@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@fontsource/koulen";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { FocusProvider } from "@/components/focus/FocusProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ fontFamily: "'Koulen', sans-serif" }}
       >
-        <AppLayout>{children}</AppLayout>
+        <FocusProvider>
+          <AppLayout>{children}</AppLayout>
+        </FocusProvider>
       </body>
     </html>
   );

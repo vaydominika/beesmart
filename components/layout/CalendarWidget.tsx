@@ -96,7 +96,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`prev-${day}`}
-          className="text-[#262626] text-sm py-2 opacity-50"
+          className="text-[var(--theme-text)] text-sm py-2 opacity-50"
           disabled
         >
           {day}
@@ -117,10 +117,10 @@ export function CalendarWidget({
           className={cn(
             "text-sm py-2 rounded-full transition-colors",
             isSelectedDate || isTodayDate
-              ? "bg-[#FADA6D] text-[#262626]"
+              ? "bg-[var(--theme-card)] text-[var(--theme-text)]"
               : isHighlightedDate
-              ? "bg-[#FADA6D] text-[#262626]"
-              : "text-[#262626] hover:bg-white/50"
+              ? "bg-[var(--theme-card)] text-[var(--theme-text)]"
+              : "text-[var(--theme-text)] hover:bg-white/50"
           )}
         >
           {day}
@@ -134,7 +134,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`next-${day}`}
-          className="text-[#262626] text-sm py-2 opacity-50"
+          className="text-[var(--theme-text)] text-sm py-2 opacity-50"
           disabled
         >
           {day}
@@ -154,9 +154,9 @@ export function CalendarWidget({
           onClick={goToPreviousMonth}
           className="h-8 w-8 rounded-md bg-white hover:bg-gray-100"
         >
-          <ChevronLeft className="h-4 w-4 text-[#262626]" />
+          <ChevronLeft className="h-4 w-4 text-[var(--theme-text)]" />
         </Button>
-        <h3 className="text-base font-medium text-[#262626]">
+        <h3 className="text-base font-medium text-[var(--theme-text)]">
           {monthNames[month]}. {year}.
         </h3>
         <Button
@@ -165,12 +165,12 @@ export function CalendarWidget({
           onClick={goToNextMonth}
           className="h-8 w-8 rounded-md bg-white hover:bg-gray-100"
         >
-          <ChevronRight className="h-4 w-4 text-[#262626]" />
+          <ChevronRight className="h-4 w-4 text-[var(--theme-text)]" />
         </Button>
       </div>
       <div className="grid grid-cols-7 gap-0 mb-2">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-[#262626] py-1">
+          <div key={day} className="text-center text-sm font-medium text-[var(--theme-text)] py-1">
             {day}
           </div>
         ))}

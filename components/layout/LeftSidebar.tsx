@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { Lightbulb, Settings, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { mockStreak } from "@/lib/mockData";
+import { useFocus } from "@/components/focus/FocusProvider";
+import { FocusModal } from "@/components/focus/FocusModal";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/" },
@@ -16,9 +18,10 @@ const navigationItems = [
 
 export function LeftSidebar() {
   const pathname = usePathname();
+  const { openModal } = useFocus();
 
   return (
-    <div className="w-[400px] bg-[#FFF6C4] flex flex-col min-h-screen">
+    <div className="w-[400px] bg-[var(--theme-sidebar)] flex flex-col min-h-screen rounded-tr-[30px] rounded-br-[30px]">
       <div className="p-6">
         <div className="flex justify-center mb-6 -translate-x-1/18">
           <Image
@@ -30,56 +33,63 @@ export function LeftSidebar() {
           />
         </div>
         
-        <div className="bg-white rounded-lg p-4 mb-4">
-          <p className="text-[32px] font-semibold text-[#262626] uppercase tracking-wide mb-3">
+        <div className="bg-white rounded-[30px] p-4 mb-4 w-55 m-auto">
+          <p className="text-[32px] font-semibold text-[var(--theme-text)] uppercase mb-3 justify-center flex">
             BEE CONSISTENT
           </p>
-          <div className="flex items-center gap-2">
-            <div className="bg-[#FADA6D] rounded-lg px-4 py-2 flex items-center justify-center">
-              <span className="text-[64px] font-bold text-[#262626]">{mockStreak}</span>
+          <div className="flex items-center gap-2 justify-center">
+            <div className="bg-[var(--theme-card)] rounded-[20px] px-4 py-2 flex items-center justify-center h-19">
+              <span className="text-[64px] font-bold text-[var(--theme-text)]">{mockStreak}</span>
             </div>
-            <span className="text-[64px] font-bold text-[#262626] uppercase">DAYS</span>
+            <span className="text-[64px] font-bold text-[var(--theme-text)] uppercase">DAYS</span>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4">
-        <ul className="space-y-2">
+      <nav className="flex-1 m-auto relative">
+        <ul>
           {navigationItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "block px-4 py-3 text-[40px] font-semibold uppercase tracking-wide transition-colors rounded-lg",
-                    isActive
-                      ? "bg-[#FADA6D] text-[#262626]"
-                      : "text-[#262626] hover:bg-[#FFF6C4]/80"
-                  )}
-                >
-                  {item.name}
-                </Link>
+              <li key={item.href} className="relative h-12">
+                <div className="relative h-full">
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "block h-full px-6 mt-2 text-[40px] uppercase transition-all duration-300 relative z-10 flex items-center font-black",
+                      isActive
+                        ? "bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-l-2xl"
+                        : "text-[var(--theme-text)] hover:text-[var(--theme-card)]"
+                    )}
+                  >
+                    {item.name}
+                  </Link>
+                </div>
               </li>
             );
           })}
         </ul>
       </nav>
 
-      <div className="px-4 py-4 space-y-2">
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-[40px] font-semibold uppercase tracking-wide text-[#262626] hover:bg-[#FFF6C4]/80 transition-colors rounded-lg">
-          <Lightbulb className="h-4 w-4 text-[#262626]" />
+      <div className="py-4 m-auto tracking-tighter text-[32px]">
+        <button 
+          onClick={openModal}
+          className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer"
+        >
+          <Lightbulb className="h-8 w-8 stroke-3" />
           FOCUS
         </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-[40px] font-semibold uppercase tracking-wide text-[#262626] hover:bg-[#FFF6C4]/80 transition-colors rounded-lg">
-          <Settings className="h-4 w-4 text-[#262626]" />
+        <button className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer">
+          <Settings className="h-8 w-8 stroke-3" />
           SETTINGS
         </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-[40px] font-semibold uppercase tracking-wide text-[#262626] hover:bg-[#FFF6C4]/80 transition-colors rounded-lg">
-          <LogOut className="h-4 w-4 text-[#262626]" />
+        <button className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer">
+          <LogOut className="h-8 w-8 stroke-3" />
           LOG OUT
         </button>
       </div>
+      
+      <FocusModal />
     </div>
   );
 }

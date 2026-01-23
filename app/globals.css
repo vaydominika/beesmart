@@ -121,18 +121,18 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-[#FFFEF8] text-[#262626];
+    @apply bg-[var(--theme-bg)] text-[var(--theme-text)];
     font-family: 'Koulen', sans-serif;
   }
 }
 
-/* Bee Theme Colors */
+/* Default Bee Theme Colors */
 :root {
-  --bee-card: #FADA6D;
-  --bee-sidebar: #FFF6C4;
-  --bee-text: #262626;
-  --bee-bg: #FFFEF8;
-  --bee-secondary: #B25121;
+  --theme-card: #FADA6D;
+  --theme-sidebar: #FFF6C4;
+  --theme-text: #262626;
+  --theme-bg: #FFFEF8;
+  --theme-secondary: #B25121;
 }
 
 /* Dark Theme Example */

@@ -4,15 +4,15 @@ import { mockUser } from "@/lib/mockData";
 
 export function WelcomeBanner() {
   return (
-    <div className="bg-[#FADA6D] rounded-lg p-6 flex items-center justify-between">
+    <div className="bg-[var(--theme-card)] rounded-lg p-6 flex items-center justify-between">
       <div className="flex-1">
-        <h2 className="text-[48px] font-bold text-[#262626] mb-2">
+        <h2 className="text-[48px] font-bold text-[var(--theme-text)] mb-2">
           WELCOME BACK, {mockUser.name.toUpperCase()}!
         </h2>
-        <p className="text-[40px] text-[#262626] mb-4">
+        <p className="text-[40px] text-[var(--theme-text)] mb-4">
           THINGS JUST WEREN'T THE SAME WITHOUT YOUR BEE-AUTIFUL PRESENCE!
         </p>
-        <Button className="bg-[#FADA6D] text-[40px] text-[#262626] hover:bg-[#FADA6D]/90 border-2 border-[#262626] uppercase font-semibold rounded-lg">
+        <Button className="bg-[var(--theme-card)] text-[40px] text-[var(--theme-text)] hover:bg-[var(--theme-card)]/90 border-2 border-[var(--theme-text)] uppercase font-semibold rounded-lg">
           LET'S DISCOVER!
         </Button>
       </div>
