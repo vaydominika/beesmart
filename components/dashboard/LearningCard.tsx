@@ -22,7 +22,7 @@ export function LearningCard({
         className
       )}
     >
-      <div className="relative w-full h-48 overflow-hidden">
+      <div className="relative w-full h-48 overflow-hidden rounded-t-xl corner-squircle">
         <Image 
           src="/images/LearningCardImage.jpg" 
           alt={title} 
