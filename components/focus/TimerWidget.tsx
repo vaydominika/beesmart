@@ -68,15 +68,15 @@ export function TimerWidget() {
       >
         <div
           ref={nodeRef}
-          className="fixed z-[9999] bg-[#FFF6C4] rounded-[15px] p-2 shadow-lg cursor-move"
+          className="fixed z-9999 bg-(--theme-sidebar) p-2 shadow-lg cursor-move"
         >
           <div className="flex items-center gap-1.5">
             <div className="drag-handle cursor-move">
-              <div className="w-1.5 h-1.5 bg-[var(--theme-text)] rounded-full"></div>
+              <div className="w-1.5 h-1.5 bg-(--theme-text) rounded-full"></div>
             </div>
             <button
               onClick={toggleMinimize}
-              className="text-[var(--theme-text)] hover:text-[var(--theme-secondary)]"
+              className="text-(--theme-text) hover:text-(--theme-secondary)"
             >
               <HugeiconsIcon icon={Minimize01Icon} className="rotate-180" size={14} />
             </button>
@@ -95,19 +95,19 @@ export function TimerWidget() {
     >
       <div
         ref={nodeRef}
-        className="fixed z-[9999] bg-[#FFF6C4] rounded-[15px] p-3 shadow-lg min-w-[160px]"
+        className="fixed z-9999 bg-(--theme-sidebar) p-3 shadow-lg min-w-[160px]"
       >
         {/* Window controls */}
         <div className="flex items-center justify-end gap-1.5 mb-1.5">
           <button
             onClick={toggleMinimize}
-            className="text-[var(--theme-text)] hover:text-[var(--theme-secondary)] transition-colors"
+            className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
           >
             <HugeiconsIcon icon={Minimize01Icon} size={16} />
           </button>
           <button
             onClick={stopSession}
-            className="text-[var(--theme-text)] hover:text-[var(--theme-secondary)] transition-colors"
+            className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} />
           </button>
@@ -115,7 +115,7 @@ export function TimerWidget() {
 
         {/* Timer display */}
         <div className="text-center mb-2">
-          <div className="text-[32px] font-bold text-[var(--theme-text)] drag-handle cursor-move">
+          <div className="text-[32px] font-bold text-(--theme-text) drag-handle cursor-move">
             {formatTime(timeRemaining)}
           </div>
         </div>
@@ -124,21 +124,21 @@ export function TimerWidget() {
         <div className="flex items-center justify-center gap-2.5">
           <button
             onClick={undo}
-            className="p-1.5 text-[var(--theme-text)] hover:text-[var(--theme-secondary)] transition-colors"
+            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title="Undo"
           >
             <HugeiconsIcon icon={UndoIcon} size={20} />
           </button>
           <button
             onClick={isRunning ? pauseTimer : resumeTimer}
-            className="p-1.5 text-[var(--theme-text)] hover:text-[var(--theme-secondary)] transition-colors"
+            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title={isRunning ? "Pause" : "Play"}
           >
             <HugeiconsIcon icon={isRunning ? PauseIcon : PlayIcon} size={20} />
           </button>
           <button
             onClick={next}
-            className="p-1.5 text-[var(--theme-text)] hover:text-[var(--theme-secondary)] transition-colors"
+            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title="Next"
           >
             <HugeiconsIcon icon={NextIcon} size={20} />

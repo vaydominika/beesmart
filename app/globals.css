@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@toolwind/corner-shape";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -131,6 +132,7 @@
   --theme-card: #FADA6D;
   --theme-sidebar: #FFF6C4;
   --theme-text: #262626;
+  --theme-text-important: #EBC421;
   --theme-bg: #FFFEF8;
   --theme-secondary: #B25121;
 }
@@ -165,4 +167,55 @@
   --theme-secondary: #2F855A;
 }
 
-/* To use a theme, add data-theme="theme-name" to the <html> tag in layout.tsx */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
+}
+
+.custom-shadow {
+  @apply shadow-[0_1px_2px_0_rgba(0,14,51,0.25)];
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.sidebar-active-animation {
+  animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideSidebarOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideSidebarIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sidebar-slide-transition {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

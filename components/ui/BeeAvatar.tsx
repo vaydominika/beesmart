@@ -4,7 +4,7 @@ export function BeeAvatar() {
       {/* White outer circle */}
       <div className="w-16 h-16 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center">
         {/* Yellow inner circle */}
-        <div className="w-12 h-12 rounded-full bg-[var(--theme-card)] flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full bg-(--theme-card) flex items-center justify-center">
           {/* Bee icon - simple SVG bee */}
           <svg
             width="24"

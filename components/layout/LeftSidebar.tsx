@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 import { mockStreak } from "@/lib/mockData";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
+import { useSettings } from "@/components/settings/SettingsProvider";
+import { SettingsModal } from "@/components/settings/Settings";
+import { FancyCard } from "@/components/fancycard";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/" },
@@ -19,9 +22,10 @@ const navigationItems = [
 export function LeftSidebar() {
   const pathname = usePathname();
   const { openModal } = useFocus();
+  const { openModal: openSettingsModal } = useSettings();
 
   return (
-    <div className="w-[400px] bg-[var(--theme-sidebar)] flex flex-col min-h-screen rounded-tr-[30px] rounded-br-[30px]">
+    <div className="w-[400px] bg-(--theme-sidebar) flex flex-col h-screen rounded-tr-[30px] rounded-br-[30px] overflow-visible relative z-10" id="sidebar-container">
       <div className="p-6">
         <div className="flex justify-center mb-6 -translate-x-1/18">
           <Image
@@ -33,33 +37,48 @@ export function LeftSidebar() {
           />
         </div>
         
-        <div className="bg-white rounded-[30px] p-4 mb-4 w-55 m-auto">
-          <p className="text-[32px] font-semibold text-[var(--theme-text)] uppercase mb-3 justify-center flex">
-            BEE CONSISTENT
-          </p>
-          <div className="flex items-center gap-2 justify-center">
-            <div className="bg-[var(--theme-card)] rounded-[20px] px-4 py-2 flex items-center justify-center h-19">
-              <span className="text-[64px] font-bold text-[var(--theme-text)]">{mockStreak}</span>
+        <FancyCard className="mb-4 w-60 m-auto bg-(--theme-bg)">
+          <div className="p-2">
+            <p className="text-[32px] font-semibold text-(--theme-text) uppercase mb-3 justify-center flex">
+              BEE CONSISTENT
+            </p>
+            <div className="flex items-center gap-2 justify-center">
+              <FancyCard className="flex items-center justify-center h-20 bg-(--theme-sidebar)">
+                <span className="text-[64px] font-bold text-(--theme-text) p-4">{mockStreak}</span>
+              </FancyCard>
+              <span className="text-[64px] font-bold text-(--theme-text) uppercase">DAYS</span>
             </div>
-            <span className="text-[64px] font-bold text-[var(--theme-text)] uppercase">DAYS</span>
           </div>
-        </div>
+        </FancyCard>
       </div>
 
-      <nav className="flex-1 m-auto relative">
-        <ul>
-          {navigationItems.map((item) => {
+      <nav className="flex-1 m-auto relative overflow-visible tracking-tight w-full pl-20">
+        <ul className="overflow-visible relative space-y-2">
+          {navigationItems.map((item, index) => {
             const isActive = pathname === item.href;
             return (
-              <li key={item.href} className="relative h-12">
-                <div className="relative h-full">
+              <li key={item.href} className="relative h-14 overflow-visible">
+                  {isActive && (
+                    <Image
+                      src="/svg/ActiveSidebarElement.svg"
+                      alt="Active sidebar element"
+                      width={348}
+                      height={145}
+                      className="absolute z-0 pointer-events-none left-0 right-0 sidebar-active-animation"
+                      style={{ 
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                      }}
+                    />
+                  )}
+                <div className="relative h-full overflow-visible">
                   <Link
                     href={item.href}
                     className={cn(
-                      "block h-full px-6 mt-2 text-[40px] uppercase transition-all duration-300 relative z-10 flex items-center font-black",
+                      "block h-full px-6 mt-2 text-[40px] uppercase transition-all duration-300 relative z-10 items-center font-black",
                       isActive
-                        ? "bg-[var(--theme-bg)] text-[var(--theme-text)] rounded-l-2xl"
-                        : "text-[var(--theme-text)] hover:text-[var(--theme-card)]"
+                        ? "text-(--theme-text-important)"
+                        : "text-(--theme-text) hover:text-(--theme-text-important)"
                     )}
                   >
                     {item.name}
@@ -74,16 +93,19 @@ export function LeftSidebar() {
       <div className="py-4 m-auto tracking-tighter text-[32px]">
         <button 
           onClick={openModal}
-          className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer"
+          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
         >
           <Lightbulb className="h-8 w-8 stroke-3" />
           FOCUS
         </button>
-        <button className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer">
+        <button 
+          onClick={openSettingsModal}
+          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+        >
           <Settings className="h-8 w-8 stroke-3" />
           SETTINGS
         </button>
-        <button className="w-full flex items-center gap-2 uppercase text-[var(--theme-text)] hover:text-[var(--theme-card)] transition-colors cursor-pointer">
+        <button className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer">
           <LogOut className="h-8 w-8 stroke-3" />
           LOG OUT
         </button>

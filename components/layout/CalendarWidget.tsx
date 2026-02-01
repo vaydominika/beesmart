@@ -96,7 +96,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`prev-${day}`}
-          className="text-[var(--theme-text)] text-sm py-2 opacity-50"
+          className="text-(--theme-text) text-sm py-2 opacity-50"
           disabled
         >
           {day}
@@ -117,10 +117,10 @@ export function CalendarWidget({
           className={cn(
             "text-sm py-2 rounded-full transition-colors",
             isSelectedDate || isTodayDate
-              ? "bg-[var(--theme-card)] text-[var(--theme-text)]"
+              ? "bg-(--theme-card) text-(--theme-text)"
               : isHighlightedDate
-              ? "bg-[var(--theme-card)] text-[var(--theme-text)]"
-              : "text-[var(--theme-text)] hover:bg-white/50"
+              ? "bg-(--theme-card) text-(--theme-text)"
+              : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
           )}
         >
           {day}
@@ -134,7 +134,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`next-${day}`}
-          className="text-[var(--theme-text)] text-sm py-2 opacity-50"
+          className="text-(--theme-text) text-sm py-2 opacity-50"
           disabled
         >
           {day}
@@ -152,25 +152,25 @@ export function CalendarWidget({
           variant="ghost"
           size="icon"
           onClick={goToPreviousMonth}
-          className="h-8 w-8 rounded-md bg-white hover:bg-gray-100"
+          className="h-8 w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
         >
-          <ChevronLeft className="h-4 w-4 text-[var(--theme-text)]" />
+          <ChevronLeft className="h-4 w-4 text-(--theme-text)" />
         </Button>
-        <h3 className="text-base font-medium text-[var(--theme-text)]">
+        <h3 className="text-base font-medium text-(--theme-text)">
           {monthNames[month]}. {year}.
         </h3>
         <Button
           variant="ghost"
           size="icon"
           onClick={goToNextMonth}
-          className="h-8 w-8 rounded-md bg-white hover:bg-gray-100"
+          className="h-8 w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
         >
-          <ChevronRight className="h-4 w-4 text-[var(--theme-text)]" />
+          <ChevronRight className="h-4 w-4 text-(--theme-text)" />
         </Button>
       </div>
       <div className="grid grid-cols-7 gap-0 mb-2">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-[var(--theme-text)] py-1">
+          <div key={day} className="text-center text-sm font-medium text-(--theme-text) py-1">
             {day}
           </div>
         ))}
