@@ -10,7 +10,7 @@ import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
 import { useSettings } from "@/components/settings/SettingsProvider";
 import { SettingsModal } from "@/components/settings/Settings";
-import { FancyCard } from "@/components/fancycard";
+import { FancyCard } from "@/components/ui/fancycard";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/" },

@@ -14,7 +14,7 @@ export const FancyButton = ({ children, className, ...props }: FancyButtonProps)
     
     return (
         <button 
-            className={`custom-shadow ${bgClass} corner-squircle rounded-2xl overflow-hidden ${otherClasses}`}
+            className={`custom-shadow ${bgClass} corner-squircle rounded-2xl overflow-hidden hover:-translate-y-0.5 transition-all duration-300 ${otherClasses}`}
             {...props}
         >
             <div className='bg-linear-to-b from-white to-transparent p-[1.5px]'>

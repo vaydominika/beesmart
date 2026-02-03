@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { FancyCard } from '../fancycard'
+import { FancyCard } from '../ui/fancycard'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Settings01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { FancyButton } from '../fancybutton'
+import { FancyButton } from '../ui/fancybutton'
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { useSettings } from './SettingsProvider'

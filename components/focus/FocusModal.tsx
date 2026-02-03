@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FancyButton } from "@/components/fancybutton";
-import { FancyCard } from "@/components/fancycard";
+import { FancyButton } from "@/components/ui/fancybutton";
+import { FancyCard } from "@/components/ui/fancycard";
 import { useFocus } from "./FocusProvider";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Idea01Icon } from "@hugeicons/core-free-icons";

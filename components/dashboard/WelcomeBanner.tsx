@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { FancyButton } from "@/components/fancybutton";
-import { FancyCard } from "@/components/fancycard";
+import { FancyButton } from "@/components/ui/fancybutton";
+import { FancyCard } from "@/components/ui/fancycard";
 import { useSettings } from "@/components/settings/SettingsProvider";
 
 export function WelcomeBanner() {

@@ -8,7 +8,7 @@ export function MainContent() {
         <h2 className="text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
           CONTINUE LEARNING
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '1fr' }}>
           {mockContinueLearning.map((course) => (
             <LearningCard
               key={course.id}
@@ -24,7 +24,7 @@ export function MainContent() {
         <h2 className="text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
           POPULAR NOW
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '1fr' }}>
           {mockPopularNow.map((course) => (
             <LearningCard
               key={course.id}

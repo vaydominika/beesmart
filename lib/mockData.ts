@@ -88,10 +88,4 @@ export const mockReminders: Reminder[] = [
     date: "2026. December 12. Friday",
     time: "16:00",
   },
-  {
-    id: "3",
-    task: "English essay",
-    date: "2026. December 12. Friday",
-    time: "16:00",
-  },
 ];
