@@ -29,7 +29,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <button
         onClick={toggleRightSidebar}
         className={cn(
-          "fixed bottom-12 w-12 h-12 bg-(--theme-sidebar) rounded-lg flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20",
+          "fixed bottom-12 w-8 h-10 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20",
           isRightSidebarOpen ? "right-[388px]" : "right-0"
         )}
         aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}

@@ -11,16 +11,27 @@ export function WelcomeBanner() {
   return (
     <FancyCard>
       <div className="p-6 flex items-center justify-between">
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col">
           <h2 className="text-[48px] font-bold tracking-tight text-(--theme-text)">
             WELCOME BACK, <span className="text-(--theme-secondary)">{userName.toUpperCase()}!</span>
           </h2>
           <p className="text-[40px] text-(--theme-text) mb-4 tracking-tight">
             THINGS JUST WEREN'T THE SAME WITHOUT YOUR BEE-AUTIFUL PRESENCE!
           </p>
-          <FancyButton className="text-[40px] text-(--theme-text-important) bg-(--theme-sidebar) uppercase font-semibold">
+          <div className="flex gap-4">
+          <FancyButton
+            className="text-[40px] text-(--theme-text-important) bg-(--theme-sidebar) uppercase font-semibold"
+            onClick={() => document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" })}
+          >
             LET'S DISCOVER!
           </FancyButton>
+          <FancyButton
+            className="text-[40px] gap-4 text-(--theme-text-important) bg-(--theme-sidebar) uppercase font-semibold"
+            onClick={() => document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            MAKE YOUR OWN!
+          </FancyButton>
+          </div>
         </div>
         <div className="ml-8">
           <Image

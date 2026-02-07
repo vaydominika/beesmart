@@ -4,6 +4,8 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { MainContent } from "@/components/dashboard/MainContent";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { BasedOnYourCoursesCard } from "@/components/dashboard/BasedOnYourCoursesCard";
+import { SurpriseMeCard } from "@/components/dashboard/SurpriseMeCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Home() {
@@ -20,6 +22,10 @@ export default function Home() {
           />
         </div>
         <WelcomeBanner />
+        <div className="flex gap-4">
+          <BasedOnYourCoursesCard />
+          <SurpriseMeCard />
+        </div>
       </div>
       <MainContent />
     </div>

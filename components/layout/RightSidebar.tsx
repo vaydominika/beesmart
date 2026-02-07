@@ -30,7 +30,7 @@ export function RightSidebar() {
       <div className="p-4 flex justify-end">
         <button 
           onClick={openSettingsModal}
-          className="p-2 hover:bg-(--theme-sidebar)/80 rounded-md transition-colors"
+          className="p-2 hover:bg-(--theme-sidebar)/80 transition-colors"
         >
           <Settings className="h-5 w-5 text-(--theme-text)" />
         </button>

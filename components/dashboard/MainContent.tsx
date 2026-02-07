@@ -1,5 +1,5 @@
 import { LearningCard } from "./LearningCard";
-import { mockContinueLearning, mockPopularNow } from "@/lib/mockData";
+import { mockContinueLearning, mockPopularNow, mockDiscoverNow  } from "@/lib/mockData";
 
 export function MainContent() {
   return (
@@ -31,6 +31,17 @@ export function MainContent() {
               title={course.title}
               description={course.description}
             />
+          ))}
+        </div>
+      </section>
+
+      <section id="discover">
+        <h2 className="text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
+          DISCOVER
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" style={{ gridAutoRows: '1fr' }}>
+          {mockDiscoverNow.map((course) => (
+            <LearningCard key={course.id} title={course.title} description={course.description} />
           ))}
         </div>
       </section>

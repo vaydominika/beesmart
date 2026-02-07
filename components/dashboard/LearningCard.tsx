@@ -25,17 +25,22 @@ export function LearningCard({
     <div className="h-full flex flex-col">
       <FancyCard
         className={cn(
-          "flex-1 flex flex-col",
+          "flex-1 flex flex-col relative overflow-hidden",
           className
         )}
       >
-        <div className="flex flex-col h-full">
+        <div
+          className="absolute inset-0 bg-cover translate-y-1/2 bg-center opacity-5 pointer-events-none"
+          style={{ backgroundImage: "url('/svg/CardBackground.svg')" }}
+        />
+        <div className="relative z-10 flex flex-col h-full">
           <div className="relative w-full h-48 overflow-hidden rounded-t-xl corner-squircle shrink-0">
             <Image 
               src="/images/LearningCardImage.jpg" 
               alt={title} 
               fill
               className="object-cover"
+              style={{ objectPosition: "50% 65%" }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
             <div className="absolute top-2 right-2 z-10">
