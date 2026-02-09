@@ -61,14 +61,14 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
         
         <FancyCard className="mb-4 w-60 md:w-42 m-auto bg-(--theme-bg)">
           <div className="p-2">
-            <p className="text-[32px] md:text-xl font-semibold text-(--theme-text) uppercase mb-3 md:mb-2 justify-center flex">
+            <p className="text-[32px] md:text-[26px] font-semibold text-(--theme-text) uppercase mb-3 md:mb-2 justify-center flex">
               BEE CONSISTENT
             </p>
             <div className="flex items-center gap-2 md:gap-2 justify-center">
               <FancyCard className="flex items-center justify-center bg-(--theme-sidebar)">
                 <span className="text-[64px] md:text-[48px] font-bold text-(--theme-text) p-4">{mockStreak}</span>
               </FancyCard>
-              <span className="text-[64px] md:text-4xl font-bold text-(--theme-text) uppercase">DAYS</span>
+              <span className="text-[64px] md:text-[45px] font-bold text-(--theme-text) uppercase">DAYS</span>
             </div>
           </div>
         </FancyCard>

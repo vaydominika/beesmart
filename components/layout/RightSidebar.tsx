@@ -30,7 +30,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   return (
     <div
       className={cn(
-        "bg-(--theme-sidebar) flex flex-col rounded-tl-[30px] rounded-bl-[30px] relative overflow-visible transition-transform duration-300 ease-in-out w-full",
+        "bg-(--theme-sidebar) flex flex-col rounded-tl-[30px] rounded-bl-[30px] relative overflow-hidden transition-transform duration-300 ease-in-out w-full",
         isOverlay ? "h-screen" : "h-full w-72",
         !isOverlay && !isRightSidebarOpen && "translate-x-full"
       )}
@@ -71,10 +71,10 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         </div>
 
         <div>
-          <h3 className="text-[32px] md:text-xl font-semibold uppercase tracking-wide text-(--theme-text) mb-3 md:mb-2">
+          <h3 className="text-[32px] md:text-xl font-semibold uppercase tracking-wide text-(--theme-text) mb-2 md:mb-0">
             REMINDERS
           </h3>
-          <div className="space-y-1">
+          <div>
             {mockReminders.map((reminder) => (
               <ReminderItem
                 key={reminder.id}

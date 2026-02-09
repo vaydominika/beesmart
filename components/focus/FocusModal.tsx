@@ -42,7 +42,7 @@ export function FocusModal() {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={closeModal}>
-      <DialogContent className="p-0 max-w-xs border-0 bg-transparent shadow-none">
+      <DialogContent className="p-0 max-w-xs border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
         <FancyCard className="bg-(--theme-bg) p-8">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-1 text-[32px] font-bold text-(--theme-text) uppercase">
