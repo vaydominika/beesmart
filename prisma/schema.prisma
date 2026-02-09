@@ -64,6 +64,13 @@ enum FocusSessionType {
   BREAK
 }
 
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
 // Models
 model User {
   id        String   @id @default(cuid())
@@ -100,6 +107,9 @@ model User {
   testAttempts          TestAttempt[]
   flashcardStudySessions FlashcardStudySession[]
   settings              UserSettings?
+  courseRatings         CourseRating[]
+  reports               Report[]               @relation("ReportReporter")
+  reviewedReports       Report[]               @relation("ReportReviewer")
 
   @@index([email])
 }
@@ -147,6 +157,7 @@ model Course {
   id          String   @id @default(cuid())
   title       String
   description String?
+  coverImageUrl String?
   createdById String
   classroomId String?
   isPublic    Boolean  @default(false)
@@ -169,6 +180,8 @@ model Course {
   certificates Certificate[]
   announcements Announcement[]
   grades       Grade[]
+  ratings      CourseRating[]
+  reports      Report[]
 
   @@index([createdById])
   @@index([classroomId])
@@ -724,6 +737,48 @@ model Certificate {
   @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
+}
+
+model CourseRating {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  rating    Int      // 1-5 stars
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([rating])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  userId      String   // User who made the report
+  courseId    String   // Course being reported
+  reason      String   @db.Text
+  description String?  @db.Text
+  status      ReportStatus @default(PENDING)
+  reviewedAt  DateTime?
+  reviewedById String? // Admin who reviewed
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  reporter  User   @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  reviewer  User?  @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model UserSettings {
