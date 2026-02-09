@@ -79,7 +79,6 @@ export function SettingsModal() {
     if (currentPassword && newPassword && confirmPassword) {
       if (newPassword === confirmPassword) {
         // In a real app, you'd send this to your backend
-        console.log("Password change requested");
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
@@ -101,29 +100,29 @@ export function SettingsModal() {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={closeModal}>
-      <DialogContent className="p-0 max-w-2xl border-0 bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-10 flex flex-col">
-          <DialogHeader className="shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-[40px] font-bold text-(--theme-text) uppercase">
-              <HugeiconsIcon icon={Settings01Icon} size={48} strokeWidth={2.2}/>
+      <DialogContent className="p-0 max-w-2xl max-h-[85vh] border-0 bg-transparent shadow-none">
+        <FancyCard className="bg-(--theme-bg) p-4 md:p-10 flex flex-col max-h-[85vh] md:max-h-[82vh] overflow-hidden">
+          <DialogHeader className="shrink-0 pb-2 md:pb-0">
+            <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
+              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2}/>
               SETTINGS
             </DialogTitle>
           </DialogHeader>
           
-          <div className="my-8">
-            <ScrollArea className="h-[65vh] pr-2">
+          <div className="my-2 md:my-8 flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-[35vh] md:h-[40vh] pr-2">
               <div className="space-y-8 px-2 pb-4">
               {/* Profile Section */}
               <div>
                 <button
                   onClick={() => toggleSection('profile')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>PROFILE</span>
                   {openSections.profile ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -134,25 +133,25 @@ export function SettingsModal() {
                 >
                   <div className="space-y-4 pt-4">
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         NAME
                       </label>
                       <Input
                         type="text"
                         value={localName}
                         onChange={(e) => setLocalName(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                       />
                     </div>
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         ROLE
                       </label>
                       <Input
                         type="text"
                         value={localRole}
                         onChange={(e) => setLocalRole(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                       />
                     </div>
                   </div>
@@ -163,13 +162,13 @@ export function SettingsModal() {
               <div>
                 <button
                   onClick={() => toggleSection('theme')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>THEME</span>
                   {openSections.theme ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -194,7 +193,7 @@ export function SettingsModal() {
                             className="w-8 h-8 rounded-full shrink-0"
                             style={{ backgroundColor: t.color }}
                           />
-                          <span className="text-[22px] font-bold text-(--theme-text) uppercase">
+                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                             {t.label}
                           </span>
                         </div>
@@ -208,13 +207,13 @@ export function SettingsModal() {
               <div>
                 <button
                   onClick={() => toggleSection('focusTimer')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>FOCUS TIMER</span>
                   {openSections.focusTimer ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -225,39 +224,39 @@ export function SettingsModal() {
                 >
                   <div className="space-y-4 pt-4">
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         ACTIVE MINUTES
                       </label>
                       <Input
                         type="number"
                         value={localActiveMinutes}
                         onChange={(e) => setLocalActiveMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-40 h-20"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
                         min="1"
                         max="120"
                       />
                     </div>
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         BREAK MINUTES
                       </label>
                       <Input
                         type="number"
                         value={localBreakMinutes}
                         onChange={(e) => setLocalBreakMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-40 h-20"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
                         min="1"
                         max="60"
                       />
                     </div>
                     <div className="flex items-center justify-between pt-2">
-                      <label className="text-[22px] font-bold text-(--theme-text) uppercase">
+                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                         AUTO BREAK
                       </label>
                       <Switch
                         checked={defaultAutoBreak}
                         onCheckedChange={setDefaultAutoBreak}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-125"
+                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
                       />
                     </div>
                   </div>
@@ -268,13 +267,13 @@ export function SettingsModal() {
               <div>
                 <button
                   onClick={() => toggleSection('security')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>SECURITY</span>
                   {openSections.security ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -285,38 +284,38 @@ export function SettingsModal() {
                 >
                   <div className="space-y-4 pt-4">
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         CURRENT PASSWORD
                       </label>
                       <Input
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="Current password"
                       />
                     </div>
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         NEW PASSWORD
                       </label>
                       <Input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="New password"
                       />
                     </div>
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         CONFIRM PASSWORD
                       </label>
                       <Input
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="Confirm password"
                       />
                     </div>
@@ -328,13 +327,13 @@ export function SettingsModal() {
               <div>
                 <button
                   onClick={() => toggleSection('notifications')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>NOTIFICATIONS</span>
                   {openSections.notifications ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -345,33 +344,33 @@ export function SettingsModal() {
                 >
                   <div className="space-y-3 pt-4">
                     <div className="flex items-center justify-between">
-                      <label className="text-[22px] font-bold text-(--theme-text) uppercase">
+                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                         EMAIL
                       </label>
                       <Switch
                         checked={emailNotifications}
                         onCheckedChange={setEmailNotifications}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-125"
+                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="text-[22px] font-bold text-(--theme-text) uppercase">
+                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                         REMINDERS
                       </label>
                       <Switch
                         checked={reminderNotifications}
                         onCheckedChange={setReminderNotifications}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-125"
+                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
                       />
                     </div>
                     <div className="flex items-center justify-between">
-                      <label className="text-[22px] font-bold text-(--theme-text) uppercase">
+                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                         COURSE ALERTS
                       </label>
                       <Switch
                         checked={courseAlerts}
                         onCheckedChange={setCourseAlerts}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-125"
+                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
                       />
                     </div>
                   </div>
@@ -382,13 +381,13 @@ export function SettingsModal() {
               <div>
                 <button
                   onClick={() => toggleSection('privacy')}
-                  className="w-full flex items-center justify-between text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
                 >
                   <span>PRIVACY</span>
                   {openSections.privacy ? (
-                    <ChevronUp className="h-6 w-6" />
+                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
                   ) : (
-                    <ChevronDown className="h-6 w-6" />
+                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
                   )}
                 </button>
                 <div
@@ -399,7 +398,7 @@ export function SettingsModal() {
                 >
                   <div className="space-y-4 pt-4">
                     <div>
-                      <label className="block text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
                         PROFILE VISIBILITY
                       </label>
                       <div className="flex gap-3">
@@ -411,7 +410,7 @@ export function SettingsModal() {
                               : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
                           }`}
                         >
-                          <span className="text-[22px] font-bold text-(--theme-text) uppercase">
+                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                             PUBLIC
                           </span>
                         </button>
@@ -423,20 +422,20 @@ export function SettingsModal() {
                               : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
                           }`}
                         >
-                          <span className="text-[22px] font-bold text-(--theme-text) uppercase">
+                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                             PRIVATE
                           </span>
                         </button>
                       </div>
                     </div>
                     <div className="flex items-center justify-between pt-2">
-                      <label className="text-[22px] font-bold text-(--theme-text) uppercase">
+                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
                         ACTIVITY SHARING
                       </label>
                       <Switch
                         checked={activitySharing}
                         onCheckedChange={setActivitySharing}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-125"
+                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
                       />
                     </div>
                   </div>
@@ -446,18 +445,18 @@ export function SettingsModal() {
             </ScrollArea>
           </div>
 
-          <Separator />
+          <Separator className="shrink-0 my-1 md:my-0" />
 
-          <DialogFooter className="gap-6 pt-6">
+          <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
             <FancyButton
               onClick={closeModal}
-              className="flex-1 text-(--theme-text) text-[28px] font-bold uppercase"
+              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
             >
               CANCEL
             </FancyButton>
             <FancyButton
               onClick={handleSave}
-              className="flex-1 text-(--theme-text) text-[28px] font-bold uppercase"
+              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
             >
               SAVE
             </FancyButton>

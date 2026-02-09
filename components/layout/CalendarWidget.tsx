@@ -96,7 +96,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`prev-${day}`}
-          className="text-(--theme-text) text-sm py-2 opacity-50"
+          className="text-(--theme-text) text-sm md:text-xs py-2 md:py-1 opacity-50"
           disabled
         >
           {day}
@@ -115,7 +115,7 @@ export function CalendarWidget({
           key={day}
           onClick={() => handleDateClick(day)}
           className={cn(
-            "text-sm py-2 rounded-full transition-colors",
+            "text-sm md:text-xs py-2 md:py-1 rounded-full transition-colors",
             isSelectedDate || isTodayDate
               ? "bg-(--theme-card) text-(--theme-text)"
               : isHighlightedDate
@@ -134,7 +134,7 @@ export function CalendarWidget({
       days.push(
         <button
           key={`next-${day}`}
-          className="text-(--theme-text) text-sm py-2 opacity-50"
+          className="text-(--theme-text) text-sm md:text-xs py-2 md:py-1 opacity-50"
           disabled
         >
           {day}
@@ -147,30 +147,30 @@ export function CalendarWidget({
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 md:mb-3">
         <Button
           variant="ghost"
           size="icon"
           onClick={goToPreviousMonth}
-          className="h-8 w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
+          className="h-8 w-8 md:h-6 md:w-6 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
         >
-          <ChevronLeft className="h-4 w-4 text-(--theme-text)" />
+          <ChevronLeft className="h-4 w-4 md:h-3 md:w-3 text-(--theme-text)" />
         </Button>
-        <h3 className="text-base font-medium text-(--theme-text)">
+        <h3 className="text-base md:text-sm font-medium text-(--theme-text)">
           {monthNames[month]}. {year}.
         </h3>
         <Button
           variant="ghost"
           size="icon"
           onClick={goToNextMonth}
-          className="h-8 w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
+          className="h-8 w-8 md:h-6 md:w-6 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
         >
-          <ChevronRight className="h-4 w-4 text-(--theme-text)" />
+          <ChevronRight className="h-4 w-4 md:h-3 md:w-3 text-(--theme-text)" />
         </Button>
       </div>
-      <div className="grid grid-cols-7 gap-0 mb-2">
+      <div className="grid grid-cols-7 gap-0 mb-2 md:mb-1">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-(--theme-text) py-1">
+          <div key={day} className="text-center text-sm md:text-xs font-medium text-(--theme-text) py-1">
             {day}
           </div>
         ))}
