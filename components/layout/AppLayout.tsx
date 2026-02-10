@@ -6,11 +6,13 @@ import { LeftSidebar } from "./LeftSidebar";
 import { RightSidebar } from "./RightSidebar";
 import { TimerWidget } from "@/components/focus/TimerWidget";
 import { SettingsModal } from "@/components/settings/Settings";
+import { ProfileSettingsModal } from "@/components/settings/ProfileSettingsModal";
 import { useLayout } from "./LayoutProvider";
 import { useIsMobile } from "./useIsMobile";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FancyButton } from "@/components/ui/fancybutton";
+import { Toaster } from "@/components/ui/sonner";
 
 const SCROLL_THRESHOLD = 200;
 const LAPTOP_SIDEBAR_WIDTH = 288; // w-72
@@ -104,6 +106,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         </FancyButton>
         <TimerWidget />
         <SettingsModal />
+        <ProfileSettingsModal />
+        <Toaster />
       </div>
     );
   }
@@ -127,14 +131,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       <button
         onClick={toggleRightSidebar}
-        className="fixed bottom-36 w-8 h-10 md:w-5 md:h-7 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
+        className="fixed bottom-36 w-8 h-10 md:w-5 md:h-9 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] md:rounded-tl-[10px] md:rounded-bl-[10px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
         style={{ right: isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
         aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
       >
         {isRightSidebarOpen ? (
-          <ChevronRight className="h-6 w-6 text-(--theme-text)" />
+          <ChevronRight className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5 md:translate-x-0.5" />
         ) : (
-          <ChevronLeft className="h-6 w-6 text-(--theme-text)" />
+          <ChevronLeft className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5" />
         )}
       </button>
         <FancyButton
@@ -151,6 +155,8 @@ export function AppLayout({ children }: AppLayoutProps) {
         </FancyButton>
       <TimerWidget />
       <SettingsModal />
+      <ProfileSettingsModal />
+      <Toaster />
     </div>
   );
 }

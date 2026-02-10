@@ -5,9 +5,9 @@ import { Settings, X } from "lucide-react";
 import { CalendarWidget } from "./CalendarWidget";
 import { ReminderItem } from "@/components/dashboard/ReminderItem";
 import { BeeAvatar } from "@/components/ui/BeeAvatar";
-import { mockReminders } from "@/lib/mockData";
 import { useLayout } from "./LayoutProvider";
 import { useSettings } from "@/components/settings/SettingsProvider";
+import { useDashboard } from "@/lib/DashboardContext";
 import { cn } from "@/lib/utils";
 
 interface RightSidebarProps {
@@ -15,11 +15,21 @@ interface RightSidebarProps {
   onClose?: () => void;
 }
 
+const BANNER_HEIGHT = 80; // reaches down to ~middle of 64px avatar when overlapped
+const DEFAULT_BANNER_URL = "/images/BannerBackground.png";
+
 export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const { isRightSidebarOpen } = useLayout();
-  const { openModal: openSettingsModal, userName, userRole } = useSettings();
+  const { openProfileModal } = useSettings();
+  const { data } = useDashboard();
   const isOverlay = variant === "overlay";
+  const reminders = data?.reminders ?? [];
+  const user = data?.user;
+  const userName = user?.name ?? "Guest";
+  const userRole = user?.role ?? "Learner";
+  const userAvatar = user?.avatar ?? null;
+  const bannerImageUrl = user?.bannerImageUrl ?? null;
 
   const highlightedDates = [
     new Date(2022, 11, 2),
@@ -35,33 +45,55 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         !isOverlay && !isRightSidebarOpen && "translate-x-full"
       )}
     >
-      <div className="p-4 md:p-3 flex justify-end items-center gap-2">
-        {isOverlay && onClose && (
+      {/* Banner: default image or user's custom banner; extends to profile picture middle */}
+      <div
+        className="relative rounded-tl-[30px] shrink-0 bg-[#fef9c3]"
+        style={{
+          minHeight: BANNER_HEIGHT,
+          backgroundImage: `url(${bannerImageUrl ?? DEFAULT_BANNER_URL})`,
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute top-0 right-0 flex items-center gap-2 p-2 md:p-1.5">
+          {isOverlay && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close sidebar"
+              className="p-2 rounded-md hover:bg-black/10 text-(--theme-text)"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close sidebar"
-            className="p-2 rounded-md hover:bg-(--theme-sidebar)/80 text-(--theme-text)"
+            onClick={openProfileModal}
+            aria-label="Profile settings"
+            className="p-2 rounded-md hover:bg-black/10 text-(--theme-text)"
           >
-            <X className="h-5 w-5" />
+            <Settings className="h-5 w-5" />
           </button>
-        )}
-        <button 
-          onClick={openSettingsModal}
-          className="p-2 hover:bg-(--theme-sidebar)/80 transition-colors"
-        >
-          <Settings className="h-5 w-5 text-(--theme-text)" />
-        </button>
+        </div>
       </div>
-      <div className="px-6 pb-6 md:px-4 md:pb-4">
-        <div className="flex flex-col items-center mb-6 md:mb-4">
+
+      {/* Profile: avatar overlaps banner (half in banner), then name and role */}
+      <div className="px-6 pb-4 md:px-4 -mt-10 relative z-10">
+        <div className="flex flex-col items-center mb-4 md:mb-3">
           <div className="mb-3 md:mb-2">
-            <BeeAvatar />
+            <BeeAvatar avatarUrl={userAvatar} />
           </div>
-          <p className="text-[40px] md:text-2xl font-semibold text-(--theme-text)">{userName}</p>
-          <p className="text-[32px] md:text-xl text-(--theme-text)">{userRole}</p>
+          <p className="text-[40px] md:text-2xl font-semibold text-(--theme-text) uppercase tracking-wide text-center">
+            {userName}
+          </p>
+          <p className="text-[32px] md:text-xl text-(--theme-text) uppercase tracking-wide">
+            {userRole}
+          </p>
         </div>
 
+      </div>
+
+      <div className="px-6 pb-6 md:px-4 md:pb-4 flex-1 overflow-auto">
         <div className="mb-6 md:mb-4">
           <CalendarWidget
             selectedDate={selectedDate}
@@ -75,14 +107,18 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
             REMINDERS
           </h3>
           <div>
-            {mockReminders.map((reminder) => (
-              <ReminderItem
-                key={reminder.id}
-                task={reminder.task}
-                date={reminder.date}
-                time={reminder.time}
-              />
-            ))}
+            {reminders.length > 0 ? (
+              reminders.map((reminder) => (
+                <ReminderItem
+                  key={reminder.id}
+                  task={reminder.task}
+                  date={reminder.date}
+                  time={reminder.time ?? ""}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-(--theme-text) py-2">No reminders</p>
+            )}
           </div>
         </div>
       </div>

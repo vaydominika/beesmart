@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Lightbulb, Settings, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockStreak } from "@/lib/mockData";
+import { useDashboard } from "@/lib/DashboardContext";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
 import { useSettings } from "@/components/settings/SettingsProvider";
@@ -28,6 +28,8 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
   const pathname = usePathname();
   const { openModal } = useFocus();
   const { openModal: openSettingsModal } = useSettings();
+  const { data } = useDashboard();
+  const streak = data?.streak ?? 0;
   const isOverlay = variant === "overlay";
 
   return (
@@ -66,7 +68,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             </p>
             <div className="flex items-center gap-2 md:gap-2 justify-center">
               <FancyCard className="flex items-center justify-center bg-(--theme-sidebar)">
-                <span className="text-[64px] md:text-[48px] font-bold text-(--theme-text) p-4">{mockStreak}</span>
+                <div className="text-[64px] md:text-[48px] font-bold text-(--theme-text) leading-none w-fit md:px-2 md:py-1 px-3 py-2">{streak}</div>
               </FancyCard>
               <span className="text-[64px] md:text-[45px] font-bold text-(--theme-text) uppercase">DAYS</span>
             </div>

@@ -13,15 +13,12 @@ import { ScrollArea } from '../ui/scroll-area'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Separator } from "@/components/ui/separator"
+import { toast } from "@/components/ui/sonner"
 
 export function SettingsModal() {
   const {
     isModalOpen,
     closeModal,
-    userName,
-    userRole,
-    setUserName,
-    setUserRole,
     theme,
     setTheme,
     defaultActiveMinutes,
@@ -42,8 +39,6 @@ export function SettingsModal() {
     setActivitySharing,
   } = useSettings();
 
-  const [localName, setLocalName] = useState(userName);
-  const [localRole, setLocalRole] = useState(userRole);
   const [localActiveMinutes, setLocalActiveMinutes] = useState(defaultActiveMinutes.toString());
   const [localBreakMinutes, setLocalBreakMinutes] = useState(defaultBreakMinutes.toString());
   const [currentPassword, setCurrentPassword] = useState("");
@@ -52,7 +47,6 @@ export function SettingsModal() {
   
   // Section open/close state - all closed by default
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    profile: false,
     theme: false,
     focusTimer: false,
     security: false,
@@ -68,8 +62,6 @@ export function SettingsModal() {
   };
 
   const handleSave = () => {
-    setUserName(localName);
-    setUserRole(localRole);
     const active = parseInt(localActiveMinutes) || 45;
     const breakMins = parseInt(localBreakMinutes) || 15;
     setDefaultActiveMinutes(active);
@@ -88,6 +80,7 @@ export function SettingsModal() {
       }
     }
     
+    toast.success("Settings saved");
     closeModal();
   };
 
@@ -112,52 +105,6 @@ export function SettingsModal() {
           <div className="my-2 md:my-8 flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-[35vh] md:h-[40vh] pr-2">
               <div className="space-y-8 px-2 pb-4">
-              {/* Profile Section */}
-              <div>
-                <button
-                  onClick={() => toggleSection('profile')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>PROFILE</span>
-                  {openSections.profile ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.profile ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        NAME
-                      </label>
-                      <Input
-                        type="text"
-                        value={localName}
-                        onChange={(e) => setLocalName(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        ROLE
-                      </label>
-                      <Input
-                        type="text"
-                        value={localRole}
-                        onChange={(e) => setLocalRole(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Theme Section */}
               <div>
                 <button
@@ -231,7 +178,7 @@ export function SettingsModal() {
                         type="number"
                         value={localActiveMinutes}
                         onChange={(e) => setLocalActiveMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
                         min="1"
                         max="120"
                       />
@@ -244,7 +191,7 @@ export function SettingsModal() {
                         type="number"
                         value={localBreakMinutes}
                         onChange={(e) => setLocalBreakMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
                         min="1"
                         max="60"
                       />
@@ -291,7 +238,7 @@ export function SettingsModal() {
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="Current password"
                       />
                     </div>
@@ -303,7 +250,7 @@ export function SettingsModal() {
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="New password"
                       />
                     </div>
@@ -315,7 +262,7 @@ export function SettingsModal() {
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
                         placeholder="Confirm password"
                       />
                     </div>

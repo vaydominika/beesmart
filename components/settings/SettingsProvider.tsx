@@ -8,13 +8,10 @@ interface SettingsContextType {
   isModalOpen: boolean;
   openModal: () => void;
   closeModal: () => void;
-  
-  // Profile
-  userName: string;
-  userRole: string;
-  setUserName: (name: string) => void;
-  setUserRole: (role: string) => void;
-  
+  isProfileModalOpen: boolean;
+  openProfileModal: () => void;
+  closeProfileModal: () => void;
+
   // Theme
   theme: Theme;
   setTheme: (theme: Theme) => void;
@@ -74,12 +71,11 @@ function saveSettings(settings: Partial<SettingsContextType>) {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   
   // Load from localStorage or use defaults
   const saved = loadSettings();
   
-  const [userName, setUserName] = useState(saved?.userName || "YOUR NAME");
-  const [userRole, setUserRole] = useState(saved?.userRole || "ROLE");
   const [theme, setTheme] = useState<Theme>(saved?.theme || "bee");
   const [defaultActiveMinutes, setDefaultActiveMinutes] = useState(saved?.defaultActiveMinutes || 45);
   const [defaultBreakMinutes, setDefaultBreakMinutes] = useState(saved?.defaultBreakMinutes || 15);
@@ -102,8 +98,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Save to localStorage whenever settings change
   useEffect(() => {
     saveSettings({
-      userName,
-      userRole,
       theme,
       defaultActiveMinutes,
       defaultBreakMinutes,
@@ -114,11 +108,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       profileVisibility,
       activitySharing,
     });
-  }, [userName, userRole, theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak, 
+  }, [theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak,
       emailNotifications, reminderNotifications, courseAlerts, profileVisibility, activitySharing]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+  const openProfileModal = () => setIsProfileModalOpen(true);
+  const closeProfileModal = () => setIsProfileModalOpen(false);
 
   return (
     <SettingsContext.Provider
@@ -126,10 +122,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         isModalOpen,
         openModal,
         closeModal,
-        userName,
-        userRole,
-        setUserName,
-        setUserRole,
+        isProfileModalOpen,
+        openProfileModal,
+        closeProfileModal,
         theme,
         setTheme,
         defaultActiveMinutes,

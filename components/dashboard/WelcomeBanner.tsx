@@ -3,11 +3,12 @@
 import Image from "next/image";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { FancyCard } from "@/components/ui/fancycard";
-import { useSettings } from "@/components/settings/SettingsProvider";
+import { useDashboard } from "@/lib/DashboardContext";
 
 export function WelcomeBanner() {
-  const { userName } = useSettings();
-  
+  const { data } = useDashboard();
+  const userName = data?.user?.name ?? "Guest";
+
   return (
     <FancyCard>
       <div className="p-4 md:p-6 flex flex-col md:flex-row items-center md:items-stretch md:justify-between gap-4">
