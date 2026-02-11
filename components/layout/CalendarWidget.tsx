@@ -113,7 +113,7 @@ export function CalendarWidget({
       const date = new Date(year, month, day);
       const isTodayDate = isToday(date);
       const isSelectedDate = isSelected(date);
-      const isHighlightedDate = isHighlighted(date) && !isTodayDate && !isSelectedDate;
+      const hasEvent = isHighlighted(date);
 
       days.push(
         <div key={day} className="flex items-center justify-center">
@@ -121,10 +121,11 @@ export function CalendarWidget({
             onClick={() => handleDateClick(day)}
             className={cn(
               "w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-base md:text-sm transition-colors",
-              isTodayDate
-                ? "bg-(--theme-card) text-(--theme-text)"
-                : isHighlightedDate
-                  ? "bg-(--theme-bg) text-(--theme-text)"
+              isSelectedDate && "ring-[1.5px] ring-(--theme-card) z-10",
+              hasEvent
+                ? "bg-(--theme-bg) text-(--theme-text)"
+                : isTodayDate
+                  ? "bg-(--theme-card) text-(--theme-text)"
                   : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
             )}
           >

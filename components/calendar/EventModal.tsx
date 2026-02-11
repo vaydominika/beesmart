@@ -11,7 +11,8 @@ import { Trash2 } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DragDropVerticalIcon } from "@hugeicons/core-free-icons";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { Clock } from "lucide-react";
 
 interface EventData {
     id: string;
@@ -230,9 +231,10 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
                     {loadingEvents ? (
                         <p className="text-sm text-(--theme-text) py-2">Loading…</p>
                     ) : events.length > 0 ? (
-                        <ScrollArea className="mb-4 max-h-20 pr-2 overflow-y-auto">
+                        <div className="mb-4 max-h-40 pr-2 overflow-y-auto [&::-webkit-scrollbar]:w-[7px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-(--theme-card) [&::-webkit-scrollbar-thumb]:rounded-full">
                             <Reorder.Group
                                 axis="y"
+                                layoutScroll
                                 values={events}
                                 onReorder={handleReorder}
                                 className="space-y-2"
@@ -246,37 +248,37 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
                                     />
                                 ))}
                             </Reorder.Group>
-                        </ScrollArea>
+                        </div>
                     ) : (
                         <p className="text-sm text-(--theme-text) opacity-60 mb-4">No events for this day.</p>
                     )}
 
                     {/* Add event form */}
-                    <div className="space-y-3 flex-1">
+                    <div className="space-y-2 flex-1">
                         <div>
-                            <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                 Title
                             </label>
                             <Input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                                 placeholder="Event title"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                 Description
                             </label>
                             <Input
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                                 placeholder="Optional"
                             />
                         </div>
                         <div className="flex items-center justify-between">
-                            <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                            <label className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
                                 All Day
                             </label>
                             <Switch
@@ -288,26 +290,50 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
                         {!isAllDay && (
                             <div className="flex gap-3">
                                 <div className="flex-1">
-                                    <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                         Start
                                     </label>
-                                    <Input
-                                        type="time"
-                                        value={startTime}
-                                        onChange={(e) => setStartTime(e.target.value)}
-                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            type="time"
+                                            value={startTime}
+                                            onChange={(e) => setStartTime(e.target.value)}
+                                            onClick={(e) => {
+                                                if ("showPicker" in HTMLInputElement.prototype) {
+                                                    try {
+                                                        (e.currentTarget as any).showPicker();
+                                                    } catch (err) {
+                                                        // ignore
+                                                    }
+                                                }
+                                            }}
+                                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden cursor-pointer pl-3"
+                                        />
+                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                    </div>
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                         End
                                     </label>
-                                    <Input
-                                        type="time"
-                                        value={endTime}
-                                        onChange={(e) => setEndTime(e.target.value)}
-                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            type="time"
+                                            value={endTime}
+                                            onChange={(e) => setEndTime(e.target.value)}
+                                            onClick={(e) => {
+                                                if ('showPicker' in HTMLInputElement.prototype) {
+                                                    try {
+                                                        e.currentTarget.showPicker();
+                                                    } catch (err) {
+                                                        // ignore
+                                                    }
+                                                }
+                                            }}
+                                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden cursor-pointer pl-3"
+                                        />
+                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -316,20 +342,20 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
                     <div className="flex gap-3 pt-4 shrink-0">
                         <FancyButton
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-[28px] font-bold uppercase"
+                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                         >
                             Cancel
                         </FancyButton>
                         <FancyButton
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-[28px] font-bold uppercase"
+                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                         >
                             {saving ? "Saving…" : "Add Event"}
                         </FancyButton>
                     </div>
                 </FancyCard>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

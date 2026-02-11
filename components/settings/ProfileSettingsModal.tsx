@@ -177,7 +177,7 @@ export function ProfileSettingsModal() {
                 <div>
                   <button
                     onClick={() => toggleSection("profile")}
-                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
                   >
                     <span>PROFILE</span>
                     {openSections.profile ? (
@@ -194,27 +194,27 @@ export function ProfileSettingsModal() {
                         : "max-h-0 opacity-0"
                     )}
                   >
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-3 pt-2">
                       <div>
-                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                           NAME
                         </label>
                         <Input
                           type="text"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                           placeholder="Your name"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                           ROLE
                         </label>
-                        <p className="text-base md:text-[22px] font-bold text-(--theme-text) bg-(--theme-sidebar) rounded-xl corner-squircle px-4 py-3">
+                        <p className="text-sm md:text-lg font-bold text-(--theme-text) bg-(--theme-sidebar) rounded-xl corner-squircle px-4 py-3">
                           {roleDisplay}
                         </p>
-                        <p className="text-xs md:text-sm text-(--theme-text)/70 mt-1">
+                        <p className="text-xs text-(--theme-text)/70 mt-1">
                           Role is set by your classroom membership.
                         </p>
                       </div>
@@ -226,7 +226,7 @@ export function ProfileSettingsModal() {
                 <div>
                   <button
                     onClick={() => toggleSection("picture")}
-                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
                   >
                     <span>PROFILE PICTURE</span>
                     {openSections.picture ? (
@@ -243,7 +243,7 @@ export function ProfileSettingsModal() {
                         : "max-h-0 opacity-0"
                     )}
                   >
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-3 pt-2">
                       <BeeAvatar
                         avatarUrl={avatarUrl || undefined}
                         className="shrink-0"
@@ -259,7 +259,7 @@ export function ProfileSettingsModal() {
                         type="button"
                         onClick={() => avatarInputRef.current?.click()}
                         disabled={uploadingAvatar}
-                        className="text-(--theme-text) text-[36px] md:text-[28px] font-bold uppercase flex items-center"
+                        className="text-(--theme-text) text-xs md:text-xl font-bold uppercase flex items-center"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         <span>{uploadingAvatar ? "UPLOADING…" : "UPLOAD IMAGE"}</span>
@@ -272,7 +272,7 @@ export function ProfileSettingsModal() {
                 <div>
                   <button
                     onClick={() => toggleSection("banner")}
-                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
                   >
                     <span>BANNER</span>
                     {openSections.banner ? (
@@ -289,7 +289,7 @@ export function ProfileSettingsModal() {
                         : "max-h-0 opacity-0"
                     )}
                   >
-                    <div className="pt-4 space-y-4">
+                    <div className="pt-2 space-y-3">
                       <div className="w-full min-w-[200px] h-20 min-h-[80px] rounded-xl overflow-hidden border border-(--theme-card) bg-[#fef9c3] relative">
                         <Image
                           src={bannerImageUrl ? bannerImageUrl : "/images/BannerBackground.png"}
@@ -311,7 +311,7 @@ export function ProfileSettingsModal() {
                         type="button"
                         onClick={() => bannerInputRef.current?.click()}
                         disabled={uploadingBanner}
-                        className="text-(--theme-text) text-[36px] md:text-[28px] font-bold uppercase flex items-center"
+                        className="text-(--theme-text) text-xs md:text-xl font-bold uppercase flex items-center"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         <span>{uploadingBanner ? "UPLOADING…" : "UPLOAD IMAGE"}</span>
@@ -324,7 +324,7 @@ export function ProfileSettingsModal() {
                 <div>
                   <button
                     onClick={() => toggleSection("security")}
-                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                    className="w-full flex items-center justify-between text-xs md:text-lg font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
                   >
                     <span>PASSWORD</span>
                     {openSections.security ? (
@@ -341,40 +341,40 @@ export function ProfileSettingsModal() {
                         : "max-h-0 opacity-0"
                     )}
                   >
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-3 pt-2">
                       <div>
-                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
                           CURRENT PASSWORD
                         </label>
                         <Input
                           type="password"
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                           placeholder="Current password"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
                           NEW PASSWORD
                         </label>
                         <Input
                           type="password"
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                           placeholder="New password"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
                           CONFIRM PASSWORD
                         </label>
                         <Input
                           type="password"
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                           placeholder="Confirm password"
                         />
                       </div>
@@ -400,14 +400,14 @@ export function ProfileSettingsModal() {
             <FancyButton
               onClick={closeProfileModal}
               disabled={saving}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
+              className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               CANCEL
             </FancyButton>
             <FancyButton
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
+              className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               {saving ? "SAVING…" : "SAVE"}
             </FancyButton>
