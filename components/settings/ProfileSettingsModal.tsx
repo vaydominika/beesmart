@@ -248,7 +248,7 @@ export function ProfileSettingsModal() {
                         avatarUrl={avatarUrl || undefined}
                         className="shrink-0"
                       />
-                      <input
+                      <Input
                         ref={avatarInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"
@@ -300,7 +300,7 @@ export function ProfileSettingsModal() {
                           unoptimized
                         />
                       </div>
-                      <input
+                      <Input
                         ref={bannerInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/gif"

@@ -8,7 +8,7 @@ import { BasedOnYourCoursesCard } from "@/components/dashboard/BasedOnYourCourse
 import { SurpriseMeCard } from "@/components/dashboard/SurpriseMeCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function Home() {
+export default function DashboardPage() {
   return (
     <ScrollArea className="h-full overflow-y-auto">
     <div className="flex flex-col">

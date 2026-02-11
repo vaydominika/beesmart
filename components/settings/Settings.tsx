@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 import { FancyCard } from '../ui/fancycard'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Settings01Icon } from '@hugeicons/core-free-icons'
@@ -394,18 +395,29 @@ export function SettingsModal() {
 
           <Separator className="shrink-0 my-1 md:my-0" />
 
-          <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
+          <DialogFooter className="flex flex-col gap-2 md:gap-4 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
+            <div className="flex w-full gap-2 md:gap-6">
+              <FancyButton
+                onClick={closeModal}
+                className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
+              >
+                CANCEL
+              </FancyButton>
+              <FancyButton
+                onClick={handleSave}
+                className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
+              >
+                SAVE
+              </FancyButton>
+            </div>
             <FancyButton
-              onClick={closeModal}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
+              onClick={() => {
+                closeModal();
+                signOut({ callbackUrl: "/login" });
+              }}
+              className="w-full text-(--theme-secondary) bg-(--theme-card) text-xs md:text-lg font-bold uppercase"
             >
-              CANCEL
-            </FancyButton>
-            <FancyButton
-              onClick={handleSave}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
-            >
-              SAVE
+              SIGN OUT
             </FancyButton>
           </DialogFooter> 
         </FancyCard>

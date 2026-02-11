@@ -9,7 +9,17 @@ import type {
 export async function getContinueLearningForUser(
   userId: string
 ): Promise<CourseCard[]> {
-  const enrollments = await prisma.courseEnrollment.findMany({
+  type EnrollmentWithCourse = {
+    course: {
+      id: string;
+      title: string;
+      description: string | null;
+      coverImageUrl: string | null;
+      modules: { lessons: { id: string }[] }[];
+      ratings: { rating: number }[];
+    };
+  };
+  const enrollments = (await prisma.courseEnrollment.findMany({
     where: { userId },
     include: {
       course: {
@@ -19,14 +29,16 @@ export async function getContinueLearningForUser(
         },
       },
     },
-  });
+  })) as EnrollmentWithCourse[];
 
-  const progressByCourse = await prisma.courseProgress.findMany({
+  const progressByCourse = (await prisma.courseProgress.findMany({
     where: { userId },
     select: { lessonId: true, completedAt: true },
-  });
+  })) as { lessonId: string; completedAt: Date | null }[];
   const completedLessonIds = new Set(
-    progressByCourse.filter((p) => p.completedAt).map((p) => p.lessonId)
+    progressByCourse
+      .filter((p) => p.completedAt != null)
+      .map((p) => p.lessonId)
   );
 
   return enrollments.map((e) => {
@@ -57,15 +69,24 @@ export async function getContinueLearningForUser(
   });
 }
 
+type CourseWithRatings = {
+  id: string;
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  ratings: { rating: number }[];
+  enrollments: unknown[];
+};
+
 export async function getPopularCourses(): Promise<CourseCard[]> {
-  const courses = await prisma.course.findMany({
+  const courses = (await prisma.course.findMany({
     where: { isPublic: true },
     include: {
       ratings: true,
       enrollments: true,
     },
     take: 12,
-  });
+  })) as CourseWithRatings[];
 
   const withAvg = courses.map((c) => {
     const avg =
@@ -94,14 +115,16 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
 export async function getDiscoverCoursesForUser(
   userId: string
 ): Promise<CourseCard[]> {
-  const enrolled = await prisma.courseEnrollment
-    .findMany({ where: { userId }, select: { courseId: true } })
-    .then((r) => new Set(r.map((e) => e.courseId)));
+  const enrolledData = (await prisma.courseEnrollment.findMany({
+    where: { userId },
+    select: { courseId: true },
+  })) as { courseId: string }[];
+  const enrolled = new Set(enrolledData.map((e) => e.courseId));
 
-  const courses = await prisma.course.findMany({
+  const courses = (await prisma.course.findMany({
     where: { isPublic: true, id: { notIn: [...enrolled] } },
     include: { ratings: true },
-  });
+  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; ratings: { rating: number }[] }[];
 
   return courses.map((c) => {
     const avg =
@@ -121,10 +144,10 @@ export async function getDiscoverCoursesForUser(
 export async function getRemindersForUser(
   userId: string
 ): Promise<ReminderItem[]> {
-  const list = await prisma.reminder.findMany({
+  const list = (await prisma.reminder.findMany({
     where: { userId },
     orderBy: [{ date: "asc" }, { time: "asc" }],
-  });
+  })) as { id: string; task: string; date: Date; time: string | null }[];
   return list.map((r) => ({
     id: r.id,
     task: r.task,
@@ -144,12 +167,12 @@ export async function getStreakForUser(userId: string): Promise<number> {
 export async function getCurrentUserById(
   userId: string
 ): Promise<CurrentUser | null> {
-  const user = await prisma.user.findUnique({
+  const user = (await prisma.user.findUnique({
     where: { id: userId },
     include: {
       classroomMemberships: { take: 1, orderBy: { joinedAt: "asc" } },
     },
-  });
+  })) as { id: string; name: string; avatar: string | null; image: string | null; bannerImageUrl: string | null; classroomMemberships: { role: string }[] } | null;
   if (!user) return null;
   const role = user.classroomMemberships[0]?.role ?? "STUDENT";
   const roleDisplay =
@@ -161,7 +184,7 @@ export async function getCurrentUserById(
   return {
     id: user.id,
     name: user.name,
-    avatar: user.avatar,
+    avatar: user.avatar ?? user.image ?? null,
     bannerImageUrl: user.bannerImageUrl,
     role: roleDisplay,
   };

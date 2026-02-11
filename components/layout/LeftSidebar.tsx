@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Lightbulb, Settings, LogOut, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/DashboardContext";
@@ -13,7 +14,7 @@ import { SettingsModal } from "@/components/settings/Settings";
 import { FancyCard } from "@/components/ui/fancycard";
 
 const navigationItems = [
-  { name: "DASHBOARD", href: "/" },
+  { name: "DASHBOARD", href: "/dashboard" },
   { name: "SCHEDULE", href: "/schedule" },
   { name: "CLASSROOM", href: "/classroom" },
   { name: "PRACTICE", href: "/practice" },
@@ -130,7 +131,11 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           <Settings className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
           SETTINGS
         </button>
-        <button className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer">
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+        >
           <LogOut className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
           LOG OUT
         </button>

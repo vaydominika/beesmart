@@ -1,32 +1,42 @@
-import "dotenv/config";
-import { PrismaClient } from "./generated/prisma";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma: unknown };
 
 function createPrismaClient() {
+  require("dotenv/config");
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Prisma 7 requires an adapter with a connection URL."
     );
   }
+  const { PrismaClient: PrismaClientCtor } = require("./generated/prisma");
+  const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
   const adapter = new PrismaMariaDb(url);
-  return new PrismaClient({ adapter });
+  return new PrismaClientCtor({ adapter });
 }
 
-export const prisma =
-  globalForPrisma.prisma ?? createPrismaClient();
+function getPrisma() {
+  if (globalForPrisma.prisma) return globalForPrisma.prisma as ReturnType<typeof createPrismaClient>;
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = client;
+  return client;
+}
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export const prisma = new Proxy(
+  {} as ReturnType<typeof createPrismaClient>,
+  {
+    get(_, prop) {
+      return getPrisma()[prop as keyof ReturnType<typeof createPrismaClient>];
+    },
+  }
+);
 
 /**
- * Returns the current user id for the app. Replace with session when auth is added.
- * Uses CURRENT_USER_ID env (server) or first user in DB.
+ * Returns the current user id from the session. Used by API routes and server code.
+ * Uses dynamic import to avoid circular dependency with auth (auth imports prisma from this file).
  */
 export async function getCurrentUserId(): Promise<string | null> {
-  const envId = process.env.CURRENT_USER_ID;
-  if (envId) return envId;
-  const first = await prisma.user.findFirst({ select: { id: true } });
-  return first?.id ?? null;
+  const { auth } = await import("@/auth");
+  const session = await auth();
+  const id = session?.user?.id;
+  return typeof id === "string" ? id : null;
 }

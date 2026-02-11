@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@fontsource/koulen";
 import "./globals.css";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { FocusProvider } from "@/components/focus/FocusProvider";
-import { LayoutProvider } from "@/components/layout/LayoutProvider";
-import { SettingsProvider } from "@/components/settings/SettingsProvider";
-import { DashboardProvider } from "@/lib/DashboardContext";
+import { SessionProvider } from "next-auth/react";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,15 +31,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ fontFamily: "'Koulen', sans-serif" }}
       >
-        <SettingsProvider>
-          <DashboardProvider>
-            <FocusProvider>
-              <LayoutProvider>
-                <AppLayout>{children}</AppLayout>
-              </LayoutProvider>
-            </FocusProvider>
-          </DashboardProvider>
-        </SettingsProvider>
+        <SessionProvider>
+          <Toaster />
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );

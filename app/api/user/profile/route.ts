@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { getCurrentUserById } from "@/lib/courses-data";
 
@@ -27,7 +28,14 @@ export async function PATCH(request: Request) {
   }
 
   if (body.currentPassword != null && body.newPassword != null) {
-    if (body.currentPassword !== user.password) {
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "Account uses social sign-in; set a password in your provider or use password reset" },
+        { status: 400 }
+      );
+    }
+    const match = await bcrypt.compare(body.currentPassword, user.password);
+    if (!match) {
       return NextResponse.json(
         { error: "Current password is incorrect" },
         { status: 400 }
@@ -53,7 +61,7 @@ export async function PATCH(request: Request) {
   if (body.bannerImageUrl !== undefined)
     updateData.bannerImageUrl = body.bannerImageUrl?.trim() || null;
   if (body.newPassword != null && body.newPassword.length > 0)
-    updateData.password = body.newPassword;
+    updateData.password = await bcrypt.hash(body.newPassword, 10);
 
   await prisma.user.update({
     where: { id: userId },
