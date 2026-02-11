@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { Trash2 } from "lucide-react";
+import { Reorder, useDragControls } from "framer-motion";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { DragDropVerticalIcon } from "@hugeicons/core-free-icons";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EventData {
     id: string;
@@ -24,6 +28,54 @@ interface EventModalProps {
     onClose: () => void;
     selectedDate: Date;
     onEventsChanged: () => void;
+}
+
+function SortableEventItem({
+    event,
+    onDelete,
+    onDragEnd,
+}: {
+    event: EventData;
+    onDelete: (id: string) => void;
+    onDragEnd: () => void;
+}) {
+    const controls = useDragControls();
+
+    return (
+        <Reorder.Item
+            value={event}
+            dragListener={false}
+            dragControls={controls}
+            onDragEnd={onDragEnd}
+            className="flex items-center justify-between bg-(--theme-sidebar) rounded-xl corner-squircle p-3 mb-2"
+        >
+            <div
+                className="cursor-move p-2 -ml-2 text-(--theme-text) opacity-50 hover:opacity-100 touch-none"
+                onPointerDown={(e) => controls.start(e)}
+            >
+                <HugeiconsIcon icon={DragDropVerticalIcon} size={20} strokeWidth={2.2} />
+            </div>
+            <div className="min-w-0 flex-1 ml-1 select-none">
+                <p className="text-sm md:text-base font-bold text-(--theme-text) truncate">
+                    {event.title}
+                </p>
+                {event.isAllDay ? (
+                    <p className="text-xs text-(--theme-text) opacity-70">All day</p>
+                ) : event.startTime ? (
+                    <p className="text-xs text-(--theme-text) opacity-70">
+                        {event.startTime}
+                        {event.endTime ? ` – ${event.endTime}` : ""}
+                    </p>
+                ) : null}
+            </div>
+            <button
+                onClick={() => onDelete(event.id)}
+                className="ml-2 p-1.5 rounded-lg hover:bg-(--theme-card)/50 text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity shrink-0"
+            >
+                <Trash2 className="h-4 w-4" />
+            </button>
+        </Reorder.Item>
+    );
 }
 
 export function EventModal({ open, onClose, selectedDate, onEventsChanged }: EventModalProps) {
@@ -109,7 +161,10 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
             setEndTime("");
             setIsAllDay(false);
             await fetchEventsForDate();
-            onEventsChanged();
+            // Small delay to ensure DB propagation before parent refetch
+            setTimeout(() => {
+                onEventsChanged();
+            }, 100);
         } catch {
             toast.error("Failed to create event.");
         } finally {
@@ -126,15 +181,44 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
             }
             toast.success("Event deleted.");
             await fetchEventsForDate();
-            onEventsChanged();
+            // Small delay to ensure DB propagation before parent refetch
+            setTimeout(() => {
+                onEventsChanged();
+            }, 50);
         } catch {
             toast.error("Failed to delete event.");
         }
     };
 
+    const handleReorder = (newOrder: EventData[]) => {
+        setEvents(newOrder); // Optimistic update
+    };
+
+    const handleDragEnd = async () => {
+        // Save new order to backend
+        try {
+            const updates = events.map((event, index) => ({
+                id: event.id,
+                order: index,
+            }));
+
+            await fetch("/api/user/events", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updates),
+            });
+            // Notify parent to refresh reminders
+            setTimeout(() => {
+                onEventsChanged();
+            }, 50);
+        } catch {
+            toast.error("Failed to save order.");
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-lg border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
+            <DialogContent className="p-0 max-w-lg max-h-[95vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
                 <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
@@ -146,34 +230,23 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
                     {loadingEvents ? (
                         <p className="text-sm text-(--theme-text) py-2">Loading…</p>
                     ) : events.length > 0 ? (
-                        <div className="mb-4 space-y-2 max-h-40 overflow-y-auto">
-                            {events.map((event) => (
-                                <div
-                                    key={event.id}
-                                    className="flex items-center justify-between bg-(--theme-sidebar) rounded-xl corner-squircle p-3"
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm md:text-base font-bold text-(--theme-text) truncate">
-                                            {event.title}
-                                        </p>
-                                        {event.isAllDay ? (
-                                            <p className="text-xs text-(--theme-text) opacity-70">All day</p>
-                                        ) : event.startTime ? (
-                                            <p className="text-xs text-(--theme-text) opacity-70">
-                                                {event.startTime}
-                                                {event.endTime ? ` – ${event.endTime}` : ""}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                    <button
-                                        onClick={() => handleDelete(event.id)}
-                                        className="ml-2 p-1.5 rounded-lg hover:bg-(--theme-card)/50 text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity shrink-0"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                        <ScrollArea className="mb-4 max-h-20 pr-2 overflow-y-auto">
+                            <Reorder.Group
+                                axis="y"
+                                values={events}
+                                onReorder={handleReorder}
+                                className="space-y-2"
+                            >
+                                {events.map((event) => (
+                                    <SortableEventItem
+                                        key={event.id}
+                                        event={event}
+                                        onDelete={handleDelete}
+                                        onDragEnd={handleDragEnd}
+                                    />
+                                ))}
+                            </Reorder.Group>
+                        </ScrollArea>
                     ) : (
                         <p className="text-sm text-(--theme-text) opacity-60 mb-4">No events for this day.</p>
                     )}

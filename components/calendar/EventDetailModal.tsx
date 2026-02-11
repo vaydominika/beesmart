@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Trash2 } from "lucide-react";
 
 interface EventData {
     id: string;
@@ -87,11 +88,36 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
             toast.success("Event updated!");
             setDisplayEvent(updatedEvent);
             setEditing(false);
-            onEventUpdated();
+            setDisplayEvent(updatedEvent);
+            setEditing(false);
+            // Small delay to ensure DB propagation before parent refetch
+            setTimeout(() => {
+                onEventUpdated();
+            }, 100);
         } catch {
             toast.error("Failed to update event.");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (confirm("Are you sure you want to delete this event?")) {
+            try {
+                const res = await fetch(`/api/user/events?id=${event.id}`, { method: "DELETE" });
+                if (!res.ok) {
+                    toast.error("Failed to delete event.");
+                    return;
+                }
+                toast.success("Event deleted.");
+                onClose();
+                // Small delay to ensure DB propagation before parent refetch
+                setTimeout(() => {
+                    onEventUpdated();
+                }, 100);
+            } catch {
+                toast.error("Failed to delete event.");
+            }
         }
     };
 
@@ -102,13 +128,22 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                 <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
                     {/* Top bar: pencil left, cancel right */}
                     <div className="flex items-center justify-between mb-4">
-                        <button
-                            onClick={handleEdit}
-                            className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
-                            aria-label="Edit event"
-                        >
-                            <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleEdit}
+                                className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
+                                aria-label="Edit event"
+                            >
+                                <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
+                                aria-label="Delete event"
+                            >
+                                <Trash2 className="w-5 h-5" strokeWidth={2.2} />
+                            </button>
+                        </div>
                         <button
                             onClick={handleCancel}
                             className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"

@@ -80,9 +80,7 @@ export function CalendarWidget({
   const isHighlighted = (date: Date) => {
     return highlightedDates.some(
       (highlighted) =>
-        date.getDate() === highlighted.getDate() &&
-        date.getMonth() === highlighted.getMonth() &&
-        date.getFullYear() === highlighted.getFullYear()
+        date.toDateString() === highlighted.toDateString()
     );
   };
 
@@ -100,13 +98,14 @@ export function CalendarWidget({
       const day = previousMonthDays - i;
       const date = new Date(year, month - 1, day);
       days.push(
-        <button
-          key={`prev-${day}`}
-          className="text-(--theme-text) text-base md:text-sm py-3 md:py-2 opacity-50"
-          disabled
-        >
-          {day}
-        </button>
+        <div key={`prev-${day}`} className="flex items-center justify-center">
+          <button
+            className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-(--theme-text) text-base md:text-sm opacity-50"
+            disabled
+          >
+            {day}
+          </button>
+        </div>
       );
     }
 
@@ -117,20 +116,21 @@ export function CalendarWidget({
       const isHighlightedDate = isHighlighted(date) && !isTodayDate && !isSelectedDate;
 
       days.push(
-        <button
-          key={day}
-          onClick={() => handleDateClick(day)}
-          className={cn(
-            "text-base md:text-sm py-3 md:py-2 rounded-full transition-colors",
-            isTodayDate
-              ? "bg-(--theme-card) text-(--theme-text)"
-              : isHighlightedDate
-                ? "bg-(--theme-bg) text-(--theme-text) ring-2 ring-(--theme-card)"
-                : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
-          )}
-        >
-          {day}
-        </button>
+        <div key={day} className="flex items-center justify-center">
+          <button
+            onClick={() => handleDateClick(day)}
+            className={cn(
+              "w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-base md:text-sm transition-colors",
+              isTodayDate
+                ? "bg-(--theme-card) text-(--theme-text)"
+                : isHighlightedDate
+                  ? "bg-(--theme-bg) text-(--theme-text)"
+                  : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
+            )}
+          >
+            {day}
+          </button>
+        </div>
       );
     }
 
@@ -138,13 +138,14 @@ export function CalendarWidget({
     const remainingCells = totalCells - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       days.push(
-        <button
-          key={`next-${day}`}
-          className="text-(--theme-text) text-base md:text-sm py-3 md:py-2 opacity-50"
-          disabled
-        >
-          {day}
-        </button>
+        <div key={`next-${day}`} className="flex items-center justify-center">
+          <button
+            className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-(--theme-text) text-base md:text-sm opacity-50"
+            disabled
+          >
+            {day}
+          </button>
+        </div>
       );
     }
 

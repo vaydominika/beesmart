@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
                 userId,
                 startDate: { gte: now },
             },
-            orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
+            orderBy: [{ order: "asc" }, { startTime: "asc" }],
             take: limit,
         });
         return NextResponse.json(events);
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
                 userId,
                 startDate: { gte: start, lte: end },
             },
-            orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
+            orderBy: [{ order: "asc" }, { startTime: "asc" }],
         });
         return NextResponse.json(events);
     }
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     // Default: return all user events
     const events = await prisma.event.findMany({
         where: { userId },
-        orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
+        orderBy: [{ order: "asc" }, { startTime: "asc" }],
     });
     return NextResponse.json(events);
 }
@@ -70,6 +70,16 @@ export async function POST(req: Request) {
     const startDate = new Date(body.startDate);
     const endDate = body.endDate ? new Date(body.endDate) : startDate;
 
+    // Get max order for this day to append at end
+    const lastEvent = await prisma.event.findFirst({
+        where: {
+            userId,
+            startDate: { gte: startDate, lte: endDate }, // Same day (roughly)
+        },
+        orderBy: { order: "desc" },
+    });
+    const newOrder = (lastEvent?.order ?? -1) + 1;
+
     const event = await prisma.event.create({
         data: {
             title: body.title,
@@ -79,6 +89,7 @@ export async function POST(req: Request) {
             startTime: body.startTime || null,
             endTime: body.endTime || null,
             isAllDay: body.isAllDay ?? false,
+            order: newOrder,
             userId,
         },
     });
@@ -130,6 +141,7 @@ export async function PATCH(req: NextRequest) {
     if (body.startTime !== undefined) data.startTime = body.startTime || null;
     if (body.endTime !== undefined) data.endTime = body.endTime || null;
     if (body.isAllDay !== undefined) data.isAllDay = Boolean(body.isAllDay);
+    if (body.order !== undefined) data.order = parseInt(body.order);
 
     const updated = await prisma.event.update({
         where: { id },
@@ -137,4 +149,29 @@ export async function PATCH(req: NextRequest) {
     });
 
     return NextResponse.json(updated);
+}
+
+export async function PUT(req: NextRequest) {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    if (!Array.isArray(body)) {
+        return NextResponse.json({ error: "Expected array of updates" }, { status: 400 });
+    }
+
+    // Bulk update order
+    // In a transaction for safety
+    await prisma.$transaction(
+        body.map((item: { id: string; order: number }) =>
+            prisma.event.update({
+                where: { id: item.id, userId }, // Ensure user owns event
+                data: { order: item.order },
+            })
+        )
+    );
+
+    return NextResponse.json({ success: true });
 }

@@ -40,6 +40,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const { isRightSidebarOpen } = useLayout();
   const { openProfileModal } = useSettings();
@@ -54,7 +55,11 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   // Fetch events for the current month (for calendar highlights)
   const fetchMonthEvents = useCallback(async () => {
     try {
-      const res = await fetch(`/api/user/events?month=${currentMonth}`);
+      // Add timestamp to prevent browser caching
+      const res = await fetch(`/api/user/events?month=${currentMonth}&ts=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Pragma": "no-cache" }
+      });
       if (!res.ok) return;
       const events: EventData[] = await res.json();
       const dates = events.map((e) => new Date(e.startDate));
@@ -67,7 +72,10 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   // Fetch next 2 upcoming events (for reminders)
   const fetchUpcomingEvents = useCallback(async () => {
     try {
-      const res = await fetch("/api/user/events?upcoming=2");
+      const res = await fetch(`/api/user/events?upcoming=2&ts=${Date.now()}`, {
+        cache: "no-store",
+        headers: { "Pragma": "no-cache" }
+      });
       if (!res.ok) return;
       const events: EventData[] = await res.json();
       setUpcomingEvents(events);
@@ -96,9 +104,16 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   };
 
   const handleEventsChanged = () => {
-    fetchMonthEvents();
-    fetchUpcomingEvents();
+    setRefreshTrigger((prev) => prev + 1);
   };
+
+  useEffect(() => {
+    fetchMonthEvents();
+  }, [fetchMonthEvents, refreshTrigger]);
+
+  useEffect(() => {
+    fetchUpcomingEvents();
+  }, [fetchUpcomingEvents, refreshTrigger]);
 
   // Format upcoming event date for display: "2026. December 12. Friday"
   const formatEventDate = (dateStr: string) => {
@@ -166,7 +181,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           </div>
         </div>
 
-        <div className="px-6 pb-6 md:px-4 md:pb-4 flex-1 overflow-auto">
+        <div className="px-6 pb-6 md:px-4 md:pb-4 flex-1 overflow-hidden">
           <div className="mb-6 md:mb-4">
             <CalendarWidget
               selectedDate={selectedDate}
