@@ -74,72 +74,78 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-md flex flex-col items-center gap-6">
-      <Link href="/" className="flex items-center gap-2">
+    <div className="w-full max-w-md h-[95vh] flex flex-col items-center gap-4">
+      <Link href="/" className="flex items-center">
         <Image
           src="/svg/BeeSmartLogo.svg"
           alt="BeeSmart"
-          width={120}
-          height={48}
-          className="h-10 w-auto"
+          width={480}
+          height={192}
+          className="h-25 w-auto -translate-x-2.5"
         />
       </Link>
-      <h1 className="text-2xl font-bold text-(--theme-text) uppercase tracking-tight">
-        Create account
-      </h1>
-      <FancyCard className="w-full p-6 bg-(--theme-card)">
+      <FancyCard className="w-full p-6 bg-(--theme-bg) border-dashed border-4 border-(--theme-card)">
         <div className="flex flex-col gap-4">
           <FancyButton
             type="button"
             onClick={handleGoogleSignIn}
-            className="w-full h-10 md:h-12 text-(--theme-text) bg-(--theme-sidebar) font-semibold uppercase"
+            className="w-full h-10 md:h-12 text-(--theme-text) bg-(--theme-card) font-semibold uppercase text-[28px]"
           >
+            <Image
+              src="/svg/google-icon-logo-svgrepo-com.svg"
+              alt="Google"
+              width={24}
+              height={24}
+              className="h-6 w-auto mr-2"
+            />
             Continue with Google
           </FancyButton>
           <div className="flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="text-sm text-(--theme-text) opacity-80">or</span>
-            <Separator className="flex-1" />
+            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
+            <span className="text-[22px] text-(--theme-card) opacity-90">or</span>
+            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
           </div>
           <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
-            <div>
-              <label
-                htmlFor="register-name"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Name
-              </label>
-              <Input
-                id="register-name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="Your name"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="register-email"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Email
-              </label>
-              <Input
-                id="register-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="you@example.com"
-              />
+            <div className="flex flex-row gap-4">
+              <div>
+                <label
+                  htmlFor="register-name"
+                  className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
+                >
+                  Name
+                </label>
+                <Input
+                  id="register-name"
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="register-email"
+                  className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
+                >
+                  Email
+                </label>
+                <Input
+                  id="register-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
             <div>
               <label
                 htmlFor="register-password"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
+                className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
               >
                 Password
               </label>
@@ -149,14 +155,14 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
+                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                 placeholder="At least 6 characters"
               />
             </div>
             <div>
               <label
                 htmlFor="register-confirm"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
+                className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
               >
                 Confirm password
               </label>
@@ -166,14 +172,14 @@ export default function RegisterPage() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
+                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                 placeholder="••••••••"
               />
             </div>
             <FancyButton
               type="submit"
               disabled={loading}
-              className="w-full h-10 md:h-12 text-(--theme-text-important) bg-(--theme-sidebar) font-semibold uppercase"
+              className="w-full h-10 md:h-12 text-(--theme-text-important) bg-(--theme-sidebar) font-semibold uppercase text-[28px]"
             >
               {loading ? "Creating account…" : "Create account"}
             </FancyButton>

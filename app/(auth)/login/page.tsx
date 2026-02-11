@@ -64,14 +64,14 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md flex flex-col items-center gap-6">
-      <Link href="/" className="flex items-center gap-2">
+    <div className="w-full max-w-md flex flex-col items-center gap-4">
+      <Link href="/" className="flex items-center">
         <Image
           src="/svg/BeeSmartLogo.svg"
           alt="BeeSmart"
           width={480}
           height={192}
-          className="h-20 w-auto"
+          className="h-25 w-auto -translate-x-2.5"
         />
       </Link>
       <FancyCard className="w-full p-6 bg-(--theme-bg) border-dashed border-4 border-(--theme-card)">
