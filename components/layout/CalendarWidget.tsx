@@ -9,12 +9,14 @@ interface CalendarWidgetProps {
   selectedDate?: Date;
   onDateSelect?: (date: Date) => void;
   highlightedDates?: Date[];
+  onMonthChange?: (date: Date) => void;
 }
 
 export function CalendarWidget({
   selectedDate,
   onDateSelect,
   highlightedDates = [],
+  onMonthChange,
 }: CalendarWidgetProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const today = new Date();
@@ -47,11 +49,15 @@ export function CalendarWidget({
   const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const goToPreviousMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
+    const newDate = new Date(year, month - 1, 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
   };
 
   const goToNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
+    const newDate = new Date(year, month + 1, 1);
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
   };
 
   const isToday = (date: Date) => {
@@ -90,7 +96,7 @@ export function CalendarWidget({
     const previousMonthDays = new Date(year, month, 0).getDate();
     const daysToShowFromPreviousMonth = adjustedStartingDay;
 
-      for (let i = daysToShowFromPreviousMonth - 1; i >= 0; i--) {
+    for (let i = daysToShowFromPreviousMonth - 1; i >= 0; i--) {
       const day = previousMonthDays - i;
       const date = new Date(year, month - 1, day);
       days.push(
@@ -116,11 +122,11 @@ export function CalendarWidget({
           onClick={() => handleDateClick(day)}
           className={cn(
             "text-base md:text-sm py-3 md:py-2 rounded-full transition-colors",
-            isSelectedDate || isTodayDate
+            isTodayDate
               ? "bg-(--theme-card) text-(--theme-text)"
               : isHighlightedDate
-              ? "bg-(--theme-card) text-(--theme-text)"
-              : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
+                ? "bg-(--theme-bg) text-(--theme-text) ring-2 ring-(--theme-card)"
+                : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
           )}
         >
           {day}
