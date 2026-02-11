@@ -38,6 +38,8 @@ export function SettingsModal() {
     activitySharing,
     setProfileVisibility,
     setActivitySharing,
+    saveSettingsToServer,
+    isSaving,
   } = useSettings();
 
   const [localActiveMinutes, setLocalActiveMinutes] = useState(defaultActiveMinutes.toString());
@@ -45,7 +47,7 @@ export function SettingsModal() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // Section open/close state - all closed by default
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     theme: false,
@@ -62,26 +64,55 @@ export function SettingsModal() {
     }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const active = parseInt(localActiveMinutes) || 45;
     const breakMins = parseInt(localBreakMinutes) || 15;
     setDefaultActiveMinutes(active);
     setDefaultBreakMinutes(breakMins);
-    
+
     // Handle password change if all fields are filled
     if (currentPassword && newPassword && confirmPassword) {
-      if (newPassword === confirmPassword) {
-        // In a real app, you'd send this to your backend
+      if (newPassword !== confirmPassword) {
+        toast.error("New passwords don't match!");
+        return;
+      }
+      if (newPassword.length < 6) {
+        toast.error("New password must be at least 6 characters.");
+        return;
+      }
+      try {
+        const res = await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            currentPassword,
+            newPassword,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          toast.error(data.error ?? "Failed to change password.");
+          return;
+        }
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
-      } else {
-        alert("New passwords don't match!");
+        toast.success("Password updated!");
+      } catch {
+        toast.error("Failed to change password.");
         return;
       }
     }
-    
-    toast.success("Settings saved");
+
+    const ok = await saveSettingsToServer({
+      defaultActiveMinutes: active,
+      defaultBreakMinutes: breakMins,
+    });
+    if (ok) {
+      toast.success("Settings saved");
+    } else {
+      toast.error("Failed to save settings. Changes saved locally.");
+    }
     closeModal();
   };
 
@@ -98,297 +129,294 @@ export function SettingsModal() {
         <FancyCard className="bg-(--theme-bg) p-4 md:p-10 flex flex-col max-h-[85vh] md:max-h-[82vh] overflow-hidden">
           <DialogHeader className="shrink-0 pb-2 md:pb-0">
             <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
-              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2}/>
+              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2} />
               SETTINGS
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="my-2 md:my-8 flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-[35vh] md:h-[40vh] pr-2">
               <div className="space-y-8 px-2 pb-4">
-              {/* Theme Section */}
-              <div>
-                <button
-                  onClick={() => toggleSection('theme')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>THEME</span>
-                  {openSections.theme ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.theme ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="grid grid-cols-2 gap-4 pt-4">
-                    {themes.map((t) => (
-                      <button
-                        key={t.value}
-                        onClick={() => setTheme(t.value)}
-                        className={`p-4 rounded-xl corner-squircle border-2 transition-all ${
-                          theme === t.value
+                {/* Theme Section */}
+                <div>
+                  <button
+                    onClick={() => toggleSection('theme')}
+                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>THEME</span>
+                    {openSections.theme ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.theme ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="grid grid-cols-2 gap-4 pt-4">
+                      {themes.map((t) => (
+                        <button
+                          key={t.value}
+                          onClick={() => setTheme(t.value)}
+                          className={`p-4 rounded-xl corner-squircle border-2 transition-all ${theme === t.value
                             ? "border-(--theme-text-important) bg-(--theme-sidebar)"
                             : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-8 h-8 rounded-full shrink-0"
-                            style={{ backgroundColor: t.color }}
-                          />
-                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                            {t.label}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Focus Timer Defaults */}
-              <div>
-                <button
-                  onClick={() => toggleSection('focusTimer')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>FOCUS TIMER</span>
-                  {openSections.focusTimer ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.focusTimer ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        ACTIVE MINUTES
-                      </label>
-                      <Input
-                        type="number"
-                        value={localActiveMinutes}
-                        onChange={(e) => setLocalActiveMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
-                        min="1"
-                        max="120"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        BREAK MINUTES
-                      </label>
-                      <Input
-                        type="number"
-                        value={localBreakMinutes}
-                        onChange={(e) => setLocalBreakMinutes(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
-                        min="1"
-                        max="60"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                        AUTO BREAK
-                      </label>
-                      <Switch
-                        checked={defaultAutoBreak}
-                        onCheckedChange={setDefaultAutoBreak}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Security */}
-              <div>
-                <button
-                  onClick={() => toggleSection('security')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>SECURITY</span>
-                  {openSections.security ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.security ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        CURRENT PASSWORD
-                      </label>
-                      <Input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                        placeholder="Current password"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        NEW PASSWORD
-                      </label>
-                      <Input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                        placeholder="New password"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        CONFIRM PASSWORD
-                      </label>
-                      <Input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
-                        placeholder="Confirm password"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notifications */}
-              <div>
-                <button
-                  onClick={() => toggleSection('notifications')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>NOTIFICATIONS</span>
-                  {openSections.notifications ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.notifications ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="space-y-3 pt-4">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                        EMAIL
-                      </label>
-                      <Switch
-                        checked={emailNotifications}
-                        onCheckedChange={setEmailNotifications}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                        REMINDERS
-                      </label>
-                      <Switch
-                        checked={reminderNotifications}
-                        onCheckedChange={setReminderNotifications}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                        COURSE ALERTS
-                      </label>
-                      <Switch
-                        checked={courseAlerts}
-                        onCheckedChange={setCourseAlerts}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Privacy */}
-              <div>
-                <button
-                  onClick={() => toggleSection('privacy')}
-                  className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
-                >
-                  <span>PRIVACY</span>
-                  {openSections.privacy ? (
-                    <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                  )}
-                </button>
-                <div
-                  className={cn(
-                    "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                    openSections.privacy ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                  )}
-                >
-                  <div className="space-y-4 pt-4">
-                    <div>
-                      <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                        PROFILE VISIBILITY
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => setProfileVisibility("public")}
-                          className={`flex-1 p-4 rounded-xl corner-squircle border-2 transition-all ${
-                            profileVisibility === "public"
-                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
-                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                          }`}
+                            }`}
                         >
-                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                            PUBLIC
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-8 h-8 rounded-full shrink-0"
+                              style={{ backgroundColor: t.color }}
+                            />
+                            <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                              {t.label}
+                            </span>
+                          </div>
                         </button>
-                        <button
-                          onClick={() => setProfileVisibility("private")}
-                          className={`flex-1 p-4 rounded-xl corner-squircle border-2 transition-all ${
-                            profileVisibility === "private"
-                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
-                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                          }`}
-                        >
-                          <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                            PRIVATE
-                          </span>
-                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Focus Timer Defaults */}
+                <div>
+                  <button
+                    onClick={() => toggleSection('focusTimer')}
+                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>FOCUS TIMER</span>
+                    {openSections.focusTimer ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.focusTimer ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          ACTIVE MINUTES
+                        </label>
+                        <Input
+                          type="number"
+                          value={localActiveMinutes}
+                          onChange={(e) => setLocalActiveMinutes(e.target.value)}
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
+                          min="1"
+                          max="120"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          BREAK MINUTES
+                        </label>
+                        <Input
+                          type="number"
+                          value={localBreakMinutes}
+                          onChange={(e) => setLocalBreakMinutes(e.target.value)}
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-32 md:w-40 h-16 md:h-20"
+                          min="1"
+                          max="60"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between pt-2">
+                        <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                          AUTO BREAK
+                        </label>
+                        <Switch
+                          checked={defaultAutoBreak}
+                          onCheckedChange={setDefaultAutoBreak}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
+                        />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pt-2">
-                      <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                        ACTIVITY SHARING
-                      </label>
-                      <Switch
-                        checked={activitySharing}
-                        onCheckedChange={setActivitySharing}
-                        className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                      />
+                  </div>
+                </div>
+
+                {/* Security */}
+                <div>
+                  <button
+                    onClick={() => toggleSection('security')}
+                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>SECURITY</span>
+                    {openSections.security ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.security ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          CURRENT PASSWORD
+                        </label>
+                        <Input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          placeholder="Current password"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          NEW PASSWORD
+                        </label>
+                        <Input
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          placeholder="New password"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          CONFIRM PASSWORD
+                        </label>
+                        <Input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[28px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-16 w-full"
+                          placeholder="Confirm password"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+
+                {/* Notifications */}
+                <div>
+                  <button
+                    onClick={() => toggleSection('notifications')}
+                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>NOTIFICATIONS</span>
+                    {openSections.notifications ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.notifications ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="space-y-3 pt-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                          EMAIL
+                        </label>
+                        <Switch
+                          checked={emailNotifications}
+                          onCheckedChange={setEmailNotifications}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                          REMINDERS
+                        </label>
+                        <Switch
+                          checked={reminderNotifications}
+                          onCheckedChange={setReminderNotifications}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                          COURSE ALERTS
+                        </label>
+                        <Switch
+                          checked={courseAlerts}
+                          onCheckedChange={setCourseAlerts}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Privacy */}
+                <div>
+                  <button
+                    onClick={() => toggleSection('privacy')}
+                    className="w-full flex items-center justify-between text-base md:text-[28px] font-bold text-(--theme-text) uppercase mb-4 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>PRIVACY</span>
+                    {openSections.privacy ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.privacy ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="space-y-4 pt-4">
+                      <div>
+                        <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
+                          PROFILE VISIBILITY
+                        </label>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setProfileVisibility("public")}
+                            className={`flex-1 p-4 rounded-xl corner-squircle border-2 transition-all ${profileVisibility === "public"
+                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
+                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
+                              }`}
+                          >
+                            <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                              PUBLIC
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => setProfileVisibility("private")}
+                            className={`flex-1 p-4 rounded-xl corner-squircle border-2 transition-all ${profileVisibility === "private"
+                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
+                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
+                              }`}
+                          >
+                            <span className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                              PRIVATE
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2">
+                        <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
+                          ACTIVITY SHARING
+                        </label>
+                        <Switch
+                          checked={activitySharing}
+                          onCheckedChange={setActivitySharing}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </ScrollArea>
           </div>
@@ -405,21 +433,13 @@ export function SettingsModal() {
               </FancyButton>
               <FancyButton
                 onClick={handleSave}
+                disabled={isSaving}
                 className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
               >
-                SAVE
+                {isSaving ? "SAVING…" : "SAVE"}
               </FancyButton>
             </div>
-            <FancyButton
-              onClick={() => {
-                closeModal();
-                signOut({ callbackUrl: "/login" });
-              }}
-              className="w-full text-(--theme-secondary) bg-(--theme-card) text-xs md:text-lg font-bold uppercase"
-            >
-              SIGN OUT
-            </FancyButton>
-          </DialogFooter> 
+          </DialogFooter>
         </FancyCard>
       </DialogContent>
     </Dialog>
