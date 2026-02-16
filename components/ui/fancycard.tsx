@@ -17,8 +17,8 @@ export const FancyCard = ({ children, className, ...props }: FancyCardProps) => 
             className={`custom-shadow ${bgClass} corner-squircle rounded-2xl overflow-hidden ${otherClasses}`}
             {...props}
         >
-            <div className='bg-linear-to-b from-white to-transparent p-[1.5px]'>
-                <div className={`${bgClass} rounded-xl corner-squircle transition-all ${paddingClasses}`}>
+            <div className='bg-linear-to-b from-white to-transparent p-[1.5px] h-full'>
+                <div className={`${bgClass} rounded-xl corner-squircle transition-all ${paddingClasses} h-full`}>
                     {children}
                 </div>
             </div>

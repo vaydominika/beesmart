@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Trash2, Clock } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface EventData {
     id: string;
@@ -243,7 +244,14 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                     disabled={saving}
                                     className="w-full text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                                 >
-                                    {saving ? "Saving…" : "Save Changes"}
+                                    {saving ? (
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Spinner />
+                                            <span>Saving…</span>
+                                        </div>
+                                    ) : (
+                                        "Save Changes"
+                                    )}
                                 </FancyButton>
                             </div>
                         </div>

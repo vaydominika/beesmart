@@ -5,6 +5,7 @@ import { LearningCard } from "./LearningCard";
 import { useDashboard } from "@/lib/DashboardContext";
 import { ReportCourseModal } from "./ReportCourseModal";
 import type { CourseCard } from "@/lib/types";
+import { Spinner } from "@/components/ui/spinner";
 
 function courseTitleById(courses: CourseCard[], id: string): string {
   return courses.find((c) => c.id === id)?.title ?? "Course";
@@ -32,13 +33,7 @@ export function MainContent() {
     setReportModalOpen(true);
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-6 overflow-y-auto bg-(--theme-bg)">
-        <p className="text-(--theme-text)">Loading…</p>
-      </div>
-    );
-  }
+
 
   return (
     <div className="flex-1 p-6 space-y-8 overflow-y-auto bg-(--theme-bg)">
@@ -95,7 +90,11 @@ export function MainContent() {
         <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
           DISCOVER
         </h2>
-        {discoverCourses.length > 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner className="h-8 w-8 text-(--theme-text)" />
+          </div>
+        ) : discoverCourses.length > 0 ? (
           <div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             style={{ gridAutoRows: "1fr" }}

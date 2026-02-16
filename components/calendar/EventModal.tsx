@@ -29,6 +29,8 @@ interface EventModalProps {
     onClose: () => void;
     selectedDate: Date;
     onEventsChanged: () => void;
+    initialStartTime?: string;
+    initialEndTime?: string;
 }
 
 function SortableEventItem({
@@ -79,7 +81,7 @@ function SortableEventItem({
     );
 }
 
-export function EventModal({ open, onClose, selectedDate, onEventsChanged }: EventModalProps) {
+export function EventModal({ open, onClose, selectedDate, onEventsChanged, initialStartTime, initialEndTime }: EventModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [startTime, setStartTime] = useState("");
@@ -120,11 +122,11 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged }: Eve
             fetchEventsForDate();
             setTitle("");
             setDescription("");
-            setStartTime("");
-            setEndTime("");
+            setStartTime(initialStartTime || "");
+            setEndTime(initialEndTime || "");
             setIsAllDay(false);
         }
-    }, [open, fetchEventsForDate]);
+    }, [open, fetchEventsForDate, initialStartTime, initialEndTime]);
 
     const handleSave = async () => {
         if (!title.trim()) {

@@ -11,6 +11,7 @@ import { useDashboard } from "@/lib/DashboardContext";
 import { cn } from "@/lib/utils";
 import { EventModal } from "@/components/calendar/EventModal";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
+import { useEventSync } from "@/hooks/use-event-sync";
 
 interface RightSidebarProps {
   variant?: "inline" | "overlay";
@@ -40,7 +41,6 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const { isRightSidebarOpen } = useLayout();
   const { openProfileModal } = useSettings();
@@ -103,17 +103,17 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     setCurrentMonth(`${y}-${m}`);
   };
 
-  const handleEventsChanged = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
-
-  useEffect(() => {
+  // Sync with other components
+  const { triggerUpdate } = useEventSync(() => {
     fetchMonthEvents();
-  }, [fetchMonthEvents, refreshTrigger]);
-
-  useEffect(() => {
     fetchUpcomingEvents();
-  }, [fetchUpcomingEvents, refreshTrigger]);
+  });
+
+  const handleEventsChanged = () => {
+    triggerUpdate();
+    fetchMonthEvents();
+    fetchUpcomingEvents();
+  };
 
   // Format upcoming event date for display: "2026. December 12. Friday"
   const formatEventDate = (dateStr: string) => {
