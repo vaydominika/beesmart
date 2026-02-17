@@ -11,6 +11,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Trash2, Clock } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
 
 interface EventData {
     id: string;
@@ -20,6 +21,7 @@ interface EventData {
     startTime?: string | null;
     endTime?: string | null;
     isAllDay: boolean;
+    color?: string | null;
 }
 
 interface EventDetailModalProps {
@@ -40,6 +42,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     const [startTime, setStartTime] = useState(event.startTime ?? "");
     const [endTime, setEndTime] = useState(event.endTime ?? "");
     const [isAllDay, setIsAllDay] = useState(event.isAllDay);
+    const [color, setColor] = useState(event.color || "#FEC435");
 
     // Format date for display
     const d = new Date(displayEvent.startDate);
@@ -51,6 +54,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         setStartTime(displayEvent.startTime ?? "");
         setEndTime(displayEvent.endTime ?? "");
         setIsAllDay(displayEvent.isAllDay);
+        setColor(displayEvent.color || "#FEC435");
         setEditing(true);
     };
 
@@ -79,6 +83,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                     startTime: isAllDay ? null : startTime || null,
                     endTime: isAllDay ? null : endTime || null,
                     isAllDay,
+                    color,
                 }),
             });
             if (!res.ok) {
@@ -238,6 +243,26 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                     </div>
                                 </div>
                             )}
+                            <div className="space-y-2">
+                                <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
+                                    Color
+                                </label>
+                                <div className="flex gap-2">
+                                    {["#FEC435", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEEAD"].map((c) => (
+                                        <button
+                                            key={c}
+                                            onClick={() => setColor(c)}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
+                                                color === c ? "border-(--theme-text) scale-110" : "border-transparent"
+                                            )}
+                                            style={{ backgroundColor: c }}
+                                            type="button"
+                                            aria-label={`Select color ${c}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                             <div className="pt-2">
                                 <FancyButton
                                     onClick={handleSave}

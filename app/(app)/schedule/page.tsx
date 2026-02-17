@@ -99,12 +99,7 @@ export default function SchedulePage() {
     }, []);
 
     return (
-        <div className="h-full p-6 flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold text-(--theme-text)">Schedule</h1>
-                <p className="text-(--theme-text)/70">Manage your weekly classes and events.</p>
-            </div>
-
+        <div className="h-full px-6 py-2 flex flex-col">
             <div className="flex-1 min-h-0">
                 <WeeklyCalendar
                     events={events}

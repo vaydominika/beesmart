@@ -206,7 +206,11 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                     <ReminderItem
                       task={event.title}
                       date={formatEventDate(event.startDate)}
-                      time={event.isAllDay ? "All day" : event.startTime ?? ""}
+                      time={
+                        event.isAllDay
+                          ? "All day"
+                          : `${event.startTime || ""}${event.endTime ? ` - ${event.endTime}` : ""}`
+                      }
                     />
                   </button>
                 ))

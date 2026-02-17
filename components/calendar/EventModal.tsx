@@ -87,6 +87,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
     const [isAllDay, setIsAllDay] = useState(false);
+    const [color, setColor] = useState("#FEC435"); // Default yellow
     const [saving, setSaving] = useState(false);
     const [events, setEvents] = useState<EventData[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
@@ -125,6 +126,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             setStartTime(initialStartTime || "");
             setEndTime(initialEndTime || "");
             setIsAllDay(false);
+            setColor("#FEC435");
         }
     }, [open, fetchEventsForDate, initialStartTime, initialEndTime]);
 
@@ -150,6 +152,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                     startTime: isAllDay ? null : startTime || null,
                     endTime: isAllDay ? null : endTime || null,
                     isAllDay,
+                    color,
                 }),
             });
             if (!res.ok) {
@@ -163,6 +166,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             setStartTime("");
             setEndTime("");
             setIsAllDay(false);
+            setColor("#FEC435");
             await fetchEventsForDate();
             // Small delay to ensure DB propagation before parent refetch
             setTimeout(() => {
@@ -315,9 +319,6 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                                     </div>
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                        End
-                                    </label>
                                     <div className="relative">
                                         <Input
                                             type="time"
@@ -339,6 +340,26 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                                 </div>
                             </div>
                         )}
+                        <div className="space-y-2">
+                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
+                                Color
+                            </label>
+                            <div className="flex gap-2">
+                                {["#FEC435", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEEAD"].map((c) => (
+                                    <button
+                                        key={c}
+                                        onClick={() => setColor(c)}
+                                        className={cn(
+                                            "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
+                                            color === c ? "border-(--theme-text) scale-110" : "border-transparent"
+                                        )}
+                                        style={{ backgroundColor: c }}
+                                        type="button"
+                                        aria-label={`Select color ${c}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-4 shrink-0">

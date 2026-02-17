@@ -332,7 +332,7 @@ export function WeeklyCalendar({ events = [], onDateChange, onEventClick, onTime
                                                 onEventClick?.(event);
                                             }}
                                             style={{ backgroundColor: event.color || '#FEC435' }}
-                                            className="rounded-md px-2 py-1 text-[10px] md:text-xs font-bold text-black cursor-pointer shadow-sm hover:brightness-95 truncate z-10"
+                                            className="rounded-md px-2 py-1 text-[10px] md:text-xs font-bold text-black cursor-pointer hover:brightness-95 truncate z-10"
                                         >
                                             {event.title}
                                         </div>
@@ -383,13 +383,14 @@ export function WeeklyCalendar({ events = [], onDateChange, onEventClick, onTime
                                                         key={event.id}
                                                         style={{
                                                             ...getEventStyle(event),
-                                                            backgroundColor: event.color || '#FEC435'
+                                                            backgroundColor: event.color || 'var(--theme-card)'
                                                         }}
+                                                        onMouseDown={(e) => e.stopPropagation()}
                                                         onClick={(e) => {
                                                             e.stopPropagation(); // Prevent creation trigger when clicking existing event
                                                             onEventClick?.(event);
                                                         }}
-                                                        className="absolute rounded-md cursor-pointer shadow-md transition-all z-50 group hover:brightness-95 border-l-4 border-black/20"
+                                                        className="absolute rounded-xl corner-squircle cursor-pointer transition-all z-50 group hover:brightness-95 border-l-4 border-black/20"
                                                     >
                                                         <div className="p-1 md:p-2 w-full h-full overflow-hidden text-black text-xs">
                                                             <div className="font-bold truncate">{event.title}</div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { Event } from "@/lib/generated/prisma";
 
 export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId();
@@ -15,15 +16,47 @@ export async function GET(req: NextRequest) {
     if (upcoming) {
         const limit = parseInt(upcoming) || 2;
         const now = new Date();
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+
+        // Fetch events starting from today (buffered)
         const events = await prisma.event.findMany({
             where: {
                 userId,
-                startDate: { gte: now },
+                startDate: {
+                    gte: startOfToday,
+                },
             },
-            orderBy: [{ order: "asc" }, { startTime: "asc" }],
-            take: limit,
+            orderBy: [
+                { startDate: "asc" },
+                { startTime: "asc" }
+            ],
+            take: limit + 5, // Fetch extra to filter in memory
         });
-        return NextResponse.json(events);
+
+        // Filter: Keep future dates OR today if time is later than now
+        const upcomingEvents = events.filter((event: Event) => {
+            const eventDate = new Date(event.startDate);
+            const isToday =
+                eventDate.getDate() === now.getDate() &&
+                eventDate.getMonth() === now.getMonth() &&
+                eventDate.getFullYear() === now.getFullYear();
+
+            if (isToday) {
+                if (event.isAllDay) return true;
+                if (!event.startTime) return true;
+
+                const [h, m] = event.startTime.split(":").map(Number);
+                const eventMinutes = h * 60 + m;
+                const currentMinutes = now.getHours() * 60 + now.getMinutes(); // current minutes
+
+                return eventMinutes > currentMinutes;
+            }
+
+            return true; // Future dates (already guaranteed by SQL query to be >= today)
+        }).slice(0, limit);
+
+        return NextResponse.json(upcomingEvents);
     }
 
     // Return events for a specific month
@@ -89,6 +122,7 @@ export async function POST(req: Request) {
             startTime: body.startTime || null,
             endTime: body.endTime || null,
             isAllDay: body.isAllDay ?? false,
+            color: body.color || null,
             order: newOrder,
             userId,
         },
@@ -141,6 +175,7 @@ export async function PATCH(req: NextRequest) {
     if (body.startTime !== undefined) data.startTime = body.startTime || null;
     if (body.endTime !== undefined) data.endTime = body.endTime || null;
     if (body.isAllDay !== undefined) data.isAllDay = Boolean(body.isAllDay);
+    if (body.color !== undefined) data.color = body.color || null;
     if (body.order !== undefined) data.order = parseInt(body.order);
 
     const updated = await prisma.event.update({
