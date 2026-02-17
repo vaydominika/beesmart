@@ -13,6 +13,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { DragDropVerticalIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
+import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 
 interface EventData {
     id: string;
@@ -91,6 +92,9 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     const [saving, setSaving] = useState(false);
     const [events, setEvents] = useState<EventData[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const dateStr = selectedDate.toLocaleDateString("en-US", {
         weekday: "long",
@@ -179,9 +183,16 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDeleteClick = (id: string) => {
+        setEventToDeleteId(id);
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!eventToDeleteId) return;
+        setDeleting(true);
         try {
-            const res = await fetch(`/api/user/events?id=${id}`, { method: "DELETE" });
+            const res = await fetch(`/api/user/events?id=${eventToDeleteId}`, { method: "DELETE" });
             if (!res.ok) {
                 toast.error("Failed to delete event.");
                 return;
@@ -192,8 +203,12 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             setTimeout(() => {
                 onEventsChanged();
             }, 50);
+            setShowDeleteModal(false);
+            setEventToDeleteId(null);
         } catch {
             toast.error("Failed to delete event.");
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -249,7 +264,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                                     <SortableEventItem
                                         key={event.id}
                                         event={event}
-                                        onDelete={handleDelete}
+                                        onDelete={handleDeleteClick}
                                         onDragEnd={handleDragEnd}
                                     />
                                 ))}
@@ -319,6 +334,9 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                                     </div>
                                 </div>
                                 <div className="flex-1">
+                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
+                                        End
+                                    </label>
                                     <div className="relative">
                                         <Input
                                             type="time"
@@ -379,6 +397,15 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                     </div>
                 </FancyCard>
             </DialogContent>
+
+            <DeleteConfirmationModal
+                open={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleConfirmDelete}
+                isDeleting={deleting}
+                title="Delete Event"
+                description="Are you sure you want to delete this event?"
+            />
         </Dialog >
     );
 }

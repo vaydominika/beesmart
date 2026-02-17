@@ -12,6 +12,7 @@ import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
 import { Trash2, Clock } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 
 interface EventData {
     id: string;
@@ -35,6 +36,8 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     const [displayEvent, setDisplayEvent] = useState(event);
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     // Edit state
     const [title, setTitle] = useState(event.title);
@@ -107,23 +110,29 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         }
     };
 
-    const handleDelete = async () => {
-        if (confirm("Are you sure you want to delete this event?")) {
-            try {
-                const res = await fetch(`/api/user/events?id=${event.id}`, { method: "DELETE" });
-                if (!res.ok) {
-                    toast.error("Failed to delete event.");
-                    return;
-                }
-                toast.success("Event deleted.");
-                onClose();
-                // Small delay to ensure DB propagation before parent refetch
-                setTimeout(() => {
-                    onEventUpdated();
-                }, 100);
-            } catch {
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        setDeleting(true);
+        try {
+            const res = await fetch(`/api/user/events?id=${event.id}`, { method: "DELETE" });
+            if (!res.ok) {
                 toast.error("Failed to delete event.");
+                return;
             }
+            toast.success("Event deleted.");
+            setShowDeleteModal(false);
+            onClose();
+            // Small delay to ensure DB propagation before parent refetch
+            setTimeout(() => {
+                onEventUpdated();
+            }, 100);
+        } catch {
+            toast.error("Failed to delete event.");
+        } finally {
+            setDeleting(false);
         }
     };
 
@@ -143,7 +152,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                 <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
                             </button>
                             <button
-                                onClick={handleDelete}
+                                onClick={handleDeleteClick}
                                 className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
                                 aria-label="Delete event"
                             >
@@ -306,6 +315,14 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                     )}
                 </FancyCard>
             </DialogContent>
+
+
+            <DeleteConfirmationModal
+                open={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleConfirmDelete}
+                isDeleting={deleting}
+            />
         </Dialog >
     );
 }
