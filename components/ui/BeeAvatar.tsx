@@ -12,7 +12,7 @@ export function BeeAvatar({ avatarUrl, className }: BeeAvatarProps) {
   return (
     <div className={className ?? "relative"}>
       {/* White outer circle */}
-      <div className="w-16 h-16 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+      <div className="w-16 h-16 rounded-full bg-white border-4 border-(--theme-sidebar) flex items-center justify-center overflow-hidden">
         <Image
           src={src}
           alt="Profile"

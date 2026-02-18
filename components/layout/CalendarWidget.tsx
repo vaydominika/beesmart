@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FancyButton } from "@/components/ui/fancybutton";
 import { cn } from "@/lib/utils";
 
 interface CalendarWidgetProps {
@@ -29,24 +29,23 @@ export function CalendarWidget({
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const daysInMonth = lastDayOfMonth.getDate();
   const startingDayOfWeek = firstDayOfMonth.getDay();
+  // Adjust for Monday start (0=Sun -> 6, 1=Mon -> 0, etc.)
+  // If startingDay is 0 (Sun), we want index 6. 
+  // If startingDay is 1 (Mon), we want index 0.
   const adjustedStartingDay = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
 
   const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
   ];
 
   const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  const goToToday = () => {
+    const newDate = new Date();
+    setCurrentDate(newDate);
+    onMonthChange?.(newDate);
+  };
 
   const goToPreviousMonth = () => {
     const newDate = new Date(year, month - 1, 1);
@@ -92,19 +91,16 @@ export function CalendarWidget({
   const renderCalendarDays = () => {
     const days = [];
     const previousMonthDays = new Date(year, month, 0).getDate();
+    // Number of days to show from previous month
     const daysToShowFromPreviousMonth = adjustedStartingDay;
 
     for (let i = daysToShowFromPreviousMonth - 1; i >= 0; i--) {
       const day = previousMonthDays - i;
-      const date = new Date(year, month - 1, day);
       days.push(
-        <div key={`prev-${day}`} className="flex items-center justify-center">
-          <button
-            className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-(--theme-text) text-base md:text-sm opacity-50"
-            disabled
-          >
+        <div key={`prev-${day}`} className="flex items-center justify-center aspect-square">
+          <span className="text-xs font-bold text-(--theme-text) opacity-30">
             {day}
-          </button>
+          </span>
         </div>
       );
     }
@@ -116,20 +112,23 @@ export function CalendarWidget({
       const hasEvent = isHighlighted(date);
 
       days.push(
-        <div key={day} className="flex items-center justify-center">
+        <div key={day} className="flex items-center justify-center aspect-square">
           <button
             onClick={() => handleDateClick(day)}
             className={cn(
-              "w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-base md:text-sm transition-colors",
-              isSelectedDate && "ring-[1.5px] ring-(--theme-card) z-10",
-              hasEvent
-                ? "bg-(--theme-bg) text-(--theme-text)"
-                : isTodayDate
-                  ? "bg-(--theme-card) text-(--theme-text)"
-                  : "text-(--theme-text) hover:bg-(--theme-sidebar)/50"
+              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all relative",
+              isTodayDate
+                ? "bg-(--theme-text) text-(--theme-bg)"  // High contrast for today
+                : "text-(--theme-text) hover:bg-(--theme-text)/10",
+              isSelectedDate && !isTodayDate && "ring-2 ring-(--theme-text) ring-offset-1 ring-offset-(--theme-sidebar)", // Selection ring
+              isSelectedDate && isTodayDate && "ring-2 ring-(--theme-text) ring-offset-1 ring-offset-(--theme-sidebar)",
+              hasEvent && !isTodayDate && !isSelectedDate && "font-extrabold" // Indicate event? or maybe a dot?
             )}
           >
             {day}
+            {hasEvent && !isTodayDate && (
+              <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-(--theme-secondary)"></span>
+            )}
           </button>
         </div>
       );
@@ -139,13 +138,10 @@ export function CalendarWidget({
     const remainingCells = totalCells - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       days.push(
-        <div key={`next-${day}`} className="flex items-center justify-center">
-          <button
-            className="w-10 h-10 md:w-8 md:h-8 rounded-full flex items-center justify-center text-(--theme-text) text-base md:text-sm opacity-50"
-            disabled
-          >
+        <div key={`next-${day}`} className="flex items-center justify-center aspect-square">
+          <span className="text-xs font-bold text-(--theme-text) opacity-30">
             {day}
-          </button>
+          </span>
         </div>
       );
     }
@@ -154,36 +150,47 @@ export function CalendarWidget({
   };
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-5 md:mb-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToPreviousMonth}
-          className="h-10 w-10 md:h-8 md:w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
-        >
-          <ChevronLeft className="h-5 w-5 md:h-4 md:w-4 text-(--theme-text)" />
-        </Button>
-        <h3 className="text-lg md:text-base font-medium text-(--theme-text)">
+    <div className="w-full select-none">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl md:text-2xl font-bold text-(--theme-text) uppercase tracking-tight">
           {monthNames[month]}. {year}.
         </h3>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={goToNextMonth}
-          className="h-10 w-10 md:h-8 md:w-8 bg-(--theme-bg) hover:bg-(--theme-sidebar)/90"
-        >
-          <ChevronRight className="h-5 w-5 md:h-4 md:w-4 text-(--theme-text)" />
-        </Button>
+        <div className="flex gap-1 items-center">
+          <FancyButton
+            onClick={goToPreviousMonth}
+            className="h-7 w-7 p-0 bg-(--theme-bg) text-(--theme-text) shadow-none border-0"
+          >
+            <ChevronLeft className="h-4 w-4" strokeWidth={3} />
+          </FancyButton>
+          <FancyButton
+            onClick={goToToday}
+            className="h-7 px-2 bg-(--theme-bg) hover:bg-(--theme-card)/50 text-(--theme-text) shadow-none border-0 text-xs font-bold uppercase tracking-wide"
+          >
+            Today
+          </FancyButton>
+          <FancyButton
+            onClick={goToNextMonth}
+            className="h-7 w-7 p-0 bg-(--theme-bg) text-(--theme-text) shadow-none border-0"
+          >
+            <ChevronRight className="h-4 w-4" strokeWidth={3} />
+          </FancyButton>
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-0 mb-3 md:mb-2">
+
+      {/* Weekday Headers */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
         {daysOfWeek.map((day) => (
-          <div key={day} className="text-center text-base md:text-sm font-medium text-(--theme-text) py-2">
+          <div key={day} className="text-center text-[10px] md:text-xs font-bold text-(--theme-text)/60 uppercase tracking-wider">
             {day}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-0">{renderCalendarDays()}</div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {renderCalendarDays()}
+      </div>
     </div>
   );
 }

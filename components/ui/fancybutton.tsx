@@ -5,12 +5,12 @@ interface FancyButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 export const FancyButton = ({ children, className, ...props }: FancyButtonProps) => {
-    const bgMatch = className?.match(/bg-[^\s]+/);
-    const bgClass = bgMatch ? bgMatch[0] : 'bg-(--theme-card)';
+    const bgMatch = className?.match(/(?:^|\s)bg-[^\s]+/);
+    const bgClass = bgMatch ? bgMatch[0].trim() : 'bg-(--theme-card)';
     // Separate padding classes from other classes
     const paddingRegex = /\b(p-|px-|py-|pt-|pr-|pb-|pl-|ps-|pe-)\S+/g;
     const paddingClasses = className?.match(paddingRegex)?.join(' ') || '';
-    const otherClasses = className?.replace(/bg-[^\s]+/g, '').replace(paddingRegex, '').trim() || '';
+    const otherClasses = className?.replace(/(?:^|\s)bg-[^\s]+/g, ' ').replace(paddingRegex, '').trim() || '';
 
     const isIconButton = otherClasses?.includes('p-0') || paddingClasses?.includes('p-0') || otherClasses?.includes('size-') || (otherClasses?.includes('w-') && otherClasses?.includes('h-'));
     const innerPadding = paddingClasses || (isIconButton ? 'p-0' : 'px-4 py-1');

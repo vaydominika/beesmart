@@ -123,7 +123,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       <div
         className={cn(
-          "relative transition-all duration-300 overflow-visible shrink-0 h-screen hidden md:block",
+          "relative transition-all duration-300 overflow-hidden shrink-0 h-screen hidden md:block",
           isRightSidebarOpen ? "w-72" : "w-0"
         )}
       >
@@ -141,18 +141,18 @@ export function AppLayout({ children }: AppLayoutProps) {
           <ChevronLeft className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5" />
         )}
       </button>
-        <FancyButton
-          onClick={scrollToTop}
-          aria-label="Back to top"
-          className={cn(
-            "fixed bottom-4 right-4 p-0 w-10 h-10 rounded-full bg-(--theme-sidebar) flex items-center justify-center transition-all duration-300 z-999 shadow-lg",
-            showBackToTop
-              ? "opacity-100 scale-100 pointer-events-auto"
-              : "opacity-0 scale-0 pointer-events-none"
-          )}
-        >
-          <ChevronUp className="h-6 w-6 text-(--theme-text)" />
-        </FancyButton>
+      <FancyButton
+        onClick={scrollToTop}
+        aria-label="Back to top"
+        className={cn(
+          "fixed bottom-4 right-4 p-0 w-10 h-10 rounded-full bg-(--theme-sidebar) flex items-center justify-center transition-all duration-300 z-999 shadow-lg",
+          showBackToTop
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 scale-0 pointer-events-none"
+        )}
+      >
+        <ChevronUp className="h-6 w-6 text-(--theme-text)" />
+      </FancyButton>
       <TimerWidget />
       <SettingsModal />
       <ProfileSettingsModal />

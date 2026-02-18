@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { WeeklyCalendar } from "@/components/calendar/WeeklyCalendar";
+import { BigCalendar } from "@/components/calendar/BigCalendar";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
 
 interface EventData {
@@ -101,8 +101,8 @@ export default function SchedulePage() {
     return (
         <div className="h-full px-6 py-2 flex flex-col">
             <div className="flex-1 min-h-0">
-                <WeeklyCalendar
-                    events={events}
+                <BigCalendar
+                    events={events} // Fixed prop name from currentEvents
                     onDateChange={handleDateChange}
                     onEventClick={handleEventClick}
                     onTimeRangeSelect={handleTimeRangeSelect}
