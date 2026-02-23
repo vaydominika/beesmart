@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Info, AlertCircle, Megaphone, Pin, X } from "lucide-react";
+import { AlertTriangle, Info, AlertCircle, Megaphone, Pin, X, CheckCircle2, Circle } from "lucide-react";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Notification01Icon } from '@hugeicons/core-free-icons';
 
 interface Announcement {
     id: string;
@@ -45,11 +47,13 @@ const PRIORITY_STYLES: Record<string, { bg: string; icon: React.ReactNode; borde
 interface Props {
     classroomId: string;
     isTeacher: boolean;
+    dismissed: Set<string>;
+    setDismissed: React.Dispatch<React.SetStateAction<Set<string>>>;
+    showDismissed: boolean;
 }
 
-export function AnnouncementBanner({ classroomId, isTeacher }: Props) {
+export function AnnouncementBanner({ classroomId, isTeacher, dismissed, setDismissed, showDismissed }: Props) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [dismissed, setDismissed] = useState<Set<string>>(new Set());
     const [createOpen, setCreateOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
@@ -99,49 +103,96 @@ export function AnnouncementBanner({ classroomId, isTeacher }: Props) {
         }
     };
 
-    const visible = announcements.filter((a) => !dismissed.has(a.id));
+    const visible = announcements.filter((a) => showDismissed || !dismissed.has(a.id));
     if (visible.length === 0 && !isTeacher) return null;
 
     return (
-        <div className="mb-6 space-y-2">
-            {visible.map((a) => {
-                const style = PRIORITY_STYLES[a.priority] || PRIORITY_STYLES.INFO;
-                return (
-                    <div
-                        key={a.id}
-                        className={cn(
-                            "flex items-start gap-3 p-3 rounded-xl corner-squircle border",
-                            style.bg,
-                            style.border
-                        )}
-                    >
-                        {style.icon}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-(--theme-text) truncate">{a.title}</span>
-                                {a.isPinned && <Pin className="h-3 w-3 text-(--theme-text) opacity-50" />}
-                            </div>
-                            <p className="text-xs text-(--theme-text) opacity-70 mt-0.5 line-clamp-2">{a.body}</p>
-                        </div>
+        <div className="space-y-4">
+            {/* Header controls for Dropdown mode */}
+            {showDismissed && announcements.length > 0 && (
+                <div className="flex items-center justify-between px-2">
+                    <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase">
+                        {dismissed.size} Read
+                    </span>
+                    {dismissed.size < announcements.length ? (
                         <button
-                            onClick={() => setDismissed((prev) => new Set([...prev, a.id]))}
-                            className="shrink-0 p-1 rounded-md hover:bg-(--theme-card)/30 text-(--theme-text) opacity-50 hover:opacity-100"
+                            onClick={() => setDismissed(new Set(announcements.map(a => a.id)))}
+                            className="text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity"
                         >
-                            <X className="h-4 w-4" />
+                            Mark all as read
                         </button>
-                    </div>
-                );
-            })}
-
-            {isTeacher && (
-                <FancyButton
-                    onClick={() => setCreateOpen(true)}
-                    className="text-(--theme-text) text-xs font-bold uppercase px-3 py-1"
-                >
-                    <Megaphone className="h-3.5 w-3.5 mr-1.5" />
-                    New Announcement
-                </FancyButton>
+                    ) : (
+                        <button
+                            onClick={() => setDismissed(new Set())}
+                            className="text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity"
+                        >
+                            Mark all as unread
+                        </button>
+                    )}
+                </div>
             )}
+
+            <div className="mb-6 space-y-2">
+                {visible.map((a) => {
+                    const style = PRIORITY_STYLES[a.priority] || PRIORITY_STYLES.INFO;
+                    const isRead = dismissed.has(a.id);
+
+                    return (
+                        <div
+                            key={a.id}
+                            className={cn(
+                                "flex items-start gap-3 p-3 rounded-xl corner-squircle border transition-all",
+                                style.bg,
+                                style.border,
+                                isRead ? "opacity-60 grayscale" : "opacity-100"
+                            )}
+                        >
+                            {style.icon}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className={cn("font-bold text-sm text-(--theme-text) truncate", isRead && "line-through opacity-70")}>{a.title}</span>
+                                    {a.isPinned && <Pin className="h-3 w-3 text-(--theme-text) opacity-50" />}
+                                </div>
+                                <p className="text-xs text-(--theme-text) opacity-70 mt-0.5 line-clamp-2">{a.body}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setDismissed(prev => {
+                                        const newSet = new Set(prev);
+                                        if (newSet.has(a.id)) newSet.delete(a.id);
+                                        else newSet.add(a.id);
+                                        return newSet;
+                                    });
+                                }}
+                                className={cn(
+                                    "shrink-0 p-1.5 rounded-lg transition-colors flex items-center gap-1.5",
+                                    isRead
+                                        ? "bg-(--theme-card) text-(--theme-text) opacity-50 hover:opacity-100"
+                                        : "bg-(--theme-sidebar) text-(--theme-text) hover:bg-(--theme-card)"
+                                )}
+                                title={isRead ? "Mark as unread" : "Mark as read"}
+                            >
+                                {isRead ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
+                                {showDismissed && (
+                                    <span className="text-[10px] font-bold uppercase">{isRead ? "Mark as unread" : "Mark as Read"}</span>
+                                )}
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="flex gap-2">
+                {isTeacher && (
+                    <FancyButton
+                        onClick={() => setCreateOpen(true)}
+                        className="text-(--theme-text) text-xs font-bold uppercase px-3 py-1"
+                    >
+                        <Megaphone className="h-3.5 w-3.5 mr-1.5" />
+                        New Announcement
+                    </FancyButton>
+                )}
+            </div>
 
             {/* Create Announcement Modal */}
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>

@@ -202,8 +202,8 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
         id: assignmentId,
         title: "Loading Assignment Details...",
         dueDate: new Date().toISOString(),
-        isGraded: true,
-        maxPoints: 100,
+        isGraded: false,
+        maxPoints: null,
         createdAt: new Date().toISOString()
     };
 
@@ -226,7 +226,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 <span>Due: {new Date(displayAssignment.dueDate).toLocaleDateString()}</span>
                                 {displayAssignment.dueTime && <span>at {displayAssignment.dueTime}</span>}
                             </div>
-                            {displayAssignment.isGraded && (
+                            {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
                                 <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">
                                     <CheckCircle2 className="h-4 w-4" />
                                     <span>{displayAssignment.maxPoints} Points Possible</span>
@@ -483,7 +483,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                                             {/* Grading Box */}
                                             <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle mt-auto">
-                                                <h4 className="text-xs font-bold uppercase tracking-wider mb-3">Grade Assignment</h4>
+                                                <h4 className="text-xs font-bold uppercase tracking-wider mb-3">Review Assignments</h4>
                                                 <div className="flex flex-col md:flex-row gap-4">
                                                     <div className="flex-1">
                                                         <textarea
