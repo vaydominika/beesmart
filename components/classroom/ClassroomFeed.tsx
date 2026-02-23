@@ -12,8 +12,9 @@ import { CreateTestModal } from "@/components/classroom/CreateTestModal";
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
     FileText, Image, ClipboardList, GraduationCap,
-    Calendar, BookOpen, Paperclip, Send, Upload, X,
+    Calendar, BookOpen, Paperclip, Send, Upload, X, ArrowRight
 } from "lucide-react";
+import Link from "next/link";
 
 interface PostFile {
     id: string;
@@ -478,20 +479,25 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Assignment Badge */}
                             {post.assignment && (
-                                <div className="flex items-center gap-2 mb-3 p-2 bg-(--theme-sidebar) rounded-lg">
-                                    <ClipboardList className="h-4 w-4 text-(--theme-text) opacity-60" />
-                                    <div className="flex-1">
-                                        <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
-                                        {post.assignment.dueDate && (
-                                            <span className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.dueDate).color)}>
-                                                {getDueDateBadge(post.assignment.dueDate).text}
-                                            </span>
+                                <Link href={`/classroom/${classroomId}/assignments/${post.assignment.id}`} className="block">
+                                    <div className="flex items-center gap-2 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
+                                        <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
+                                        <div className="flex-1">
+                                            <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
+                                            {post.assignment.dueDate && (
+                                                <span className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.dueDate).color)}>
+                                                    {getDueDateBadge(post.assignment.dueDate).text}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {post.assignment.maxPoints && (
+                                            <span className="text-xs font-bold text-(--theme-text) opacity-50 mr-2">{post.assignment.maxPoints} pts</span>
                                         )}
+                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ArrowRight className="h-4 w-4 text-(--theme-text)" />
+                                        </div>
                                     </div>
-                                    {post.assignment.maxPoints && (
-                                        <span className="text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints} pts</span>
-                                    )}
-                                </div>
+                                </Link>
                             )}
 
                             {/* Test Badge */}
