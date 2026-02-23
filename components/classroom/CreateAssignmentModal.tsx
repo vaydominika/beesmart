@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { Paperclip, X, Upload } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface UploadedFile {
     fileName: string;
@@ -123,102 +124,104 @@ export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }:
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-3 flex-1 overflow-y-auto max-h-[60vh] pr-1 [&::-webkit-scrollbar]:w-[7px] [&::-webkit-scrollbar-thumb]:bg-(--theme-card) [&::-webkit-scrollbar-thumb]:rounded-full">
-                        <div>
-                            <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Title *</label>
-                            <Input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
-                                placeholder="e.g. Chapter 5 Homework"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Description</label>
-                            <textarea
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[70px] w-full p-3 resize-none"
-                                placeholder="Instructions for the assignment..."
-                            />
-                        </div>
-
-                        <div className="flex gap-3">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Date *</label>
-                                <Input
-                                    type="date"
-                                    value={dueDate}
-                                    onChange={(e) => setDueDate(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Time</label>
-                                <Input
-                                    type="time"
-                                    value={dueTime}
-                                    onChange={(e) => setDueTime(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold text-(--theme-text) uppercase">Graded</label>
-                            <Switch
-                                checked={isGraded}
-                                onCheckedChange={setIsGraded}
-                                className="data-[state=checked]:bg-(--theme-sidebar) scale-110"
-                            />
-                        </div>
-
-                        {isGraded && (
+                    <ScrollArea className="flex-1 max-h-[60vh]">
+                        <div className="space-y-3 pr-3">
                             <div>
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Max Points</label>
+                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Title *</label>
                                 <Input
-                                    type="number"
-                                    value={maxPoints}
-                                    onChange={(e) => setMaxPoints(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-32"
-                                    min="0"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
+                                    placeholder="e.g. Chapter 5 Homework"
                                 />
                             </div>
-                        )}
 
-                        {/* File Attachments */}
-                        <div>
-                            <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Attachments</label>
-                            {files.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-2">
-                                    {files.map((f, i) => (
-                                        <div
-                                            key={i}
-                                            className="flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 text-xs font-bold text-(--theme-text) opacity-70"
-                                        >
-                                            <Paperclip className="h-3 w-3" />
-                                            <span className="truncate max-w-[120px]">{f.fileName}</span>
-                                            <button onClick={() => removeFile(i)} className="hover:opacity-100 opacity-50">
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </div>
-                                    ))}
+                            <div>
+                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[70px] w-full p-3 resize-none"
+                                    placeholder="Instructions for the assignment..."
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Date *</label>
+                                    <Input
+                                        type="date"
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
+                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Time</label>
+                                    <Input
+                                        type="time"
+                                        value={dueTime}
+                                        onChange={(e) => setDueTime(e.target.value)}
+                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-(--theme-text) uppercase">Graded</label>
+                                <Switch
+                                    checked={isGraded}
+                                    onCheckedChange={setIsGraded}
+                                    className="data-[state=checked]:bg-(--theme-sidebar) scale-110"
+                                />
+                            </div>
+
+                            {isGraded && (
+                                <div>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Max Points</label>
+                                    <Input
+                                        type="number"
+                                        value={maxPoints}
+                                        onChange={(e) => setMaxPoints(e.target.value)}
+                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-32"
+                                        min="0"
+                                    />
                                 </div>
                             )}
-                            <label className="inline-flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-3 py-2 text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
-                                <Upload className="h-3.5 w-3.5" />
-                                {uploading ? "Uploading…" : "Add Files"}
-                                <input
-                                    type="file"
-                                    multiple
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                    disabled={uploading}
-                                />
-                            </label>
+
+                            {/* File Attachments */}
+                            <div>
+                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Attachments</label>
+                                {files.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-2">
+                                        {files.map((f, i) => (
+                                            <div
+                                                key={i}
+                                                className="flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 text-xs font-bold text-(--theme-text) opacity-70"
+                                            >
+                                                <Paperclip className="h-3 w-3" />
+                                                <span className="truncate max-w-[120px]">{f.fileName}</span>
+                                                <button onClick={() => removeFile(i)} className="hover:opacity-100 opacity-50">
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <label className="inline-flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-3 py-2 text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
+                                    <Upload className="h-3.5 w-3.5" />
+                                    {uploading ? "Uploading…" : "Add Files"}
+                                    <input
+                                        type="file"
+                                        multiple
+                                        onChange={handleFileUpload}
+                                        className="hidden"
+                                        disabled={uploading}
+                                    />
+                                </label>
+                            </div>
                         </div>
-                    </div>
+                    </ScrollArea>
 
                     <div className="flex gap-3 pt-5 shrink-0">
                         <FancyButton

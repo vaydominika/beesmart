@@ -10,6 +10,7 @@ import {
     Calendar, Clock, FileText, Upload, Paperclip,
     CheckCircle2, XCircle, Send, Plus, X
 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Props {
     classroomId: string;
@@ -362,7 +363,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         <FancyCard className="bg-(--theme-card) p-4 flex flex-col h-[600px]">
                             <h3 className="text-sm font-bold text-(--theme-text) mb-4 uppercase tracking-wider">Submissions</h3>
 
-                            <div className="flex-1 overflow-y-auto space-y-1 -mx-2 px-2">
+                            <ScrollArea className="flex-1 space-y-1 -mx-2 px-2">
                                 {allSubmissions?.submissions.map(sub => (
                                     <button
                                         key={sub.user.id}
@@ -408,7 +409,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         <p className="text-sm font-bold">No students found.</p>
                                     </div>
                                 )}
-                            </div>
+                            </ScrollArea>
                         </FancyCard>
                     </div>
 
@@ -443,7 +444,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                 </span>
                                             </div>
 
-                                            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                                            <ScrollArea className="flex-1 space-y-4 pr-2">
                                                 {selectedSub.content && (
                                                     <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle">
                                                         <p className="text-sm text-(--theme-text) whitespace-pre-wrap">{selectedSub.content}</p>
@@ -478,7 +479,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                 {!selectedSub.content && selectedSub.files.length === 0 && (
                                                     <p className="text-sm opacity-50 italic">Empty submission</p>
                                                 )}
-                                            </div>
+                                            </ScrollArea>
 
                                             {/* Grading Box */}
                                             <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle mt-auto">

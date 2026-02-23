@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { Toaster } from "@/components/ui/sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const SCROLL_THRESHOLD = 200;
 const LAPTOP_SIDEBAR_WIDTH = 288; // w-72
@@ -54,7 +55,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex h-screen bg-(--theme-bg) relative overflow-x-hidden">
         <div className="flex flex-col flex-1 overflow-hidden min-w-0 w-full">
           <Header />
-          <main ref={mainRef} className="flex-1 overflow-y-auto bg-(--theme-bg)">{children}</main>
+          <main ref={mainRef} className="flex-1 overflow-hidden bg-(--theme-bg)">
+            <ScrollArea className="h-full">
+              {children}
+            </ScrollArea>
+          </main>
         </div>
 
         {/* Backdrop when either sidebar is open */}
@@ -119,7 +124,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
-        <main ref={mainRef} className="flex-1 overflow-y-auto bg-(--theme-bg)">{children}</main>
+        <main ref={mainRef} className="flex-1 overflow-hidden bg-(--theme-bg)">
+          <ScrollArea className="h-full">
+            {children}
+          </ScrollArea>
+        </main>
       </div>
       <div
         className={cn(

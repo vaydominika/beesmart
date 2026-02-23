@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
 import { Flag } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ReportCourseModalProps {
   open: boolean;
@@ -97,7 +98,7 @@ export function ReportCourseModal({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="my-2 md:my-6 flex-1 min-h-0 overflow-auto">
+          <ScrollArea className="my-2 md:my-6 flex-1 min-h-0">
             <div className="space-y-4 px-2 pb-4">
               <div>
                 <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
@@ -131,7 +132,7 @@ export function ReportCourseModal({
                 <p className="text-sm text-red-600 font-medium">{error}</p>
               )}
             </div>
-          </div>
+          </ScrollArea>
 
           <Separator className="shrink-0 my-1 md:my-0" />
 

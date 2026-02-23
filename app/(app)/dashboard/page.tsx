@@ -11,7 +11,7 @@ import { Search01Icon } from '@hugeicons/core-free-icons';
 
 export default function DashboardPage() {
   return (
-    <ScrollArea className="h-full overflow-y-auto">
+    <ScrollArea className="h-full">
       <div className="flex flex-col">
         <div className="px-6 pt-4 pb-6 space-y-4">
           <div className="relative">

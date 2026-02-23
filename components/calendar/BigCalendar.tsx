@@ -530,21 +530,23 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
                                                         {item.day}
                                                     </span>
                                                 </div>
-                                                <div className="flex-1 flex flex-col gap-1 overflow-y-auto no-scrollbar">
-                                                    {eventsForDay.map(event => (
-                                                        <div
-                                                            key={event.id}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onEventClick?.(event);
-                                                            }}
-                                                            style={{ backgroundColor: event.color || '#FEC435' }}
-                                                            className="text-[10px] md:text-xs px-1.5 py-0.5 rounded-sm font-semibold truncate text-black shrink-0"
-                                                        >
-                                                            {event.title}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                <ScrollArea className="flex-1">
+                                                    <div className="flex flex-col gap-1">
+                                                        {eventsForDay.map(event => (
+                                                            <div
+                                                                key={event.id}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onEventClick?.(event);
+                                                                }}
+                                                                style={{ backgroundColor: event.color || '#FEC435' }}
+                                                                className="text-[10px] md:text-xs px-1.5 py-0.5 rounded-sm font-semibold truncate text-black shrink-0"
+                                                            >
+                                                                {event.title}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </ScrollArea>
                                             </div>
                                         );
                                     });

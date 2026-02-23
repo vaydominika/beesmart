@@ -502,16 +502,21 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Test Badge */}
                             {post.test && (
-                                <div className="flex items-center gap-2 mb-3 p-2 bg-(--theme-sidebar) rounded-lg">
-                                    <GraduationCap className="h-4 w-4 text-(--theme-text) opacity-60" />
-                                    <div className="flex-1">
-                                        <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
-                                        {post.test.timeLimit && (
-                                            <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit} min</span>
-                                        )}
+                                <Link href={`/classroom/${classroomId}/tests/${post.test.id}`} className="block">
+                                    <div className="flex items-center gap-2 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
+                                        <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
+                                        <div className="flex-1">
+                                            <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
+                                            {post.test.timeLimit && (
+                                                <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit} min</span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase mr-2">{post.test.type}</span>
+                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ArrowRight className="h-4 w-4 text-(--theme-text)" />
+                                        </div>
                                     </div>
-                                    <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase">{post.test.type}</span>
-                                </div>
+                                </Link>
                             )}
 
                             {/* Files */}
