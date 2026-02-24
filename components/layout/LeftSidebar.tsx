@@ -17,7 +17,7 @@ const navigationItems = [
   { name: "DASHBOARD", href: "/dashboard" },
   { name: "SCHEDULE", href: "/schedule" },
   { name: "CLASSROOM", href: "/classroom" },
-  { name: "PRACTICE", href: "/practice" },
+  { name: "COURSES", href: "/courses" },
 ];
 
 interface LeftSidebarProps {
@@ -61,7 +61,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             className="h-auto w-60 md:w-40"
           />
         </div>
-        
+
         <FancyCard className="mb-4 w-60 md:w-42 m-auto bg-(--theme-bg)">
           <div className="p-2">
             <p className="text-[32px] md:text-[26px] font-semibold text-(--theme-text) uppercase mb-3 md:mb-2 justify-center flex">
@@ -83,19 +83,19 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             const isActive = pathname === item.href;
             return (
               <li key={item.href} className="relative h-14 md:h-10 overflow-visible">
-                  {isActive && (
-                    <Image
-                      src="/svg/ActiveSidebarElement.svg"
-                      alt="Active sidebar element"
-                      width={348}
-                      height={145}
-                      className="absolute z-0 pointer-events-none left-0 right-0 sidebar-active-animation md:translate-y-1.5"
-                      style={{ 
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                      }}
-                    />
-                  )}
+                {isActive && (
+                  <Image
+                    src="/svg/ActiveSidebarElement.svg"
+                    alt="Active sidebar element"
+                    width={348}
+                    height={145}
+                    className="absolute z-0 pointer-events-none left-0 right-0 sidebar-active-animation md:translate-y-1.5"
+                    style={{
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                    }}
+                  />
+                )}
                 <div className="relative h-full overflow-visible">
                   <Link
                     href={item.href}
@@ -117,14 +117,14 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
       </nav>
 
       <div className="py-4 md:py-3 m-auto tracking-tighter text-[32px] md:text-[30px]">
-        <button 
+        <button
           onClick={openModal}
           className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
         >
           <Lightbulb className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
           FOCUS
         </button>
-        <button 
+        <button
           onClick={openSettingsModal}
           className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
         >
@@ -140,7 +140,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           LOG OUT
         </button>
       </div>
-      
+
       <FocusModal />
     </div>
   );

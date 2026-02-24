@@ -15,6 +15,7 @@ import {
     Calendar, BookOpen, Paperclip, Send, Upload, X, ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import { Editor } from "@/components/ui/editor";
 
 interface PostFile {
     id: string;
@@ -133,7 +134,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     }, [fetchPosts]);
 
     const handleCreatePost = async () => {
-        if (!newPostContent.trim() && postFiles.length === 0) return;
+        const isContentEmpty = !newPostContent.replace(/<[^>]*>?/gm, '').trim();
+        if (isContentEmpty && postFiles.length === 0) return;
         setPosting(true);
         try {
             const postType = postFiles.some((f) => f.fileType === "IMAGE") ? "PHOTO" : postFiles.length > 0 ? "MATERIAL" : "TEXT";
@@ -142,7 +144,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     type: postType,
-                    content: newPostContent.trim() || null,
+                    content: isContentEmpty ? null : newPostContent,
                     files: postFiles.length > 0 ? postFiles : undefined,
                 }),
             });
@@ -278,15 +280,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             {/* Post creation */}
             <FancyCard className="bg-(--theme-card) p-4 mb-4">
                 <div className="flex gap-3">
-                    <textarea
-                        value={newPostContent}
-                        onChange={(e) => setNewPostContent(e.target.value)}
-                        placeholder="Share something with your class..."
-                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[60px] p-3 resize-none"
+                    <Editor
+                        initialValue={newPostContent}
+                        onChange={setNewPostContent}
+                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm"
                     />
                     <FancyButton
                         onClick={handleCreatePost}
-                        disabled={posting || (!newPostContent.trim() && postFiles.length === 0)}
+                        disabled={posting || (!newPostContent.replace(/<[^>]*>?/gm, '').trim() && postFiles.length === 0)}
                         className="text-(--theme-text) text-xs font-bold uppercase px-3 self-end"
                     >
                         <Send className="h-4 w-4" />
@@ -474,7 +475,10 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Post Content */}
                             {post.content && (
-                                <p className="text-sm text-(--theme-text) opacity-80 whitespace-pre-wrap mb-3">{post.content}</p>
+                                <div
+                                    className="text-sm text-(--theme-text) opacity-80 mb-3 prose dark:prose-invert prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: post.content }}
+                                />
                             )}
 
                             {/* Assignment Badge */}
@@ -591,7 +595,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 }
                                             }}
                                             placeholder="Write a comment..."
-                                            className="flex-1 bg-(--theme-sidebar) rounded-lg text-xs border-0 outline-none ring-0 focus:ring-1 focus:ring-(--theme-card) h-8 px-3"
+                                            className="flex-1 bg-(--theme-sidebar) rounded-lg text-xs border-0 outline-none ring-0 focus:ring-1 focus:ring-(--theme-card) h-8 px-3 normal-case"
                                         />
                                         <button
                                             onClick={() => handleAddComment(post.id)}
