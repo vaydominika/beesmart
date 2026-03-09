@@ -69,6 +69,46 @@ export async function getContinueLearningForUser(
   });
 }
 
+/**
+ * Shared helper to calculate progress for a list of courses for a user
+ */
+async function getProgressForCourses(userId: string, courseIds: string[]): Promise<Map<string, number>> {
+  const progressMap = new Map<string, number>();
+
+  // Fetch all relevant lessons for these courses to calculate total
+  const courses = await prisma.course.findMany({
+    where: { id: { in: courseIds } },
+    include: { modules: { include: { lessons: { select: { id: true } } } } }
+  });
+
+  const userProgress = await prisma.courseProgress.findMany({
+    where: { userId, courseId: { in: courseIds } },
+    select: { lessonId: true, completedAt: true, courseId: true }
+  });
+
+  const completedLessonIds = new Set(
+    userProgress
+      .filter((p: any) => p.completedAt != null)
+      .map((p: any) => p.lessonId)
+  );
+
+  for (const course of courses) {
+    const totalLessons = course.modules.reduce((acc: number, m: any) => acc + m.lessons.length, 0);
+    if (totalLessons === 0) {
+      progressMap.set(course.id, 0);
+      continue;
+    }
+
+    const completed = course.modules.reduce(
+      (acc: number, m: any) => acc + m.lessons.filter((l: any) => completedLessonIds.has(l.id)).length,
+      0
+    );
+    progressMap.set(course.id, Math.round((completed / totalLessons) * 100));
+  }
+
+  return progressMap;
+}
+
 type CourseWithRatings = {
   id: string;
   title: string;
@@ -79,8 +119,20 @@ type CourseWithRatings = {
 };
 
 export async function getPopularCourses(): Promise<CourseCard[]> {
+  const userId = await getCurrentUserId();
+  const enrolledData = userId ? (await prisma.courseEnrollment.findMany({
+    where: { userId },
+    select: { courseId: true },
+  })) : [];
+  const enrolledIds = new Set(enrolledData.map((e: any) => e.courseId));
+
   const courses = (await prisma.course.findMany({
-    where: { isPublic: true },
+    where: {
+      isPublic: true,
+      published: true,
+      id: { notIn: Array.from(enrolledIds) },
+      createdById: userId ? { not: userId } : undefined,
+    },
     include: {
       ratings: true,
       enrollments: true,
@@ -93,8 +145,12 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
       c.ratings.length > 0
         ? c.ratings.reduce((s, r) => s + r.rating, 0) / c.ratings.length
         : null;
-    return { course: c, averageRating: avg, enrollCount: c.enrollments.length };
+    return { course: c, averageRating: avg, enrollCount: c.enrollments.length, isEnrolled: enrolledIds.has(c.id) };
   });
+
+  const enrolledCourseIds = Array.from(enrolledIds) as string[];
+  const progressMap = userId ? await getProgressForCourses(userId, enrolledCourseIds) : new Map<string, number>();
+
   withAvg.sort((a, b) => {
     const ar = a.averageRating ?? 0;
     const br = b.averageRating ?? 0;
@@ -102,11 +158,13 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
     return b.enrollCount - a.enrollCount;
   });
 
-  return withAvg.slice(0, 12).map(({ course, averageRating }) => ({
+  return withAvg.slice(0, 12).map(({ course, averageRating, isEnrolled }) => ({
     id: course.id,
     title: course.title,
     description: course.description,
     coverImageUrl: course.coverImageUrl,
+    isEnrolled,
+    progress: progressMap.get(course.id),
     averageRating:
       averageRating !== null ? Math.round(averageRating * 10) / 10 : null,
   }));
@@ -122,8 +180,15 @@ export async function getDiscoverCoursesForUser(
   const enrolled = new Set(enrolledData.map((e) => e.courseId));
 
   const courses = (await prisma.course.findMany({
-    where: { isPublic: true, id: { notIn: [...enrolled] } },
+    where: {
+      isPublic: true,
+      published: true,
+      id: { notIn: [...enrolled] },
+      createdById: { not: userId }
+    },
     include: { ratings: true },
+    orderBy: { createdAt: "desc" },
+    take: 12,
   })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; ratings: { rating: number }[] }[];
 
   return courses.map((c) => {
@@ -136,6 +201,32 @@ export async function getDiscoverCoursesForUser(
       title: c.title,
       description: c.description,
       coverImageUrl: c.coverImageUrl,
+      averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
+    };
+  });
+}
+
+export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]> {
+  const courses = (await prisma.course.findMany({
+    where: { createdById: userId },
+    include: { ratings: true },
+    orderBy: { updatedAt: "desc" },
+  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; ratings: { rating: number }[] }[];
+
+  const courseIds = courses.map(c => c.id);
+  const progressMap = await getProgressForCourses(userId, courseIds);
+
+  return courses.map((c) => {
+    const avg =
+      c.ratings.length > 0
+        ? c.ratings.reduce((s: number, r: any) => s + r.rating, 0) / c.ratings.length
+        : null;
+    return {
+      id: c.id,
+      title: c.title,
+      description: c.description,
+      coverImageUrl: c.coverImageUrl,
+      progress: progressMap.get(c.id),
       averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
     };
   });
@@ -196,6 +287,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     continueLearning,
     popularCourses,
     discoverCourses,
+    myCourses,
     reminders,
     streak,
     user,
@@ -203,6 +295,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     uid ? getContinueLearningForUser(uid) : Promise.resolve([]),
     getPopularCourses(),
     uid ? getDiscoverCoursesForUser(uid) : Promise.resolve([]),
+    uid ? getMyCoursesForUser(uid) : Promise.resolve([]),
     uid ? getRemindersForUser(uid) : Promise.resolve([]),
     uid ? getStreakForUser(uid) : Promise.resolve(0),
     uid ? getCurrentUserById(uid) : Promise.resolve(null),
@@ -211,6 +304,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     continueLearning,
     popularCourses,
     discoverCourses,
+    myCourses,
     reminders,
     streak,
     user,

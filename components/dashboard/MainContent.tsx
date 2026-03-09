@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { LearningCard } from "./LearningCard";
 import { useDashboard } from "@/lib/DashboardContext";
 import { ReportCourseModal } from "./ReportCourseModal";
@@ -13,6 +14,7 @@ function courseTitleById(courses: CourseCard[], id: string): string {
 }
 
 export function MainContent() {
+  const router = useRouter();
   const { data, loading } = useDashboard();
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportCourseId, setReportCourseId] = useState<string | null>(null);
@@ -20,10 +22,11 @@ export function MainContent() {
   const continueLearning = data?.continueLearning ?? [];
   const popularCourses = data?.popularCourses ?? [];
   const discoverCourses = data?.discoverCourses ?? [];
+  const myCourses = data?.myCourses ?? [];
 
   const allCourses = useMemo(
-    () => [...continueLearning, ...popularCourses, ...discoverCourses],
-    [continueLearning, popularCourses, discoverCourses]
+    () => [...continueLearning, ...popularCourses, ...discoverCourses, ...myCourses],
+    [continueLearning, popularCourses, discoverCourses, myCourses]
   );
   const reportCourseTitle = reportCourseId
     ? courseTitleById(allCourses, reportCourseId)
@@ -39,13 +42,39 @@ export function MainContent() {
   return (
     <ScrollArea className="flex-1 bg-(--theme-bg)">
       <div className="p-6 space-y-8">
+        {myCourses.length > 0 && (
+          <section>
+            <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
+              YOUR COURSES
+            </h2>
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              style={{ gridAutoRows: "1fr" }}
+            >
+              {myCourses.map((course) => (
+                <LearningCard
+                  key={course.id}
+                  id={course.id}
+                  title={course.title}
+                  description={course.description ?? ""}
+                  progress={course.progress}
+                  coverImageUrl={course.coverImageUrl}
+                  averageRating={course.averageRating}
+                  onReportClick={openReport}
+                  onButtonClick={() => router.push(`/courses/${course.id}/builder`)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {continueLearning.length > 0 && (
           <section>
             <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
               CONTINUE LEARNING
             </h2>
             <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              className="grid grid-cols-1 md:md:grid-cols-2 lg:grid-cols-3 gap-4"
               style={{ gridAutoRows: "1fr" }}
             >
               {continueLearning.map((course) => (
@@ -58,6 +87,7 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
             </div>
@@ -79,9 +109,11 @@ export function MainContent() {
                   id={course.id}
                   title={course.title}
                   description={course.description ?? ""}
+                  progress={course.progress}
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
             </div>
@@ -110,6 +142,7 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
             </div>

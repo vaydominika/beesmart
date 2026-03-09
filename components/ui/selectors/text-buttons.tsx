@@ -6,7 +6,9 @@ import type { SelectorItem } from "./node-selector";
 
 export const TextButtons = () => {
     const { editor } = useEditor();
+
     if (!editor) return null;
+
     const items: SelectorItem[] = [
         {
             name: "bold",
@@ -39,6 +41,9 @@ export const TextButtons = () => {
             icon: CodeIcon,
         },
     ];
+
+
+
     return (
         <div className="flex">
             {items.map((item) => (
