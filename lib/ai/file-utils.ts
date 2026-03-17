@@ -1,4 +1,26 @@
-const pdf = require('pdf-parse');
+// Add polyfills for pdf.js in Node.js environment where browser globals aren't available
+if (typeof global.DOMMatrix === 'undefined') {
+    (global as any).DOMMatrix = class DOMMatrix {
+        constructor() { }
+    };
+}
+if (typeof global.ImageData === 'undefined') {
+    (global as any).ImageData = class ImageData {
+        constructor() { }
+    };
+}
+if (typeof global.Path2D === 'undefined') {
+    (global as any).Path2D = class Path2D {
+        constructor() { }
+    };
+}
+
+const { getData } = require('pdf-parse/worker');
+const { PDFParse } = require('pdf-parse');
+
+// Explicitly set the worker source to avoid "expression is too dynamic" errors in Next.js
+PDFParse.setWorker(getData());
+
 import mammoth from 'mammoth';
 
 /**
@@ -10,8 +32,13 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
     try {
         if (fileType === 'application/pdf') {
-            const data = await pdf(buffer);
-            return data.text;
+            const parser = new PDFParse({ data: buffer });
+            try {
+                const data = await parser.getText();
+                return data.text;
+            } finally {
+                await parser.destroy();
+            }
         }
 
         if (fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
