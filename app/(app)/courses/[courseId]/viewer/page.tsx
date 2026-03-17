@@ -33,7 +33,13 @@ export default async function CourseViewerPage({ params }: ViewerPageProps) {
                 include: {
                     lessons: {
                         orderBy: { order: "asc" },
-                        select: { id: true, title: true, content: true, order: true }
+                        select: {
+                            id: true,
+                            title: true,
+                            content: true,
+                            order: true,
+                            files: true
+                        }
                     }
                 },
                 orderBy: { order: "asc" }

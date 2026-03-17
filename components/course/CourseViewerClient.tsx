@@ -19,6 +19,7 @@ interface Lesson {
     id: string;
     title: string;
     content: string | null;
+    files?: any[];
 }
 
 interface Module {
@@ -219,6 +220,38 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                 </div>
                             )}
                         </article>
+
+                        {/* Lesson Materials */}
+                        {activeLesson.files && activeLesson.files.filter(f => f.isVisible).length > 0 && (
+                            <div className="mt-12 p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                                    <HugeiconsIcon icon={Layers01Icon} className="size-4" />
+                                    Lesson Materials
+                                </h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {activeLesson.files.filter(f => f.isVisible).map((file) => (
+                                        <a
+                                            key={file.id}
+                                            href={file.fileUrl}
+                                            download={file.fileName}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl hover:border-slate-300 hover:shadow-md transition-all group"
+                                        >
+                                            <div className="size-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-50 group-hover:scale-110 transition-transform">
+                                                <HugeiconsIcon icon={Book02Icon} className="size-5 text-slate-400 group-hover:text-black transition-colors" />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm font-bold text-slate-900 truncate">{file.fileName}</span>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                                    {(file.fileSize / 1024).toFixed(1)} KB
+                                                </span>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Navigation Footer */}
                         <footer className="mt-20 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -5,6 +5,9 @@ import { useDebouncedCallback } from "use-debounce";
 import { SparklesIcon, UploadIcon, XIcon, Loader2Icon, FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EditorInstance } from "novel";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Tick01Icon } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 
 interface CourseBuilderEditorProps {
     lesson: any;
@@ -23,6 +26,7 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
     const [isGenerating, setIsGenerating] = useState(false);
     const [generationPrompt, setGenerationPrompt] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [showFileInLesson, setShowFileInLesson] = useState(true);
     const editorRef = useRef<EditorInstance | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,7 +65,10 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
         try {
             const formData = new FormData();
             if (generationPrompt) formData.append("prompt", generationPrompt);
-            if (selectedFile) formData.append("file", selectedFile);
+            if (selectedFile) {
+                formData.append("file", selectedFile);
+                formData.append("isVisible", showFileInLesson.toString());
+            }
             formData.append("existingContent", content);
 
             const res = await fetch(`/api/courses/${courseId}/lessons/${lesson.id}/generate`, {
@@ -228,8 +235,53 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
                                     {isGenerating ? "Generating..." : "Generate"}
                                 </Button>
                             </div>
+
+                            <div className="flex items-center gap-2 mt-1">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <div className="relative flex items-center justify-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={showFileInLesson}
+                                            onChange={(e) => setShowFileInLesson(e.target.checked)}
+                                            className="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-slate-300 transition-all checked:bg-amber-600 checked:border-amber-600"
+                                        />
+                                        <HugeiconsIcon icon={Tick01Icon} className="absolute h-3.5 w-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                    </div>
+                                    <span className="text-sm font-medium text-amber-900/80 group-hover:text-amber-900 transition-colors">
+                                        Show file in lesson for students
+                                    </span>
+                                </label>
+                            </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Attached Files List */}
+            {lesson.files && lesson.files.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                    {lesson.files.map((file: any) => (
+                        <div key={file.id} className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl group hover:border-slate-300 transition-all">
+                            <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 shadow-sm">
+                                <FileIcon className="size-4 text-slate-400" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-bold text-slate-700 truncate max-w-[200px]">{file.fileName}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                                        {(file.fileSize / 1024).toFixed(1)} KB
+                                    </span>
+                                    <div className="size-1 bg-slate-200 rounded-full" />
+                                    <span className={cn(
+                                        "text-[10px] font-black uppercase tracking-wider",
+                                        file.isVisible ? "text-emerald-500" : "text-slate-400"
+                                    )}>
+                                        {file.isVisible ? "Visible" : "Hidden"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { streamText } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
 type RouteContext = { params: Promise<{ courseId: string; lessonId: string }> };
 
@@ -23,6 +27,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         let tone: string | undefined;
         let existingContent: string | undefined;
         let file: File | null = null;
+        let isVisible = true;
 
         const contentType = req.headers.get("content-type") || "";
 
@@ -32,6 +37,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             tone = formData.get("tone")?.toString();
             existingContent = formData.get("existingContent")?.toString();
             file = formData.get("file") as File;
+            isVisible = formData.get("isVisible") === "true";
         } else {
             const data = await req.json();
             prompt = data.prompt;
@@ -52,9 +58,41 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (file) {
             const { extractTextFromFile } = await import("@/lib/ai/file-utils");
             try {
+                // 1. Extract text for AI
                 extractedFileText = await extractTextFromFile(file);
+
+                // 2. Save file to filesystem
+                await mkdir(UPLOAD_DIR, { recursive: true });
+                const ext = path.extname(file.name);
+                const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "_");
+                const uniqueName = `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+                const bytes = await file.arrayBuffer();
+                await writeFile(path.join(UPLOAD_DIR, uniqueName), Buffer.from(bytes));
+
+                // 3. Determine file type for database
+                const mimeType = file.type || "";
+                let fileType: "PDF" | "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT" | "OTHER" = "OTHER";
+                if (mimeType === "application/pdf") fileType = "PDF";
+                else if (mimeType.startsWith("image/")) fileType = "IMAGE";
+                else if (mimeType.startsWith("video/")) fileType = "VIDEO";
+                else if (mimeType.startsWith("audio/")) fileType = "AUDIO";
+                else if (mimeType.includes("document") || mimeType.includes("word")) fileType = "DOCUMENT";
+
+                // 4. Create database record
+                await prisma.courseFile.create({
+                    data: {
+                        lessonId,
+                        courseId,
+                        fileName: file.name,
+                        fileUrl: `/uploads/${uniqueName}`,
+                        fileType,
+                        fileSize: file.size,
+                        isVisible,
+                        uploadedById: userId,
+                    }
+                });
             } catch (err) {
-                console.error("File extraction failed:", err);
+                console.error("File processing failed:", err);
             }
         }
 

@@ -312,6 +312,7 @@ model CourseFile {
   fileUrl     String
   fileType    FileType
   fileSize    Int
+  isVisible   Boolean  @default(true)
   uploadedById String
   createdAt   DateTime @default(now())
 
