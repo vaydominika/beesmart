@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { generateObject } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
@@ -31,7 +31,7 @@ Lesson Text:
 "${textEntry}"`;
 
         const { object } = await generateObject({
-            model: anthropic("claude-3-5-sonnet-latest"),
+            model: deepseek("deepseek-chat"),
             schema: z.object({
                 type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER"] as const).describe("The type of question"),
                 question: z.string().describe("The question text"),
@@ -41,6 +41,16 @@ Lesson Text:
             }),
             prompt,
         });
+
+        // Safety check on generated content
+        const { checkContentSafety, flagContent } = await import("@/lib/ai/moderation");
+        const fullContentText = JSON.stringify(object);
+        const safetyResult = await checkContentSafety(fullContentText);
+
+        if (!safetyResult.safe) {
+            await flagContent(userId, courseId, "AI_GENERATED_UNSAFE_QUIZ", safetyResult.reason);
+            return NextResponse.json({ error: "Generated content was flagged as inappropriate." }, { status: 400 });
+        }
 
         return NextResponse.json(object);
 

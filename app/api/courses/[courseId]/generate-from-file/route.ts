@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { generateObject } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
@@ -27,11 +27,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const buffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(buffer);
 
-        const prompt = `You are an expert curriculum designer. Extract the key subjects, knowledge, and structure from the attached document/image and create a comprehensive course outline.
-The outline should be broken down into logically sequenced modules, and each module should contain lessons. Return a strict JSON structure.`;
+        // Extract text from file for DeepSeek (it doesn't natively support file content parts for docs)
+        const { extractTextFromFile } = await import("@/lib/ai/file-utils");
+        const extractedText = await extractTextFromFile(file);
+
+        const prompt = `You are an expert curriculum designer. Extract the key subjects, knowledge, and structure from the provided text and create a comprehensive course outline.
+The outline should be broken down into logically sequenced modules, and each module should contain lessons. Return a strict JSON structure.
+
+SOURCE TEXT:
+${extractedText.substring(0, 30000)}`; // Limit to avoid token overflow
 
         const { object } = await generateObject({
-            model: anthropic("claude-3-5-sonnet-latest"),
+            model: deepseek("deepseek-chat"),
             schema: z.object({
                 modules: z.array(z.object({
                     title: z.string().describe("The name of the module/chapter"),
@@ -42,20 +49,18 @@ The outline should be broken down into logically sequenced modules, and each mod
                     })).min(1),
                 })).min(1),
             }),
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: prompt },
-                        {
-                            type: 'file',
-                            data: uint8Array,
-                            mediaType: file.type,
-                        },
-                    ],
-                },
-            ],
+            prompt,
         });
+
+        // Safety check on generated content
+        const { checkContentSafety, flagContent } = await import("@/lib/ai/moderation");
+        const fullContentText = JSON.stringify(object);
+        const safetyResult = await checkContentSafety(fullContentText);
+
+        if (!safetyResult.safe) {
+            await flagContent(userId, courseId, "AI_GENERATED_UNSAFE_FILE", safetyResult.reason);
+            return NextResponse.json({ error: "Generated content was flagged as inappropriate. Please check your source file." }, { status: 400 });
+        }
 
         return NextResponse.json({ outline: object });
 

@@ -2,7 +2,7 @@
 
 import { EditorContent, EditorRoot, EditorInstance, EditorBubble } from "novel";
 import { defaultExtensions } from "./extensions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { NodeSelector } from "./selectors/node-selector";
 import { LinkSelector } from "./selectors/link-selector";
@@ -23,6 +23,20 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
+  const [editor, setEditor] = useState<EditorInstance | null>(null);
+
+  // Synchronize internal state with initialValue prop changes (e.g. lesson switch)
+  useEffect(() => {
+    if (initialValue !== undefined && initialValue !== content) {
+      setContent(initialValue);
+      if (editor) {
+        // If the content is significantly different (not just a minor typing update), reset the editor
+        // We use a simple length check or a flag to prevent infinite loops if needed
+        // But for now, direct setContent is usually safest for external syncs
+        editor.commands.setContent(initialValue, false);
+      }
+    }
+  }, [initialValue, editor]);
 
   const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
     const html = editor.getHTML();
@@ -38,6 +52,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
           extensions={defaultExtensions}
           onUpdate={({ editor }) => debouncedUpdates(editor)}
           onCreate={({ editor }) => {
+            setEditor(editor);
             if (onReady) onReady(editor);
           }}
           editable={editable}

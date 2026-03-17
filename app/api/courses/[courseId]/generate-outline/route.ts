@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { generateObject } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
@@ -32,7 +32,7 @@ ${targetAudience ? `Target audience: ${targetAudience}` : ''}
 The course should be broken down into logically sequenced modules, and each module should contain 3-6 lessons. Returns a strict JSON structure.`;
 
         const { object } = await generateObject({
-            model: anthropic("claude-3-5-sonnet-latest"), // Assuming Sonnet 3.5 is the standard for complex reasoning
+            model: deepseek("deepseek-chat"),
             schema: z.object({
                 modules: z.array(z.object({
                     title: z.string().describe("The name of the module/chapter"),
@@ -45,6 +45,16 @@ The course should be broken down into logically sequenced modules, and each modu
             }),
             prompt,
         });
+
+        // Safety check on generated content
+        const { checkContentSafety, flagContent } = await import("@/lib/ai/moderation");
+        const fullContentText = JSON.stringify(object);
+        const safetyResult = await checkContentSafety(fullContentText);
+
+        if (!safetyResult.safe) {
+            await flagContent(userId, courseId, "AI_GENERATED_UNSAFE", safetyResult.reason);
+            return NextResponse.json({ error: "Generated content was flagged as inappropriate. Please try a different topic." }, { status: 400 });
+        }
 
         // The user wants to *preview* the outline before we save it to the DB!
         // So we just return the generated outline here. The frontend will present it,

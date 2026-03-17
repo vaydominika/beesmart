@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { generateObject } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
@@ -30,7 +30,7 @@ Text:
 "${textEntry}"`;
 
         const { object } = await generateObject({
-            model: anthropic("claude-3-5-sonnet-latest"), // Assuming Sonnet 3.5
+            model: deepseek("deepseek-chat"),
             schema: z.object({
                 term: z.string().describe("The key term or concept found in the text"),
                 definition: z.string().describe("A simple, 1-3 sentence explanation or definition"),

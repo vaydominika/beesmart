@@ -1,9 +1,9 @@
-"use client";
-
+import { useState, useRef } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { PlusSignIcon, DragDropVerticalIcon, LockPasswordIcon } from "hugeicons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { SparklesIcon, UploadIcon, XIcon, Loader2Icon, FileIcon } from "lucide-react";
 
 interface CourseBuilderSidebarProps {
     course: any;
@@ -13,6 +13,10 @@ interface CourseBuilderSidebarProps {
 }
 
 export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson }: CourseBuilderSidebarProps) {
+    const [isAIExpanded, setIsAIExpanded] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Very basic optimistic drag update for lessons within the same module
     const handleDragEnd = async (result: DropResult) => {
@@ -26,7 +30,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
         // Clone state
         const modules = [...course.modules];
-        const moduleIndex = modules.findIndex(m => m.id === moduleId);
+        const moduleIndex = modules.findIndex((m: any) => m.id === moduleId);
         if (moduleIndex === -1) return;
 
         const originalLessons = [...modules[moduleIndex].lessons];
@@ -47,7 +51,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    list: updatedLessons.map(l => ({ id: l.id, order: l.order, moduleId: moduleId }))
+                    list: updatedLessons.map((l: any) => ({ id: l.id, order: l.order, moduleId: moduleId }))
                 })
             });
             if (!res.ok) throw new Error("Failed");
@@ -96,8 +100,69 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         }
     }
 
+    const handleBulkGenerate = async () => {
+        if (!selectedFile) {
+            toast.error("Please select a file first");
+            return;
+        }
+        setIsGenerating(true);
+        const toastId = toast.loading("AI is analyzing your file and dreaming up a syllabus...");
+
+        try {
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            const generateRes = await fetch(`/api/courses/${course.id}/generate-from-file`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!generateRes.ok) {
+                const err = await generateRes.json();
+                throw new Error(err.error || "Outline generation failed");
+            }
+
+            const { outline } = await generateRes.json();
+
+            // Now we need to create these modules and lessons in the DB
+            // We'll do it sequentially to keep it simple and avoid race conditions with order
+            const createdModules = [];
+            for (const mod of outline.modules) {
+                const modRes = await fetch(`/api/courses/${course.id}/modules`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: mod.title, description: mod.description })
+                });
+                if (!modRes.ok) continue;
+                const newModule = await modRes.json();
+
+                const createdLessons = [];
+                for (const les of mod.lessons) {
+                    const lesRes = await fetch(`/api/courses/${course.id}/modules/${newModule.id}/lessons`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ title: les.title, description: les.description, content: "" })
+                    });
+                    if (lesRes.ok) {
+                        createdLessons.push(await lesRes.json());
+                    }
+                }
+                createdModules.push({ ...newModule, lessons: createdLessons });
+            }
+
+            onCourseChange({ ...course, modules: [...course.modules, ...createdModules] });
+            toast.success("Syllabus generated from file!", { id: toastId });
+            setIsAIExpanded(false);
+            setSelectedFile(null);
+        } catch (e: any) {
+            toast.error(e.message || "Failed to generate syllabus", { id: toastId });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const togglePrerequisite = async (lesson: any, moduleId: string) => {
-        // Toggle the isLocked attribute
+        // ... (same as before)
         const isLocked = !lesson.isLocked;
 
         try {
@@ -127,11 +192,74 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
     return (
         <div className="h-full flex flex-col bg-slate-50 border-r overflow-hidden">
-            <div className="p-4 border-b shrink-0 flex items-center justify-between bg-white">
-                <h2 className="font-semibold text-sm uppercase tracking-wider text-slate-500">Syllabus</h2>
-                <Button variant="ghost" size="icon" onClick={addModule}>
-                    <PlusSignIcon className="w-4 h-4 text-slate-500" />
-                </Button>
+            <div className="p-4 border-b shrink-0 bg-white">
+                <div className="flex items-center justify-between mb-2">
+                    <h2 className="font-semibold text-xs uppercase tracking-widest text-slate-400">Syllabus</h2>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-8 w-8 transition-colors ${isAIExpanded ? 'text-amber-500 bg-amber-50' : 'text-slate-400'}`}
+                            onClick={() => setIsAIExpanded(!isAIExpanded)}
+                            title="Generate Outline with AI"
+                        >
+                            <SparklesIcon className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={addModule}>
+                            <PlusSignIcon className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </div>
+
+                {isAIExpanded && (
+                    <div className="bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-lg p-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-[10px] font-bold text-amber-800/60 uppercase tracking-tighter">AI Course Outline Generator</p>
+
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                                accept=".pdf,.doc,.docx,image/*"
+                            />
+
+                            <div className="flex flex-col gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="border-dashed border-amber-300 bg-white hover:bg-amber-50 text-amber-700 text-[11px] h-8 justify-start gap-2"
+                                >
+                                    <UploadIcon className="w-3 h-3" />
+                                    {selectedFile ? (
+                                        <span className="truncate">{selectedFile.name}</span>
+                                    ) : "Upload Source File"}
+                                </Button>
+
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        onClick={handleBulkGenerate}
+                                        disabled={isGenerating || !selectedFile}
+                                        className="flex-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] h-8 gap-2 shadow-sm"
+                                    >
+                                        {isGenerating ? <Loader2Icon className="w-3 h-3 animate-spin" /> : <SparklesIcon className="w-3 h-3" />}
+                                        {isGenerating ? "Processing..." : "Generate"}
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => { setIsAIExpanded(false); setSelectedFile(null); }}
+                                        className="h-8 w-8 p-0 text-slate-400"
+                                    >
+                                        <XIcon className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
