@@ -41,9 +41,10 @@ export function CourseCard({ title, description, _count, creator, onClick, publi
             </div>
 
             {description && (
-                <div className="text-sm font-medium text-(--theme-text)/70 uppercase line-clamp-2 mb-4 tracking-tighter">
-                    {description}
-                </div>
+                <div
+                    className="text-sm font-medium text-(--theme-text)/70 uppercase line-clamp-2 mb-4 tracking-tighter"
+                    dangerouslySetInnerHTML={{ __html: description }}
+                />
             )}
 
             {progress !== undefined && progress > 0 && (

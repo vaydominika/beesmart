@@ -27,6 +27,7 @@ export type DashboardData = {
   popularCourses: CourseCard[];
   discoverCourses: CourseCard[];
   myCourses: CourseCard[];
+  finishedCourses: CourseCard[];
   reminders: ReminderItem[];
   streak: number;
   user: CurrentUser | null;

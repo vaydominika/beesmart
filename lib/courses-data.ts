@@ -300,11 +300,37 @@ export async function getDashboardData(): Promise<DashboardData> {
     uid ? getStreakForUser(uid) : Promise.resolve(0),
     uid ? getCurrentUserById(uid) : Promise.resolve(null),
   ]);
+
+  // CATEGORIZATION LOGIC: Refined to use persisted completion and avoid duplicates
+  const finishedCourses: CourseCard[] = [];
+  const processedIds = new Set<string>();
+
+  const filterFinished = (list: CourseCard[]) => {
+    return list.filter(course => {
+      // If already processed (e.g. in My Courses and Continue Learning), skip
+      if (processedIds.has(course.id)) return false;
+
+      // A course is finished if it has 100% progress
+      if (course.progress === 100) {
+        finishedCourses.push(course);
+        processedIds.add(course.id);
+        return false;
+      }
+
+      processedIds.add(course.id);
+      return true;
+    });
+  };
+
+  const filteredContinue = filterFinished(continueLearning);
+  const filteredMy = filterFinished(myCourses);
+
   return {
-    continueLearning,
+    continueLearning: filteredContinue,
     popularCourses,
     discoverCourses,
-    myCourses,
+    myCourses: filteredMy,
+    finishedCourses,
     reminders,
     streak,
     user,

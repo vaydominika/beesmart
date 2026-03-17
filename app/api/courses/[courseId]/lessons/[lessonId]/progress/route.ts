@@ -33,6 +33,40 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
         if (completed) {
             await updateUserStreak(userId);
+
+            // Check if course is now fully completed
+            const allLessons = await prisma.courseLesson.findMany({
+                where: { module: { courseId } },
+                select: { id: true }
+            });
+
+            const completedProgress = await prisma.courseProgress.findMany({
+                where: {
+                    userId,
+                    courseId,
+                    completedAt: { not: null }
+                },
+                select: { lessonId: true }
+            });
+
+            const isFullyCompleted = allLessons.every((lesson: { id: string }) =>
+                completedProgress.some((p: { lessonId: string }) => p.lessonId === lesson.id)
+            );
+
+            if (isFullyCompleted) {
+                await prisma.courseEnrollment.update({
+                    where: { userId_courseId: { userId, courseId } },
+                    data: { completedAt: new Date() }
+                });
+            }
+        } else {
+            // If a lesson was unmarked, ensure course is not marked as completed
+            await prisma.courseEnrollment.update({
+                where: { userId_courseId: { userId, courseId } },
+                data: { completedAt: null }
+            }).catch(() => {
+                // Ignore if not enrolled or already null
+            });
         }
 
         return NextResponse.json(progress);

@@ -17,6 +17,7 @@ interface LearningCardProps {
   averageRating?: number | null;
   className?: string;
   showButton?: boolean;
+  buttonText?: string;
   onButtonClick?: () => void;
   onReportClick?: (courseId: string) => void;
 }
@@ -46,6 +47,7 @@ export function LearningCard({
   coverImageUrl,
   averageRating,
   className,
+  buttonText,
   onButtonClick,
   onReportClick,
 }: LearningCardProps) {
@@ -94,26 +96,31 @@ export function LearningCard({
                 </FancyButton>
               )}
               <FancyButton
-                className="p-0 cursor-pointer"
+                className={cn("cursor-pointer", buttonText ? "px-3 py-2 flex items-center gap-2" : "p-0")}
                 onClick={(e) => {
                   e.stopPropagation();
                   onButtonClick?.();
                 }}
               >
-                <HugeiconsIcon
-                  icon={PlayIcon}
-                  className="size-8 text-(--theme-text)"
-                  strokeWidth={2.5}
-                />
+                {buttonText ? (
+                  <span className="text-xs font-bold uppercase tracking-wider text-(--theme-text)">{buttonText}</span>
+                ) : (
+                  <HugeiconsIcon
+                    icon={PlayIcon}
+                    className="size-8 text-(--theme-text)"
+                    strokeWidth={2.5}
+                  />
+                )}
               </FancyButton>
             </div>
           </div>
           <div className="p-2 pb-4 flex-1 flex flex-col min-h-0 relative">
             <div className="flex-1 min-h-[55px] max-h-[60px] overflow-hidden">
               <h3 className="font-semibold text-(--theme-text) mb-1">{title}</h3>
-              <p className="text-sm text-(--theme-text) mb-2 line-clamp-2">
-                {description ?? ""}
-              </p>
+              <div
+                className="text-sm text-(--theme-text) mb-2 line-clamp-2"
+                dangerouslySetInnerHTML={{ __html: description ?? "" }}
+              />
             </div>
             {averageRating != null && averageRating > 0 && (
               <div className="mb-1">

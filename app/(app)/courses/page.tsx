@@ -79,14 +79,43 @@ export default function CoursesPage() {
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                    {courses.map((c) => (
-                        <CourseCard
-                            key={c.id}
-                            {...c}
-                            onClick={() => router.push(`/courses/${c.id}/builder`)}
-                        />
-                    ))}
+                <div className="space-y-12">
+                    {/* Active Courses */}
+                    {courses.filter(c => c.progress < 100).length > 0 && (
+                        <section>
+                            <h2 className="text-xl md:text-2xl font-bold text-(--theme-text) uppercase tracking-tight mb-6">
+                                Active Courses
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                {courses.filter(c => c.progress < 100).map((c) => (
+                                    <CourseCard
+                                        key={c.id}
+                                        {...c}
+                                        progress={undefined} // Creators don't see progress
+                                        onClick={() => router.push(`/courses/${c.id}/builder`)}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Finished Courses */}
+                    {courses.filter(c => c.progress === 100).length > 0 && (
+                        <section>
+                            <h2 className="text-xl md:text-2xl font-bold text-emerald-600 uppercase tracking-tight mb-6">
+                                Finished Courses
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                                {courses.filter(c => c.progress === 100).map((c) => (
+                                    <CourseCard
+                                        key={c.id}
+                                        {...c}
+                                        onClick={() => router.push(`/courses/${c.id}`)}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             )}
 
