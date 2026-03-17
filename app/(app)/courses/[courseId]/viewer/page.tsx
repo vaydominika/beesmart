@@ -38,6 +38,7 @@ export default async function CourseViewerPage({ params }: ViewerPageProps) {
                             title: true,
                             content: true,
                             order: true,
+                            isLocked: true,
                             files: true
                         }
                     }

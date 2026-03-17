@@ -12,14 +12,21 @@ import { cn } from "@/lib/utils";
 interface CourseBuilderEditorProps {
     lesson: any;
     courseId: string;
-    previewMode: boolean;
+    previewMode?: boolean;
+    autoPublish?: boolean;
     onLessonUpdate: (lesson: any) => void;
+    onSavingChange?: (saving: boolean) => void;
 }
 
-export default function CourseBuilderEditor({ lesson, courseId, previewMode, onLessonUpdate }: CourseBuilderEditorProps) {
+export default function CourseBuilderEditor({ lesson, courseId, previewMode = false, autoPublish = true, onLessonUpdate, onSavingChange }: CourseBuilderEditorProps) {
     const [title, setTitle] = useState(lesson.title);
-    const [content, setContent] = useState(lesson.content || "");
+    const [content, setContent] = useState(lesson.contentDraft || lesson.content || "");
     const [isSaving, setIsSaving] = useState(false);
+
+    // Report saving state to parent
+    useEffect(() => {
+        onSavingChange?.(isSaving);
+    }, [isSaving, onSavingChange]);
 
     // AI State
     const [isAIExpanded, setIsAIExpanded] = useState(false);
@@ -29,33 +36,68 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
     const [showFileInLesson, setShowFileInLesson] = useState(true);
     const editorRef = useRef<EditorInstance | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const pendingChanges = useRef<{ title?: string; content?: string }>({});
 
     // Sync on lesson switch
     useEffect(() => {
+        console.log("[CourseBuilderEditor] Lesson switched to:", lesson.id, "Title:", lesson.title, "Content length:", (lesson.content || "").length);
+
+        // This runs for the OUTGOING lesson when [lesson.id] changes.
+        // It ensures any pending edits for the old lesson are saved before we clear state.
+        return () => {
+            console.log("[CourseBuilderEditor] Switching away, flushing pending saves.");
+            saveChanges.flush();
+        };
+    }, [lesson.id]);
+
+    // Secondary effect to reset state AFTER potential flush.
+    useEffect(() => {
+        // Cancel any pending saves for the previous lesson (already flushed above)
+        saveChanges.cancel();
+        pendingChanges.current = {}; // Reset accumulation
+
         setTitle(lesson.title);
-        setContent(lesson.content || "");
+        setContent(lesson.contentDraft || lesson.content || "");
         setIsAIExpanded(false);
     }, [lesson.id]);
 
-    const saveChanges = useDebouncedCallback(async (newTitle: string, newContent: string) => {
-        if (!newTitle.trim()) return;
+    const saveChanges = useDebouncedCallback(async (targetLessonId: string, targetModuleId: string) => {
+        const changesToSave = { ...pendingChanges.current };
+        console.log("[CourseBuilderEditor] saveChanges triggered for ID:", targetLessonId, "Changes:", changesToSave);
+
+        if (Object.keys(changesToSave).length === 0) {
+            console.log("[CourseBuilderEditor] No changes to save, skipping.");
+            return;
+        }
+
+        // Reset before starting async to prevent double-saving same values
+        pendingChanges.current = {};
+
         setIsSaving(true);
         try {
-            const res = await fetch(`/api/courses/${courseId}/modules/${lesson.moduleId}/lessons/${lesson.id}`, {
+            const res = await fetch(`/api/courses/${courseId}/modules/${targetModuleId}/lessons/${targetLessonId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title: newTitle, content: newContent })
+                body: JSON.stringify({ ...changesToSave, autoPublish })
             });
             if (res.ok) {
                 const updated = await res.json();
+                console.log("[CourseBuilderEditor] PATCH success for ID:", updated.id, "Current lesson.id:", lesson.id);
+
+                // ALWAYS update the parent, even if we've switched away.
+                // onLessonUpdate is ID-smart and will update the correct lesson in memory,
+                // preventing a "revert" if the user switches back to this lesson later.
                 onLessonUpdate(updated);
+            } else {
+                console.error("[CourseBuilderEditor] PATCH failed with status:", res.status);
             }
         } catch (e) {
+            console.error("[CourseBuilderEditor] Save error:", e);
             toast.error("Failed to save changes");
         } finally {
             setIsSaving(false);
         }
-    }, 1000);
+    }, 700);
 
     const handleGenerate = async () => {
         if (isGenerating) return;
@@ -107,7 +149,8 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
 
             // Final sync and save
             setContent(accumulated);
-            saveChanges(title, accumulated);
+            pendingChanges.current.content = accumulated;
+            saveChanges(lesson.id, lesson.moduleId);
         } catch (e: any) {
             console.error("AI Generation Error:", e);
             toast.error(e.message || "Failed to generate lesson", { id: toastId });
@@ -117,13 +160,33 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
     };
 
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTitle(e.target.value);
-        saveChanges(e.target.value, content);
+        const nextTitle = e.target.value;
+        console.log("[CourseBuilderEditor] handleTitleChange:", nextTitle);
+        setTitle(nextTitle);
+        pendingChanges.current.title = nextTitle;
+        saveChanges(lesson.id, lesson.moduleId);
     };
 
-    const handleContentChange = (val: string) => {
+    const handleContentChange = (val: string, editorId: string) => {
+        // ID-QUALIFIED GUARD (Phase 4): 
+        // If the editor sends an update but it's not for our current lesson ID,
+        // it's a "ghost" update from a previous session. KILL IT.
+        if (editorId !== lesson.id) {
+            console.warn("[CourseBuilderEditor] REJECTED ghost update! Active ID:", lesson.id, "but update was for:", editorId);
+            return;
+        }
+
+        // SAFETY: If the new content is exactly the same as the existing lesson content, 
+        // it means this was likely an internal editor update (e.g. from props) that shouldn't trigger a save.
+        if (val === lesson.content) {
+            console.log("[CourseBuilderEditor] handleContentChange: value identical to lesson.content, ignoring save.");
+            return;
+        }
+
+        console.log("[CourseBuilderEditor] handleContentChange (val length):", val.length);
         setContent(val);
-        saveChanges(title, val);
+        pendingChanges.current.content = val;
+        saveChanges(lesson.id, lesson.moduleId);
     };
 
     if (previewMode) {
@@ -136,6 +199,7 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
                     <Editor
                         initialValue={content}
                         editable={false}
+                        id={lesson.id}
                     />
                 </div>
             </div>
@@ -292,6 +356,7 @@ export default function CourseBuilderEditor({ lesson, courseId, previewMode, onL
                     onReady={(inst) => { editorRef.current = inst; }}
                     placeholder="Start writing your lesson..."
                     className="min-h-[500px]"
+                    id={lesson.id}
                 />
             </div>
         </div>

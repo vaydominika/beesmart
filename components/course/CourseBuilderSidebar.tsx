@@ -10,9 +10,10 @@ interface CourseBuilderSidebarProps {
     onCourseChange: (course: any) => void;
     activeLessonId: string | null;
     onSelectLesson: (id: string) => void;
+    isSaving?: boolean;
 }
 
-export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson }: CourseBuilderSidebarProps) {
+export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson, isSaving = false }: CourseBuilderSidebarProps) {
     const [isAIExpanded, setIsAIExpanded] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -42,8 +43,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
         // Update orders locally to match visual
         const updatedLessons = newLessons.map((l: any, i) => ({ ...l, order: i }));
-        modules[moduleIndex].lessons = updatedLessons;
-        onCourseChange({ ...course, modules });
+        onCourseChange({
+            modules: modules.map((m, i) => i === moduleIndex ? { ...m, lessons: updatedLessons } : m)
+        });
 
         // Save to DB
         try {
@@ -58,8 +60,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         } catch (e) {
             // Revert on fail
             toast.error("Failed to reorder lessons");
-            modules[moduleIndex].lessons = originalLessons;
-            onCourseChange({ ...course, modules });
+            onCourseChange({
+                modules: course.modules.map((m: any, i: number) => i === moduleIndex ? { ...m, lessons: originalLessons } : m)
+            });
         }
     };
 
@@ -74,7 +77,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         });
         if (res.ok) {
             const newModule = await res.json();
-            onCourseChange({ ...course, modules: [...course.modules, newModule] });
+            onCourseChange({ modules: [...course.modules, newModule] });
         }
     };
 
@@ -89,13 +92,14 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         });
         if (res.ok) {
             const newLesson = await res.json();
-            const newModules = course.modules.map((m: any) => {
-                if (m.id === moduleId) {
-                    return { ...m, lessons: [...m.lessons, newLesson] };
-                }
-                return m;
+            onCourseChange({
+                modules: course.modules.map((m: any) => {
+                    if (m.id === moduleId) {
+                        return { ...m, lessons: [...m.lessons, newLesson] };
+                    }
+                    return m;
+                })
             });
-            onCourseChange({ ...course, modules: newModules });
             onSelectLesson(newLesson.id);
         }
     }
@@ -150,7 +154,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                 createdModules.push({ ...newModule, lessons: createdLessons });
             }
 
-            onCourseChange({ ...course, modules: [...course.modules, ...createdModules] });
+            onCourseChange({ modules: [...course.modules, ...createdModules] });
             toast.success("Syllabus generated from file!", { id: toastId });
             setIsAIExpanded(false);
             setSelectedFile(null);
@@ -173,16 +177,17 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
             });
 
             if (res.ok) {
-                const newModules = course.modules.map((m: any) => {
-                    if (m.id === moduleId) {
-                        return {
-                            ...m,
-                            lessons: m.lessons.map((l: any) => l.id === lesson.id ? { ...l, isLocked } : l)
-                        };
-                    }
-                    return m;
+                onCourseChange({
+                    modules: course.modules.map((m: any) => {
+                        if (m.id === moduleId) {
+                            return {
+                                ...m,
+                                lessons: m.lessons.map((l: any) => l.id === lesson.id ? { ...l, isLocked } : l)
+                            };
+                        }
+                        return m;
+                    })
                 });
-                onCourseChange({ ...course, modules: newModules });
                 toast.success(isLocked ? "Lesson locked as prerequisite" : "Prerequisite removed");
             }
         } catch (e) {
@@ -199,13 +204,14 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                         <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-8 w-8 transition-colors ${isAIExpanded ? 'text-amber-500 bg-amber-50' : 'text-slate-400'}`}
-                            onClick={() => setIsAIExpanded(!isAIExpanded)}
+                            className={`h-8 w-8 transition-colors ${isAIExpanded ? 'text-amber-500 bg-amber-50' : 'text-slate-400'} ${isSaving ? 'cursor-not-allowed opacity-50' : ''}`}
+                            onClick={() => !isSaving && setIsAIExpanded(!isAIExpanded)}
+                            disabled={isSaving}
                             title="Generate Outline with AI"
                         >
                             <SparklesIcon className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400" onClick={addModule}>
+                        <Button variant="ghost" size="icon" className={`h-8 w-8 text-slate-400 ${isSaving ? 'cursor-not-allowed opacity-50' : ''}`} onClick={addModule} disabled={isSaving}>
                             <PlusSignIcon className="w-4 h-4" />
                         </Button>
                     </div>
@@ -270,7 +276,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                 <h3 className="font-medium text-slate-800 text-sm">
                                     {module.title}
                                 </h3>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => addLesson(module.id)}>
+                                <Button variant="ghost" size="icon" className={`h-6 w-6 opacity-0 group-hover:opacity-100 ${isSaving ? 'cursor-not-allowed' : ''}`} onClick={() => !isSaving && addLesson(module.id)} disabled={isSaving}>
                                     <PlusSignIcon className="w-3 h-3 text-slate-500" />
                                 </Button>
                             </div>
@@ -297,8 +303,8 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                                             <DragDropVerticalIcon className="w-3 h-3" />
                                                         </div>
                                                         <div
-                                                            className="flex-1 truncate cursor-pointer py-1"
-                                                            onClick={() => onSelectLesson(lesson.id)}
+                                                            className={`flex-1 truncate py-1 ${isSaving ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer'}`}
+                                                            onClick={() => !isSaving && onSelectLesson(lesson.id)}
                                                         >
                                                             {lesson.title}
                                                         </div>

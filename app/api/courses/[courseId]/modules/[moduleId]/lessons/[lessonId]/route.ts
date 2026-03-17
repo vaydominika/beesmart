@@ -52,14 +52,39 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const data = await req.json();
+        const { autoPublish, publishNow } = data;
         const updateData: {
             title?: string;
             description?: string | null;
             content?: string;
+            contentDraft?: string;
+            isLocked?: boolean;
         } = {};
+
         if (data.title !== undefined) updateData.title = data.title.trim();
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-        if (data.content !== undefined) updateData.content = data.content;
+        if (data.isLocked !== undefined) updateData.isLocked = data.isLocked;
+
+        // PUBLISHING LOGIC (Phase 9):
+        if (data.content !== undefined) {
+            updateData.contentDraft = data.content; // Changes always go to Draft first
+            if (autoPublish) {
+                updateData.content = data.content; // If auto-publishing, also hit the Live content
+            }
+        }
+
+        if (publishNow) {
+            // Manual publish: copy draft to live
+            if (data.content !== undefined) {
+                updateData.content = data.content;
+            } else {
+                const current = await prisma.courseLesson.findUnique({
+                    where: { id: lessonId },
+                    select: { contentDraft: true }
+                });
+                updateData.content = current?.contentDraft || "";
+            }
+        }
 
         const updated = await prisma.courseLesson.update({
             where: { id: lessonId },
