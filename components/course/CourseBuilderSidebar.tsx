@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { PlusSignIcon, DragDropVerticalIcon, LockPasswordIcon } from "hugeicons-react";
+import { PlusSignIcon, DragDropVerticalIcon, SquareLock02Icon } from "hugeicons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { SparklesIcon, UploadIcon, XIcon, Loader2Icon, FileIcon } from "lucide-react";
@@ -188,7 +188,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                         return m;
                     })
                 });
-                toast.success(isLocked ? "Lesson locked as prerequisite" : "Prerequisite removed");
+                toast.success(isLocked ? "Lesson set as prerequisite (blocks all subsequent)" : "Prerequisite removed");
             }
         } catch (e) {
             toast.error("Failed to update prerequisite");
@@ -315,9 +315,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                                                 togglePrerequisite(lesson, module.id);
                                                             }}
                                                             className={`p-1 rounded opacity-0 group-hover/lesson:opacity-100 transition-opacity ${lesson.isLocked ? 'text-amber-500 opacity-100' : 'text-slate-400 hover:text-amber-500'}`}
-                                                            title={lesson.isLocked ? "Unlock lesson" : "Require previous completion"}
+                                                            title={lesson.isLocked ? "Remove prerequisite" : "Set as prerequisite (blocks all subsequent)"}
                                                         >
-                                                            <LockPasswordIcon className="w-3.5 h-3.5" />
+                                                            <SquareLock02Icon className="w-3.5 h-3.5" />
                                                         </button>
 
                                                     </div>

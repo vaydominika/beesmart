@@ -283,8 +283,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <Editor
                         initialValue={newPostContent}
                         onChange={setNewPostContent}
-                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm"
-                    />
+                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm" id={""} />
                     <FancyButton
                         onClick={handleCreatePost}
                         disabled={posting || (!newPostContent.replace(/<[^>]*>?/gm, '').trim() && postFiles.length === 0)}

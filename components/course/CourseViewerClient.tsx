@@ -10,7 +10,7 @@ import {
     Book02Icon,
     Menu01Icon,
     PlayIcon,
-    LockPasswordIcon
+    SquareLock02Icon
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -50,26 +50,31 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
     );
 
     const isLessonLocked = (lesson: Lesson) => {
-        if (!lesson || !lesson.isLocked) return false;
+        if (!lesson) return false;
         const index = allLessons.findIndex(l => l.id === lesson.id);
-        if (index <= 0) return false;
-        const previousLessonId = allLessons[index - 1].id;
-        return !completedLessonIds.has(previousLessonId);
+        if (index === -1) return false;
+
+        // A lesson is locked if ANY previous lesson is a prerequisite (isLocked) and not completed
+        for (let i = 0; i < index; i++) {
+            if (allLessons[i].isLocked && !completedLessonIds.has(allLessons[i].id)) {
+                return true;
+            }
+        }
+        return false;
     };
 
     const initialLessonIdToUse = useMemo(() => {
         const initial = initialLessonId || allLessons[0]?.id || null;
         if (!initial) return null;
-        const lesson = allLessons.find(l => l.id === initial);
-        if (lesson && lesson.isLocked) {
-            const index = allLessons.findIndex(l => l.id === initial);
-            if (index > 0) {
-                const prev = allLessons[index - 1];
-                if (!initialCompletedLessonIds.includes(prev.id)) return allLessons[0]?.id || null;
-            }
+
+        const currentLesson = allLessons.find(l => l.id === initial);
+        if (currentLesson && isLessonLocked(currentLesson)) {
+            // Find the first non-locked lesson
+            const firstAvailable = allLessons.find(l => !isLessonLocked(l));
+            return firstAvailable?.id || allLessons[0]?.id || null;
         }
         return initial;
-    }, [initialLessonId, allLessons, initialCompletedLessonIds]);
+    }, [initialLessonId, allLessons, completedLessonIds]); // Changed initialCompletedLessonIds to completedLessonIds for better tracking
 
     const [activeLessonId, setActiveLessonId] = useState<string | null>(initialLessonIdToUse);
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -155,14 +160,13 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                     return (
                                         <button
                                             key={lesson.id}
-                                            onClick={() => !locked && setActiveLessonId(lesson.id)}
-                                            disabled={locked}
+                                            onClick={() => setActiveLessonId(lesson.id)}
                                             className={cn(
                                                 "w-full text-left px-3 py-3 rounded-2xl transition-all flex items-center gap-3 font-bold group",
                                                 isActive
                                                     ? "bg-slate-900 text-white shadow-xl shadow-slate-900/10"
                                                     : locked
-                                                        ? "opacity-30 cursor-not-allowed grayscale"
+                                                        ? "text-slate-400 hover:bg-slate-200/50"
                                                         : "text-slate-600 hover:bg-slate-200/50"
                                             )}
                                         >
@@ -179,7 +183,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                                 {isActive ? (
                                                     <HugeiconsIcon icon={PlayIcon} className="size-3 fill-current text-white" />
                                                 ) : locked ? (
-                                                    <HugeiconsIcon icon={LockPasswordIcon} className="size-3 text-slate-400" />
+                                                    <HugeiconsIcon icon={SquareLock02Icon} className="size-3 text-slate-400" />
                                                 ) : completedLessonIds.has(lesson.id) ? (
                                                     <HugeiconsIcon icon={Tick01Icon} className="size-3.5 text-white" />
                                                 ) : (
@@ -239,21 +243,34 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                         </div>
                     </div>
 
-                    <article className="prose prose-slate prose-xl max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-img:rounded-3xl prose-img:corner-squircle prose-a:text-black">
-                        {isLessonLocked(activeLesson) ? (
-                            <div className="text-center py-20 bg-amber-50 rounded-[40px] border-2 border-dashed border-amber-200 shadow-xl shadow-amber-500/5">
-                                <HugeiconsIcon icon={LockPasswordIcon} className="size-16 text-amber-200 mx-auto mb-6" />
-                                <h2 className="text-amber-800 font-black uppercase tracking-tight mb-2">Content Locked</h2>
-                                <p className="text-amber-600/80 font-bold uppercase tracking-wider text-sm max-w-xs mx-auto">Complete the previous lesson to unlock this knowledge.</p>
-                            </div>
-                        ) : activeLesson.content ? (
-                            <div dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
-                        ) : (
-                            <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
-                                <HugeiconsIcon icon={Layers01Icon} className="size-16 text-slate-200 mx-auto mb-6" />
-                                <p className="text-slate-400 font-bold uppercase tracking-wider">Empty lesson content</p>
+                    <article className="prose prose-slate prose-xl max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-img:rounded-3xl prose-img:corner-squircle prose-a:text-black relative">
+                        {isLessonLocked(activeLesson) && (
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-3xl rounded-[40px] border-2 border-dashed border-slate-200 shadow-2xl shadow-slate-500/5 animate-in fade-in duration-500">
+                                <div className="p-8 bg-white rounded-[40px] shadow-2xl flex flex-col items-center text-center max-w-xs border border-slate-100">
+                                    <div className="size-20 bg-amber-50 rounded-[30px] flex items-center justify-center mb-6 shadow-inner">
+                                        <HugeiconsIcon icon={SquareLock02Icon} className="size-10 text-amber-500" />
+                                    </div>
+                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Content Locked</h2>
+                                    <p className="text-slate-500 font-bold uppercase tracking-wider text-[10px] leading-relaxed">
+                                        Complete all previous prerequisites to unlock this lesson.
+                                    </p>
+                                </div>
                             </div>
                         )}
+
+                        <div className={cn(
+                            "transition-all duration-700",
+                            isLessonLocked(activeLesson) ? "blur-[20px] grayscale opacity-50 select-none pointer-events-none" : ""
+                        )}>
+                            {activeLesson.content ? (
+                                <div dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
+                            ) : (
+                                <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
+                                    <HugeiconsIcon icon={Layers01Icon} className="size-16 text-slate-200 mx-auto mb-6" />
+                                    <p className="text-slate-400 font-bold uppercase tracking-wider">Empty lesson content</p>
+                                </div>
+                            )}
+                        </div>
                     </article>
 
                     {/* Lesson Materials */}
