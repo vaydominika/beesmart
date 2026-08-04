@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string }> };
+const CLASSROOM_ROLES = ["TEACHER", "TEACHING_ASSISTANT", "STUDENT"] as const;
+type ClassroomRoleValue = (typeof CLASSROOM_ROLES)[number];
 
 // GET /api/classrooms/[id]/members — List members
 export async function GET(_req: NextRequest, ctx: RouteContext) {
@@ -15,15 +17,22 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-        const members = await prisma.classroomMember.findMany({
+        const [classroom, members] = await Promise.all([
+            prisma.classroom.findUnique({ where: { id }, select: { createdById: true } }),
+            prisma.classroomMember.findMany({
             where: { classroomId: id },
             include: {
                 user: { select: { id: true, name: true, email: true, avatar: true } },
             },
             orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
-        });
+            }),
+        ]);
 
-        return NextResponse.json(members);
+        return NextResponse.json(members.map((member: any) => ({
+            ...member,
+            isOwner: member.userId === classroom?.createdById,
+            isCurrentUser: member.userId === userId,
+        })));
     } catch (e) {
         console.error("GET members", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -45,13 +54,25 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         }
 
         const { memberId, role } = await req.json();
-        if (!memberId || !role) {
+        if (!memberId || !CLASSROOM_ROLES.includes(role as ClassroomRoleValue)) {
             return NextResponse.json({ error: "Member ID and role required" }, { status: 400 });
+        }
+
+        const target = await prisma.classroomMember.findFirst({
+            where: { id: memberId, classroomId: id },
+            include: { classroom: { select: { createdById: true } } },
+        });
+        if (!target) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+        if (target.userId === target.classroom.createdById) {
+            return NextResponse.json({ error: "The classroom owner must remain a teacher" }, { status: 400 });
+        }
+        if (target.userId === userId) {
+            return NextResponse.json({ error: "You cannot change your own role" }, { status: 400 });
         }
 
         const updated = await prisma.classroomMember.update({
             where: { id: memberId },
-            data: { role },
+            data: { role: role as ClassroomRoleValue },
             include: {
                 user: { select: { id: true, name: true, email: true, avatar: true } },
             },
@@ -84,12 +105,16 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
         }
 
         // Prevent removing the classroom creator
-        const memberToRemove = await prisma.classroomMember.findUnique({
-            where: { id: memberId },
+        const memberToRemove = await prisma.classroomMember.findFirst({
+            where: { id: memberId, classroomId: id },
             include: { classroom: { select: { createdById: true } } },
         });
+        if (!memberToRemove) return NextResponse.json({ error: "Member not found" }, { status: 404 });
         if (memberToRemove?.userId === memberToRemove?.classroom.createdById) {
             return NextResponse.json({ error: "Cannot remove the classroom creator" }, { status: 400 });
+        }
+        if (memberToRemove.userId === userId) {
+            return NextResponse.json({ error: "You cannot remove yourself" }, { status: 400 });
         }
 
         await prisma.classroomMember.delete({ where: { id: memberId } });

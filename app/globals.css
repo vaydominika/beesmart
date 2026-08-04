@@ -130,41 +130,113 @@
 
 /* Default Bee Theme Colors */
 :root {
-  --theme-card: #FADA6D;
-  --theme-sidebar: #FFF6C4;
-  --theme-text: #262626;
-  --theme-text-important: #EBC421;
-  --theme-bg: #FFFEF8;
+  --app-accent: #FADA6D;
+  --app-accent-soft: #FFF6C4;
+  --app-accent-hover: #FFEF9D;
+  --app-canvas: #FFFDF2;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: #F5F5F1;
+  --app-surface-hover: #FAFAF7;
+  --app-text: #20231F;
+  --app-text-muted: #777B74;
+  --app-text-faint: #9A9D97;
+  --app-border: #E6E6E0;
+  --app-border-strong: #DEDED7;
+  --app-focus-ring: #FFF6C4;
+  --app-focus-border: #D2BC4A;
+  --app-danger: #DC2626;
+  --app-danger-soft: #FEF2F2;
+  --app-success: #15803D;
+  --app-success-soft: #F0FDF4;
+  --app-warning: #B45309;
+  --app-warning-soft: #FFFBEB;
+  --app-accent-text: #705900;
+  --app-pin: #B5A044;
+  --app-role-teacher-bg: #FFF3BF;
+  --app-role-teacher-text: #705900;
+  --app-role-assistant-bg: #F1EAFE;
+  --app-role-assistant-text: #6842A6;
+  --app-role-student-bg: #EAF2FF;
+  --app-role-student-text: #315F9C;
+
+  /* Legacy names stay as aliases while the rest of the app adopts semantic tokens. */
+  --theme-card: var(--app-accent);
+  --theme-sidebar: var(--app-accent-soft);
+  --theme-text: var(--app-text);
+  --theme-text-important: var(--app-focus-border);
+  --theme-bg: var(--app-canvas);
   --theme-secondary: #B25121;
 }
 
 /* Dark Theme Example */
 [data-theme="dark"],
 .theme-dark {
-  --theme-card: #4A5568;
-  --theme-sidebar: #2D3748;
-  --theme-text: #F7FAFC;
-  --theme-bg: #1A202C;
+  --app-accent: #4A5568;
+  --app-accent-soft: #2D3748;
+  --app-accent-hover: #3A475B;
+  --app-canvas: #1A202C;
+  --app-surface: #202938;
+  --app-surface-muted: #2D3748;
+  --app-surface-hover: #344156;
+  --app-text: #F7FAFC;
+  --app-text-muted: #CBD5E0;
+  --app-text-faint: #A0AEC0;
+  --app-border: #4A5568;
+  --app-border-strong: #5C6B80;
+  --app-focus-ring: #4A5568;
+  --app-focus-border: #A0AEC0;
+  --theme-card: var(--app-accent);
+  --theme-sidebar: var(--app-accent-soft);
+  --theme-text: var(--app-text);
+  --theme-bg: var(--app-canvas);
   --theme-secondary: #A0AEC0;
 }
 
 /* Ocean Theme Example */
 [data-theme="ocean"],
 .theme-ocean {
-  --theme-card: #4FD1C7;
-  --theme-sidebar: #B2F5EA;
-  --theme-text: #1A365D;
-  --theme-bg: #EDF2F7;
+  --app-accent: #4FD1C7;
+  --app-accent-soft: #CCFBF1;
+  --app-accent-hover: #99F6E4;
+  --app-canvas: #F0FDFA;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: #F0FDFA;
+  --app-surface-hover: #ECFEFF;
+  --app-text: #1A365D;
+  --app-text-muted: #4A667B;
+  --app-text-faint: #78909C;
+  --app-border: #CDE8E5;
+  --app-border-strong: #A7DCD7;
+  --app-focus-ring: #CCFBF1;
+  --app-focus-border: #2AAFA5;
+  --theme-card: var(--app-accent);
+  --theme-sidebar: var(--app-accent-soft);
+  --theme-text: var(--app-text);
+  --theme-bg: var(--app-canvas);
   --theme-secondary: #2C5282;
 }
 
 /* Forest Theme Example */
 [data-theme="forest"],
 .theme-forest {
-  --theme-card: #68D391;
-  --theme-sidebar: #C6F6D5;
-  --theme-text: #22543D;
-  --theme-bg: #F0FFF4;
+  --app-accent: #68D391;
+  --app-accent-soft: #DCFCE7;
+  --app-accent-hover: #BBF7D0;
+  --app-canvas: #F0FFF4;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: #F0FDF4;
+  --app-surface-hover: #ECFDF5;
+  --app-text: #22543D;
+  --app-text-muted: #527266;
+  --app-text-faint: #7A968B;
+  --app-border: #CDE7D5;
+  --app-border-strong: #A8D5B7;
+  --app-focus-ring: #DCFCE7;
+  --app-focus-border: #38A169;
+  --theme-card: var(--app-accent);
+  --theme-sidebar: var(--app-accent-soft);
+  --theme-text: var(--app-text);
+  --theme-bg: var(--app-canvas);
   --theme-secondary: #2F855A;
 }
 
@@ -224,21 +296,49 @@ input[type="number"] {
 /* Classroom workspace uses a quieter, reading-first type system. */
 .classroom-ui,
 .classroom-dialog {
-  --classroom-accent: #FFF6C4;
-  --classroom-accent-hover: #FFEF9D;
-  --classroom-line: #E6E6E0;
-  --theme-bg: #FFFDF2;
-  --theme-sidebar: #f2f2ed;
-  --theme-card: #FFF6C4;
-  --theme-text: #20231f;
-  --theme-text-important: #20231f;
+  --classroom-canvas: var(--app-canvas);
+  --classroom-surface: var(--app-surface);
+  --classroom-surface-muted: var(--app-surface-muted);
+  --classroom-surface-hover: var(--app-surface-hover);
+  --classroom-accent: var(--app-accent-soft);
+  --classroom-accent-hover: var(--app-accent-hover);
+  --classroom-text: var(--app-text);
+  --classroom-text-muted: var(--app-text-muted);
+  --classroom-text-faint: var(--app-text-faint);
+  --classroom-line: var(--app-border);
+  --classroom-line-strong: var(--app-border-strong);
+  --classroom-focus-ring: var(--app-focus-ring);
+  --classroom-focus-border: var(--app-focus-border);
+  --classroom-danger: var(--app-danger);
+  --classroom-danger-soft: var(--app-danger-soft);
+  --classroom-success: var(--app-success);
+  --classroom-success-soft: var(--app-success-soft);
+  --classroom-warning: var(--app-warning);
+  --classroom-warning-soft: var(--app-warning-soft);
+  --classroom-accent-text: var(--app-accent-text);
+  --classroom-pin: var(--app-pin);
+  --classroom-role-teacher-bg: var(--app-role-teacher-bg);
+  --classroom-role-teacher-text: var(--app-role-teacher-text);
+  --classroom-role-assistant-bg: var(--app-role-assistant-bg);
+  --classroom-role-assistant-text: var(--app-role-assistant-text);
+  --classroom-role-student-bg: var(--app-role-student-bg);
+  --classroom-role-student-text: var(--app-role-student-text);
+  --theme-bg: var(--classroom-canvas);
+  --theme-sidebar: var(--classroom-surface-muted);
+  --theme-card: var(--classroom-focus-ring);
+  --theme-text: var(--classroom-text);
+  --theme-text-important: var(--classroom-text);
   font-family: var(--font-geist-sans), Arial, sans-serif;
   letter-spacing: normal;
 }
 
 .classroom-ui {
-  color: #20231f;
-  background: #FFFDF2;
+  color: var(--classroom-text);
+  background: var(--classroom-canvas);
+}
+
+.classroom-ui.classroom-surface {
+  background: var(--classroom-surface);
 }
 
 .classroom-ui .custom-shadow,
@@ -259,16 +359,28 @@ input[type="number"] {
 }
 
 .classroom-dialog input,
-.classroom-dialog textarea {
-  border: 1px solid #e6e6e0 !important;
-  background: #f5f5f1 !important;
-  color: #20231f;
+.classroom-dialog textarea,
+.classroom-dialog select {
+  border: 1px solid var(--classroom-line) !important;
+  background: var(--classroom-surface-muted) !important;
+  color: var(--classroom-text);
   font-weight: 500;
+}
+
+.classroom-ui input:focus-visible,
+.classroom-ui textarea:focus-visible,
+.classroom-ui select:focus-visible,
+.classroom-dialog input:focus-visible,
+.classroom-dialog textarea:focus-visible,
+.classroom-dialog select:focus-visible {
+  outline: none !important;
+  border-color: var(--classroom-focus-border) !important;
+  box-shadow: 0 0 0 2px var(--classroom-focus-ring) !important;
 }
 
 .classroom-dialog [contenteditable="true"] {
   border: 0 !important;
   background: transparent !important;
-  color: #20231f;
+  color: var(--classroom-text);
   font-weight: inherit;
 }

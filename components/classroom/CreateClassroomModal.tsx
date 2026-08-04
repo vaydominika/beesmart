@@ -56,7 +56,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl">
                 <FancyCard className="flex flex-col bg-white p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
@@ -103,7 +103,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                     <div className="flex gap-3 pt-5 shrink-0">
                         <FancyButton
                             onClick={onClose}
-                            className="flex-1 bg-[#f4f4f0] text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1 bg-[var(--classroom-surface-muted)] text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                         >
                             Cancel
                         </FancyButton>

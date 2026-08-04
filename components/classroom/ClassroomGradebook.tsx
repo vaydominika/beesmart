@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { FancyCard } from "@/components/ui/fancycard";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-import { ClipboardCheck } from "lucide-react";
+import { formatDateYmd } from "@/lib/date";
+import { ChevronDown, ClipboardCheck, ClipboardList, GraduationCap } from "lucide-react";
 
 interface Props {
     classroomId: string;
@@ -19,31 +19,91 @@ interface GradebookData {
         maxPoints?: number | null;
         dueDate: string;
         grade?: { score: number; maxScore?: number | null; feedback?: string | null } | null;
+        submission?: { status: string; submittedAt?: string | null } | null;
     }>;
     tests: Array<{
         id: string;
         title: string;
-        type: string;
+        type: "TEST" | "EXAM";
         attempt?: { score: number; submittedAt: string } | null;
     }>;
     students?: Array<{
         student: { id: string; name: string; email: string; avatar?: string | null };
-        assignmentGrades: Array<{ assignmentId: string; score: number | null; maxScore: number | null }>;
-        testGrades: Array<{ testId: string; score: number | null }>;
+        assignmentGrades: Array<{
+            assignmentId: string;
+            score: number | null;
+            maxScore: number | null;
+            submissionStatus: string | null;
+            submittedAt: string | null;
+        }>;
+        testGrades: Array<{ testId: string; score: number | null; submittedAt: string | null }>;
     }>;
 }
 
-export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
+interface GradeSectionProps {
+    title: string;
+    type: "Assignment" | "Test" | "Exam";
+    detail: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: ReactNode;
+}
+
+function GradeSection({ title, type, detail, isOpen, onToggle, children }: GradeSectionProps) {
+    const WorkIcon = type === "Assignment" ? ClipboardList : GraduationCap;
+
+    return (
+        <section className="overflow-hidden rounded-xl border border-(--classroom-line) bg-(--classroom-surface)">
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-expanded={isOpen}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)"
+            >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--classroom-accent)">
+                    <WorkIcon className="h-4 w-4 text-(--classroom-text-muted)" />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-(--classroom-text)">{title}</span>
+                    <span className="mt-0.5 flex items-center gap-2 text-xs text-(--classroom-text-muted)">
+                        <span>{type}</span>
+                        <span>{detail}</span>
+                    </span>
+                </span>
+                <ChevronDown className={cn("h-4 w-4 shrink-0 text-(--classroom-text-muted) transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-180")} />
+            </button>
+            {isOpen && <div className="border-t border-(--classroom-line)">{children}</div>}
+        </section>
+    );
+}
+
+const statusLabel = (status?: string | null) => {
+    if (!status) return "Not submitted";
+    return status.replaceAll("_", " ").toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
+};
+
+export function ClassroomGradebook({ classroomId }: Props) {
     const [data, setData] = useState<GradebookData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
     const fetchGradebook = useCallback(async () => {
         try {
-            const res = await fetch(`/api/classrooms/${classroomId}/gradebook`);
-            if (!res.ok) return;
-            setData(await res.json());
+            const response = await fetch(`/api/classrooms/${classroomId}/gradebook`);
+            if (!response.ok) return;
+            const result: GradebookData = await response.json();
+            setData(result);
+            setOpenSections((current) => {
+                if (current.size > 0) return current;
+                const firstId = result.assignments[0]?.id
+                    ? `assignment:${result.assignments[0].id}`
+                    : result.tests[0]?.id
+                        ? `test:${result.tests[0].id}`
+                        : null;
+                return firstId ? new Set([firstId]) : current;
+            });
         } catch {
-            // ignore
+            // Keep the gradebook empty if loading fails.
         } finally {
             setLoading(false);
         }
@@ -53,186 +113,215 @@ export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
         fetchGradebook();
     }, [fetchGradebook]);
 
-    if (loading) {
-        return <div className="flex justify-center py-10"><Spinner /></div>;
-    }
+    const toggleSection = (sectionId: string) => {
+        setOpenSections((current) => {
+            const next = new Set(current);
+            if (next.has(sectionId)) next.delete(sectionId);
+            else next.add(sectionId);
+            return next;
+        });
+    };
+
+    if (loading) return <div className="flex justify-center py-10"><Spinner /></div>;
 
     if (!data) {
-        return <p className="text-sm text-(--theme-text) opacity-50 text-center py-10">No gradebook data available.</p>;
+        return <p className="py-10 text-center text-sm text-(--classroom-text-muted)">No gradebook data available.</p>;
     }
 
-    // Student View
-    if (data.role === "STUDENT") {
+    if (data.assignments.length === 0 && data.tests.length === 0) {
         return (
-            <div className="space-y-6">
-                {/* Assignment Grades */}
-                {data.assignments.length > 0 && (
-                    <div>
-                        <h3 className="mb-3 text-sm font-semibold text-[#20231f]">Assignment grades</h3>
-                        <div className="space-y-2">
-                            {data.assignments.map((a) => (
-                                <FancyCard key={a.id} className="bg-white p-4 border border-[#e6e6e0] shadow-none">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-bold text-(--theme-text)">{a.title}</span>
-                                        {a.grade ? (
-                                            <span className={cn(
-                                                "text-sm font-bold px-2 py-0.5 rounded-md",
-                                                a.grade.maxScore && a.grade.score / a.grade.maxScore >= 0.7
-                                                    ? "bg-green-500/20 text-green-500"
-                                                    : "bg-orange-500/20 text-orange-500"
-                                            )}>
-                                                {a.grade.score}{a.grade.maxScore ? `/${a.grade.maxScore}` : ""}
-                                            </span>
-                                        ) : (
-                                            <span className="text-xs text-(--theme-text) opacity-40">Not graded</span>
-                                        )}
-                                    </div>
-                                    {a.grade?.feedback && (
-                                        <p className="text-xs text-(--theme-text) opacity-60 mt-1 italic">&ldquo;{a.grade.feedback}&rdquo;</p>
-                                    )}
-                                </FancyCard>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Test Scores */}
-                {data.tests.length > 0 && (
-                    <div>
-                        <h3 className="mb-3 text-sm font-semibold text-[#20231f]">Test scores</h3>
-                        <div className="space-y-2">
-                            {data.tests.map((t) => (
-                                <FancyCard key={t.id} className="bg-white p-4 border border-[#e6e6e0] shadow-none">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <span className="text-sm font-bold text-(--theme-text)">{t.title}</span>
-                                            <span className="text-xs text-(--theme-text) opacity-40 ml-2 uppercase">{t.type}</span>
-                                        </div>
-                                        {t.attempt ? (
-                                            <span className={cn(
-                                                "text-sm font-bold px-2 py-0.5 rounded-md",
-                                                t.attempt.score >= 70
-                                                    ? "bg-green-500/20 text-green-500"
-                                                    : "bg-orange-500/20 text-orange-500"
-                                            )}>
-                                                {Math.round(t.attempt.score)}%
-                                            </span>
-                                        ) : (
-                                            <span className="text-xs text-(--theme-text) opacity-40">Not taken</span>
-                                        )}
-                                    </div>
-                                </FancyCard>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {data.assignments.length === 0 && data.tests.length === 0 && (
-                    <div className="rounded-xl border border-[#e6e6e0] bg-white px-5 py-12 text-center">
-                        <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
-                        <p className="mt-3 text-sm font-semibold text-[#20231f]">No grades yet</p>
-                        <p className="mt-1 text-xs text-[#858880]">Your assignment and test results will appear here.</p>
-                    </div>
-                )}
+            <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-5 py-12 text-center">
+                <ClipboardCheck className="mx-auto h-6 w-6 text-(--classroom-text-faint)" />
+                <p className="mt-3 text-sm font-semibold text-(--classroom-text)">No graded work yet</p>
+                <p className="mt-1 text-xs text-(--classroom-text-muted)">
+                    {data.role === "STUDENT" ? "Your assignments, tests, and exams will appear here." : "Assignments, tests, and exams will appear here after you create them."}
+                </p>
             </div>
         );
     }
 
-    // Teacher View
+    if (data.role === "STUDENT") {
+        return (
+            <div className="space-y-3">
+                {data.assignments.map((assignment) => {
+                    const sectionId = `assignment:${assignment.id}`;
+                    return (
+                        <GradeSection
+                            key={sectionId}
+                            title={assignment.title}
+                            type="Assignment"
+                            detail={assignment.maxPoints ? `${assignment.maxPoints} points` : "Graded"}
+                            isOpen={openSections.has(sectionId)}
+                            onToggle={() => toggleSection(sectionId)}
+                        >
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[420px] text-sm">
+                                    <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
+                                        <tr>
+                                            <th className="px-4 py-2.5 text-left">Status</th>
+                                            <th className="px-4 py-2.5 text-left">Submitted</th>
+                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{assignment.grade ? "Graded" : statusLabel(assignment.submission?.status)}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text-muted)">{assignment.submission?.submittedAt ? formatDateYmd(assignment.submission.submittedAt) : "—"}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">
+                                                {assignment.grade ? `${assignment.grade.score}${assignment.grade.maxScore ? `/${assignment.grade.maxScore}` : ""}` : "—"}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                {assignment.grade?.feedback && <p className="border-t border-(--classroom-line) px-4 py-3 text-xs text-(--classroom-text-muted)">{assignment.grade.feedback}</p>}
+                            </div>
+                        </GradeSection>
+                    );
+                })}
+
+                {data.tests.map((test) => {
+                    const sectionId = `test:${test.id}`;
+                    return (
+                        <GradeSection
+                            key={sectionId}
+                            title={test.title}
+                            type={test.type === "EXAM" ? "Exam" : "Test"}
+                            detail={test.attempt ? "Completed" : "Not completed"}
+                            isOpen={openSections.has(sectionId)}
+                            onToggle={() => toggleSection(sectionId)}
+                        >
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[360px] text-sm">
+                                    <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
+                                        <tr>
+                                            <th className="px-4 py-2.5 text-left">Status</th>
+                                            <th className="px-4 py-2.5 text-left">Completed</th>
+                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{test.attempt ? "Completed" : "Not completed"}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text-muted)">{test.attempt?.submittedAt ? formatDateYmd(test.attempt.submittedAt) : "—"}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{test.attempt ? `${Math.round(test.attempt.score)}%` : "—"}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </GradeSection>
+                    );
+                })}
+            </div>
+        );
+    }
+
     return (
-        <div>
-            {(data.assignments.length === 0 && data.tests.length === 0) ? (
-                <div className="rounded-xl border border-[#e6e6e0] bg-white px-5 py-12 text-center">
-                    <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
-                    <p className="mt-3 text-sm font-semibold text-[#20231f]">No graded work yet</p>
-                    <p className="mt-1 text-xs text-[#858880]">Assignments and tests will appear here after you create them.</p>
-                </div>
-            ) : (
-                <div className="overflow-x-auto">
-                    <FancyCard className="bg-white p-0 border border-[#e6e6e0] shadow-none">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b border-[#e2e2dc] bg-[#f7f7f4]">
-                                    <th className="sticky left-0 w-[36%] min-w-[180px] bg-[#f7f7f4] p-3 text-left align-top text-xs font-semibold text-[#555952]">
-                                        Student
-                                    </th>
-                                    {data.assignments.map((a) => (
-                                        <th key={a.id} className="min-w-[140px] p-3 align-top text-xs font-semibold text-[#555952]">
-                                            <div className="mx-auto flex w-fit max-w-[160px] flex-col items-center gap-0.5 text-center">
-                                                <span className="max-w-[160px] truncate" title={a.title}>{a.title}</span>
-                                                {a.maxPoints && <span className="text-[10px] font-medium opacity-50">/{a.maxPoints}</span>}
-                                            </div>
-                                        </th>
-                                    ))}
-                                    {data.tests.map((t) => (
-                                        <th key={t.id} className="min-w-[140px] p-3 align-top text-xs font-semibold text-[#555952]">
-                                            <div className="mx-auto flex w-fit max-w-[160px] flex-col items-center gap-0.5 text-center">
-                                                <span className="max-w-[160px] truncate" title={t.title}>{t.title}</span>
-                                                <span className="text-[10px] font-medium uppercase opacity-50">{t.type}</span>
-                                            </div>
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {!data.students?.length && (
-                                    <tr>
-                                        <td colSpan={1 + data.assignments.length + data.tests.length} className="px-5 py-12 text-center">
-                                            <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
-                                            <p className="mt-3 text-sm font-semibold text-[#20231f]">No submissions yet</p>
-                                            <p className="mt-1 text-xs text-[#858880]">Grades will appear after a student hands in an assignment or completes a test.</p>
-                                        </td>
-                                    </tr>
-                                )}
-                                {data.students?.map((s) => (
-                                    <tr key={s.student.id} className="border-b border-[#edede8] transition-colors hover:bg-[#fafaf7]">
-                                        <td className="sticky left-0 bg-white p-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f1f1ec] text-xs font-semibold text-[#4f534d]">
-                                                    {s.student.name?.[0]?.toUpperCase() || "?"}
-                                                </div>
-                                                <span className="font-bold text-(--theme-text) text-xs whitespace-nowrap">{s.student.name}</span>
-                                            </div>
-                                        </td>
-                                        {s.assignmentGrades.map((g, i) => (
-                                            <td key={i} className="text-center p-3">
-                                                {g.score !== null ? (
-                                                    <span className={cn(
-                                                        "text-xs font-bold px-1.5 py-0.5 rounded-md",
-                                                        g.maxScore && g.score / g.maxScore >= 0.7
-                                                            ? "bg-green-500/20 text-green-500"
-                                                            : "bg-orange-500/20 text-orange-500"
-                                                    )}>
-                                                        {g.score}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] text-(--theme-text) opacity-30">—</span>
-                                                )}
-                                            </td>
+        <div className="space-y-3">
+            {data.assignments.map((assignment) => {
+                const sectionId = `assignment:${assignment.id}`;
+                const rows = (data.students ?? []).flatMap((student) => {
+                    const result = student.assignmentGrades.find((grade) => grade.assignmentId === assignment.id);
+                    return result && (result.submissionStatus || result.score !== null) ? [{ student: student.student, result }] : [];
+                });
+
+                return (
+                    <GradeSection
+                        key={sectionId}
+                        title={assignment.title}
+                        type="Assignment"
+                        detail={`${rows.length} submission${rows.length === 1 ? "" : "s"}`}
+                        isOpen={openSections.has(sectionId)}
+                        onToggle={() => toggleSection(sectionId)}
+                    >
+                        {rows.length === 0 ? (
+                            <div className="px-5 py-9 text-center">
+                                <ClipboardCheck className="mx-auto h-5 w-5 text-(--classroom-text-faint)" />
+                                <p className="mt-2 text-sm font-medium text-(--classroom-text)">No one has handed in this assignment yet</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[620px] text-sm">
+                                    <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
+                                        <tr>
+                                            <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
+                                            <th className="px-4 py-2.5 text-left">Submitted</th>
+                                            <th className="px-4 py-2.5 text-left">Status</th>
+                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-(--classroom-line)">
+                                        {rows.map(({ student, result }) => (
+                                            <tr key={student.id} className="hover:bg-(--classroom-surface-hover)">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-(--classroom-surface-muted) text-xs font-semibold text-(--classroom-text-muted)">{student.name?.[0]?.toUpperCase() || "?"}</span>
+                                                        <span className="font-medium text-(--classroom-text)">{student.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.score !== null ? "Graded" : statusLabel(result.submissionStatus)}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? `${result.score}${result.maxScore ? `/${result.maxScore}` : ""}` : "—"}</td>
+                                            </tr>
                                         ))}
-                                        {s.testGrades.map((g, i) => (
-                                            <td key={i} className="text-center p-3">
-                                                {g.score !== null ? (
-                                                    <span className={cn(
-                                                        "text-xs font-bold px-1.5 py-0.5 rounded-md",
-                                                        g.score >= 70
-                                                            ? "bg-green-500/20 text-green-500"
-                                                            : "bg-orange-500/20 text-orange-500"
-                                                    )}>
-                                                        {Math.round(g.score)}%
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] text-(--theme-text) opacity-30">—</span>
-                                                )}
-                                            </td>
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </GradeSection>
+                );
+            })}
+
+            {data.tests.map((test) => {
+                const sectionId = `test:${test.id}`;
+                const rows = (data.students ?? []).flatMap((student) => {
+                    const result = student.testGrades.find((grade) => grade.testId === test.id);
+                    return result && (result.submittedAt || result.score !== null) ? [{ student: student.student, result }] : [];
+                });
+
+                return (
+                    <GradeSection
+                        key={sectionId}
+                        title={test.title}
+                        type={test.type === "EXAM" ? "Exam" : "Test"}
+                        detail={`${rows.length} completed`}
+                        isOpen={openSections.has(sectionId)}
+                        onToggle={() => toggleSection(sectionId)}
+                    >
+                        {rows.length === 0 ? (
+                            <div className="px-5 py-9 text-center">
+                                <ClipboardCheck className="mx-auto h-5 w-5 text-(--classroom-text-faint)" />
+                                <p className="mt-2 text-sm font-medium text-(--classroom-text)">No one has completed this {test.type === "EXAM" ? "exam" : "test"} yet</p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[500px] text-sm">
+                                    <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
+                                        <tr>
+                                            <th className="w-[50%] px-4 py-2.5 text-left">Student</th>
+                                            <th className="px-4 py-2.5 text-left">Completed</th>
+                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-(--classroom-line)">
+                                        {rows.map(({ student, result }) => (
+                                            <tr key={student.id} className="hover:bg-(--classroom-surface-hover)">
+                                                <td className="px-4 py-3">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-(--classroom-surface-muted) text-xs font-semibold text-(--classroom-text-muted)">{student.name?.[0]?.toUpperCase() || "?"}</span>
+                                                        <span className="font-medium text-(--classroom-text)">{student.name}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? `${Math.round(result.score)}%` : "—"}</td>
+                                            </tr>
                                         ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </FancyCard>
-                </div>
-            )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </GradeSection>
+                );
+            })}
         </div>
     );
 }

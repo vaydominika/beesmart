@@ -55,10 +55,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (isMobile) {
     return (
-      <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
+      <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
         <div className="flex flex-col flex-1 overflow-hidden min-w-0 w-full">
           <Header />
-          <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
+          <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
             <ScrollArea className="h-full">
               {children}
             </ScrollArea>
@@ -121,13 +121,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
+    <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
       <div className="hidden md:block shrink-0 h-screen">
         <LeftSidebar variant="inline" />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
-        <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
+        <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
           <ScrollArea className="h-full">
             {children}
           </ScrollArea>

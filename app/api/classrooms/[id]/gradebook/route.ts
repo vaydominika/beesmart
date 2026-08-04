@@ -31,15 +31,21 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
         if (membership.role === "STUDENT") {
             // Student sees own grades
-            const assignmentGrades = await prisma.grade.findMany({
-                where: {
-                    userId,
-                    assignedWorkId: { in: assignments.map((a: any) => a.id) },
-                },
-                include: {
-                    assignedWork: { select: { title: true, maxPoints: true } },
-                },
-            });
+            const [assignmentGrades, submissions] = await Promise.all([
+                prisma.grade.findMany({
+                    where: {
+                        userId,
+                        assignedWorkId: { in: assignments.map((a: any) => a.id) },
+                    },
+                    include: {
+                        assignedWork: { select: { title: true, maxPoints: true } },
+                    },
+                }),
+                prisma.submission.findMany({
+                    where: { userId, assignedWorkId: { in: assignments.map((a: any) => a.id) } },
+                    select: { assignedWorkId: true, status: true, submittedAt: true },
+                }),
+            ]);
 
             const testAttempts = await prisma.testAttempt.findMany({
                 where: {
@@ -56,9 +62,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 role: "STUDENT",
                 assignments: assignments.map((a: any) => {
                     const grade = assignmentGrades.find((g: any) => g.assignedWorkId === a.id);
+                    const submission = submissions.find((item: any) => item.assignedWorkId === a.id);
                     return {
                         ...a,
                         grade: grade ? { score: grade.score, maxScore: grade.maxScore, feedback: grade.feedback } : null,
+                        submission: submission ? { status: submission.status, submittedAt: submission.submittedAt } : null,
                     };
                 }),
                 tests: tests.map((t: any) => {
@@ -76,27 +84,33 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
             });
 
-            const allGrades = await prisma.grade.findMany({
-                where: {
-                    assignedWorkId: { in: assignments.map((a: any) => a.id) },
-                },
-            });
-
-            const allAttempts = await prisma.testAttempt.findMany({
-                where: {
-                    testId: { in: tests.map((t: any) => t.id) },
-                    isCompleted: true,
-                },
-            });
+            const [allGrades, allSubmissions, allAttempts] = await Promise.all([
+                prisma.grade.findMany({
+                    where: { assignedWorkId: { in: assignments.map((a: any) => a.id) } },
+                }),
+                prisma.submission.findMany({
+                    where: { assignedWorkId: { in: assignments.map((a: any) => a.id) } },
+                    select: { assignedWorkId: true, userId: true, status: true, submittedAt: true },
+                }),
+                prisma.testAttempt.findMany({
+                    where: {
+                        testId: { in: tests.map((t: any) => t.id) },
+                        isCompleted: true,
+                    },
+                }),
+            ]);
 
             const studentGrades = students.map((s: any) => ({
                 student: s.user,
                 assignmentGrades: assignments.map((a: any) => {
                     const grade = allGrades.find((g: any) => g.assignedWorkId === a.id && g.userId === s.userId);
+                    const submission = allSubmissions.find((item: any) => item.assignedWorkId === a.id && item.userId === s.userId);
                     return {
                         assignmentId: a.id,
                         score: grade?.score ?? null,
                         maxScore: grade?.maxScore ?? a.maxPoints ?? null,
+                        submissionStatus: submission?.status ?? null,
+                        submittedAt: submission?.submittedAt ?? null,
                     };
                 }),
                 testGrades: tests.map((t: any) => {
@@ -104,6 +118,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     return {
                         testId: t.id,
                         score: attempt?.score ?? null,
+                        submittedAt: attempt?.submittedAt ?? null,
                     };
                 }),
             }));

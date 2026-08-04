@@ -76,39 +76,39 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
     return (
         <div className="space-y-5 pt-1">
             {/* Class Info */}
-            <section className="rounded-xl border border-[#ecece6] bg-[#fcfcfa] p-4 md:p-5">
+            <section className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface)] p-4 md:p-5">
                 <div className="mb-4">
-                    <h2 className="text-base font-semibold text-[#20231f]">Classroom details</h2>
+                    <h2 className="text-base font-semibold text-[var(--classroom-text)]">Classroom details</h2>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Name</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Name</label>
                         <Input
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
+                            className="h-10 w-full rounded-xl border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-sm font-normal focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-[var(--classroom-focus-ring)]/20"
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Subject</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Subject</label>
                         <Input
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
-                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
+                            className="h-10 w-full rounded-xl border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-sm font-normal focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-[var(--classroom-focus-ring)]/20"
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Description</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Description</label>
                         <Input
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
+                            className="h-10 w-full rounded-xl border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-sm font-normal focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-[var(--classroom-focus-ring)]/20"
                         />
                     </div>
                     <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="mt-2 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 py-2.5 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
+                        className="mt-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 py-2.5 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
                     >
                         {saving ? "Saving…" : "Save Changes"}
                     </button>
@@ -118,7 +118,7 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
             {/* Danger Zone */}
             <section className="rounded-xl border border-red-100 bg-red-50/30 p-4 md:p-5">
                 <h2 className="text-base font-semibold text-red-700">Delete classroom</h2>
-                <p className="mb-4 mt-1 text-sm leading-5 text-[#747771]">
+                <p className="mb-4 mt-1 text-sm leading-5 text-[var(--classroom-text-muted)]">
                     Deleting this classroom will permanently remove all posts, assignments, tests, and grades.
                 </p>
                 <button

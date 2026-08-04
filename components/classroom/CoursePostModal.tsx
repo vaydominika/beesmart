@@ -84,16 +84,16 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+            <DialogContent className="classroom-dialog h-[min(35rem,calc(100dvh-1.5rem))] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-0 shadow-2xl">
                 <DialogClose
                     aria-label="Close course picker"
-                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-(--classroom-text-muted) transition-colors hover:bg-(--classroom-surface-muted) hover:text-(--classroom-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
                 >
                     <X className="h-4 w-4" />
                 </DialogClose>
 
-                <div className="flex min-h-0 flex-col p-4 md:p-5">
-                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                <div className="flex h-full min-h-0 flex-col p-4 md:p-5">
+                    <DialogHeader className="shrink-0 border-b border-(--classroom-line) pb-4 pr-10 text-left">
                         <DialogTitle className="text-xl font-semibold text-(--theme-text)">
                             Add a course
                         </DialogTitle>
@@ -102,7 +102,7 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="relative mt-3 grid shrink-0 grid-cols-2 border-b border-[#e8e8e2]" role="tablist" aria-label="Course source">
+                    <div className="relative mt-3 grid shrink-0 grid-cols-2 border-b border-(--classroom-line)" role="tablist" aria-label="Course source">
                         <span
                             aria-hidden="true"
                             className={cn(
@@ -121,8 +121,8 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                     setCourseId("");
                                 }}
                                 className={cn(
-                                    "h-10 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d2bc4a]",
-                                    source === tab ? "font-semibold text-[#20231f]" : "font-medium text-[#858880] hover:text-[#4d504a]",
+                                    "h-10 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)",
+                                    source === tab ? "font-semibold text-(--classroom-text)" : "font-medium text-(--classroom-text-muted) hover:text-(--classroom-text)",
                                 )}
                             >
                                 {tab === "all" ? "All courses" : "My courses"}
@@ -131,25 +131,25 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                     </div>
 
                     <div className="relative my-3 shrink-0">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8f928b]" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--classroom-text-muted)" />
                         <Input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search courses"
                             aria-label="Search courses"
-                            className="h-10 rounded-xl border border-[#e4e4de] bg-[#fafaf8] pl-10 pr-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-[#f2e7a9]"
+                            className="h-10 rounded-xl pl-10 pr-3 text-sm font-normal shadow-none"
                         />
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto pr-1" aria-live="polite">
                         {loading ? (
-                            <div className="flex h-52 items-center justify-center">
+                            <div className="flex h-full items-center justify-center">
                                 <Spinner />
                             </div>
                         ) : courses.length === 0 ? (
-                            <div className="flex h-52 flex-col items-center justify-center rounded-xl border border-dashed border-[#deded7] text-center">
-                                <BookOpen className="mb-2 h-5 w-5 text-[#999c95]" />
-                                <p className="text-sm font-medium text-[#4d504a]">No matching courses</p>
+                            <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-(--classroom-line-strong) text-center">
+                                <BookOpen className="mb-2 h-5 w-5 text-(--classroom-text-faint)" />
+                                <p className="text-sm font-medium text-(--classroom-text-muted)">No matching courses</p>
                             </div>
                         ) : (
                             <div className="space-y-2 pb-1">
@@ -166,10 +166,10 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                             disabled={isPrivate}
                                             title={isPrivate ? "Change this course to public or invitation-only before sharing it" : undefined}
                                             className={cn(
-                                                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]",
+                                                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)",
                                                 isSelected
-                                                    ? "border-[#e2cf68] bg-[#fff9d8]"
-                                                    : "border-[#e4e4de] bg-white hover:border-[#d8d8d1] hover:bg-[#fafaf8]",
+                                                    ? "border-(--classroom-accent-hover) bg-(--classroom-accent)"
+                                                    : "border-(--classroom-line) bg-(--classroom-surface) hover:border-(--classroom-line-strong) hover:bg-(--classroom-surface-hover)",
                                                 isPrivate && "cursor-not-allowed opacity-45",
                                             )}
                                         >
@@ -177,24 +177,24 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                                 className={cn(
                                                     "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
                                                     isSelected
-                                                        ? "border-[#eadb8b] bg-white"
-                                                        : "border-[#ecece6] bg-[#fafaf8]",
+                                                        ? "border-(--classroom-accent-hover) bg-(--classroom-surface)"
+                                                        : "border-(--classroom-line) bg-(--classroom-surface-muted)",
                                                 )}
                                             >
-                                                <BookOpen className="h-4 w-4 text-[#5f625c]" />
+                                                <BookOpen className="h-4 w-4 text-(--classroom-text-muted)" />
                                             </span>
                                             <span className="min-w-0 flex-1">
-                                                <span className="block truncate text-sm font-semibold text-[#20231f]">{course.title}</span>
-                                                <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#858880]">
+                                                <span className="block truncate text-sm font-semibold text-(--classroom-text)">{course.title}</span>
+                                                <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-(--classroom-text-muted)">
                                                     <span className="truncate">{course.creator.name}</span>
                                                     <span>{course._count?.modules ?? 0} modules</span>
-                                                    <span className="rounded-md bg-[#f1f1ed] px-1.5 py-0.5 text-[10px] font-medium capitalize text-[#666962]">
+                                                    <span className="rounded-md bg-(--classroom-surface-muted) px-1.5 py-0.5 text-[10px] font-medium capitalize text-(--classroom-text-muted)">
                                                         {course.visibility.replaceAll("_", " ").toLowerCase()}
                                                     </span>
                                                 </span>
                                             </span>
                                             {isSelected && (
-                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-[#20231f]">
+                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--app-accent) text-(--classroom-text)">
                                                     <Check className="h-3.5 w-3.5" />
                                                 </span>
                                             )}
@@ -205,11 +205,11 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                         )}
                     </div>
 
-                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-(--classroom-line) pt-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="h-9 rounded-xl border border-[#e4e4de] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                            className="h-9 rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-4 text-sm font-medium text-(--classroom-text-muted) transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
                         >
                             Cancel
                         </button>
@@ -217,7 +217,7 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                             type="button"
                             onClick={handleAdd}
                             disabled={!selectedCourse}
-                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:border-[#ecece6] disabled:bg-[#f5f5f1] disabled:text-[#a6a8a2]"
+                            className="h-9 rounded-xl border border-(--classroom-accent-hover) bg-(--classroom-accent) px-4 text-sm font-semibold text-(--classroom-text) transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring) disabled:cursor-not-allowed disabled:border-(--classroom-line) disabled:bg-(--classroom-surface-muted) disabled:text-(--classroom-text-faint)"
                         >
                             Add course
                         </button>

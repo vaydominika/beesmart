@@ -97,16 +97,16 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl">
                 <DialogClose
                     aria-label="Close assignment builder"
-                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                 >
                     <X className="h-4 w-4" />
                 </DialogClose>
 
                 <div className="flex min-h-0 flex-col p-4 md:p-5">
-                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                    <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-xl font-semibold text-(--theme-text)">
                             Create assignment
                         </DialogTitle>
@@ -118,50 +118,50 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                     <ScrollArea className="min-h-0 max-h-[calc(100dvh-11rem)] flex-1">
                         <div className="space-y-4 py-4 pl-1 pr-3">
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Title *</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Title *</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="h-10 w-full rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                    className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     placeholder="e.g. Chapter 5 homework"
                                 />
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Description</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Description</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="min-h-24 w-full resize-none rounded-xl border border-[#e4e4de] bg-[#fafaf8] p-3 text-sm font-normal text-(--theme-text) outline-none transition-shadow placeholder:text-[#969991] focus:border-[#d2bc4a] focus:ring-2 focus:ring-(--theme-card)"
+                                    className="min-h-24 w-full resize-none rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3 text-sm font-normal text-(--theme-text) outline-none transition-shadow placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-(--theme-card)"
                                     placeholder="Add instructions..."
                                 />
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Due date *</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due date *</label>
                                     <Input
                                         type="date"
                                         value={dueDate}
                                         onChange={(e) => setDueDate(e.target.value)}
-                                        className="h-10 w-full cursor-pointer rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                        className="h-10 w-full cursor-pointer rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Due time</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due time</label>
                                     <Input
                                         type="time"
                                         value={dueTime}
                                         onChange={(e) => setDueTime(e.target.value)}
-                                        className="h-10 w-full cursor-pointer rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                        className="h-10 w-full cursor-pointer rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>
                             </div>
 
                             <div className="grid items-end gap-3 sm:grid-cols-[1fr_9rem]">
                                 <div>
-                                    <span className="mb-1.5 block text-xs font-medium text-[#4d504a]">Grading</span>
-                                    <div className="flex h-10 items-center justify-between rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3">
+                                    <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Grading</span>
+                                    <div className="flex h-10 items-center justify-between rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3">
                                         <label htmlFor="assignment-graded" className="text-sm text-(--theme-text)">Graded</label>
                                         <Switch
                                             id="assignment-graded"
@@ -174,12 +174,12 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
                                 {isGraded && (
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Max points</label>
+                                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Max points</label>
                                         <Input
                                             type="number"
                                             value={maxPoints}
                                             onChange={(e) => setMaxPoints(e.target.value)}
-                                            className="h-10 w-full rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                            className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                             min="0"
                                         />
                                     </div>
@@ -187,21 +187,21 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                             </div>
 
                             <div>
-                                <span className="mb-1.5 block text-xs font-medium text-[#4d504a]">Attachments</span>
+                                <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Attachments</span>
                                 {files.length > 0 && (
                                     <div className="mb-2 space-y-2">
                                         {files.map((file, index) => (
                                             <div
                                                 key={`${file.fileName}-${index}`}
-                                                className="flex items-center gap-2 rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-(--theme-text)"
+                                                className="flex items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 py-2 text-sm text-(--theme-text)"
                                             >
-                                                <Paperclip className="h-4 w-4 shrink-0 text-[#777a73]" />
+                                                <Paperclip className="h-4 w-4 shrink-0 text-[var(--classroom-text-muted)]" />
                                                 <span className="min-w-0 flex-1 truncate">{file.fileName}</span>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFile(index)}
                                                     aria-label={`Remove ${file.fileName}`}
-                                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#eeeeea] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-hover)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                                 >
                                                     <X className="h-3.5 w-3.5" />
                                                 </button>
@@ -209,7 +209,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                         ))}
                                     </div>
                                 )}
-                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[#e4e4de] bg-white px-3 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-within:ring-2 focus-within:ring-[#d2bc4a]">
+                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-white px-3 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-border)]">
                                     <Upload className="h-4 w-4" />
                                     {uploading ? "Uploading..." : "Add files"}
                                     <input
@@ -224,11 +224,11 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                         </div>
                     </ScrollArea>
 
-                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="h-9 rounded-xl border border-[#e4e4de] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                         >
                             Cancel
                         </button>
@@ -236,7 +236,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                             type="button"
                             onClick={handleSave}
                             disabled={uploading}
-                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-9 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Add assignment
                         </button>

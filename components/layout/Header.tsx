@@ -24,14 +24,14 @@ export function Header() {
     return (
       <div className={cn(
         "px-4 py-3 border-b shrink-0",
-        isClassroom ? "bg-white border-[#e7e7e1] classroom-ui" : "bg-(--theme-card) border-(--theme-text)/10",
+        isClassroom ? "classroom-ui classroom-surface border-(--classroom-line)" : "bg-(--theme-card) border-(--theme-text)/10",
       )}>
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={toggleLeftSidebar}
             aria-label="Open menu"
-            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-[#f1f1ed]" : "hover:bg-(--theme-card)/80")}
+            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-(--classroom-surface-muted)" : "hover:bg-(--theme-card)/80")}
           >
             <PanelLeft className="h-6 w-6" />
           </button>
@@ -53,7 +53,7 @@ export function Header() {
             type="button"
             onClick={toggleRightSidebar}
             aria-label="Open calendar and profile"
-            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-[#f1f1ed]" : "hover:bg-(--theme-card)/80")}
+            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-(--classroom-surface-muted)" : "hover:bg-(--theme-card)/80")}
           >
             <PanelRight className="h-6 w-6" />
           </button>
@@ -67,7 +67,7 @@ export function Header() {
   }
 
   return (
-    <div className={cn("px-6 py-4 border-b", isClassroom ? "bg-white border-[#e7e7e1] classroom-ui" : "bg-(--theme-card) border-(--theme-text)/10")}>
+    <div className={cn("px-6 py-4 border-b", isClassroom ? "classroom-ui classroom-surface border-(--classroom-line)" : "bg-(--theme-card) border-(--theme-text)/10")}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="text-[24px] font-bold text-(--theme-text) uppercase">

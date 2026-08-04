@@ -249,16 +249,16 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
+            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
                 <DialogClose
                     aria-label="Close test builder"
-                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                 >
                     <X className="h-4 w-4" />
                 </DialogClose>
                 <FancyCard className="h-full min-h-0 bg-white p-4 shadow-none md:p-5">
                   <div className="h-full min-h-0 flex flex-col">
-                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                    <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-lg font-semibold text-(--theme-text) md:text-xl">
                             Create {testType === "EXAM" ? "Exam" : "Test"}
                         </DialogTitle>
@@ -534,18 +534,18 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
                         </div>
                     </ScrollArea>
 
-                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="h-9 rounded-xl border border-[#e6e6e0] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                         >
                             Cancel
                         </button>
                         <button
                             type="button"
                             onClick={handleSave}
-                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-9 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Add {testType === "EXAM" ? "exam" : "test"}
                         </button>
