@@ -2,18 +2,19 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { ClassroomFeed } from "@/components/classroom/ClassroomFeed";
 import { ClassroomPeople } from "@/components/classroom/ClassroomPeople";
 import { ClassroomGradebook } from "@/components/classroom/ClassroomGradebook";
 import { ClassroomSettings } from "@/components/classroom/ClassroomSettings";
-import { AnnouncementBanner } from "@/components/classroom/AnnouncementBanner";
-import { ArrowLeft, Copy, Check } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Check, ChevronLeft, Copy, FileText, QrCode, Settings, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { QRCodeSVG } from "qrcode.react";
 
-const TABS = ["Feed", "People", "Grades", "Settings"] as const;
+const TABS = ["Feed", "People", "Grades"] as const;
 type Tab = (typeof TABS)[number];
 
 interface ClassroomDetail {
@@ -21,7 +22,6 @@ interface ClassroomDetail {
     name: string;
     description?: string | null;
     code: string;
-    color?: string | null;
     subject?: string | null;
     role: string;
     creator: { id: string; name: string; avatar?: string | null };
@@ -32,23 +32,22 @@ export default function ClassroomDetailPage() {
     const router = useRouter();
     const params = useParams();
     const classroomId = params.id as string;
-
     const [classroom, setClassroom] = useState<ClassroomDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<Tab>("Feed");
     const [codeCopied, setCodeCopied] = useState(false);
+    const [qrOpen, setQrOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
 
     const fetchClassroom = useCallback(async () => {
         try {
             const res = await fetch(`/api/classrooms/${classroomId}`);
             if (!res.ok) {
-                if (res.status === 403) toast.error("You are not a member of this classroom.");
-                else if (res.status === 404) toast.error("Classroom not found.");
+                toast.error(res.status === 403 ? "You are not a member of this classroom." : "Classroom not found.");
                 router.push("/classroom");
                 return;
             }
-            const data = await res.json();
-            setClassroom(data);
+            setClassroom(await res.json());
         } catch {
             toast.error("Failed to load classroom.");
             router.push("/classroom");
@@ -61,125 +60,152 @@ export default function ClassroomDetailPage() {
         fetchClassroom();
     }, [fetchClassroom]);
 
-    const copyCode = () => {
+    const copyCode = async () => {
         if (!classroom) return;
-        navigator.clipboard.writeText(classroom.code);
+        await navigator.clipboard.writeText(classroom.code);
         setCodeCopied(true);
-        toast.success("Code copied!");
-        setTimeout(() => setCodeCopied(false), 2000);
+        toast.success("Classroom code copied.");
+        window.setTimeout(() => setCodeCopied(false), 2000);
     };
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center h-full py-20">
-                <Spinner />
-            </div>
-        );
-    }
-
+    if (loading) return <div className="classroom-ui flex min-h-full items-center justify-center bg-[#fffdf2]"><Spinner /></div>;
     if (!classroom) return null;
 
     const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
+    const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? "Teaching assistant" : classroom.role.toLowerCase();
+    const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroom.code}` : "";
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <FancyButton
-                        onClick={() => router.push("/classroom")}
-                        className="text-(--theme-text) p-2"
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </FancyButton>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            {classroom.color && (
-                                <div
-                                    className="w-4 h-4 rounded-full shrink-0"
-                                    style={{ backgroundColor: classroom.color }}
-                                />
+        <div className="classroom-ui min-h-full bg-[#fffdf2]">
+            <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-9">
+                <header className="mb-5 px-1 py-2 md:px-0 md:py-3">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
+                            {classroom.subject && (
+                                <div className="mb-1 ml-[52px] text-[11px] font-semibold uppercase tracking-[0.14em] text-[#858880] md:ml-14">
+                                    {classroom.subject}
+                                </div>
                             )}
-                            <h1 className="text-2xl md:text-4xl font-bold text-(--theme-text) uppercase tracking-tight">
-                                {classroom.name}
-                            </h1>
+                            <div className="flex min-w-0 items-center gap-3 md:gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => router.push("/classroom")}
+                                    aria-label="Back to classrooms"
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#e8dda0] bg-(--classroom-accent) text-[#4d504a] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                >
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <div className="flex min-w-0 flex-wrap items-center gap-3">
+                                    <h1 className="truncate text-2xl font-semibold leading-none tracking-[-0.035em] text-[#20231f] md:text-[38px]">{classroom.name}</h1>
+                                    <span className="shrink-0 rounded-full bg-[#f2f2ee] px-2.5 py-1 text-[11px] font-medium capitalize text-[#666962]">{roleLabel}</span>
+                                </div>
+                            </div>
+                            {classroom.description && <p className="ml-[52px] mt-2 max-w-2xl text-sm leading-relaxed text-[#6f726c] md:ml-14">{classroom.description}</p>}
+                            <div className="ml-[52px] mt-2 flex items-center gap-4 text-xs text-[#777a73] md:ml-14">
+                                <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {classroom._count.members} members</span>
+                                <span className="flex items-center gap-1.5"><FileText className="h-4 w-4" /> {classroom._count.posts} posts</span>
+                            </div>
                         </div>
-                        {classroom.subject && (
-                            <p className="text-sm text-(--theme-text) opacity-50 uppercase tracking-wider ml-7">
-                                {classroom.subject}
-                            </p>
-                        )}
-                    </div>
-                </div>
 
-                {/* Classroom code */}
-                <div className="flex items-center gap-3">
-                    {/* Code Badge */}
-                    <button
-                        onClick={copyCode}
-                        className="flex items-center gap-2 bg-(--theme-sidebar) rounded-xl corner-squircle px-3 py-2 hover:opacity-80 transition-opacity"
-                    >
-                        <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase">Code:</span>
-                        <span className="text-sm md:text-base font-bold text-(--theme-text) tracking-[0.15em]">
-                            {classroom.code}
-                        </span>
-                        {codeCopied ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                            <Copy className="h-4 w-4 text-(--theme-text) opacity-50" />
-                        )}
-                    </button>
-
-                </div>
-            </div>
-
-            {/* Active Announcements Banner */}
-            <div className="mb-6">
-                <AnnouncementBanner
-                    classroomId={classroomId}
-                    isTeacher={isTeacher}
-                />
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-                {TABS.map((tab) => {
-                    // Only show Settings to teachers
-                    if (tab === "Settings" && !isTeacher) return null;
-                    return (
-                        <FancyButton
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={cn(
-                                "text-xs md:text-base font-bold uppercase px-4 py-1.5 whitespace-nowrap",
-                                activeTab === tab
-                                    ? "bg-(--theme-card) text-(--theme-text)"
-                                    : "text-(--theme-text) opacity-60"
+                        <div className="flex shrink-0 items-center gap-2">
+                            {isTeacher && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSettingsOpen(true)}
+                                    aria-label="Open classroom settings"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e6e6e0] bg-white text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                >
+                                    <Settings className="h-4 w-4" />
+                                </button>
                             )}
-                        >
-                            {tab}
-                        </FancyButton>
-                    );
-                })}
-            </div>
+                            <button
+                                type="button"
+                                onClick={copyCode}
+                                className="flex items-center gap-2 rounded-xl border border-[#e8dda0] bg-white px-3.5 py-2.5 text-sm text-[#343730] transition-colors hover:bg-[#fffefa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                aria-label={`Copy classroom code ${classroom.code}`}
+                            >
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8b8e87]">Code</span>
+                                <span className="font-semibold tracking-[0.12em]">{classroom.code}</span>
+                                {codeCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-[#7d8079]" />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setQrOpen(true)}
+                                aria-label="Show classroom QR code"
+                                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e8dda0] bg-(--classroom-accent) text-[#4d504a] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                            >
+                                <QrCode className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                </header>
 
-            {/* Tab Content */}
-            {activeTab === "Feed" && (
-                <ClassroomFeed classroomId={classroomId} isTeacher={isTeacher} />
-            )}
-            {activeTab === "People" && (
-                <ClassroomPeople classroomId={classroomId} isTeacher={isTeacher} />
-            )}
-            {activeTab === "Grades" && (
-                <ClassroomGradebook classroomId={classroomId} isTeacher={isTeacher} />
-            )}
-            {activeTab === "Settings" && isTeacher && (
-                <ClassroomSettings
-                    classroom={classroom}
-                    onUpdated={fetchClassroom}
-                    onDeleted={() => router.push("/classroom")}
-                />
-            )}
+                <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-[#ddddd6]" aria-label="Classroom sections">
+                    {TABS.map((tab) => {
+                        return (
+                            <button
+                                key={tab}
+                                type="button"
+                                onClick={() => setActiveTab(tab)}
+                                className={cn(
+                                    "relative min-w-fit px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d2bc4a]",
+                                    activeTab === tab ? "text-[#20231f]" : "text-[#74776f] hover:text-[#20231f]",
+                                )}
+                            >
+                                {tab}
+                                {activeTab === tab && (
+                                    <motion.span
+                                        layoutId="classroom-tab-indicator"
+                                        className="absolute inset-x-3 bottom-0 h-[3px] rounded-full bg-(--classroom-accent)"
+                                        transition={{ type: "spring", stiffness: 520, damping: 38 }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                <main>
+                    {activeTab === "Feed" && <ClassroomFeed classroomId={classroomId} isTeacher={isTeacher} />}
+                    {activeTab === "People" && <ClassroomPeople classroomId={classroomId} isTeacher={isTeacher} />}
+                    {activeTab === "Grades" && <ClassroomGradebook classroomId={classroomId} isTeacher={isTeacher} />}
+                </main>
+
+                {isTeacher && (
+                    <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                        <DialogContent className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[#e6e6e0] bg-white p-5 shadow-2xl md:p-6">
+                            <DialogHeader>
+                                <DialogTitle className="text-xl font-semibold text-[#20231f]">Classroom settings</DialogTitle>
+                            </DialogHeader>
+                            <DialogClose
+                                aria-label="Close classroom settings"
+                                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                            >
+                                <X className="h-4 w-4" />
+                            </DialogClose>
+                            <ClassroomSettings
+                                classroom={classroom}
+                                onUpdated={fetchClassroom}
+                                onDeleted={() => router.push("/classroom")}
+                            />
+                        </DialogContent>
+                    </Dialog>
+                )}
+
+                <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+                    <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[#e6e6e0] bg-white p-6 shadow-2xl">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-semibold text-[#20231f]">Join {classroom.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="mt-3 flex flex-col items-center rounded-xl bg-[#f7f7f4] p-5">
+                            <div className="rounded-xl bg-white p-3">
+                                {joinUrl && <QRCodeSVG value={joinUrl} size={200} level="M" />}
+                            </div>
+                            <p className="mt-3 text-sm font-semibold tracking-[0.2em] text-[#20231f]">{classroom.code}</p>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </div>
     );
 }

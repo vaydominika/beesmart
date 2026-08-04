@@ -82,7 +82,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 endTime: dueTime || null,
                 isAllDay: !dueTime,
                 classroomId: id,
-                color: (await prisma.classroom.findUnique({ where: { id }, select: { color: true } }))?.color || null,
             },
         });
 

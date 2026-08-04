@@ -1,16 +1,12 @@
 "use client";
 
-import React from "react";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
-import { Users } from "lucide-react";
+import { ArrowUpRight, Users } from "lucide-react";
 
 interface ClassroomCardProps {
     id: string;
     name: string;
     description?: string | null;
     code: string;
-    color?: string | null;
     subject?: string | null;
     role: string;
     memberCount: number;
@@ -18,85 +14,41 @@ interface ClassroomCardProps {
     onClick: () => void;
 }
 
-const CLASSROOM_COLORS: Record<string, string> = {
-    "#FEC435": "bg-[#FEC435]",
-    "#FF6B6B": "bg-[#FF6B6B]",
-    "#4ECDC4": "bg-[#4ECDC4]",
-    "#45B7D1": "bg-[#45B7D1]",
-    "#96CEB4": "bg-[#96CEB4]",
-    "#FFEEAD": "bg-[#FFEEAD]",
-    "#DDA0DD": "bg-[#DDA0DD]",
-    "#98D8C8": "bg-[#98D8C8]",
-};
-
-export function ClassroomCard({
-    name,
-    description,
-    color,
-    subject,
-    role,
-    memberCount,
-    creatorName,
-    onClick,
-}: ClassroomCardProps) {
-    const roleLabel = role === "TEACHER" ? "Teacher" : role === "TEACHING_ASSISTANT" ? "TA" : "Student";
-    const roleBg = role === "TEACHER" ? "bg-amber-400/20 text-amber-600" : role === "TEACHING_ASSISTANT" ? "bg-purple-400/20 text-purple-600" : "bg-blue-400/20 text-blue-600";
+export function ClassroomCard({ name, description, subject, role, memberCount, onClick }: ClassroomCardProps) {
+    const roleLabel = role === "TEACHER" ? "Teacher" : role === "TEACHING_ASSISTANT" ? "Teaching assistant" : "Student";
+    const roleStyle = role === "TEACHER"
+        ? "bg-[#fff3bf] text-[#705900]"
+        : role === "TEACHING_ASSISTANT"
+            ? "bg-[#f1eafe] text-[#6842a6]"
+            : "bg-[#eaf2ff] text-[#315f9c]";
 
     return (
-        <FancyCard className="bg-(--theme-card) p-5 group cursor-pointer hover:scale-[1.02] transition-transform duration-200">
-            <div onClick={onClick} className="flex flex-col h-full min-h-[180px]">
-                {/* Color accent bar */}
-                {color && (
-                    <div
-                        className="w-full h-2 rounded-full mb-3 opacity-80"
-                        style={{ backgroundColor: color }}
-                    />
-                )}
+        <button
+            type="button"
+            onClick={onClick}
+            className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-(--classroom-accent) bg-white p-5 text-left transition-colors duration-200 hover:bg-[#fffefa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+        >
+            {subject && (
+                <span className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8a8d86]">{subject}</span>
+            )}
+            <h2 className="mb-2 text-xl font-semibold leading-tight tracking-[-0.025em] text-[#20231f]">{name}</h2>
+            {description ? (
+                <p className="mb-auto line-clamp-2 text-sm leading-relaxed text-[#6f726c]">{description}</p>
+            ) : (
+                <p className="mb-auto text-sm text-[#a0a29c]">No description</p>
+            )}
 
-                {/* Subject tag */}
-                {subject && (
-                    <span className="text-xs font-bold uppercase text-(--theme-text) opacity-50 tracking-wider mb-1">
-                        {subject}
+            <div className="mt-5 flex items-center justify-between border-t border-[#ecece6] pt-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-[#6f726c]">
+                        <Users className="h-4 w-4" /> {memberCount}
                     </span>
-                )}
-
-                {/* Title */}
-                <h3 className="text-lg md:text-xl font-bold text-(--theme-text) uppercase tracking-tight leading-tight mb-1.5">
-                    {name}
-                </h3>
-
-                {/* Description */}
-                {description && (
-                    <p className="text-sm text-(--theme-text) opacity-60 leading-snug line-clamp-2 mb-auto">
-                        {description}
-                    </p>
-                )}
-                {!description && <div className="mb-auto" />}
-
-                {/* Footer */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-(--theme-text)/10">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 text-(--theme-text) opacity-60">
-                            <Users className="h-4 w-4" />
-                            <span className="text-sm font-bold">{memberCount}</span>
-                        </div>
-                        <span className={`text-xs font-bold uppercase px-2 py-0.5 rounded-full ${roleBg}`}>
-                            {roleLabel}
-                        </span>
-                    </div>
-                    <FancyButton
-                        className="text-xs font-bold text-(--theme-text) uppercase px-3 py-0.5"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClick();
-                        }}
-                    >
-                        View
-                    </FancyButton>
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleStyle}`}>{roleLabel}</span>
                 </div>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e8dda0] bg-(--classroom-accent) text-[#343730] transition-colors group-hover:bg-(--classroom-accent-hover)">
+                    <ArrowUpRight className="h-4 w-4" />
+                </span>
             </div>
-        </FancyCard>
+        </button>
     );
 }
-
-export { CLASSROOM_COLORS };

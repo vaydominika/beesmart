@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, Check, Search } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { BookOpen, Check, Search, X } from "lucide-react";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -79,95 +84,145 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-            <DialogContent className="p-0 max-w-2xl max-h-[90vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8">
-                    <DialogHeader>
-                        <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
+            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+                <DialogClose
+                    aria-label="Close course picker"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                >
+                    <X className="h-4 w-4" />
+                </DialogClose>
+
+                <div className="flex min-h-0 flex-col p-4 md:p-5">
+                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                        <DialogTitle className="text-xl font-semibold text-(--theme-text)">
                             Add a course
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Choose a course to attach to the post.
+                        </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 mt-4">
-                        <div className="grid grid-cols-2 gap-1 bg-(--theme-sidebar) p-1 rounded-xl">
-                            {(["all", "my"] as CourseSource[]).map((tab) => (
-                                <button
-                                    key={tab}
-                                    type="button"
-                                    onClick={() => { setSource(tab); setCourseId(""); }}
-                                    className={cn(
-                                        "py-2.5 rounded-lg text-xs font-bold uppercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-text-important)",
-                                        source === tab ? "bg-(--theme-card)" : "opacity-45 hover:opacity-80",
-                                    )}
-                                >
-                                    {tab === "all" ? "All courses" : "My courses"}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 opacity-35" />
-                            <Input
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                placeholder="Search courses"
-                                aria-label="Search courses"
-                                className="pl-10 h-11 bg-(--theme-sidebar) border-0 rounded-xl"
-                            />
-                        </div>
-
-                        <div className="h-64 overflow-y-auto space-y-2 pr-1" aria-live="polite">
-                            {loading ? (
-                                <div className="h-full flex items-center justify-center"><Spinner /></div>
-                            ) : courses.length === 0 ? (
-                                <div className="h-full flex items-center justify-center text-xs font-bold uppercase text-(--theme-text) opacity-35">
-                                    No matching courses
-                                </div>
-                            ) : courses.map((course) => {
-                                const isPrivate = course.visibility === "PRIVATE";
-                                return (
-                                    <button
-                                        key={course.id}
-                                        type="button"
-                                        onClick={() => setCourseId(course.id)}
-                                        disabled={isPrivate}
-                                        title={isPrivate ? "Change this course to Public or Invitation-only before sharing it" : undefined}
-                                        className={cn(
-                                            "w-full flex gap-3 items-center text-left p-3 rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-text-important)",
-                                            courseId === course.id
-                                                ? "bg-(--theme-card) ring-2 ring-(--theme-text-important)/20"
-                                                : "bg-(--theme-sidebar) hover:-translate-y-0.5",
-                                            isPrivate && "opacity-35 cursor-not-allowed hover:translate-y-0",
-                                        )}
-                                    >
-                                        <div className="w-10 h-10 rounded-lg bg-(--theme-bg) flex items-center justify-center shrink-0">
-                                            <BookOpen className="h-4 w-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-bold text-(--theme-text) truncate">{course.title}</p>
-                                            <p className="text-[10px] text-(--theme-text) opacity-45 uppercase truncate">
-                                                {course.creator.name} · {course._count?.modules ?? 0} modules · {course.visibility.replace("_", " ")}
-                                            </p>
-                                        </div>
-                                        {courseId === course.id && <Check className="h-4 w-4 shrink-0" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        <div className="flex gap-3 pt-2">
-                            <FancyButton onClick={onClose} className="flex-1 text-(--theme-text) text-xs md:text-lg font-bold uppercase">
-                                Cancel
-                            </FancyButton>
-                            <FancyButton
-                                onClick={handleAdd}
-                                disabled={!selectedCourse}
-                                className="flex-1 text-(--theme-text) text-xs md:text-lg font-bold uppercase disabled:opacity-40 disabled:cursor-not-allowed"
+                    <div className="relative mt-3 grid shrink-0 grid-cols-2 border-b border-[#e8e8e2]" role="tablist" aria-label="Course source">
+                        <span
+                            aria-hidden="true"
+                            className={cn(
+                                "absolute bottom-[-1px] left-0 h-0.5 w-1/2 bg-(--classroom-accent) transition-transform duration-200 motion-reduce:transition-none",
+                                source === "my" && "translate-x-full",
+                            )}
+                        />
+                        {(["all", "my"] as CourseSource[]).map((tab) => (
+                            <button
+                                key={tab}
+                                type="button"
+                                role="tab"
+                                aria-selected={source === tab}
+                                onClick={() => {
+                                    setSource(tab);
+                                    setCourseId("");
+                                }}
+                                className={cn(
+                                    "h-10 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d2bc4a]",
+                                    source === tab ? "font-semibold text-[#20231f]" : "font-medium text-[#858880] hover:text-[#4d504a]",
+                                )}
                             >
-                                Add course
-                            </FancyButton>
-                        </div>
+                                {tab === "all" ? "All courses" : "My courses"}
+                            </button>
+                        ))}
                     </div>
-                </FancyCard>
+
+                    <div className="relative my-3 shrink-0">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8f928b]" />
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Search courses"
+                            aria-label="Search courses"
+                            className="h-10 rounded-xl border border-[#e4e4de] bg-[#fafaf8] pl-10 pr-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-[#f2e7a9]"
+                        />
+                    </div>
+
+                    <div className="min-h-0 flex-1 overflow-y-auto pr-1" aria-live="polite">
+                        {loading ? (
+                            <div className="flex h-52 items-center justify-center">
+                                <Spinner />
+                            </div>
+                        ) : courses.length === 0 ? (
+                            <div className="flex h-52 flex-col items-center justify-center rounded-xl border border-dashed border-[#deded7] text-center">
+                                <BookOpen className="mb-2 h-5 w-5 text-[#999c95]" />
+                                <p className="text-sm font-medium text-[#4d504a]">No matching courses</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 pb-1">
+                                {courses.map((course) => {
+                                    const isPrivate = course.visibility === "PRIVATE";
+                                    const isSelected = courseId === course.id;
+
+                                    return (
+                                        <button
+                                            key={course.id}
+                                            type="button"
+                                            onClick={() => setCourseId((currentId) => currentId === course.id ? "" : course.id)}
+                                            aria-pressed={isSelected}
+                                            disabled={isPrivate}
+                                            title={isPrivate ? "Change this course to public or invitation-only before sharing it" : undefined}
+                                            className={cn(
+                                                "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]",
+                                                isSelected
+                                                    ? "border-[#e2cf68] bg-[#fff9d8]"
+                                                    : "border-[#e4e4de] bg-white hover:border-[#d8d8d1] hover:bg-[#fafaf8]",
+                                                isPrivate && "cursor-not-allowed opacity-45",
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+                                                    isSelected
+                                                        ? "border-[#eadb8b] bg-white"
+                                                        : "border-[#ecece6] bg-[#fafaf8]",
+                                                )}
+                                            >
+                                                <BookOpen className="h-4 w-4 text-[#5f625c]" />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-sm font-semibold text-[#20231f]">{course.title}</span>
+                                                <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[#858880]">
+                                                    <span className="truncate">{course.creator.name}</span>
+                                                    <span>{course._count?.modules ?? 0} modules</span>
+                                                    <span className="rounded-md bg-[#f1f1ed] px-1.5 py-0.5 text-[10px] font-medium capitalize text-[#666962]">
+                                                        {course.visibility.replaceAll("_", " ").toLowerCase()}
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            {isSelected && (
+                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-[#20231f]">
+                                                    <Check className="h-3.5 w-3.5" />
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="h-9 rounded-xl border border-[#e4e4de] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleAdd}
+                            disabled={!selectedCourse}
+                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:border-[#ecece6] disabled:bg-[#f5f5f1] disabled:text-[#a6a8a2]"
+                        >
+                            Add course
+                        </button>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );

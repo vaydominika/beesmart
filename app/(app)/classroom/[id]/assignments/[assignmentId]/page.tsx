@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { AssignmentView } from "@/components/classroom/AssignmentView";
@@ -59,22 +57,23 @@ export default function AssignmentPage() {
     const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+        <div className="classroom-ui mx-auto max-w-5xl space-y-6 bg-[#fffdf2] p-4 md:p-8">
             {/* Header / Back Button */}
             <div className="flex items-center gap-4">
-                <FancyButton
+                <button
+                    type="button"
                     onClick={() => router.push(`/classroom/${classroomId}`)}
-                    className="text-(--theme-text) p-2"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#e6e6e0] bg-white text-[#4f534d] hover:bg-[#f1f1ec]"
                 >
                     <ArrowLeft className="h-5 w-5" />
-                </FancyButton>
+                </button>
                 <div className="flex items-center gap-3">
-                    <h1 className="text-xl md:text-2xl font-bold text-(--theme-text) tracking-tight">
+                    <h1 className="text-xl font-semibold tracking-tight text-[#20231f] md:text-2xl">
                         {classroom.name}
                     </h1>
                     <span className="text-(--theme-text) opacity-30 text-xl font-light">/</span>
-                    <h2 className="text-xl md:text-2xl font-bold text-(--theme-text) opacity-60 tracking-tight">
-                        Assignment Details
+                    <h2 className="text-xl font-medium tracking-tight text-[#777b74] md:text-2xl">
+                        Assignment details
                     </h2>
                 </div>
             </div>

@@ -6,9 +6,6 @@ import { FancyCard } from "@/components/ui/fancycard";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
-
-const COLORS = ["#FEC435", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#DDA0DD", "#FFEEAD", "#98D8C8"];
 
 interface CreateClassroomModalProps {
     open: boolean;
@@ -20,7 +17,6 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [subject, setSubject] = useState("");
-    const [color, setColor] = useState(COLORS[0]);
     const [saving, setSaving] = useState(false);
 
     const handleSave = async () => {
@@ -37,7 +33,6 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                     name: name.trim(),
                     description: description.trim() || null,
                     subject: subject.trim() || null,
-                    color,
                 }),
             });
             if (!res.ok) {
@@ -51,7 +46,6 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
             setName("");
             setDescription("");
             setSubject("");
-            setColor(COLORS[0]);
             onClose();
         } catch {
             toast.error("Failed to create classroom.");
@@ -62,8 +56,8 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-lg border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
+            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+                <FancyCard className="flex flex-col bg-white p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Create Classroom
@@ -104,32 +98,12 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                                 placeholder="Optional description"
                             />
                         </div>
-                        <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Color
-                            </label>
-                            <div className="flex gap-2">
-                                {COLORS.map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setColor(c)}
-                                        className={cn(
-                                            "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
-                                            color === c ? "border-(--theme-text) scale-110" : "border-transparent"
-                                        )}
-                                        style={{ backgroundColor: c }}
-                                        type="button"
-                                        aria-label={`Select color ${c}`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-5 shrink-0">
                         <FancyButton
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1 bg-[#f4f4f0] text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                         >
                             Cancel
                         </FancyButton>

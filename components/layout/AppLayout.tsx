@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePathname } from "next/navigation";
 
 const SCROLL_THRESHOLD = 200;
 const LAPTOP_SIDEBAR_WIDTH = 288; // w-72
@@ -24,6 +25,8 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const isClassroom = pathname.startsWith("/classroom");
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -52,10 +55,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (isMobile) {
     return (
-      <div className="flex h-screen bg-(--theme-bg) relative overflow-x-hidden">
+      <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
         <div className="flex flex-col flex-1 overflow-hidden min-w-0 w-full">
           <Header />
-          <main ref={mainRef} className="flex-1 overflow-hidden bg-(--theme-bg)">
+          <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
             <ScrollArea className="h-full">
               {children}
             </ScrollArea>
@@ -118,13 +121,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen bg-(--theme-bg) relative overflow-x-hidden">
+    <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
       <div className="hidden md:block shrink-0 h-screen">
         <LeftSidebar variant="inline" />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
-        <main ref={mainRef} className="flex-1 overflow-hidden bg-(--theme-bg)">
+        <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-[#fffdf2]" : "bg-(--theme-bg)")}>
           <ScrollArea className="h-full">
             {children}
           </ScrollArea>

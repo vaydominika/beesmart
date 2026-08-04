@@ -2,21 +2,30 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { formatDateYmd } from "@/lib/date";
 import { CreateAssignmentModal } from "@/components/classroom/CreateAssignmentModal";
 import { CreateTestModal } from "@/components/classroom/CreateTestModal";
 import { CoursePostModal, type PostCourse } from "@/components/classroom/CoursePostModal";
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
     FileText, Image, ClipboardList, GraduationCap,
-    Calendar, BookOpen, Paperclip, Send, Upload, X, ArrowRight
+    BookOpen, Paperclip, Send, Upload, X, ArrowRight,
+    MoreHorizontal, Pencil, Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { Editor } from "@/components/ui/editor";
+import type { AssignmentDraft, TestDraft } from "@/lib/classroom-post-drafts";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PostFile {
     id: string;
@@ -33,7 +42,8 @@ interface Post {
     content?: string | null;
     isPinned: boolean;
     createdAt: string;
-    author: { id: true; name: string; avatar?: string | null };
+    author: { id: string; name: string; avatar?: string | null };
+    isOwnPost: boolean;
     _count: { comments: number; files: number };
     files: PostFile[];
     assignment?: {
@@ -69,7 +79,6 @@ const POST_TYPE_ICONS: Record<string, React.ReactNode> = {
     PHOTO: <Image className="h-4 w-4" />,
     ASSIGNMENT: <ClipboardList className="h-4 w-4" />,
     TEST: <GraduationCap className="h-4 w-4" />,
-    DATE: <Calendar className="h-4 w-4" />,
     COURSE: <BookOpen className="h-4 w-4" />,
     MATERIAL: <Paperclip className="h-4 w-4" />,
 };
@@ -78,8 +87,7 @@ const POST_TYPE_LABELS: Record<string, string> = {
     TEXT: "Text",
     PHOTO: "Photo",
     ASSIGNMENT: "Assignment",
-    TEST: "Test",
-    DATE: "Date",
+    TEST: "Test / Exam",
     COURSE: "Course",
     MATERIAL: "Material",
 };
@@ -102,9 +110,15 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [posting, setPosting] = useState(false);
     const [postFiles, setPostFiles] = useState<{ fileName: string; fileUrl: string; fileType: string; fileSize: number }[]>([]);
     const [postCourse, setPostCourse] = useState<PostCourse | null>(null);
+    const [postAssignment, setPostAssignment] = useState<AssignmentDraft | null>(null);
+    const [postTest, setPostTest] = useState<TestDraft | null>(null);
     const [uploadingFiles, setUploadingFiles] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const postEditorRef = useRef<{
+        getHTML: () => string;
+        commands: { clearContent: () => void };
+    } | null>(null);
+    const editEditorRef = useRef<{
         getHTML: () => string;
         commands: { clearContent: () => void };
     } | null>(null);
@@ -113,6 +127,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
     const [testModalOpen, setTestModalOpen] = useState(false);
     const [courseModalOpen, setCourseModalOpen] = useState(false);
+    const [editingPost, setEditingPost] = useState<Post | null>(null);
+    const [editContent, setEditContent] = useState("");
+    const [savingEdit, setSavingEdit] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+    const [deletingPost, setDeletingPost] = useState(false);
 
     // Comment state
     const [expandedPost, setExpandedPost] = useState<string | null>(null);
@@ -141,16 +160,44 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         fetchPosts();
     }, [fetchPosts]);
 
+    const handleAddAssignment = (assignment: AssignmentDraft) => {
+        setPostAssignment(assignment);
+        setPostTest(null);
+        setPostCourse(null);
+    };
+
+    const handleAddTest = (test: TestDraft) => {
+        setPostTest(test);
+        setPostAssignment(null);
+        setPostCourse(null);
+    };
+
+    const handleSelectCourse = (course: PostCourse) => {
+        setPostCourse(course);
+        setPostAssignment(null);
+        setPostTest(null);
+    };
+
     const handleCreatePost = async () => {
         const editorContent = postEditorRef.current?.getHTML() ?? newPostContent;
         const isContentEmpty = !editorContent.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, " ").trim();
-        if (isContentEmpty && postFiles.length === 0 && !postCourse) {
-            toast.error("Write a message, attach a file, or add a course.");
+        if (isContentEmpty && postFiles.length === 0 && !postCourse && !postAssignment && !postTest) {
+            toast.error("Write a message or add something to the post.");
             return;
         }
         setPosting(true);
         try {
-            const postType = postCourse ? "COURSE" : postFiles.some((f) => f.fileType === "IMAGE") ? "PHOTO" : postFiles.length > 0 ? "MATERIAL" : "TEXT";
+            const postType = postTest
+                ? "TEST"
+                : postAssignment
+                    ? "ASSIGNMENT"
+                    : postCourse
+                        ? "COURSE"
+                        : postFiles.some((f) => f.fileType === "IMAGE")
+                            ? "PHOTO"
+                            : postFiles.length > 0
+                                ? "MATERIAL"
+                                : "TEXT";
             const res = await fetch(`/api/classrooms/${classroomId}/posts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -158,6 +205,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     type: postType,
                     content: isContentEmpty ? null : editorContent,
                     courseId: postCourse?.id,
+                    assignment: postAssignment,
+                    test: postTest,
                     files: postFiles.length > 0 ? postFiles : undefined,
                 }),
             });
@@ -171,6 +220,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             postEditorRef.current?.commands.clearContent();
             setPostFiles([]);
             setPostCourse(null);
+            setPostAssignment(null);
+            setPostTest(null);
             fetchPosts();
         } catch {
             toast.error("Failed to create post.");
@@ -251,6 +302,78 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         }
     };
 
+    const openPostEditor = (post: Post) => {
+        editEditorRef.current = null;
+        setEditContent(post.content || "");
+        setEditingPost(post);
+    };
+
+    const closePostEditor = () => {
+        if (savingEdit) return;
+        editEditorRef.current = null;
+        setEditingPost(null);
+        setEditContent("");
+    };
+
+    const handleEditPost = async () => {
+        if (!editingPost) return;
+        const content = editEditorRef.current?.getHTML() ?? editContent;
+        const plainText = content.replace(/<[^>]*>?/gm, "").replace(/&nbsp;/g, " ").trim();
+        const hasAttachment = Boolean(
+            editingPost.assignment || editingPost.test || editingPost.course || editingPost.files.length,
+        );
+        if (!plainText && !hasAttachment && !editingPost.title) {
+            toast.error("A post without attachments needs text.");
+            return;
+        }
+
+        setSavingEdit(true);
+        try {
+            const response = await fetch(`/api/classrooms/${classroomId}/posts/${editingPost.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: plainText ? content : null }),
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                toast.error(data.error || "Could not update the post.");
+                return;
+            }
+            toast.success("Post updated.");
+            editEditorRef.current = null;
+            setEditingPost(null);
+            setEditContent("");
+            fetchPosts();
+        } catch {
+            toast.error("Could not update the post.");
+        } finally {
+            setSavingEdit(false);
+        }
+    };
+
+    const handleDeletePost = async () => {
+        if (!postToDelete) return;
+        setDeletingPost(true);
+        try {
+            const response = await fetch(`/api/classrooms/${classroomId}/posts/${postToDelete.id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                const data = await response.json().catch(() => ({}));
+                toast.error(data.error || "Could not delete the post.");
+                return;
+            }
+            setPosts((current) => current.filter((post) => post.id !== postToDelete.id));
+            setExpandedPost((current) => current === postToDelete.id ? null : current);
+            setPostToDelete(null);
+            toast.success("Post deleted.");
+        } catch {
+            toast.error("Could not delete the post.");
+        } finally {
+            setDeletingPost(false);
+        }
+    };
+
     const handleTogglePin = async (postId: string, currentlyPinned: boolean) => {
         try {
             const res = await fetch(`/api/classrooms/${classroomId}/posts/${postId}`, {
@@ -276,7 +399,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         if (hours < 24) return `${hours}h ago`;
         const days = Math.floor(hours / 24);
         if (days < 7) return `${days}d ago`;
-        return d.toLocaleDateString();
+        return formatDateYmd(d);
     };
 
     const getDueDateBadge = (dueDate: string) => {
@@ -288,29 +411,34 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         if (hours < 24) return { text: `${hours}h left`, color: "bg-orange-500/20 text-orange-500" };
         const days = Math.floor(hours / 24);
         if (days <= 3) return { text: `${days}d left`, color: "bg-amber-500/20 text-amber-500" };
-        return { text: `Due ${due.toLocaleDateString()}`, color: "bg-blue-500/20 text-blue-500" };
+        return { text: `Due ${formatDateYmd(due)}`, color: "bg-blue-500/20 text-blue-500" };
     };
 
     return (
         <div>
             {/* Post creation */}
-            <FancyCard className="bg-(--theme-card) p-4 mb-4">
-                <div className="flex gap-3">
+            <section className="mb-5 border-b border-[#e6e6e0] pb-5" aria-label="Create a post">
+                <div className="mb-2">
+                    <h2 className="text-sm font-semibold text-[#20231f]">Share with the class</h2>
+                </div>
+                <div className="relative">
                     <Editor
                         initialValue={newPostContent}
                         onChange={setNewPostContent}
                         onReady={(editor) => { postEditorRef.current = editor; }}
-                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm"
+                        placeholder="Write an update..."
+                        className="min-h-[72px] rounded-xl border border-[#edede7] bg-white/70 p-3 pr-14 text-sm font-normal text-[#20231f] outline-none focus-within:border-[#d7c56a] focus-within:ring-2 focus-within:ring-[#f3c941]/15 prose prose-sm max-w-none"
                         id="classroom-post"
                     />
-                    <FancyButton
+                    <button
+                        type="button"
                         onClick={handleCreatePost}
                         disabled={posting || uploadingFiles}
                         aria-label="Publish post"
-                        className="text-(--theme-text) text-xs font-bold uppercase px-3 self-end disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center bg-transparent text-[#777b74] transition-colors hover:text-[#9a7d00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        <Send className="h-4 w-4" />
-                    </FancyButton>
+                        <Send className="h-5 w-5" />
+                    </button>
                 </div>
 
                 {/* Uploaded files preview */}
@@ -319,7 +447,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         {postFiles.map((f, i) => (
                             <div
                                 key={i}
-                                className="flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 text-xs font-bold text-(--theme-text) opacity-70"
+                                className="flex items-center gap-1.5 rounded-lg border border-[#e2e2dc] bg-[#f7f7f4] px-2.5 py-1.5 text-xs font-medium text-[#5e625c]"
                             >
                                 <Paperclip className="h-3 w-3" />
                                 <span className="truncate max-w-[120px]">{f.fileName}</span>
@@ -331,14 +459,59 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     </div>
                 )}
 
+                {postAssignment && (
+                    <div data-testid="draft-assignment" className="mt-3 flex items-center gap-3 rounded-xl border border-[#e2e2dc] bg-white p-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
+                            <ClipboardList className="h-4 w-4 text-[#4f534d]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-[#20231f]">{postAssignment.title}</p>
+                            <p className="truncate text-xs text-[#777b74]">
+                                Assignment · Due {formatDateYmd(postAssignment.dueDate)}
+                                {postAssignment.files.length > 0 && ` · ${postAssignment.files.length} file${postAssignment.files.length === 1 ? "" : "s"}`}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setPostAssignment(null)}
+                            aria-label={`Remove assignment ${postAssignment.title}`}
+                            className="p-1.5 opacity-45 transition-opacity hover:opacity-100"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+
+                {postTest && (
+                    <div data-testid="draft-test" className="mt-3 flex items-center gap-3 rounded-xl border border-[#e2e2dc] bg-white p-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
+                            <GraduationCap className="h-4 w-4 text-[#4f534d]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-[#20231f]">{postTest.title}</p>
+                            <p className="truncate text-xs text-[#777b74]">
+                                {postTest.type === "EXAM" ? "Exam" : "Test"} · {postTest.questions.length} question{postTest.questions.length === 1 ? "" : "s"}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setPostTest(null)}
+                            aria-label={`Remove ${postTest.type === "EXAM" ? "exam" : "test"} ${postTest.title}`}
+                            className="p-1.5 opacity-45 transition-opacity hover:opacity-100"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+
                 {postCourse && (
-                    <div className="mt-3 flex items-center gap-3 bg-(--theme-sidebar) rounded-xl p-3">
-                        <div className="w-9 h-9 rounded-lg bg-(--theme-bg) flex items-center justify-center shrink-0">
+                    <div className="mt-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-white p-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white">
                             <BookOpen className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-(--theme-text) truncate">{postCourse.title}</p>
-                            <p className="text-[10px] text-(--theme-text) opacity-45 uppercase truncate">
+                            <p className="truncate text-sm font-semibold text-[#20231f]">{postCourse.title}</p>
+                            <p className="truncate text-xs text-[#777b74]">
                                 {postCourse.creator.name} · {postCourse._count?.modules ?? 0} modules
                             </p>
                         </div>
@@ -355,18 +528,18 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                 {/* Teacher action toolbar */}
                 {isTeacher && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-(--theme-text)/10">
-                        <span className="text-[10px] font-bold text-(--theme-text) opacity-30 uppercase mr-1">Create:</span>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="mr-1 text-xs font-medium text-[#7b7e77]">Add to post</span>
                         <button
                             onClick={() => setAssignmentModalOpen(true)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity"
+                            className="flex items-center gap-1.5 rounded-lg border border-[#e8dda0] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[#4f534d] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[#20231f]"
                         >
                             <ClipboardList className="h-3.5 w-3.5" />
                             Assignment
                         </button>
                         <button
                             onClick={() => setTestModalOpen(true)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity"
+                            className="flex items-center gap-1.5 rounded-lg border border-[#e8dda0] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[#4f534d] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[#20231f]"
                         >
                             <GraduationCap className="h-3.5 w-3.5" />
                             Test / Exam
@@ -374,12 +547,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         <button
                             type="button"
                             onClick={() => setCourseModalOpen(true)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity"
+                            className="flex items-center gap-1.5 rounded-lg border border-[#e8dda0] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[#4f534d] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[#20231f]"
                         >
                             <BookOpen className="h-3.5 w-3.5" />
                             Course
                         </button>
-                        <label className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity cursor-pointer">
+                        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#e8dda0] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[#4f534d] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[#20231f]">
                             <Upload className="h-3.5 w-3.5" />
                             {uploadingFiles ? "Uploading…" : "Files"}
                             <input
@@ -396,8 +569,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                 {/* Student file upload */}
                 {!isTeacher && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-(--theme-text)/10">
-                        <label className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity cursor-pointer">
+                    <div className="mt-3 flex items-center gap-2">
+                        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#e8dda0] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[#4f534d] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[#20231f]">
                             <Upload className="h-3.5 w-3.5" />
                             {uploadingFiles ? "Uploading…" : "Attach Files"}
                             <input
@@ -410,28 +583,31 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         </label>
                     </div>
                 )}
-            </FancyCard>
+            </section>
 
             {/* Search & Filter */}
             <div className="flex gap-2 mb-4">
                 <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-(--theme-text) opacity-40" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8d87]" />
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search posts..."
-                        className="w-full bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) h-10 pl-10 pr-3"
+                        className="h-10 w-full rounded-xl border border-[#e6e6e0] bg-white pl-10 pr-3 text-sm text-[#20231f] outline-none placeholder:text-[#9a9d97] focus:border-[#c4a72f] focus:ring-2 focus:ring-[#f3c941]/20"
                     />
                 </div>
-                <FancyButton
+                <button
+                    type="button"
                     onClick={() => setShowFilters(!showFilters)}
+                    aria-label="Toggle post filters"
+                    aria-pressed={showFilters}
                     className={cn(
-                        "text-(--theme-text) text-xs font-bold uppercase px-3",
-                        showFilters && "bg-(--theme-card)"
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#e8dda0] bg-(--classroom-accent) text-[#5f625d] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]",
+                        showFilters && "bg-(--classroom-accent-hover) text-[#20231f]"
                     )}
                 >
                     <SlidersHorizontal className="h-4 w-4" />
-                </FancyButton>
+                </button>
             </div>
 
             {showFilters && (
@@ -440,7 +616,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         onClick={() => setTypeFilter("")}
                         className={cn(
                             "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
-                            !typeFilter ? "bg-(--theme-card) text-(--theme-text)" : "bg-(--theme-sidebar) text-(--theme-text) opacity-60"
+                            !typeFilter ? "border border-[#e8dda0] bg-(--classroom-accent) text-[#20231f]" : "border border-[#e6e6e0] bg-white text-[#696c66]"
                         )}
                     >
                         All
@@ -451,7 +627,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             onClick={() => setTypeFilter(key)}
                             className={cn(
                                 "text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5",
-                                typeFilter === key ? "bg-(--theme-card) text-(--theme-text)" : "bg-(--theme-sidebar) text-(--theme-text) opacity-60"
+                                typeFilter === key ? "border border-[#e8dda0] bg-(--classroom-accent) text-[#20231f]" : "border border-[#e6e6e0] bg-white text-[#696c66]"
                             )}
                         >
                             {POST_TYPE_ICONS[key]}
@@ -461,13 +637,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <div className="ml-auto flex gap-2">
                         <button
                             onClick={() => setSort("newest")}
-                            className={cn("text-xs font-bold px-3 py-1.5 rounded-lg", sort === "newest" ? "bg-(--theme-card)" : "bg-(--theme-sidebar) opacity-60")}
+                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "newest" ? "border border-[#e8dda0] bg-(--classroom-accent)" : "border border-[#e6e6e0] bg-white text-[#696c66]")}
                         >
                             Newest
                         </button>
                         <button
                             onClick={() => setSort("oldest")}
-                            className={cn("text-xs font-bold px-3 py-1.5 rounded-lg", sort === "oldest" ? "bg-(--theme-card)" : "bg-(--theme-sidebar) opacity-60")}
+                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "oldest" ? "border border-[#e8dda0] bg-(--classroom-accent)" : "border border-[#e6e6e0] bg-white text-[#696c66]")}
                         >
                             Oldest
                         </button>
@@ -485,21 +661,21 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             ) : (
                 <div className="space-y-4">
                     {posts.map((post) => (
-                        <FancyCard key={post.id} className="bg-(--theme-card) p-4">
+                        <FancyCard key={post.id} data-testid="classroom-post-card" className="bg-white p-4 md:p-5 border border-[#e6e6e0] shadow-none">
                             {/* Post Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-(--theme-sidebar) flex items-center justify-center text-xs font-bold text-(--theme-text)">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f1f1ec] text-xs font-semibold text-[#4f534d]">
                                         {post.author.name?.[0]?.toUpperCase() || "?"}
                                     </div>
                                     <div>
-                                        <span className="text-sm font-bold text-(--theme-text)">{post.author.name}</span>
-                                        <span className="text-xs text-(--theme-text) opacity-40 ml-2">{formatDate(post.createdAt)}</span>
+                                        <span className="text-sm font-semibold text-[#20231f]">{post.author.name}</span>
+                                        <span className="ml-2 text-xs text-[#898c86]">{formatDate(post.createdAt)}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {post.type !== "TEXT" && (
-                                        <span className="flex items-center gap-1 text-xs font-bold text-(--theme-text) opacity-50 bg-(--theme-sidebar) px-2 py-0.5 rounded-md">
+                                        <span className="flex items-center gap-1 rounded-md bg-(--classroom-accent) px-2 py-1 text-xs font-medium text-[#696c66]">
                                             {POST_TYPE_ICONS[post.type]}
                                             {POST_TYPE_LABELS[post.type]}
                                         </span>
@@ -515,23 +691,63 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             )}
                                             title={post.isPinned ? "Unpin" : "Pin"}
                                         >
-                                            <Pin className={cn("h-3.5 w-3.5", post.isPinned && "rotate-45 text-amber-500")} />
+                                            <Pin
+                                                className={cn("h-3.5 w-3.5", post.isPinned && "rotate-45 text-[#b5a044]")}
+                                                style={post.isPinned ? { fill: "var(--classroom-accent)" } : undefined}
+                                            />
                                         </button>
                                     ) : post.isPinned ? (
-                                        <Pin className="h-3.5 w-3.5 rotate-45 text-amber-500" aria-label="Pinned post" />
+                                        <Pin
+                                            className="h-3.5 w-3.5 rotate-45 text-[#b5a044]"
+                                            style={{ fill: "var(--classroom-accent)" }}
+                                            aria-label="Pinned post"
+                                        />
                                     ) : null}
+                                    {post.isOwnPost && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    aria-label="Post actions"
+                                                    className="flex h-8 w-8 items-center justify-center rounded-lg text-[#777b74] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                                >
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                className="classroom-dialog min-w-36 rounded-xl border border-[#e6e6e0] bg-white p-1 shadow-lg"
+                                            >
+                                                <DropdownMenuItem
+                                                    onSelect={() => openPostEditor(post)}
+                                                    className="rounded-lg px-2.5 py-2 text-sm text-[#4d504a] focus:bg-[#f5f5f1]"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onSelect={() => setPostToDelete(post)}
+                                                    className="rounded-lg px-2.5 py-2 text-sm focus:bg-red-50"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                                 </div>
                             </div>
 
                             {/* Post Title */}
                             {post.title && (
-                                <h3 className="text-base font-bold text-(--theme-text) mb-1">{post.title}</h3>
+                                <h3 className="mb-1 text-base font-semibold text-[#20231f]">{post.title}</h3>
                             )}
 
                             {/* Post Content */}
                             {post.content && (
                                 <div
-                                    className="text-sm text-(--theme-text) opacity-80 mb-3 prose dark:prose-invert prose-sm max-w-none"
+                                    className="mb-3 max-w-none text-sm leading-6 text-[#4f534d] prose prose-sm"
                                     dangerouslySetInnerHTML={{ __html: post.content }}
                                 />
                             )}
@@ -539,7 +755,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Assignment Badge */}
                             {post.assignment && (
                                 <Link href={`/classroom/${classroomId}/assignments/${post.assignment.id}`} className="block">
-                                    <div className="flex items-center gap-2 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
+                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[#fffefa]">
                                         <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
@@ -552,7 +768,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         {post.assignment.maxPoints && (
                                             <span className="text-xs font-bold text-(--theme-text) opacity-50 mr-2">{post.assignment.maxPoints} pts</span>
                                         )}
-                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
                                             <ArrowRight className="h-4 w-4 text-(--theme-text)" />
                                         </div>
                                     </div>
@@ -562,7 +778,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Test Badge */}
                             {post.test && (
                                 <Link href={`/classroom/${classroomId}/tests/${post.test.id}`} className="block">
-                                    <div className="flex items-center gap-2 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
+                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[#fffefa]">
                                         <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
@@ -571,7 +787,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             )}
                                         </div>
                                         <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase mr-2">{post.test.type}</span>
-                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
                                             <ArrowRight className="h-4 w-4 text-(--theme-text)" />
                                         </div>
                                     </div>
@@ -581,8 +797,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Course Badge */}
                             {post.course && (
                                 <Link href={`/courses/${post.course.id}`} className="block">
-                                    <div className="flex items-center gap-3 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
-                                        <div className="w-10 h-10 rounded-lg bg-(--theme-bg) flex items-center justify-center shrink-0">
+                                    <div className="group mb-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[#fffefa]">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
                                             <BookOpen className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -591,7 +807,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 {post.course.creator.name} · {post.course._count?.modules ?? 0} modules
                                             </p>
                                         </div>
-                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
                                             <ArrowRight className="h-4 w-4 text-(--theme-text)" />
                                         </div>
                                     </div>
@@ -607,7 +823,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             href={f.fileUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 text-xs font-bold text-(--theme-text) opacity-70 hover:opacity-100 transition-opacity"
+                                            className="flex items-center gap-1.5 rounded-lg border border-[#e2e2dc] bg-[#f7f7f4] px-2.5 py-1.5 text-xs font-medium text-[#5f625d] transition-colors hover:bg-[#eeeeea]"
                                         >
                                             <Paperclip className="h-3 w-3" />
                                             {f.fileName}
@@ -617,10 +833,10 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             )}
 
                             {/* Comments Toggle */}
-                            <div className="flex items-center gap-3 pt-2 border-t border-(--theme-text)/10">
+                            <div className="flex items-center gap-3 border-t border-[#e6e6e0] pt-3">
                                 <button
                                     onClick={() => handleToggleComments(post.id)}
-                                    className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 transition-opacity"
+                                    className="flex items-center gap-1.5 text-xs font-medium text-[#777b74] transition-colors hover:text-[#20231f]"
                                 >
                                     <MessageCircle className="h-3.5 w-3.5" />
                                     {post._count.comments} {post._count.comments === 1 ? "comment" : "comments"}
@@ -670,7 +886,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 }
                                             }}
                                             placeholder="Write a comment..."
-                                            className="flex-1 bg-(--theme-sidebar) rounded-lg text-xs border-0 outline-none ring-0 focus:ring-1 focus:ring-(--theme-card) h-8 px-3 normal-case"
+                                            className="h-9 flex-1 rounded-lg border border-[#e2e2dc] bg-[#f7f7f4] px-3 text-xs font-normal text-[#20231f] outline-none placeholder:text-[#999c96] focus:border-[#c4a72f] focus:ring-2 focus:ring-[#f3c941]/20"
                                         />
                                         <button
                                             onClick={() => handleAddComment(post.id)}
@@ -688,23 +904,100 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             )}
 
             {/* Modals */}
+            <Dialog open={Boolean(editingPost)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
+                <DialogContent className="classroom-dialog max-w-2xl rounded-2xl border border-[#e6e6e0] bg-white p-5 shadow-2xl md:p-6">
+                    <DialogHeader className="pr-10">
+                        <DialogTitle className="text-xl font-semibold text-[#20231f]">Edit post</DialogTitle>
+                        <DialogDescription className="sr-only">Update the text in your post.</DialogDescription>
+                    </DialogHeader>
+                    <DialogClose
+                        aria-label="Close post editor"
+                        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                    >
+                        <X className="h-4 w-4" />
+                    </DialogClose>
+                    {editingPost && (
+                        <Editor
+                            key={editingPost.id}
+                            initialValue={editingPost.content || ""}
+                            onChange={setEditContent}
+                            onReady={(editor) => { editEditorRef.current = editor; }}
+                            placeholder="Write an update..."
+                            className="min-h-36 rounded-xl border border-[#e6e6e0] bg-[#f7f7f4] p-3 text-sm font-normal text-[#20231f] outline-none focus-within:border-[#d7c56a] focus-within:ring-2 focus-within:ring-[#f3c941]/15 prose prose-sm max-w-none"
+                            id={`edit-classroom-post-${editingPost.id}`}
+                        />
+                    )}
+                    <div className="flex justify-end gap-2 border-t border-[#ecece6] pt-4">
+                        <button
+                            type="button"
+                            onClick={closePostEditor}
+                            disabled={savingEdit}
+                            className="h-9 rounded-xl border border-[#e6e6e0] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleEditPost}
+                            disabled={savingEdit}
+                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
+                        >
+                            {savingEdit ? "Saving…" : "Save changes"}
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(postToDelete)} onOpenChange={(open) => { if (!open && !deletingPost) setPostToDelete(null); }}>
+                <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[#e6e6e0] bg-white p-5 shadow-2xl md:p-6">
+                    <DialogHeader className="pr-10">
+                        <DialogTitle className="text-xl font-semibold text-[#20231f]">Delete post?</DialogTitle>
+                        <DialogDescription className="mt-2 text-sm leading-6 text-[#6f726c]">
+                            This removes the post and its comments. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogClose
+                        aria-label="Close delete confirmation"
+                        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                    >
+                        <X className="h-4 w-4" />
+                    </DialogClose>
+                    <div className="flex justify-end gap-2 pt-2">
+                        <button
+                            type="button"
+                            onClick={() => setPostToDelete(null)}
+                            disabled={deletingPost}
+                            className="h-9 rounded-xl border border-[#e6e6e0] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDeletePost}
+                            disabled={deletingPost}
+                            className="h-9 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
+                        >
+                            {deletingPost ? "Deleting…" : "Delete"}
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <CreateAssignmentModal
                 open={assignmentModalOpen}
                 onClose={() => setAssignmentModalOpen(false)}
-                classroomId={classroomId}
-                onCreated={fetchPosts}
+                onAdd={handleAddAssignment}
             />
             <CreateTestModal
                 open={testModalOpen}
                 onClose={() => setTestModalOpen(false)}
-                classroomId={classroomId}
-                onCreated={fetchPosts}
+                onAdd={handleAddTest}
             />
             <CoursePostModal
                 open={courseModalOpen}
                 selectedCourseId={postCourse?.id}
                 onClose={() => setCourseModalOpen(false)}
-                onSelect={setPostCourse}
+                onSelect={handleSelectCourse}
             />
         </div>
     );

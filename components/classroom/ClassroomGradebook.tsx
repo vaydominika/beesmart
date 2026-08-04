@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { ClipboardCheck } from "lucide-react";
 
 interface Props {
     classroomId: string;
@@ -67,10 +68,10 @@ export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
                 {/* Assignment Grades */}
                 {data.assignments.length > 0 && (
                     <div>
-                        <h3 className="text-xs font-bold text-(--theme-text) uppercase mb-3">Assignment Grades</h3>
+                        <h3 className="mb-3 text-sm font-semibold text-[#20231f]">Assignment grades</h3>
                         <div className="space-y-2">
                             {data.assignments.map((a) => (
-                                <FancyCard key={a.id} className="bg-(--theme-card) p-3">
+                                <FancyCard key={a.id} className="bg-white p-4 border border-[#e6e6e0] shadow-none">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-bold text-(--theme-text)">{a.title}</span>
                                         {a.grade ? (
@@ -98,10 +99,10 @@ export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
                 {/* Test Scores */}
                 {data.tests.length > 0 && (
                     <div>
-                        <h3 className="text-xs font-bold text-(--theme-text) uppercase mb-3">Test Scores</h3>
+                        <h3 className="mb-3 text-sm font-semibold text-[#20231f]">Test scores</h3>
                         <div className="space-y-2">
                             {data.tests.map((t) => (
-                                <FancyCard key={t.id} className="bg-(--theme-card) p-3">
+                                <FancyCard key={t.id} className="bg-white p-4 border border-[#e6e6e0] shadow-none">
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <span className="text-sm font-bold text-(--theme-text)">{t.title}</span>
@@ -127,7 +128,11 @@ export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
                 )}
 
                 {data.assignments.length === 0 && data.tests.length === 0 && (
-                    <p className="text-sm text-(--theme-text) opacity-50 text-center py-10">No grades yet.</p>
+                    <div className="rounded-xl border border-[#e6e6e0] bg-white px-5 py-12 text-center">
+                        <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
+                        <p className="mt-3 text-sm font-semibold text-[#20231f]">No grades yet</p>
+                        <p className="mt-1 text-xs text-[#858880]">Your assignment and test results will appear here.</p>
+                    </div>
                 )}
             </div>
         );
@@ -137,36 +142,53 @@ export function ClassroomGradebook({ classroomId, isTeacher }: Props) {
     return (
         <div>
             {(data.assignments.length === 0 && data.tests.length === 0) ? (
-                <p className="text-sm text-(--theme-text) opacity-50 text-center py-10">No graded items yet.</p>
+                <div className="rounded-xl border border-[#e6e6e0] bg-white px-5 py-12 text-center">
+                    <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
+                    <p className="mt-3 text-sm font-semibold text-[#20231f]">No graded work yet</p>
+                    <p className="mt-1 text-xs text-[#858880]">Assignments and tests will appear here after you create them.</p>
+                </div>
             ) : (
                 <div className="overflow-x-auto">
-                    <FancyCard className="bg-(--theme-card) p-0">
+                    <FancyCard className="bg-white p-0 border border-[#e6e6e0] shadow-none">
                         <table className="w-full text-sm">
                             <thead>
-                                <tr className="border-b border-(--theme-text)/10">
-                                    <th className="text-left p-3 text-xs font-bold text-(--theme-text) uppercase sticky left-0 bg-(--theme-card)">
+                                <tr className="border-b border-[#e2e2dc] bg-[#f7f7f4]">
+                                    <th className="sticky left-0 w-[36%] min-w-[180px] bg-[#f7f7f4] p-3 text-left align-top text-xs font-semibold text-[#555952]">
                                         Student
                                     </th>
                                     {data.assignments.map((a) => (
-                                        <th key={a.id} className="text-center p-3 text-xs font-bold text-(--theme-text) uppercase min-w-[80px]">
-                                            <div className="truncate max-w-[100px]" title={a.title}>{a.title}</div>
-                                            {a.maxPoints && <span className="text-[10px] opacity-50">/{a.maxPoints}</span>}
+                                        <th key={a.id} className="min-w-[140px] p-3 align-top text-xs font-semibold text-[#555952]">
+                                            <div className="mx-auto flex w-fit max-w-[160px] flex-col items-center gap-0.5 text-center">
+                                                <span className="max-w-[160px] truncate" title={a.title}>{a.title}</span>
+                                                {a.maxPoints && <span className="text-[10px] font-medium opacity-50">/{a.maxPoints}</span>}
+                                            </div>
                                         </th>
                                     ))}
                                     {data.tests.map((t) => (
-                                        <th key={t.id} className="text-center p-3 text-xs font-bold text-(--theme-text) uppercase min-w-[80px]">
-                                            <div className="truncate max-w-[100px]" title={t.title}>{t.title}</div>
-                                            <span className="text-[10px] opacity-50">{t.type}</span>
+                                        <th key={t.id} className="min-w-[140px] p-3 align-top text-xs font-semibold text-[#555952]">
+                                            <div className="mx-auto flex w-fit max-w-[160px] flex-col items-center gap-0.5 text-center">
+                                                <span className="max-w-[160px] truncate" title={t.title}>{t.title}</span>
+                                                <span className="text-[10px] font-medium uppercase opacity-50">{t.type}</span>
+                                            </div>
                                         </th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
+                                {!data.students?.length && (
+                                    <tr>
+                                        <td colSpan={1 + data.assignments.length + data.tests.length} className="px-5 py-12 text-center">
+                                            <ClipboardCheck className="mx-auto h-6 w-6 text-[#aaada6]" />
+                                            <p className="mt-3 text-sm font-semibold text-[#20231f]">No submissions yet</p>
+                                            <p className="mt-1 text-xs text-[#858880]">Grades will appear after a student hands in an assignment or completes a test.</p>
+                                        </td>
+                                    </tr>
+                                )}
                                 {data.students?.map((s) => (
-                                    <tr key={s.student.id} className="border-b border-(--theme-text)/5 hover:bg-(--theme-sidebar)/30">
-                                        <td className="p-3 sticky left-0 bg-(--theme-card)">
+                                    <tr key={s.student.id} className="border-b border-[#edede8] transition-colors hover:bg-[#fafaf7]">
+                                        <td className="sticky left-0 bg-white p-3">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-7 h-7 rounded-full bg-(--theme-sidebar) flex items-center justify-center text-xs font-bold text-(--theme-text)">
+                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f1f1ec] text-xs font-semibold text-[#4f534d]">
                                                     {s.student.name?.[0]?.toUpperCase() || "?"}
                                                 </div>
                                                 <span className="font-bold text-(--theme-text) text-xs whitespace-nowrap">{s.student.name}</span>

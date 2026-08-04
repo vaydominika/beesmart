@@ -5,7 +5,7 @@ type ClassroomNotificationInput = {
     actorId: string;
     title: string;
     body: string;
-    type?: "ASSIGNMENT" | "REMINDER" | "ANNOUNCEMENT" | "EVENT" | "GRADE" | "INVITATION" | "OTHER";
+    type?: "ASSIGNMENT" | "REMINDER" | "EVENT" | "GRADE" | "INVITATION" | "OTHER";
     relatedId?: string;
     relatedType?: string;
     actionUrl?: string;

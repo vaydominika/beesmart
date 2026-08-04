@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
             name: classroom.name,
             description: classroom.description,
             code: classroom.code,
-            color: classroom.color,
             subject: classroom.subject,
             role: "STUDENT",
             memberCount: classroom._count.members + 1,

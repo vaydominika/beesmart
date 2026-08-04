@@ -8,7 +8,6 @@ function timeValue(date: Date | null) {
 export async function syncTestCalendarEvent(testId: string) {
     const test = await prisma.test.findUnique({
         where: { id: testId },
-        include: { classroom: { select: { color: true } } },
     });
     if (!test?.classroomId) return null;
 
@@ -31,7 +30,6 @@ export async function syncTestCalendarEvent(testId: string) {
             isProtected: true,
             classroomId: test.classroomId,
             testId,
-            color: test.classroom?.color,
         },
         update: {
             title,
@@ -43,8 +41,7 @@ export async function syncTestCalendarEvent(testId: string) {
             isAllDay: false,
             isProtected: true,
             classroomId: test.classroomId,
-            color: test.classroom?.color,
+            color: null,
         },
     });
 }
-

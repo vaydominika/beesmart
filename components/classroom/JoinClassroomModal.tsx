@@ -48,17 +48,13 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-md border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
+            <DialogContent className="classroom-dialog max-w-md overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+                <FancyCard className="flex flex-col bg-white p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Join Classroom
                         </DialogTitle>
                     </DialogHeader>
-
-                    <p className="text-sm text-(--theme-text) opacity-60 mb-4">
-                        Enter the classroom code given by your teacher to join.
-                    </p>
 
                     <div className="space-y-3 flex-1">
                         <div>
@@ -78,7 +74,7 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
                     <div className="flex gap-3 pt-5 shrink-0">
                         <FancyButton
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1 bg-[#f4f4f0] text-(--theme-text) text-xs md:text-xl font-bold uppercase"
                         >
                             Cancel
                         </FancyButton>

@@ -3,8 +3,17 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { canAccessCourse } from "@/lib/course-access";
+import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
+import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
+import type { FileType, PostType, Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+const FILE_TYPES = new Set<FileType>(["PDF", "IMAGE", "VIDEO", "DOCUMENT", "AUDIO", "OTHER"]);
+
+function normalizeFileType(value: string): FileType {
+    return FILE_TYPES.has(value as FileType) ? value as FileType : "OTHER";
+}
 
 // GET /api/classrooms/[id]/posts — List posts with search/filter/sort
 export async function GET(req: NextRequest, ctx: RouteContext) {
@@ -73,7 +82,15 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             prisma.classroomPost.count({ where }),
         ]);
 
-        return NextResponse.json({ posts, total, page, limit });
+        return NextResponse.json({
+            posts: posts.map((post: { author: { id: string }; [key: string]: unknown }) => ({
+                ...post,
+                isOwnPost: post.author.id === userId,
+            })),
+            total,
+            page,
+            limit,
+        });
     } catch (e) {
         console.error("GET /api/classrooms/[id]/posts", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -94,13 +111,46 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const data = await req.json();
         const { type, title, content, isPinned, files } = data;
+        const assignment = data.assignment as AssignmentDraft | null | undefined;
+        const test = data.test as TestDraft | null | undefined;
         const courseId = typeof data.courseId === "string" && data.courseId ? data.courseId : null;
-        const normalizedType = courseId ? "COURSE" : (type || "TEXT");
+        const structuredAttachmentCount = Number(Boolean(assignment)) + Number(Boolean(test)) + Number(Boolean(courseId));
+        if (structuredAttachmentCount > 1) {
+            return NextResponse.json({ error: "Add one assignment, test, or course per post" }, { status: 400 });
+        }
+
+        const allowedTypes: PostType[] = ["TEXT", "PHOTO", "ASSIGNMENT", "TEST", "COURSE", "MATERIAL"];
+        const normalizedType: PostType = test
+            ? "TEST"
+            : assignment
+                ? "ASSIGNMENT"
+                : courseId
+                    ? "COURSE"
+                    : (allowedTypes.includes(type as PostType) ? type as PostType : "TEXT");
 
         // Only teachers/TAs can create certain post types
-        const teacherOnlyTypes = ["ASSIGNMENT", "TEST", "COURSE"];
+        const teacherOnlyTypes: PostType[] = ["ASSIGNMENT", "TEST", "COURSE"];
         if (teacherOnlyTypes.includes(normalizedType) && membership.role === "STUDENT") {
             return NextResponse.json({ error: "Students cannot create this type of post" }, { status: 403 });
+        }
+
+        if (assignment) {
+            const dueDate = new Date(assignment.dueDate);
+            if (!assignment.title?.trim() || !assignment.dueDate || Number.isNaN(dueDate.getTime())) {
+                return NextResponse.json({ error: "Assignment title and due date are required" }, { status: 400 });
+            }
+        }
+
+        if (test) {
+            if (!test.title?.trim() || !Array.isArray(test.questions) || test.questions.length === 0) {
+                return NextResponse.json({ error: "Test title and questions are required" }, { status: 400 });
+            }
+            if (test.closesAt && !test.opensAt) {
+                return NextResponse.json({ error: "Opening date required" }, { status: 400 });
+            }
+            if (test.opensAt && test.closesAt && new Date(test.closesAt) < new Date(test.opensAt)) {
+                return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
+            }
         }
 
         const course = courseId
@@ -113,40 +163,127 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Private courses cannot be shared. Change the course visibility first." }, { status: 403 });
         }
 
-        const plainText = typeof content === "string" ? content.replace(/<[^>]*>/g, "").trim() : "";
-        const hasFiles = Array.isArray(files) && files.length > 0;
-        if (!title?.trim() && !plainText && !hasFiles && !courseId) {
-            return NextResponse.json({ error: "Write a message, attach a file, or add a course" }, { status: 400 });
+        const postFiles = (Array.isArray(files) ? files : []) as PostAttachmentFile[];
+        const assignmentFiles = assignment?.files ?? [];
+        const allFiles = [...postFiles, ...assignmentFiles];
+        const plainText = typeof content === "string"
+            ? content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim()
+            : "";
+        const hasFiles = allFiles.length > 0;
+        if (!title?.trim() && !plainText && !hasFiles && !courseId && !assignment && !test) {
+            return NextResponse.json({ error: "Write a message or add something to the post" }, { status: 400 });
         }
 
-        const post = await prisma.classroomPost.create({
-            data: {
-                classroomId: id,
-                authorId: userId,
-                type: normalizedType,
-                title: title?.trim() || null,
-                content: content?.trim() || null,
-                isPinned: isPinned || false,
-                assignmentId: data.assignmentId || null,
-                testId: data.testId || null,
-                courseId,
-                files: files?.length
-                    ? {
-                        create: files.map((f: { fileName: string; fileUrl: string; fileType: string; fileSize: number }) => ({
-                            fileName: f.fileName,
-                            fileUrl: f.fileUrl,
-                            fileType: f.fileType,
-                            fileSize: f.fileSize,
-                        })),
-                    }
-                    : undefined,
-            },
-            include: {
-                author: { select: { id: true, name: true, avatar: true } },
-                _count: { select: { comments: true, files: true } },
-                files: true,
-            },
+        const post = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            let assignmentId = typeof data.assignmentId === "string" ? data.assignmentId : null;
+            let testId = typeof data.testId === "string" ? data.testId : null;
+
+            if (assignment) {
+                const createdAssignment = await tx.assignedWork.create({
+                    data: {
+                        title: assignment.title.trim(),
+                        description: assignment.description?.trim() || null,
+                        assignedById: userId,
+                        classroomId: id,
+                        dueDate: new Date(assignment.dueDate),
+                        dueTime: assignment.dueTime || null,
+                        isGraded: assignment.isGraded,
+                        maxPoints: assignment.maxPoints ? parseFloat(assignment.maxPoints) : null,
+                    },
+                });
+                assignmentId = createdAssignment.id;
+
+                await tx.event.create({
+                    data: {
+                        title: `Assignment: ${assignment.title.trim()}`,
+                        description: assignment.description?.trim() || null,
+                        startDate: new Date(assignment.dueDate),
+                        endDate: new Date(assignment.dueDate),
+                        startTime: assignment.dueTime || null,
+                        endTime: assignment.dueTime || null,
+                        isAllDay: !assignment.dueTime,
+                        classroomId: id,
+                    },
+                });
+            }
+
+            if (test) {
+                const createdTest = await tx.test.create({
+                    data: {
+                        title: test.title.trim(),
+                        description: test.description?.trim() || null,
+                        type: test.type === "EXAM" ? "EXAM" : "TEST",
+                        timeLimit: test.timeLimit ? parseInt(test.timeLimit) : null,
+                        passingScore: test.passingScore ? parseFloat(test.passingScore) : null,
+                        opensAt: test.opensAt ? new Date(test.opensAt) : null,
+                        closesAt: test.closesAt ? new Date(test.closesAt) : null,
+                        classroomId: id,
+                        createdById: userId,
+                        questions: {
+                            create: test.questions.map((question, questionIndex) => ({
+                                questionText: question.questionText.trim(),
+                                questionType: question.questionType,
+                                order: questionIndex,
+                                points: question.points || 1,
+                                options: question.options?.length
+                                    ? {
+                                        create: question.options.map((option, optionIndex) => ({
+                                            optionText: option.optionText.trim(),
+                                            isCorrect: Boolean(option.isCorrect),
+                                            order: optionIndex,
+                                        })),
+                                    }
+                                    : undefined,
+                                answers: question.correctAnswer
+                                    ? {
+                                        create: {
+                                            answerText: question.correctAnswer,
+                                            isCorrect: true,
+                                        },
+                                    }
+                                    : undefined,
+                            })),
+                        },
+                    },
+                });
+                testId = createdTest.id;
+            }
+
+            const createdPost = await tx.classroomPost.create({
+                data: {
+                    classroomId: id,
+                    authorId: userId,
+                    type: normalizedType,
+                    title: title?.trim() || null,
+                    content: typeof content === "string" && plainText ? content.trim() : null,
+                    isPinned: Boolean(isPinned),
+                    courseId,
+                    assignmentId,
+                    testId,
+                    files: hasFiles
+                        ? {
+                            create: allFiles.map((file) => ({
+                                fileName: file.fileName,
+                                fileUrl: file.fileUrl,
+                                fileType: normalizeFileType(file.fileType),
+                                fileSize: file.fileSize,
+                            })),
+                        }
+                        : undefined,
+                },
+                include: {
+                    author: { select: { id: true, name: true, avatar: true } },
+                    _count: { select: { comments: true, files: true } },
+                    files: true,
+                    assignment: true,
+                    test: true,
+                },
+            });
+
+            return createdPost;
         });
+
+        if (post.testId) await syncTestCalendarEvent(post.testId);
 
         if (courseId && course?.visibility === "INVITATION_ONLY") {
             const members = await prisma.classroomMember.findMany({ where: { classroomId: id }, select: { userId: true } });
@@ -156,24 +293,57 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             });
         }
 
+        const notification = post.assignment
+            ? {
+                title: "New assignment",
+                body: post.assignment.title,
+                type: "ASSIGNMENT" as const,
+                relatedId: post.assignment.id,
+                relatedType: "assignment",
+                actionUrl: `/classroom/${id}/assignments/${post.assignment.id}`,
+            }
+            : post.test
+                ? {
+                    title: `New ${post.test.type === "EXAM" ? "exam" : "test"}`,
+                    body: post.test.opensAt ? `${post.test.title} was scheduled.` : `${post.test.title} was created.`,
+                    type: "ASSIGNMENT" as const,
+                    relatedId: post.test.id,
+                    relatedType: "test",
+                    actionUrl: `/classroom/${id}/tests/${post.test.id}`,
+                }
+                : {
+                    title: courseId ? "New Classroom course" : hasFiles ? "New Classroom material" : "New Classroom post",
+                    body: plainText ? plainText.slice(0, 180) : (course?.title || title?.trim() || "A file was shared."),
+                    type: "OTHER" as const,
+                    relatedId: post.id,
+                    relatedType: "post",
+                    actionUrl: `/classroom/${id}`,
+                };
+
+        const activityType = post.assignment
+            ? "ASSIGNMENT_CREATED"
+            : post.test
+                ? (post.test.opensAt ? "TEST_SCHEDULED" : "TEST_CREATED")
+                : courseId
+                    ? "CLASSROOM_COURSE_PUBLISHED"
+                    : hasFiles
+                        ? "MATERIAL_UPLOADED"
+                        : "CLASSROOM_POST_PUBLISHED";
+        const activityRelatedId = post.assignment?.id || post.test?.id || post.id;
+
         const sideEffects = await Promise.allSettled([
             notifyClassroomMembers({
                 classroomId: id,
                 actorId: userId,
-                title: courseId ? "New Classroom course" : hasFiles ? "New Classroom material" : "New Classroom post",
-                body: plainText ? plainText.slice(0, 180) : (course?.title || title?.trim() || "A file was shared."),
-                type: hasFiles || courseId ? "OTHER" : "ANNOUNCEMENT",
-                relatedId: post.id,
-                relatedType: "post",
-                actionUrl: `/classroom/${id}`,
+                ...notification,
             }),
             recordMeaningfulActivity({
                 userId,
-                activityType: courseId ? "CLASSROOM_COURSE_PUBLISHED" : hasFiles ? "MATERIAL_UPLOADED" : "CLASSROOM_POST_PUBLISHED",
+                activityType,
                 classroomId: id,
                 courseId,
-                relatedId: post.id,
-                dedupeKey: `classroom:post:${post.id}`,
+                relatedId: activityRelatedId,
+                dedupeKey: `${activityType.toLowerCase()}:${activityRelatedId}`,
             }),
         ]);
         sideEffects.forEach((result) => {

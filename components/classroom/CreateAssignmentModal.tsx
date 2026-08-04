@@ -1,30 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
-import { Paperclip, X, Upload } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Paperclip, Upload, X } from "lucide-react";
+import type { AssignmentDraft, PostAttachmentFile } from "@/lib/classroom-post-drafts";
 
-interface UploadedFile {
-    fileName: string;
-    fileUrl: string;
-    fileType: string;
-    fileSize: number;
-}
+type UploadedFile = PostAttachmentFile;
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    classroomId: string;
-    onCreated: () => void;
+    onAdd: (assignment: AssignmentDraft) => void;
 }
 
-export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }: Props) {
+export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -33,7 +33,6 @@ export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }:
     const [maxPoints, setMaxPoints] = useState("100");
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [saving, setSaving] = useState(false);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
@@ -67,7 +66,7 @@ export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }:
         setFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!title.trim()) {
             toast.error("Please enter a title.");
             return;
@@ -76,141 +75,143 @@ export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }:
             toast.error("Please set a due date.");
             return;
         }
-        setSaving(true);
-        try {
-            const res = await fetch(`/api/classrooms/${classroomId}/assignments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim() || null,
-                    dueDate,
-                    dueTime: dueTime || null,
-                    isGraded,
-                    maxPoints: isGraded ? maxPoints : null,
-                    files,
-                }),
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                toast.error(data.error ?? "Failed to create assignment.");
-                return;
-            }
-            toast.success("Assignment created!");
-            // Reset
-            setTitle("");
-            setDescription("");
-            setDueDate("");
-            setDueTime("");
-            setIsGraded(true);
-            setMaxPoints("100");
-            setFiles([]);
-            onCreated();
-            onClose();
-        } catch {
-            toast.error("Failed to create assignment.");
-        } finally {
-            setSaving(false);
-        }
+        onAdd({
+            title: title.trim(),
+            description: description.trim() || null,
+            dueDate,
+            dueTime: dueTime || null,
+            isGraded,
+            maxPoints: isGraded ? maxPoints : null,
+            files,
+        });
+        toast.success("Assignment added to post.");
+        setTitle("");
+        setDescription("");
+        setDueDate("");
+        setDueTime("");
+        setIsGraded(true);
+        setMaxPoints("100");
+        setFiles([]);
+        onClose();
     };
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-lg max-h-[95vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
-                    <DialogHeader className="shrink-0 pb-2">
-                        <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
-                            Create Assignment
+            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl">
+                <DialogClose
+                    aria-label="Close assignment builder"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                >
+                    <X className="h-4 w-4" />
+                </DialogClose>
+
+                <div className="flex min-h-0 flex-col p-4 md:p-5">
+                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                        <DialogTitle className="text-xl font-semibold text-(--theme-text)">
+                            Create assignment
                         </DialogTitle>
+                        <DialogDescription className="sr-only">
+                            Add assignment details and attach it to the post.
+                        </DialogDescription>
                     </DialogHeader>
 
-                    <ScrollArea className="flex-1 max-h-[60vh]">
-                        <div className="space-y-3 pr-3">
+                    <ScrollArea className="min-h-0 max-h-[calc(100dvh-11rem)] flex-1">
+                        <div className="space-y-4 py-4 pl-1 pr-3">
                             <div>
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Title *</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Title *</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
-                                    placeholder="e.g. Chapter 5 Homework"
+                                    className="h-10 w-full rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                    placeholder="e.g. Chapter 5 homework"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Description</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Description</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[70px] w-full p-3 resize-none"
-                                    placeholder="Instructions for the assignment..."
+                                    className="min-h-24 w-full resize-none rounded-xl border border-[#e4e4de] bg-[#fafaf8] p-3 text-sm font-normal text-(--theme-text) outline-none transition-shadow placeholder:text-[#969991] focus:border-[#d2bc4a] focus:ring-2 focus:ring-(--theme-card)"
+                                    placeholder="Add instructions..."
                                 />
                             </div>
 
-                            <div className="flex gap-3">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Date *</label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Due date *</label>
                                     <Input
                                         type="date"
                                         value={dueDate}
                                         onChange={(e) => setDueDate(e.target.value)}
-                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
+                                        className="h-10 w-full cursor-pointer rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Due Time</label>
+                                <div>
+                                    <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Due time</label>
                                     <Input
                                         type="time"
                                         value={dueTime}
                                         onChange={(e) => setDueTime(e.target.value)}
-                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
+                                        className="h-10 w-full cursor-pointer rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs font-bold text-(--theme-text) uppercase">Graded</label>
-                                <Switch
-                                    checked={isGraded}
-                                    onCheckedChange={setIsGraded}
-                                    className="data-[state=checked]:bg-(--theme-sidebar) scale-110"
-                                />
-                            </div>
-
-                            {isGraded && (
+                            <div className="grid items-end gap-3 sm:grid-cols-[1fr_9rem]">
                                 <div>
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Max Points</label>
-                                    <Input
-                                        type="number"
-                                        value={maxPoints}
-                                        onChange={(e) => setMaxPoints(e.target.value)}
-                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-32"
-                                        min="0"
-                                    />
+                                    <span className="mb-1.5 block text-xs font-medium text-[#4d504a]">Grading</span>
+                                    <div className="flex h-10 items-center justify-between rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3">
+                                        <label htmlFor="assignment-graded" className="text-sm text-(--theme-text)">Graded</label>
+                                        <Switch
+                                            id="assignment-graded"
+                                            checked={isGraded}
+                                            onCheckedChange={setIsGraded}
+                                            className="data-[state=checked]:bg-(--classroom-accent)"
+                                        />
+                                    </div>
                                 </div>
-                            )}
 
-                            {/* File Attachments */}
+                                {isGraded && (
+                                    <div>
+                                        <label className="mb-1.5 block text-xs font-medium text-[#4d504a]">Max points</label>
+                                        <Input
+                                            type="number"
+                                            value={maxPoints}
+                                            onChange={(e) => setMaxPoints(e.target.value)}
+                                            className="h-10 w-full rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 text-sm font-normal shadow-none focus-visible:border-[#d2bc4a] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
+                                            min="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
                             <div>
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Attachments</label>
+                                <span className="mb-1.5 block text-xs font-medium text-[#4d504a]">Attachments</span>
                                 {files.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mb-2">
-                                        {files.map((f, i) => (
+                                    <div className="mb-2 space-y-2">
+                                        {files.map((file, index) => (
                                             <div
-                                                key={i}
-                                                className="flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 text-xs font-bold text-(--theme-text) opacity-70"
+                                                key={`${file.fileName}-${index}`}
+                                                className="flex items-center gap-2 rounded-xl border border-[#e4e4de] bg-[#fafaf8] px-3 py-2 text-sm text-(--theme-text)"
                                             >
-                                                <Paperclip className="h-3 w-3" />
-                                                <span className="truncate max-w-[120px]">{f.fileName}</span>
-                                                <button onClick={() => removeFile(i)} className="hover:opacity-100 opacity-50">
-                                                    <X className="h-3 w-3" />
+                                                <Paperclip className="h-4 w-4 shrink-0 text-[#777a73]" />
+                                                <span className="min-w-0 flex-1 truncate">{file.fileName}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFile(index)}
+                                                    aria-label={`Remove ${file.fileName}`}
+                                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#777a73] transition-colors hover:bg-[#eeeeea] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
                                                 </button>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                                <label className="inline-flex items-center gap-1.5 bg-(--theme-sidebar) rounded-lg px-3 py-2 text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 cursor-pointer transition-opacity">
-                                    <Upload className="h-3.5 w-3.5" />
-                                    {uploading ? "Uploading…" : "Add Files"}
+                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[#e4e4de] bg-white px-3 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-within:ring-2 focus-within:ring-[#d2bc4a]">
+                                    <Upload className="h-4 w-4" />
+                                    {uploading ? "Uploading..." : "Add files"}
                                     <input
                                         type="file"
                                         multiple
@@ -223,22 +224,24 @@ export function CreateAssignmentModal({ open, onClose, classroomId, onCreated }:
                         </div>
                     </ScrollArea>
 
-                    <div className="flex gap-3 pt-5 shrink-0">
-                        <FancyButton
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                        <button
+                            type="button"
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="h-9 rounded-xl border border-[#e4e4de] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
                         >
                             Cancel
-                        </FancyButton>
-                        <FancyButton
+                        </button>
+                        <button
+                            type="button"
                             onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            disabled={uploading}
+                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {saving ? "Creating…" : "Create Assignment"}
-                        </FancyButton>
+                            Add assignment
+                        </button>
                     </div>
-                </FancyCard>
+                </div>
             </DialogContent>
         </Dialog>
     );

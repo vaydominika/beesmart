@@ -4,9 +4,13 @@ import { PanelLeft, PanelRight } from "lucide-react";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { useLayout } from "./LayoutProvider";
 import { useIsMobile } from "./useIsMobile";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export function Header() {
   const isMobile = useIsMobile();
+  const pathname = usePathname();
+  const isClassroom = pathname.startsWith("/classroom");
   const { toggleLeftSidebar, toggleRightSidebar } = useLayout();
   const { isSessionActive, timeRemaining, currentMode } = useFocus();
 
@@ -18,13 +22,16 @@ export function Header() {
 
   if (isMobile) {
     return (
-      <div className="bg-(--theme-card) px-4 py-3 border-b border-(--theme-text)/10 shrink-0">
+      <div className={cn(
+        "px-4 py-3 border-b shrink-0",
+        isClassroom ? "bg-white border-[#e7e7e1] classroom-ui" : "bg-(--theme-card) border-(--theme-text)/10",
+      )}>
         <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={toggleLeftSidebar}
             aria-label="Open menu"
-            className="p-2 rounded-md hover:bg-(--theme-card)/80 text-(--theme-text)"
+            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-[#f1f1ed]" : "hover:bg-(--theme-card)/80")}
           >
             <PanelLeft className="h-6 w-6" />
           </button>
@@ -46,7 +53,7 @@ export function Header() {
             type="button"
             onClick={toggleRightSidebar}
             aria-label="Open calendar and profile"
-            className="p-2 rounded-md hover:bg-(--theme-card)/80 text-(--theme-text)"
+            className={cn("p-2 rounded-md text-(--theme-text)", isClassroom ? "hover:bg-[#f1f1ed]" : "hover:bg-(--theme-card)/80")}
           >
             <PanelRight className="h-6 w-6" />
           </button>
@@ -60,7 +67,7 @@ export function Header() {
   }
 
   return (
-    <div className="bg-(--theme-card) px-6 py-4 border-b border-(--theme-text)/10">
+    <div className={cn("px-6 py-4 border-b", isClassroom ? "bg-white border-[#e7e7e1] classroom-ui" : "bg-(--theme-card) border-(--theme-text)/10")}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="text-[24px] font-bold text-(--theme-text) uppercase">

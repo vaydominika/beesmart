@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 type CourseSource = "my" | "all";
 type Course = { id: string; title: string; description?: string | null; visibility: string; creator: { name: string }; _count?: { modules: number } };
-type Classroom = { id: string; name: string; role: string; color?: string | null };
+type Classroom = { id: string; name: string; role: string };
 
 export function AddCourseToClassroomModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     const [source, setSource] = useState<CourseSource>("my");

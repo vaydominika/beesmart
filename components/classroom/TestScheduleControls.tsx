@@ -59,7 +59,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
     };
 
     return (
-        <FancyCard className="bg-(--theme-card) p-4">
+        <FancyCard className="border border-[#e6e6e0] bg-white p-4 shadow-none">
             <div className="flex items-center gap-2 mb-3">
                 <CalendarClock className="h-4 w-4" />
                 <h3 className="text-sm font-bold uppercase text-(--theme-text)">Schedule & sync</h3>
@@ -76,4 +76,3 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
         </FancyCard>
     );
 }
-

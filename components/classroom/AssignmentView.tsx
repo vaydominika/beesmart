@@ -6,6 +6,7 @@ import { FancyButton } from "@/components/ui/fancybutton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { formatDateYmd } from "@/lib/date";
 import {
     Calendar, Clock, FileText, Upload, Paperclip,
     CheckCircle2, XCircle, Send, Plus, X
@@ -210,8 +211,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     return (
         <div className="space-y-6">
             {/* Header: Assignment Details */}
-            <FancyCard className="bg-(--theme-card) p-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 rounded-l-2xl"></div>
+            <FancyCard className="relative overflow-hidden border border-[#e6e6e0] bg-white p-6 shadow-none">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-(--theme-text) mb-2">{displayAssignment.title}</h1>
@@ -223,7 +223,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         <div className="flex flex-wrap items-center gap-4">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">
                                 <Calendar className="h-4 w-4" />
-                                <span>Due: {new Date(displayAssignment.dueDate).toLocaleDateString()}</span>
+                                <span>Due: {formatDateYmd(displayAssignment.dueDate)}</span>
                                 {displayAssignment.dueTime && <span>at {displayAssignment.dueTime}</span>}
                             </div>
                             {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
@@ -243,7 +243,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Submission Form */}
                     <div className="lg:col-span-2 space-y-4">
-                        <FancyCard className="bg-(--theme-card) p-6">
+                        <FancyCard className="border border-[#e6e6e0] bg-white p-6 shadow-none">
                             <h2 className="text-lg font-bold text-(--theme-text) mb-4">Your Work</h2>
 
                             {mySubmission && mySubmission.status !== "PENDING" ? (
@@ -259,7 +259,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                             <span>{mySubmission.status}</span>
                                         </div>
                                         <span className="text-xs opacity-70">
-                                            Submitted on {new Date(mySubmission.submittedAt).toLocaleDateString()}
+                                            Submitted on {formatDateYmd(mySubmission.submittedAt)}
                                         </span>
                                     </div>
 
@@ -332,7 +332,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                     {/* Right Col: Grading Status */}
                     <div className="space-y-4">
-                        <FancyCard className="bg-(--theme-card) p-6">
+                        <FancyCard className="border border-[#e6e6e0] bg-white p-6 shadow-none">
                             <h3 className="text-xs font-bold text-(--theme-text) opacity-50 uppercase tracking-widest mb-4">Grade Status</h3>
 
                             {mySubmission?.status === "GRADED" ? (
@@ -360,7 +360,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Student List */}
                     <div className="lg:col-span-1 space-y-4">
-                        <FancyCard className="bg-(--theme-card) p-4 flex flex-col h-[600px]">
+                        <FancyCard className="flex h-[600px] flex-col border border-[#e6e6e0] bg-white p-4 shadow-none">
                             <h3 className="text-sm font-bold text-(--theme-text) mb-4 uppercase tracking-wider">Submissions</h3>
 
                             <ScrollArea className="flex-1 space-y-1 -mx-2 px-2">
@@ -415,7 +415,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                     {/* Right Col: Grading Canvas */}
                     <div className="lg:col-span-2 space-y-4">
-                        <FancyCard className="bg-(--theme-card) p-6 h-[600px] flex flex-col">
+                        <FancyCard className="flex h-[600px] flex-col border border-[#e6e6e0] bg-white p-6 shadow-none">
                             {!selectedStudentId ? (
                                 <div className="flex-1 flex flex-col items-center justify-center opacity-30">
                                     <FileText className="h-16 w-16 mb-4" />
@@ -490,7 +490,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                             value={gradeFeedback}
                                                             onChange={e => setGradeFeedback(e.target.value)}
                                                             placeholder="Add teacher feedback..."
-                                                            className="w-full h-full min-h-[80px] bg-(--theme-card) px-3 py-2 rounded-lg text-sm font-bold border-0 outline-none resize-none"
+                                                            className="h-full min-h-[80px] w-full resize-none rounded-lg border border-[#e6e6e0] bg-[#f7f7f4] px-3 py-2 text-sm font-normal outline-none"
                                                         ></textarea>
                                                     </div>
                                                     <div className="w-full md:w-48 flex flex-col gap-2">

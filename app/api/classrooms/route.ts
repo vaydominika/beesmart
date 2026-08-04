@@ -34,7 +34,6 @@ export async function GET() {
             name: m.classroom.name,
             description: m.classroom.description,
             code: m.classroom.code,
-            color: m.classroom.color,
             subject: m.classroom.subject,
             role: m.role,
             memberCount: m.classroom._count.members,
@@ -55,7 +54,7 @@ export async function POST(req: NextRequest) {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const { name, description, subject, color } = await req.json();
+        const { name, description, subject } = await req.json();
         if (!name?.trim()) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
         }
@@ -73,7 +72,6 @@ export async function POST(req: NextRequest) {
                 name: name.trim(),
                 description: description?.trim() || null,
                 subject: subject?.trim() || null,
-                color: color || null,
                 code,
                 createdById: userId,
                 members: {
@@ -88,7 +86,6 @@ export async function POST(req: NextRequest) {
             name: classroom.name,
             description: classroom.description,
             code: classroom.code,
-            color: classroom.color,
             subject: classroom.subject,
             role: "TEACHER",
             memberCount: classroom._count.members,

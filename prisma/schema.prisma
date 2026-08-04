@@ -52,7 +52,6 @@ enum ProfileVisibility {
 enum NotificationType {
   ASSIGNMENT
   REMINDER
-  ANNOUNCEMENT
   EVENT
   GRADE
   INVITATION
@@ -88,19 +87,11 @@ enum ReportStatus {
   DISMISSED
 }
 
-enum AnnouncementPriority {
-  INFO
-  IMPORTANT
-  WARNING
-  URGENT
-}
-
 enum PostType {
   TEXT
   PHOTO
   ASSIGNMENT
   TEST
-  DATE
   COURSE
   MATERIAL
 }
@@ -144,7 +135,6 @@ model User {
   schedules              Schedule[]
   reminders              Reminder[]
   notifications          Notification[]
-  announcements          Announcement[]
   gradesAsStudent        Grade[]                 @relation("StudentGrade")
   gradesAsGrader         Grade[]                 @relation("Grader")
   streak                 Streak?
@@ -212,7 +202,6 @@ model Classroom {
   name        String
   description String?
   code        String   @unique
-  color       String?
   subject     String?
   createdById String
   createdAt   DateTime @default(now())
@@ -226,7 +215,6 @@ model Classroom {
   assignedWork  AssignedWork[]
   schedules     Schedule[]
   invitations   ClassroomInvitation[]
-  announcements Announcement[]
   posts         ClassroomPost[]
   tests         Test[]
   courseLinks   ClassroomCourse[]
@@ -278,7 +266,6 @@ model Course {
   tags           CourseTag[]
   bookmarks      Bookmark[]
   certificates   Certificate[]
-  announcements  Announcement[]
   grades         Grade[]
   ratings        CourseRating[]
   reports        Report[]
@@ -750,31 +737,6 @@ model ActivityRecord {
   @@index([activityType])
   @@index([classroomId])
   @@index([courseId])
-  @@index([createdAt])
-}
-
-model Announcement {
-  id          String               @id @default(cuid())
-  classroomId String?
-  courseId    String?
-  authorId    String
-  title       String
-  body        String               @db.Text
-  priority    AnnouncementPriority @default(INFO)
-  publishAt   DateTime?
-  expiresAt   DateTime?
-  isPinned    Boolean              @default(false)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-
-  // Relationships
-  classroom Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  course    Course?    @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([classroomId])
-  @@index([courseId])
-  @@index([authorId])
   @@index([createdAt])
 }
 

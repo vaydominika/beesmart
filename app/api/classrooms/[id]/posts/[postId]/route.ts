@@ -52,7 +52,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        return NextResponse.json(post);
+        return NextResponse.json({ ...post, isOwnPost: post.author.id === userId });
     } catch (e) {
         console.error("GET /api/classrooms/[id]/posts/[postId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -71,22 +71,45 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-        const post = await prisma.classroomPost.findUnique({ where: { id: postId } });
+        const post = await prisma.classroomPost.findUnique({
+            where: { id: postId },
+            include: { _count: { select: { files: true } } },
+        });
         if (!post || post.classroomId !== id) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        // Only author or teacher can edit
-        if (post.authorId !== userId && membership.role !== "TEACHER") {
-            return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-        }
-
         const data = await req.json();
         const updateData: Record<string, unknown> = {};
-        if (data.title !== undefined) updateData.title = data.title;
-        if (data.content !== undefined) updateData.content = data.content;
+        const editsContent = data.title !== undefined || data.content !== undefined;
+        if (editsContent && post.authorId !== userId) {
+            return NextResponse.json({ error: "Only the author can edit this post" }, { status: 403 });
+        }
+
+        if (data.title !== undefined) {
+            updateData.title = typeof data.title === "string" ? data.title.trim() || null : null;
+        }
+        if (data.content !== undefined) {
+            updateData.content = typeof data.content === "string" ? data.content.trim() || null : null;
+        }
         if (data.isPinned !== undefined && membership.role === "TEACHER") {
-            updateData.isPinned = data.isPinned;
+            updateData.isPinned = Boolean(data.isPinned);
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+        }
+
+        if (editsContent) {
+            const nextTitle = data.title !== undefined ? updateData.title : post.title;
+            const nextContent = data.content !== undefined ? updateData.content : post.content;
+            const plainText = typeof nextContent === "string"
+                ? nextContent.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim()
+                : "";
+            const hasAttachment = Boolean(post.assignmentId || post.testId || post.courseId || post._count.files);
+            if (!nextTitle && !plainText && !hasAttachment) {
+                return NextResponse.json({ error: "A post without attachments needs text" }, { status: 400 });
+            }
         }
 
         const updated = await prisma.classroomPost.update({

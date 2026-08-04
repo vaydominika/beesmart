@@ -1,16 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
-import { QRCodeSVG } from "qrcode.react";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmationModal } from "@/components/calendar/DeleteConfirmationModal";
-
-const COLORS = ["#FEC435", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#DDA0DD", "#FFEEAD", "#98D8C8"];
 
 interface Props {
     classroom: {
@@ -18,7 +12,6 @@ interface Props {
         name: string;
         description?: string | null;
         code: string;
-        color?: string | null;
         subject?: string | null;
     };
     onUpdated: () => void;
@@ -29,12 +22,9 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
     const [name, setName] = useState(classroom.name);
     const [description, setDescription] = useState(classroom.description || "");
     const [subject, setSubject] = useState(classroom.subject || "");
-    const [color, setColor] = useState(classroom.color || COLORS[0]);
     const [saving, setSaving] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
-
-    const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroom.code}` : "";
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -50,7 +40,6 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                     name: name.trim(),
                     description: description.trim() || null,
                     subject: subject.trim() || null,
-                    color,
                 }),
             });
             if (!res.ok) {
@@ -85,88 +74,61 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
     };
 
     return (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-5 pt-1">
             {/* Class Info */}
-            <FancyCard className="bg-(--theme-card) p-4 md:p-6">
-                <h3 className="text-sm font-bold text-(--theme-text) uppercase mb-4">Classroom Details</h3>
-                <div className="space-y-3">
+            <section className="rounded-xl border border-[#ecece6] bg-[#fcfcfa] p-4 md:p-5">
+                <div className="mb-4">
+                    <h2 className="text-base font-semibold text-[#20231f]">Classroom details</h2>
+                </div>
+                <div className="space-y-4">
                     <div>
-                        <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Name</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Name</label>
                         <Input
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
+                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Subject</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Subject</label>
                         <Input
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
-                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
+                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Description</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[#595d57]">Description</label>
                         <Input
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
+                            className="h-10 w-full rounded-xl border-[#e6e6e0] bg-[#f7f7f4] text-sm font-normal focus-visible:border-[#c4a72f] focus-visible:ring-[#f3c941]/20"
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Color</label>
-                        <div className="flex gap-2">
-                            {COLORS.map((c) => (
-                                <button
-                                    key={c}
-                                    onClick={() => setColor(c)}
-                                    className={cn(
-                                        "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
-                                        color === c ? "border-(--theme-text) scale-110" : "border-transparent"
-                                    )}
-                                    style={{ backgroundColor: c }}
-                                    type="button"
-                                />
-                            ))}
-                        </div>
-                    </div>
-                    <FancyButton
+                    <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="text-(--theme-text) text-xs md:text-base font-bold uppercase px-4 py-1.5 mt-2"
+                        className="mt-2 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 py-2.5 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
                     >
                         {saving ? "Saving…" : "Save Changes"}
-                    </FancyButton>
+                    </button>
                 </div>
-            </FancyCard>
-
-            {/* QR Code */}
-            <FancyCard className="bg-(--theme-card) p-4 md:p-6">
-                <h3 className="text-sm font-bold text-(--theme-text) uppercase mb-4">Invite Link & QR</h3>
-                <div className="flex flex-col items-center">
-                    <div className="bg-white p-4 rounded-xl mb-3">
-                        {joinUrl && <QRCodeSVG value={joinUrl} size={200} level="M" />}
-                    </div>
-                    <p className="text-sm font-bold text-(--theme-text) tracking-[0.2em]">{classroom.code}</p>
-                    <p className="text-xs text-(--theme-text) opacity-40 mt-1">Scan or share the code above</p>
-                </div>
-            </FancyCard>
+            </section>
 
             {/* Danger Zone */}
-            <FancyCard className="bg-(--theme-card) p-4 md:p-6 border border-red-500/20">
-                <h3 className="text-sm font-bold text-red-500 uppercase mb-2">Danger Zone</h3>
-                <p className="text-xs text-(--theme-text) opacity-50 mb-3">
+            <section className="rounded-xl border border-red-100 bg-red-50/30 p-4 md:p-5">
+                <h2 className="text-base font-semibold text-red-700">Delete classroom</h2>
+                <p className="mb-4 mt-1 text-sm leading-5 text-[#747771]">
                     Deleting this classroom will permanently remove all posts, assignments, tests, and grades.
                 </p>
-                <FancyButton
+                <button
                     onClick={() => setDeleteOpen(true)}
-                    className="bg-red-500/10 text-red-500 text-xs font-bold uppercase px-4 py-1.5"
+                    className="inline-flex items-center rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
                 >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Classroom
-                </FancyButton>
-            </FancyCard>
+                </button>
+            </section>
 
             <DeleteConfirmationModal
                 open={deleteOpen}

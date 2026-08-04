@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRef, useState } from "react";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, GripVertical, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, GripVertical, CheckCircle2, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
+import type { TestDraft } from "@/lib/classroom-post-drafts";
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -18,6 +19,7 @@ interface QuestionOption {
 }
 
 interface Question {
+    id: string;
     questionText: string;
     questionType: QuestionType;
     points: number;
@@ -28,8 +30,7 @@ interface Question {
 interface Props {
     open: boolean;
     onClose: () => void;
-    classroomId: string;
-    onCreated: () => void;
+    onAdd: (test: TestDraft) => void;
 }
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -39,7 +40,8 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
     ESSAY: "Essay",
 };
 
-export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props) {
+export function CreateTestModal({ open, onClose, onAdd }: Props) {
+    const nextQuestionId = useRef(2);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [testType, setTestType] = useState<"TEST" | "EXAM">("TEST");
@@ -49,6 +51,7 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
     const [closesAt, setClosesAt] = useState("");
     const [questions, setQuestions] = useState<Question[]>([
         {
+            id: "question-1",
             questionText: "",
             questionType: "MULTIPLE_CHOICE",
             points: 1,
@@ -60,12 +63,12 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
             ],
         },
     ]);
-    const [saving, setSaving] = useState(false);
 
     const addQuestion = () => {
         setQuestions((prev) => [
             ...prev,
             {
+                id: `question-${nextQuestionId.current++}`,
                 questionText: "",
                 questionType: "MULTIPLE_CHOICE",
                 points: 1,
@@ -80,6 +83,17 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
     const removeQuestion = (index: number) => {
         if (questions.length <= 1) return;
         setQuestions((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleQuestionDragEnd = ({ source, destination }: DropResult) => {
+        if (!destination || source.index === destination.index) return;
+
+        setQuestions((prev) => {
+            const reordered = [...prev];
+            const [movedQuestion] = reordered.splice(source.index, 1);
+            reordered.splice(destination.index, 0, movedQuestion);
+            return reordered;
+        });
     };
 
     const updateQuestion = (index: number, field: keyof Question, value: any) => {
@@ -148,7 +162,7 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
         });
     };
 
-    const handleSave = async () => {
+    const handleSave = () => {
         if (!title.trim()) {
             toast.error("Please enter a title.");
             return;
@@ -181,9 +195,7 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
             }
         }
 
-        setSaving(true);
-        try {
-            const payload = {
+        const payload: TestDraft = {
                 title: title.trim(),
                 description: description.trim() || null,
                 type: testType,
@@ -209,54 +221,45 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                 })),
             };
 
-            const res = await fetch(`/api/classrooms/${classroomId}/tests`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                toast.error(data.error ?? "Failed to create test.");
-                return;
-            }
-            toast.success(`${testType === "EXAM" ? "Exam" : "Test"} created!`);
-            // Reset
-            setTitle("");
-            setDescription("");
-            setTestType("TEST");
-            setTimeLimit("");
-            setPassingScore("");
-            setOpensAt("");
-            setClosesAt("");
-            setQuestions([
-                {
-                    questionText: "",
-                    questionType: "MULTIPLE_CHOICE",
-                    points: 1,
-                    options: [
-                        { optionText: "", isCorrect: true },
-                        { optionText: "", isCorrect: false },
-                        { optionText: "", isCorrect: false },
-                        { optionText: "", isCorrect: false },
-                    ],
-                },
-            ]);
-            onCreated();
-            onClose();
-        } catch {
-            toast.error("Failed to create test.");
-        } finally {
-            setSaving(false);
-        }
+        onAdd(payload);
+        toast.success(`${testType === "EXAM" ? "Exam" : "Test"} added to post.`);
+        setTitle("");
+        setDescription("");
+        setTestType("TEST");
+        setTimeLimit("");
+        setPassingScore("");
+        setOpensAt("");
+        setClosesAt("");
+        setQuestions([
+            {
+                id: "question-1",
+                questionText: "",
+                questionType: "MULTIPLE_CHOICE",
+                points: 1,
+                options: [
+                    { optionText: "", isCorrect: true },
+                    { optionText: "", isCorrect: false },
+                    { optionText: "", isCorrect: false },
+                    { optionText: "", isCorrect: false },
+                ],
+            },
+        ]);
+        onClose();
     };
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-2xl h-[calc(100dvh-1rem)] md:h-[92vh] md:max-h-[780px] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 h-full min-h-0">
+            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[#deded7] bg-white p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
+                <DialogClose
+                    aria-label="Close test builder"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#777a73] transition-colors hover:bg-[#f2f2ee] hover:text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
+                >
+                    <X className="h-4 w-4" />
+                </DialogClose>
+                <FancyCard className="h-full min-h-0 bg-white p-4 shadow-none md:p-5">
                   <div className="h-full min-h-0 flex flex-col">
-                    <DialogHeader className="shrink-0 pb-2">
-                        <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
+                    <DialogHeader className="shrink-0 border-b border-[#ecece6] pb-4 pr-10 text-left">
+                        <DialogTitle className="text-lg font-semibold text-(--theme-text) md:text-xl">
                             Create {testType === "EXAM" ? "Exam" : "Test"}
                         </DialogTitle>
                     </DialogHeader>
@@ -359,16 +362,36 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                                     <span className="text-xs text-(--theme-text) opacity-40">{questions.length} question{questions.length !== 1 ? "s" : ""}</span>
                                 </div>
 
-                                <div className="space-y-4">
+                                <DragDropContext onDragEnd={handleQuestionDragEnd}>
+                                    <Droppable droppableId="test-questions">
+                                        {(droppableProvided) => (
+                                            <div
+                                                ref={droppableProvided.innerRef}
+                                                {...droppableProvided.droppableProps}
+                                                className="space-y-4"
+                                            >
                                     {questions.map((q, qIndex) => (
+                                        <Draggable key={q.id} draggableId={q.id} index={qIndex}>
+                                            {(draggableProvided, snapshot) => (
                                         <div
-                                            key={qIndex}
-                                            className="bg-(--theme-sidebar) rounded-xl corner-squircle p-4 space-y-3"
+                                            ref={draggableProvided.innerRef}
+                                            {...draggableProvided.draggableProps}
+                                            className={cn(
+                                                "bg-(--theme-sidebar) rounded-xl corner-squircle p-4 space-y-3 transition-shadow",
+                                                snapshot.isDragging && "ring-2 ring-(--theme-card) shadow-lg",
+                                            )}
                                         >
                                             {/* Question Header */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <GripVertical className="h-4 w-4 text-(--theme-text) opacity-30" />
+                                                    <button
+                                                        type="button"
+                                                        {...draggableProvided.dragHandleProps}
+                                                        aria-label={`Move question ${qIndex + 1}`}
+                                                        className="-ml-1 flex h-7 w-7 touch-none cursor-grab items-center justify-center rounded-md text-(--theme-text) opacity-40 transition-opacity hover:opacity-80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-card) active:cursor-grabbing"
+                                                    >
+                                                        <GripVertical className="h-4 w-4" />
+                                                    </button>
                                                     <span className="text-xs font-bold text-(--theme-text) opacity-60">
                                                         Q{qIndex + 1}
                                                     </span>
@@ -491,8 +514,14 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                                                 </p>
                                             )}
                                         </div>
+                                            )}
+                                        </Draggable>
                                     ))}
-                                </div>
+                                                {droppableProvided.placeholder}
+                                            </div>
+                                        )}
+                                    </Droppable>
+                                </DragDropContext>
 
                                 <button
                                     onClick={addQuestion}
@@ -505,20 +534,21 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                         </div>
                     </ScrollArea>
 
-                    <div className="flex gap-3 pt-4 mt-3 shrink-0 border-t border-(--theme-text)/10">
-                        <FancyButton
+                    <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[#ecece6] pt-3">
+                        <button
+                            type="button"
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="h-9 rounded-xl border border-[#e6e6e0] bg-white px-4 text-sm font-medium text-[#4d504a] transition-colors hover:bg-[#f7f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a]"
                         >
                             Cancel
-                        </FancyButton>
-                        <FancyButton
+                        </button>
+                        <button
+                            type="button"
                             onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="h-9 rounded-xl border border-[#e8dda0] bg-(--classroom-accent) px-4 text-sm font-semibold text-[#20231f] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d2bc4a] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {saving ? "Creating…" : `Create ${testType === "EXAM" ? "Exam" : "Test"}`}
-                        </FancyButton>
+                            Add {testType === "EXAM" ? "exam" : "test"}
+                        </button>
                     </div>
                   </div>
                 </FancyCard>

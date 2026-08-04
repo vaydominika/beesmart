@@ -55,7 +55,6 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (data.name !== undefined) updateData.name = data.name.trim();
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
         if (data.subject !== undefined) updateData.subject = data.subject?.trim() || null;
-        if (data.color !== undefined) updateData.color = data.color || null;
 
         const updated = await prisma.classroom.update({
             where: { id },

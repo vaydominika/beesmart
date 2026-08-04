@@ -245,8 +245,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return (
             <div className="space-y-6">
                 {/* Fixed Header */}
-                <FancyCard className="bg-(--theme-card) p-6 sticky top-4 z-10 shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500 rounded-l-2xl"></div>
+                <FancyCard className="sticky top-4 z-10 overflow-hidden border border-[#e6e6e0] bg-white p-6 shadow-none">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-(--theme-text) mb-1">{test.title}</h1>
@@ -286,7 +285,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 {/* State: PRE_TEST */}
                 {testState === "PRE_TEST" && (
-                    <FancyCard className="bg-(--theme-card) p-8 text-center max-w-2xl mx-auto mt-10">
+                    <FancyCard className="mx-auto mt-10 max-w-2xl border border-[#e6e6e0] bg-white p-8 text-center shadow-none">
                         <FileText className="h-16 w-16 mx-auto mb-6 text-(--theme-text) opacity-20" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-4">Ready to begin?</h2>
                         {test.description && (
@@ -386,7 +385,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 {/* State: COMPLETED */}
                 {testState === "COMPLETED" && (
-                    <FancyCard className="bg-(--theme-card) p-8 text-center max-w-2xl mx-auto mt-10">
+                    <FancyCard className="mx-auto mt-10 max-w-2xl border border-[#e6e6e0] bg-white p-8 text-center shadow-none">
                         <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-green-500" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-2">Test Submitted</h2>
 
@@ -411,8 +410,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
     return (
         <div className="space-y-6">
-            <FancyCard className="bg-(--theme-card) p-6 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500 rounded-l-2xl"></div>
+            <FancyCard className="relative overflow-hidden border border-[#e6e6e0] bg-white p-6 shadow-none">
                 <div>
                     <h1 className="text-2xl font-bold text-(--theme-text) mb-2">Teacher Dashboard: {test.title}</h1>
                     <p className="text-sm text-(--theme-text) opacity-80">

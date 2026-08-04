@@ -2,7 +2,7 @@
 
 import { EditorContent, EditorRoot, EditorInstance, EditorBubble } from "novel";
 import { defaultExtensions } from "./extensions";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { NodeSelector } from "./selectors/node-selector";
 import { LinkSelector } from "./selectors/link-selector";
@@ -28,6 +28,14 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
   const [isSyncing, setIsSyncing] = useState(false);
   const lastSyncedValue = useRef<any>(initialValue ?? "");
   const prevId = useRef<string>(id);
+  const editorExtensions = useMemo(
+    () => defaultExtensions.map((extension) => (
+      extension.name === "placeholder" && placeholder
+        ? extension.configure({ placeholder })
+        : extension
+    )),
+    [placeholder],
+  );
 
   // Synchronize internal state with initialValue prop changes (e.g. lesson switch or AI generation)
   useEffect(() => {
@@ -65,7 +73,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
       <EditorRoot>
         <EditorContent
           initialContent={initialValue}
-          extensions={defaultExtensions}
+          extensions={editorExtensions}
           onUpdate={({ editor }) => {
             if (isSyncing) {
               console.log("[UI Editor] isSyncing is true, suppressing onChange");
@@ -85,7 +93,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
           editable={editable}
           editorProps={{
             attributes: {
-              class: "prose dark:prose-invert prose-sm sm:prose-base focus:outline-none max-w-full",
+              class: "prose dark:prose-invert prose-sm sm:prose-base focus:outline-none max-w-full [&_.is-editor-empty:first-child]:before:pointer-events-none [&_.is-editor-empty:first-child]:before:float-left [&_.is-editor-empty:first-child]:before:h-0 [&_.is-editor-empty:first-child]:before:text-[#9a9d97] [&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
             },
           }}
         >
