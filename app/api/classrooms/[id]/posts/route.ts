@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { notifyClassroomMembers } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { canAccessCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -52,6 +55,13 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                             opensAt: true, closesAt: true, passingScore: true,
                         },
                     },
+                    course: {
+                        select: {
+                            id: true, title: true, description: true, visibility: true, coverImageUrl: true,
+                            creator: { select: { name: true } },
+                            _count: { select: { modules: true } },
+                        },
+                    },
                 },
                 orderBy: [
                     { isPinned: "desc" },
@@ -84,24 +94,42 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const data = await req.json();
         const { type, title, content, isPinned, files } = data;
+        const courseId = typeof data.courseId === "string" && data.courseId ? data.courseId : null;
+        const normalizedType = courseId ? "COURSE" : (type || "TEXT");
 
         // Only teachers/TAs can create certain post types
-        const teacherOnlyTypes = ["ASSIGNMENT", "TEST", "COURSE", "MATERIAL"];
-        if (teacherOnlyTypes.includes(type) && membership.role === "STUDENT") {
+        const teacherOnlyTypes = ["ASSIGNMENT", "TEST", "COURSE"];
+        if (teacherOnlyTypes.includes(normalizedType) && membership.role === "STUDENT") {
             return NextResponse.json({ error: "Students cannot create this type of post" }, { status: 403 });
+        }
+
+        const course = courseId
+            ? await prisma.course.findUnique({ where: { id: courseId }, select: { title: true, visibility: true } })
+            : null;
+        if (courseId && (!course || !await canAccessCourse(courseId, userId))) {
+            return NextResponse.json({ error: "Course is not available" }, { status: 403 });
+        }
+        if (course?.visibility === "PRIVATE") {
+            return NextResponse.json({ error: "Private courses cannot be shared. Change the course visibility first." }, { status: 403 });
+        }
+
+        const plainText = typeof content === "string" ? content.replace(/<[^>]*>/g, "").trim() : "";
+        const hasFiles = Array.isArray(files) && files.length > 0;
+        if (!title?.trim() && !plainText && !hasFiles && !courseId) {
+            return NextResponse.json({ error: "Write a message, attach a file, or add a course" }, { status: 400 });
         }
 
         const post = await prisma.classroomPost.create({
             data: {
                 classroomId: id,
                 authorId: userId,
-                type: type || "TEXT",
+                type: normalizedType,
                 title: title?.trim() || null,
                 content: content?.trim() || null,
                 isPinned: isPinned || false,
                 assignmentId: data.assignmentId || null,
                 testId: data.testId || null,
-                courseId: data.courseId || null,
+                courseId,
                 files: files?.length
                     ? {
                         create: files.map((f: { fileName: string; fileUrl: string; fileType: string; fileSize: number }) => ({
@@ -118,6 +146,38 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 _count: { select: { comments: true, files: true } },
                 files: true,
             },
+        });
+
+        if (courseId && course?.visibility === "INVITATION_ONLY") {
+            const members = await prisma.classroomMember.findMany({ where: { classroomId: id }, select: { userId: true } });
+            await prisma.courseAccess.createMany({
+                data: members.map((member: { userId: string }) => ({ courseId, userId: member.userId, invitedById: userId })),
+                skipDuplicates: true,
+            });
+        }
+
+        const sideEffects = await Promise.allSettled([
+            notifyClassroomMembers({
+                classroomId: id,
+                actorId: userId,
+                title: courseId ? "New Classroom course" : hasFiles ? "New Classroom material" : "New Classroom post",
+                body: plainText ? plainText.slice(0, 180) : (course?.title || title?.trim() || "A file was shared."),
+                type: hasFiles || courseId ? "OTHER" : "ANNOUNCEMENT",
+                relatedId: post.id,
+                relatedType: "post",
+                actionUrl: `/classroom/${id}`,
+            }),
+            recordMeaningfulActivity({
+                userId,
+                activityType: courseId ? "CLASSROOM_COURSE_PUBLISHED" : hasFiles ? "MATERIAL_UPLOADED" : "CLASSROOM_POST_PUBLISHED",
+                classroomId: id,
+                courseId,
+                relatedId: post.id,
+                dedupeKey: `classroom:post:${post.id}`,
+            }),
+        ]);
+        sideEffects.forEach((result) => {
+            if (result.status === "rejected") console.error("Classroom post side effect failed", result.reason);
         });
 
         return NextResponse.json(post, { status: 201 });

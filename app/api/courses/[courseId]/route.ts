@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canAccessCourse } from "@/lib/course-access";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { createHash } from "crypto";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -31,11 +34,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
         // Check if user has access
         const isCreator = course.createdById === userId;
-        const isEnrolled = await prisma.courseEnrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } }
-        });
-
-        if (!isCreator && !isEnrolled && !course.isPublic) {
+        if (!isCreator && !await canAccessCourse(courseId, userId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -53,7 +52,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true, published: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -62,6 +61,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (data.title !== undefined) updateData.title = data.title.trim();
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
         if (data.isPublic !== undefined) updateData.isPublic = Boolean(data.isPublic);
+        if (["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)) {
+            updateData.visibility = data.visibility;
+            updateData.isPublic = data.visibility === "PUBLIC";
+        }
         if (data.published !== undefined) updateData.published = Boolean(data.published);
         if (data.coverImageUrl !== undefined) updateData.coverImageUrl = data.coverImageUrl || null;
 
@@ -69,6 +72,22 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             where: { id: courseId },
             data: updateData,
         });
+
+        const activityType = data.published === true && !course.published ? "COURSE_PUBLISHED" : "COURSE_UPDATED";
+        const fingerprint = createHash("sha1").update(JSON.stringify(data)).digest("hex");
+        await recordMeaningfulActivity({
+            userId, activityType, courseId, relatedId: courseId,
+            dedupeKey: `course:update:${courseId}:${fingerprint}`,
+        });
+        if (activityType === "COURSE_PUBLISHED") {
+            await prisma.notification.create({
+                data: {
+                    userId, title: "Course published", body: `${updated.title} is now published.`,
+                    type: "OTHER", category: "GENERAL", relatedId: courseId,
+                    relatedType: "course", actionUrl: `/courses/${courseId}`,
+                },
+            });
+        }
 
         return NextResponse.json(updated);
     } catch (e) {

@@ -56,7 +56,7 @@ export default function AssignmentPage() {
 
     if (!classroom) return null;
 
-    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TA";
+    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">

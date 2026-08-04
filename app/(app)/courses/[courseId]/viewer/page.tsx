@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canAccessCourse } from "@/lib/course-access";
 import CourseViewerClient from "@/components/course/CourseViewerClient";
 
 type ViewerPageProps = { params: Promise<{ courseId: string }> };
@@ -9,6 +10,7 @@ export default async function CourseViewerPage({ params }: ViewerPageProps) {
     if (!userId) redirect("/login");
 
     const { courseId } = await params;
+    if (!await canAccessCourse(courseId, userId)) redirect("/courses");
 
     // Check enrollment
     const enrollment = await prisma.courseEnrollment.findUnique({

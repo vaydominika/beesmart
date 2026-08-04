@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { notifyClassroomMembers } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -84,26 +86,14 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             },
         });
 
-        // Notify classroom members
-        const members = await prisma.classroomMember.findMany({
-            where: { classroomId: id },
-            select: { userId: true },
+        await notifyClassroomMembers({
+            classroomId: id, actorId: userId, title: "New assignment", body: title.trim(),
+            type: "ASSIGNMENT", relatedId: assignment.id, relatedType: "assignment",
+            actionUrl: `/classroom/${id}/assignments/${assignment.id}`,
         });
-        const classroom = await prisma.classroom.findUnique({
-            where: { id }, select: { name: true },
-        });
-
-        await prisma.notification.createMany({
-            data: members
-                .filter((m: any) => m.userId !== userId)
-                .map((m: any) => ({
-                    userId: m.userId,
-                    title: `New Assignment in ${classroom?.name}`,
-                    body: title.trim(),
-                    type: "ASSIGNMENT" as const,
-                    relatedId: assignment.id,
-                    relatedType: "assignment",
-                })),
+        await recordMeaningfulActivity({
+            userId, activityType: "ASSIGNMENT_CREATED", classroomId: id, relatedId: assignment.id,
+            dedupeKey: `assignment:create:${assignment.id}`,
         });
 
         return NextResponse.json(post, { status: 201 });

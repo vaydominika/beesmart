@@ -103,17 +103,17 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
 
     const getRoleIcon = (role: string) => {
         if (role === "TEACHER") return <Crown className="h-4 w-4 text-amber-500" />;
-        if (role === "TA") return <Shield className="h-4 w-4 text-purple-500" />;
+        if (role === "TEACHING_ASSISTANT") return <Shield className="h-4 w-4 text-purple-500" />;
         return <UserCircle className="h-4 w-4 text-(--theme-text) opacity-40" />;
     };
 
     const getRoleBadge = (role: string) => {
         if (role === "TEACHER") return "bg-amber-500/20 text-amber-600";
-        if (role === "TA") return "bg-purple-500/20 text-purple-600";
+        if (role === "TEACHING_ASSISTANT") return "bg-purple-500/20 text-purple-600";
         return "bg-blue-500/20 text-blue-600";
     };
 
-    const teachers = members.filter((m) => m.role === "TEACHER" || m.role === "TA");
+    const teachers = members.filter((m) => m.role === "TEACHER" || m.role === "TEACHING_ASSISTANT");
     const students = members.filter((m) => m.role === "STUDENT");
     const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroomCode}` : "";
 
@@ -215,7 +215,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                             {menuOpen === m.id && (
                                                 <div className="absolute right-0 top-full mt-1 bg-(--theme-bg) border border-(--theme-text)/10 rounded-xl corner-squircle shadow-lg z-10 min-w-[150px] py-1">
                                                     <button
-                                                        onClick={() => handleChangeRole(m.id, "TA")}
+                                                        onClick={() => handleChangeRole(m.id, "TEACHING_ASSISTANT")}
                                                         className="w-full text-left px-3 py-2 text-xs font-bold text-(--theme-text) hover:bg-(--theme-sidebar) flex items-center gap-2"
                                                     >
                                                         <ArrowUpDown className="h-3 w-3" />

@@ -153,6 +153,14 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
             toast.error("Please enter a title.");
             return;
         }
+        if (closesAt && !opensAt) {
+            toast.error("Choose an opening date before the closing date.");
+            return;
+        }
+        if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
+            toast.error("Closing time must be after opening time.");
+            return;
+        }
 
         // Validate questions
         for (let i = 0; i < questions.length; i++) {
@@ -244,16 +252,17 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-2xl max-h-[95vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
+            <DialogContent className="p-0 max-w-2xl h-[calc(100dvh-1rem)] md:h-[92vh] md:max-h-[780px] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
+                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 h-full min-h-0">
+                  <div className="h-full min-h-0 flex flex-col">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Create {testType === "EXAM" ? "Exam" : "Test"}
                         </DialogTitle>
                     </DialogHeader>
 
-                    <ScrollArea className="flex-1 max-h-[60vh]">
-                        <div className="space-y-4 pr-3">
+                    <ScrollArea className="flex-1 min-h-0">
+                        <div className="space-y-4 pl-1 pr-3 py-1">
                             {/* Basic Info */}
                             <div className="flex gap-3">
                                 <div className="flex-1">
@@ -496,7 +505,7 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                         </div>
                     </ScrollArea>
 
-                    <div className="flex gap-3 pt-5 shrink-0">
+                    <div className="flex gap-3 pt-4 mt-3 shrink-0 border-t border-(--theme-text)/10">
                         <FancyButton
                             onClick={onClose}
                             className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
@@ -511,6 +520,7 @@ export function CreateTestModal({ open, onClose, classroomId, onCreated }: Props
                             {saving ? "Creating…" : `Create ${testType === "EXAM" ? "Exam" : "Test"}`}
                         </FancyButton>
                     </div>
+                  </div>
                 </FancyCard>
             </DialogContent>
         </Dialog>

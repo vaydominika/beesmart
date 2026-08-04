@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
-import { updateUserStreak } from "@/lib/streak";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { canAccessCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string; lessonId: string }> };
 
@@ -11,6 +12,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
         const { courseId, lessonId } = await ctx.params;
         const { completed } = await req.json();
+        if (!await canAccessCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const lesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, module: { courseId } }, select: { id: true } });
+        if (!lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
         // Upsert progress
         const progress = await prisma.courseProgress.upsert({
@@ -32,7 +36,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         });
 
         if (completed) {
-            await updateUserStreak(userId);
+            await recordMeaningfulActivity({
+                userId, activityType: "LESSON_COMPLETED", courseId, relatedId: lessonId,
+                dedupeKey: `lesson:complete:${userId}:${lessonId}`,
+            });
 
             // Check if course is now fully completed
             const allLessons = await prisma.courseLesson.findMany({
@@ -58,6 +65,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
                     where: { userId_courseId: { userId, courseId } },
                     data: { completedAt: new Date() }
                 });
+                const completionActivity = await recordMeaningfulActivity({
+                    userId, activityType: "COURSE_COMPLETED", courseId, relatedId: courseId,
+                    dedupeKey: `course:complete:${userId}:${courseId}`,
+                });
+                if (completionActivity.recorded) {
+                    const completedCourse = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true } });
+                    await prisma.notification.create({
+                        data: {
+                            userId, title: "Course completed", body: `You completed ${completedCourse?.title ?? "your course"}.`,
+                            type: "OTHER", category: "GENERAL", relatedId: courseId,
+                            relatedType: "course", actionUrl: `/courses/${courseId}`,
+                        },
+                    });
+                }
             }
         } else {
             // If a lesson was unmarked, ensure course is not marked as completed

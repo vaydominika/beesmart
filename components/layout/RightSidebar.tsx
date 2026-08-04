@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { EventModal } from "@/components/calendar/EventModal";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
 import { useEventSync } from "@/hooks/use-event-sync";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface RightSidebarProps {
   variant?: "inline" | "overlay";
@@ -26,6 +27,10 @@ interface EventData {
   startTime?: string | null;
   endTime?: string | null;
   isAllDay: boolean;
+  endDate?: string;
+  color?: string | null;
+  isProtected?: boolean;
+  canEdit?: boolean;
 }
 
 const BANNER_HEIGHT = 80;
@@ -145,6 +150,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           }}
         >
           <div className="absolute top-0 right-0 flex items-center gap-2 p-2 md:p-1.5">
+            <NotificationCenter />
             {isOverlay && onClose && (
               <button
                 type="button"

@@ -7,7 +7,7 @@ import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Editor } from "@/components/ui/editor";
-import { Image as ImageIcon, Upload, X, Paperclip } from "lucide-react";
+import { Image as ImageIcon, Upload, X, Paperclip, Lock, Globe2, Mail } from "lucide-react";
 
 interface CreateCourseModalProps {
     open: boolean;
@@ -19,6 +19,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [coverImageUrl, setCoverImageUrl] = useState("");
+    const [visibility, setVisibility] = useState<"PRIVATE" | "PUBLIC" | "INVITATION_ONLY">("PRIVATE");
     const [uploadingCover, setUploadingCover] = useState(false);
 
     // Support file attachments
@@ -85,6 +86,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                     description: description.trim() || null,
                     coverImageUrl: coverImageUrl || null,
                     files: files
+                    , visibility
                 }),
             });
             if (!res.ok) {
@@ -106,6 +108,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
             setDescription("");
             setCoverImageUrl("");
             setFiles([]);
+            setVisibility("PRIVATE");
             onClose();
         } catch {
             toast.error("Failed to create course.");
@@ -174,11 +177,34 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
 
                         {/* Rich Text Description */}
                         <div>
+                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-2">Visibility</label>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {([
+                                    ["PRIVATE", "Private", "Only you", Lock],
+                                    ["PUBLIC", "Public", "Anyone can find it", Globe2],
+                                    ["INVITATION_ONLY", "Invitation-only", "Only invited people", Mail],
+                                ] as const).map(([value, label, hint, Icon]) => (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => setVisibility(value)}
+                                        className={`flex items-center gap-3 rounded-xl corner-squircle p-3 text-left transition-colors ${visibility === value ? "bg-(--theme-card)" : "bg-(--theme-sidebar) opacity-60 hover:opacity-100"}`}
+                                    >
+                                        <Icon className="h-4 w-4 shrink-0" />
+                                        <span><span className="block text-xs font-bold text-(--theme-text)">{label}</span><span className="block text-[10px] text-(--theme-text) opacity-55">{hint}</span></span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Rich Text Description */}
+                        <div>
                             <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                 Course Description
                             </label>
                             <div className="bg-(--theme-sidebar) rounded-xl corner-squircle border border-(--theme-text)/10 p-4 min-h-[300px]">
                                 <Editor
+                                    id="course-description"
                                     initialValue={description}
                                     onChange={(val) => setDescription(val)}
                                     placeholder="Write your course description here. You can add images, formats, and lists..."
@@ -240,7 +266,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                         <FancyButton
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase bg-(--theme-text) text-(--theme-bg) hover:opacity-90 transition-opacity !border-none"
+                            className="flex-1 text-xs md:text-xl font-bold uppercase bg-(--theme-text) text-(--theme-bg) hover:opacity-90 transition-opacity !border-none"
                         >
                             {saving ? "Creating…" : "Create"}
                         </FancyButton>

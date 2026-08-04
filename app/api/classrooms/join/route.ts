@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
 
         const classroom = await prisma.classroom.findUnique({
             where: { code: code.trim().toUpperCase() },
-            include: { _count: { select: { members: true } } },
+            include: {
+                _count: { select: { members: true } },
+                courseLinks: { where: { course: { visibility: "INVITATION_ONLY" } }, select: { courseId: true, addedById: true } },
+            },
         });
 
         if (!classroom) {
@@ -37,6 +40,14 @@ export async function POST(req: NextRequest) {
                 role: "STUDENT",
             },
         });
+        if (classroom.courseLinks?.length && (prisma as any).courseAccess?.createMany) {
+            await prisma.courseAccess.createMany({
+                data: classroom.courseLinks.map((link: { courseId: string; addedById: string }) => ({
+                    courseId: link.courseId, userId, invitedById: link.addedById,
+                })),
+                skipDuplicates: true,
+            });
+        }
 
         return NextResponse.json({
             id: classroom.id,

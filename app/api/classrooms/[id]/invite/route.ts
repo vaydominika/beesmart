@@ -42,13 +42,22 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             where: { email: email.trim().toLowerCase() },
         });
         if (invitedUser) {
-            const classroom = await prisma.classroom.findUnique({ where: { id } });
+            const [classroom, actor] = await Promise.all([
+                prisma.classroom.findUnique({ where: { id } }),
+                prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+            ]);
             await prisma.notification.create({
                 data: {
                     userId: invitedUser.id,
                     title: "Classroom Invitation",
                     body: `You've been invited to join "${classroom?.name}"`,
                     type: "INVITATION",
+                    category: "CLASSROOM",
+                    classroomId: id,
+                    classroomName: classroom?.name,
+                    actorId: userId,
+                    actorName: actor?.name,
+                    actionUrl: `/classroom/${id}`,
                     relatedId: id,
                     relatedType: "classroom",
                 },

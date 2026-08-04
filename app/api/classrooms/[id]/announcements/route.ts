@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { notifyClassroomMembers } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -31,9 +33,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
         });
 
-        // Filter out expired announcements (but keep ones without expiresAt)
+        // Urgent announcements remain active until a teacher explicitly cancels them.
         const active = announcements.filter(
-            (a: any) => !a.expiresAt || new Date(a.expiresAt) > now
+            (a: any) => a.priority === "URGENT" || !a.expiresAt || new Date(a.expiresAt) > now
         );
 
         return NextResponse.json(active);
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 body: body.trim(),
                 priority: priority || "INFO",
                 publishAt: publishAt ? new Date(publishAt) : null,
-                expiresAt: expiresAt ? new Date(expiresAt) : null,
+                expiresAt: priority === "URGENT" ? null : (expiresAt ? new Date(expiresAt) : null),
                 isPinned: isPinned || false,
             },
             include: {
@@ -78,28 +80,14 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             },
         });
 
-        // Create notifications for all members
-        const members = await prisma.classroomMember.findMany({
-            where: { classroomId: id },
-            select: { userId: true },
+        await notifyClassroomMembers({
+            classroomId: id, actorId: userId, title: "New announcement", body: title.trim(),
+            type: "ANNOUNCEMENT", relatedId: announcement.id, relatedType: "announcement",
+            actionUrl: `/classroom/${id}`,
         });
-
-        const classroom = await prisma.classroom.findUnique({
-            where: { id },
-            select: { name: true },
-        });
-
-        await prisma.notification.createMany({
-            data: members
-                .filter((m: any) => m.userId !== userId)
-                .map((m: any) => ({
-                    userId: m.userId,
-                    title: `New Announcement in ${classroom?.name}`,
-                    body: title.trim(),
-                    type: "ANNOUNCEMENT" as const,
-                    relatedId: announcement.id,
-                    relatedType: "announcement",
-                })),
+        await recordMeaningfulActivity({
+            userId, activityType: "CLASSROOM_POST_PUBLISHED", classroomId: id, relatedId: announcement.id,
+            dedupeKey: `announcement:create:${announcement.id}`,
         });
 
         return NextResponse.json(announcement, { status: 201 });
@@ -128,7 +116,12 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Announcement ID required" }, { status: 400 });
         }
 
-        await prisma.announcement.delete({ where: { id: announcementId } });
+        const result = await prisma.announcement.deleteMany({
+            where: { id: announcementId, classroomId: id },
+        });
+        if (result.count === 0) {
+            return NextResponse.json({ error: "Announcement not found" }, { status: 404 });
+        }
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE announcement", e);

@@ -59,6 +59,23 @@ enum NotificationType {
   OTHER
 }
 
+enum NotificationCategory {
+  GENERAL
+  CLASSROOM
+}
+
+enum CourseVisibility {
+  PRIVATE
+  PUBLIC
+  INVITATION_ONLY
+}
+
+enum ActivityRole {
+  LEARNER
+  STUDENT
+  TEACHER
+}
+
 enum FocusSessionType {
   ACTIVE
   BREAK
@@ -98,53 +115,55 @@ enum SubmissionStatus {
 
 // Models
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String?
-  emailVerified DateTime?
-  image    String?
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  password       String?
+  emailVerified  DateTime?
+  image          String?
   avatar         String?
   bannerImageUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // NextAuth
   accounts Account[]
   sessions Session[]
 
   // Relationships
-  createdCourses        Course[]              @relation("CourseCreator")
-  createdClassrooms     Classroom[]
-  classroomMemberships  ClassroomMember[]
-  courseEnrollments     CourseEnrollment[]
-  courseProgress        CourseProgress[]
-  createdTests          Test[]
-  createdFlashcardSets  FlashcardSet[]
-  personalEvents        Event[]               @relation("PersonalEvents")
-  assignedWorkAsTeacher AssignedWork[]        @relation("WorkAssigner")
-  assignedWorkAsStudent AssignedWork[]        @relation("WorkAssignee")
-  schedules             Schedule[]
-  reminders             Reminder[]
-  notifications         Notification[]
-  announcements         Announcement[]
-  gradesAsStudent       Grade[]               @relation("StudentGrade")
-  gradesAsGrader        Grade[]               @relation("Grader")
-  streak                Streak?
-  focusSessions         FocusSession[]
-  sentInvitations       ClassroomInvitation[]
-  bookmarks             Bookmark[]
-  certificates          Certificate[]
-  uploadedFiles         CourseFile[]
-  testAttempts          TestAttempt[]
+  createdCourses         Course[]                @relation("CourseCreator")
+  createdClassrooms      Classroom[]
+  classroomMemberships   ClassroomMember[]
+  courseEnrollments      CourseEnrollment[]
+  courseProgress         CourseProgress[]
+  createdTests           Test[]
+  createdFlashcardSets   FlashcardSet[]
+  personalEvents         Event[]                 @relation("PersonalEvents")
+  assignedWorkAsTeacher  AssignedWork[]          @relation("WorkAssigner")
+  assignedWorkAsStudent  AssignedWork[]          @relation("WorkAssignee")
+  schedules              Schedule[]
+  reminders              Reminder[]
+  notifications          Notification[]
+  announcements          Announcement[]
+  gradesAsStudent        Grade[]                 @relation("StudentGrade")
+  gradesAsGrader         Grade[]                 @relation("Grader")
+  streak                 Streak?
+  focusSessions          FocusSession[]
+  sentInvitations        ClassroomInvitation[]
+  bookmarks              Bookmark[]
+  certificates           Certificate[]
+  uploadedFiles          CourseFile[]
+  testAttempts           TestAttempt[]
   flashcardStudySessions FlashcardStudySession[]
-  settings              UserSettings?
-  courseRatings         CourseRating[]
-  reports               Report[]               @relation("ReportReporter")
-  reviewedReports       Report[]               @relation("ReportReviewer")
-  classroomPosts        ClassroomPost[]
-  comments              Comment[]
-  submissions           Submission[]
+  settings               UserSettings?
+  courseRatings          CourseRating[]
+  reports                Report[]                @relation("ReportReporter")
+  reviewedReports        Report[]                @relation("ReportReviewer")
+  classroomPosts         ClassroomPost[]
+  comments               Comment[]
+  submissions            Submission[]
+  courseAccessGrants     CourseAccess[]
+  activityRecords        ActivityRecord[]
 
   @@index([email])
 }
@@ -155,12 +174,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?  @db.Text
-  access_token      String?  @db.Text
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?  @db.Text
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -200,27 +219,28 @@ model Classroom {
   updatedAt   DateTime @updatedAt
 
   // Relationships
-  creator     User              @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  members     ClassroomMember[]
-  courses     Course[]
-  events      Event[]
-  assignedWork AssignedWork[]
-  schedules   Schedule[]
-  invitations ClassroomInvitation[]
+  creator       User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  members       ClassroomMember[]
+  courses       Course[]
+  events        Event[]
+  assignedWork  AssignedWork[]
+  schedules     Schedule[]
+  invitations   ClassroomInvitation[]
   announcements Announcement[]
-  posts       ClassroomPost[]
-  tests       Test[]
+  posts         ClassroomPost[]
+  tests         Test[]
+  courseLinks   ClassroomCourse[]
 
   @@index([createdById])
   @@index([code])
 }
 
 model ClassroomMember {
-  id         String        @id @default(cuid())
-  userId     String
+  id          String        @id @default(cuid())
+  userId      String
   classroomId String
-  role       ClassroomRole
-  joinedAt   DateTime      @default(now())
+  role        ClassroomRole
+  joinedAt    DateTime      @default(now())
 
   // Relationships
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -232,36 +252,39 @@ model ClassroomMember {
 }
 
 model Course {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
+  id            String           @id @default(cuid())
+  title         String
+  description   String?
   coverImageUrl String?
-  createdById String
-  classroomId String?
-  isPublic    Boolean  @default(false)
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdById   String
+  classroomId   String?
+  isPublic      Boolean          @default(false)
+  visibility    CourseVisibility @default(PRIVATE)
+  published     Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   // Relationships
-  creator      User            @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  classroom    Classroom?      @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  modules      CourseModule[]
-  enrollments  CourseEnrollment[]
-  progress     CourseProgress[]
-  files        CourseFile[]
-  tests        Test[]
-  flashcardSets FlashcardSet[]
-  events       Event[]
-  assignedWork AssignedWork[]
-  tags         CourseTag[]
-  bookmarks    Bookmark[]
-  certificates Certificate[]
-  announcements Announcement[]
-  grades       Grade[]
-  ratings      CourseRating[]
-  reports      Report[]
+  creator        User               @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  classroom      Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  modules        CourseModule[]
+  enrollments    CourseEnrollment[]
+  progress       CourseProgress[]
+  files          CourseFile[]
+  tests          Test[]
+  flashcardSets  FlashcardSet[]
+  events         Event[]
+  assignedWork   AssignedWork[]
+  tags           CourseTag[]
+  bookmarks      Bookmark[]
+  certificates   Certificate[]
+  announcements  Announcement[]
+  grades         Grade[]
+  ratings        CourseRating[]
+  reports        Report[]
   classroomPosts ClassroomPost[]
+  classroomLinks ClassroomCourse[]
+  accessGrants   CourseAccess[]
 
   @@index([createdById])
   @@index([classroomId])
@@ -277,51 +300,51 @@ model CourseModule {
   updatedAt   DateTime @updatedAt
 
   // Relationships
-  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons CourseLesson[]
 
   @@index([courseId])
 }
 
 model CourseLesson {
-  id          String   @id @default(cuid())
-  moduleId    String
-  title       String
-  description String?
-  content     String?  @db.Text
+  id           String   @id @default(cuid())
+  moduleId     String
+  title        String
+  description  String?
+  content      String?  @db.Text
   contentDraft String?  @db.Text
-  order       Int      @default(0)
-  isLocked    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  order        Int      @default(0)
+  isLocked     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relationships
-  module      CourseModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  files       CourseFile[]
-  progress    CourseProgress[]
-  tests       Test[]
+  module        CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  files         CourseFile[]
+  progress      CourseProgress[]
+  tests         Test[]
   flashcardSets FlashcardSet[]
-  bookmarks   Bookmark[]
+  bookmarks     Bookmark[]
 
   @@index([moduleId])
 }
 
 model CourseFile {
-  id          String   @id @default(cuid())
-  lessonId    String?
-  courseId    String?
-  fileName    String
-  fileUrl     String
-  fileType    FileType
-  fileSize    Int
-  isVisible   Boolean  @default(true)
+  id           String   @id @default(cuid())
+  lessonId     String?
+  courseId     String?
+  fileName     String
+  fileUrl      String
+  fileType     FileType
+  fileSize     Int
+  isVisible    Boolean  @default(true)
   uploadedById String
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   // Relationships
-  lesson     CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  course     Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  uploader   User          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  lesson   CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course   Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  uploader User          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
 
   @@index([lessonId])
   @@index([courseId])
@@ -329,15 +352,15 @@ model CourseFile {
 }
 
 model CourseEnrollment {
-  id         String    @id @default(cuid())
-  userId     String
-  courseId   String
-  enrolledAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  courseId    String
+  enrolledAt  DateTime  @default(now())
   completedAt DateTime?
 
   // Relationships
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
   grades Grade[]
 
   @@unique([userId, courseId])
@@ -346,17 +369,17 @@ model CourseEnrollment {
 }
 
 model CourseProgress {
-  id            String    @id @default(cuid())
-  userId        String
-  courseId      String
-  lessonId      String
-  completedAt   DateTime?
-  lastAccessedAt DateTime @default(now())
+  id             String    @id @default(cuid())
+  userId         String
+  courseId       String
+  lessonId       String
+  completedAt    DateTime?
+  lastAccessedAt DateTime  @default(now())
 
   // Relationships
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course  Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lesson  CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
   @@index([userId])
@@ -381,14 +404,15 @@ model Test {
   updatedAt    DateTime  @updatedAt
 
   // Relationships
-  course       Course?             @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lesson       CourseLesson?      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  classroom    Classroom?          @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  creator      User                @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  questions    TestQuestion[]
-  attempts     TestAttempt[]
-  assignedWork AssignedWork[]
-  posts        ClassroomPost[]
+  course        Course?         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson        CourseLesson?   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  classroom     Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  creator       User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  questions     TestQuestion[]
+  attempts      TestAttempt[]
+  assignedWork  AssignedWork[]
+  posts         ClassroomPost[]
+  calendarEvent Event?
 
   @@index([courseId])
   @@index([lessonId])
@@ -396,19 +420,19 @@ model Test {
 }
 
 model TestQuestion {
-  id           String        @id @default(cuid())
+  id           String       @id @default(cuid())
   testId       String
-  questionText String        @db.Text
+  questionText String       @db.Text
   questionType QuestionType
-  order        Int           @default(0)
-  points       Float         @default(1)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  order        Int          @default(0)
+  points       Float        @default(1)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // Relationships
-  test     Test                @relation(fields: [testId], references: [id], onDelete: Cascade)
-  options  TestQuestionOption[]
-  answers  TestAnswer[]
+  test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  options   TestQuestionOption[]
+  answers   TestAnswer[]
   responses TestAttemptResponse[]
 
   @@index([testId])
@@ -422,17 +446,17 @@ model TestQuestionOption {
   order      Int     @default(0)
 
   // Relationships
-  question TestQuestion            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question  TestQuestion          @relation(fields: [questionId], references: [id], onDelete: Cascade)
   responses TestAttemptResponse[]
 
   @@index([questionId])
 }
 
 model TestAnswer {
-  id          String   @id @default(cuid())
-  questionId  String
-  answerText  String?  @db.Text
-  isCorrect   Boolean?
+  id         String   @id @default(cuid())
+  questionId String
+  answerText String?  @db.Text
+  isCorrect  Boolean?
 
   // Relationships
   question TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
@@ -441,41 +465,41 @@ model TestAnswer {
 }
 
 model TestAttempt {
-  id         String    @id @default(cuid())
-  testId     String
-  userId     String
-  startedAt  DateTime  @default(now())
+  id          String    @id @default(cuid())
+  testId      String
+  userId      String
+  startedAt   DateTime  @default(now())
   submittedAt DateTime?
-  score      Float?
-  isCompleted Boolean  @default(false)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  score       Float?
+  isCompleted Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relationships
-  test     Test                @relation(fields: [testId], references: [id], onDelete: Cascade)
-  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   responses TestAttemptResponse[]
-  grades   Grade[]
+  grades    Grade[]
 
   @@index([testId])
   @@index([userId])
 }
 
 model TestAttemptResponse {
-  id              String   @id @default(cuid())
-  attemptId       String
-  questionId      String
-  responseText    String?  @db.Text
+  id               String   @id @default(cuid())
+  attemptId        String
+  questionId       String
+  responseText     String?  @db.Text
   selectedOptionId String?
-  isCorrect       Boolean?
-  pointsAwarded   Float?
-  teacherComment  String?  @db.Text
-  createdAt       DateTime @default(now())
+  isCorrect        Boolean?
+  pointsAwarded    Float?
+  teacherComment   String?  @db.Text
+  createdAt        DateTime @default(now())
 
   // Relationships
-  attempt         TestAttempt        @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question        TestQuestion       @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  selectedOption  TestQuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+  attempt        TestAttempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question       TestQuestion        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption TestQuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
 
   @@index([attemptId])
   @@index([questionId])
@@ -512,19 +536,19 @@ model Flashcard {
   updatedAt DateTime @updatedAt
 
   // Relationships
-  set            FlashcardSet         @relation(fields: [setId], references: [id], onDelete: Cascade)
-  studySessions  FlashcardStudySession[]
+  set           FlashcardSet            @relation(fields: [setId], references: [id], onDelete: Cascade)
+  studySessions FlashcardStudySession[]
 
   @@index([setId])
 }
 
 model FlashcardStudySession {
-  id           String    @id @default(cuid())
-  flashcardId  String
-  userId       String
-  isKnown      Boolean   @default(false)
+  id            String   @id @default(cuid())
+  flashcardId   String
+  userId        String
+  isKnown       Boolean  @default(false)
   lastStudiedAt DateTime @default(now())
-  createdAt    DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   // Relationships
   flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
@@ -535,32 +559,36 @@ model FlashcardStudySession {
 }
 
 model Event {
-  id        String    @id @default(cuid())
-  title     String
-  description String? @db.Text
-  startDate DateTime
-  endDate   DateTime
-  startTime String?
-  endTime   String?
-  isAllDay  Boolean   @default(false)
-  order     Int       @default(0)
-  userId    String?
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  startDate   DateTime
+  endDate     DateTime
+  startTime   String?
+  endTime     String?
+  isAllDay    Boolean  @default(false)
+  order       Int      @default(0)
+  userId      String?
   classroomId String?
-  courseId  String?
-  location  String?
-  color     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  courseId    String?
+  testId      String?  @unique
+  isProtected Boolean  @default(false)
+  location    String?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relationships
-  user       User?        @relation("PersonalEvents", fields: [userId], references: [id], onDelete: Cascade)
-  classroom  Classroom?   @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  course     Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  reminders  Reminder[]
+  user      User?      @relation("PersonalEvents", fields: [userId], references: [id], onDelete: Cascade)
+  classroom Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  test      Test?      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  reminders Reminder[]
 
   @@index([userId])
   @@index([classroomId])
   @@index([courseId])
+  @@index([testId])
   @@index([startDate])
 }
 
@@ -583,11 +611,11 @@ model AssignedWork {
   updatedAt    DateTime  @updatedAt
 
   // Relationships
-  assigner    User         @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
-  assignee    User?        @relation("WorkAssignee", fields: [assignedToId], references: [id], onDelete: Cascade)
-  classroom   Classroom?   @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  course      Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  test        Test?        @relation(fields: [testId], references: [id], onDelete: SetNull)
+  assigner    User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
+  assignee    User?           @relation("WorkAssignee", fields: [assignedToId], references: [id], onDelete: Cascade)
+  classroom   Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course      Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  test        Test?           @relation(fields: [testId], references: [id], onDelete: SetNull)
   reminders   Reminder[]
   grades      Grade[]
   submissions Submission[]
@@ -601,21 +629,21 @@ model AssignedWork {
 }
 
 model Schedule {
-  id               String             @id @default(cuid())
-  userId           String
-  title            String
-  description      String?
-  dayOfWeek        Int?
-  startTime        String
-  endTime          String
-  startDate        DateTime?
-  endDate          DateTime?
-  isRecurring      Boolean            @default(false)
+  id                String             @id @default(cuid())
+  userId            String
+  title             String
+  description       String?
+  dayOfWeek         Int?
+  startTime         String
+  endTime           String
+  startDate         DateTime?
+  endDate           DateTime?
+  isRecurring       Boolean            @default(false)
   recurrencePattern RecurrencePattern?
-  classroomId      String?
-  isAutoImported   Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  classroomId       String?
+  isAutoImported    Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   // Relationships
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -627,20 +655,20 @@ model Schedule {
 }
 
 model Reminder {
-  id            String    @id @default(cuid())
-  userId        String
-  task          String
-  date          DateTime
-  time          String?
-  completed     Boolean   @default(false)
-  eventId       String?
+  id             String   @id @default(cuid())
+  userId         String
+  task           String
+  date           DateTime
+  time           String?
+  completed      Boolean  @default(false)
+  eventId        String?
   assignedWorkId String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relationships
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event        Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
   assignedWork AssignedWork? @relation(fields: [assignedWorkId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -650,21 +678,78 @@ model Reminder {
 }
 
 model Notification {
-  id         String           @id @default(cuid())
-  userId     String
-  title      String
-  body       String           @db.Text
-  type       NotificationType
-  readAt     DateTime?
-  relatedId  String?
-  relatedType String?
-  createdAt  DateTime         @default(now())
+  id            String               @id @default(cuid())
+  userId        String
+  title         String
+  body          String               @db.Text
+  type          NotificationType
+  category      NotificationCategory @default(GENERAL)
+  readAt        DateTime?
+  relatedId     String?
+  relatedType   String?
+  classroomId   String?
+  classroomName String?
+  actorId       String?
+  actorName     String?
+  actionUrl     String?
+  createdAt     DateTime             @default(now())
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([readAt])
+  @@index([category])
+  @@index([classroomId])
+  @@index([createdAt])
+}
+
+model ClassroomCourse {
+  id          String   @id @default(cuid())
+  classroomId String
+  courseId    String
+  addedById   String
+  createdAt   DateTime @default(now())
+
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([classroomId, courseId])
+  @@index([classroomId])
+  @@index([courseId])
+}
+
+model CourseAccess {
+  id          String   @id @default(cuid())
+  courseId    String
+  userId      String
+  invitedById String
+  createdAt   DateTime @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@index([userId])
+}
+
+model ActivityRecord {
+  id           String       @id @default(cuid())
+  userId       String
+  role         ActivityRole
+  activityType String
+  courseId     String?
+  classroomId  String?
+  relatedId    String?
+  dedupeKey    String       @unique
+  createdAt    DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([classroomId])
+  @@index([courseId])
   @@index([createdAt])
 }
 
@@ -694,27 +779,27 @@ model Announcement {
 }
 
 model Grade {
-  id                String    @id @default(cuid())
-  userId            String
-  assignedWorkId    String?
-  courseId          String?
+  id                 String    @id @default(cuid())
+  userId             String
+  assignedWorkId     String?
+  courseId           String?
   courseEnrollmentId String?
-  testAttemptId     String?
-  score             Float
-  maxScore          Float?
-  feedback          String?   @db.Text
-  gradedById        String?
-  gradedAt          DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  testAttemptId      String?
+  score              Float
+  maxScore           Float?
+  feedback           String?   @db.Text
+  gradedById         String?
+  gradedAt           DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   // Relationships
-  student           User            @relation("StudentGrade", fields: [userId], references: [id], onDelete: Cascade)
-  assignedWork      AssignedWork?   @relation(fields: [assignedWorkId], references: [id], onDelete: Cascade)
-  course            Course?          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseEnrollment  CourseEnrollment? @relation(fields: [courseEnrollmentId], references: [id], onDelete: Cascade)
-  testAttempt       TestAttempt?    @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
-  grader            User?           @relation("Grader", fields: [gradedById], references: [id], onDelete: SetNull)
+  student          User              @relation("StudentGrade", fields: [userId], references: [id], onDelete: Cascade)
+  assignedWork     AssignedWork?     @relation(fields: [assignedWorkId], references: [id], onDelete: Cascade)
+  course           Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseEnrollment CourseEnrollment? @relation(fields: [courseEnrollmentId], references: [id], onDelete: Cascade)
+  testAttempt      TestAttempt?      @relation(fields: [testAttemptId], references: [id], onDelete: Cascade)
+  grader           User?             @relation("Grader", fields: [gradedById], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([assignedWorkId])
@@ -724,13 +809,13 @@ model Grade {
 }
 
 model Streak {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  currentStreak   Int       @default(0)
-  longestStreak   Int       @default(0)
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  currentStreak    Int       @default(0)
+  longestStreak    Int       @default(0)
   lastActivityDate DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -739,13 +824,13 @@ model Streak {
 }
 
 model FocusSession {
-  id        String            @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
   duration  Int
   type      FocusSessionType
   startedAt DateTime
   endedAt   DateTime
-  createdAt DateTime          @default(now())
+  createdAt DateTime         @default(now())
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -755,15 +840,15 @@ model FocusSession {
 }
 
 model ClassroomInvitation {
-  id         String        @id @default(cuid())
+  id          String        @id @default(cuid())
   classroomId String
-  email      String
-  role       ClassroomRole
-  token      String        @unique
+  email       String
+  role        ClassroomRole
+  token       String        @unique
   invitedById String
-  expiresAt DateTime
-  acceptedAt DateTime?
-  createdAt  DateTime      @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime      @default(now())
 
   // Relationships
   classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
@@ -776,11 +861,11 @@ model ClassroomInvitation {
 }
 
 model Tag {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  slug      String      @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
   courses CourseTag[]
@@ -803,15 +888,15 @@ model CourseTag {
 }
 
 model Bookmark {
-  id       String    @id @default(cuid())
-  userId   String
-  courseId String?
-  lessonId String?
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String?
+  lessonId  String?
   createdAt DateTime @default(now())
 
   // Relationships
-  user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course?      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lesson CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
@@ -822,12 +907,12 @@ model Bookmark {
 }
 
 model Certificate {
-  id            String    @id @default(cuid())
-  userId       String
-  courseId     String
-  completedAt  DateTime
+  id             String   @id @default(cuid())
+  userId         String
+  courseId       String
+  completedAt    DateTime
   certificateUrl String?
-  createdAt    DateTime  @default(now())
+  createdAt      DateTime @default(now())
 
   // Relationships
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -842,7 +927,7 @@ model CourseRating {
   id        String   @id @default(cuid())
   userId    String
   courseId  String
-  rating    Int      // 1-5 stars
+  rating    Int // 1-5 stars
   comment   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -858,21 +943,21 @@ model CourseRating {
 }
 
 model Report {
-  id          String   @id @default(cuid())
-  userId      String   // User who made the report
-  courseId    String   // Course being reported
-  reason      String   @db.Text
-  description String?  @db.Text
-  status      ReportStatus @default(PENDING)
-  reviewedAt  DateTime?
+  id           String       @id @default(cuid())
+  userId       String // User who made the report
+  courseId     String // Course being reported
+  reason       String       @db.Text
+  description  String?      @db.Text
+  status       ReportStatus @default(PENDING)
+  reviewedAt   DateTime?
   reviewedById String? // Admin who reviewed
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   // Relationships
-  reporter  User   @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
-  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  reviewer  User?  @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reporter User   @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  reviewer User?  @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([courseId])
@@ -882,18 +967,18 @@ model Report {
 
 model UserSettings {
   id                    String            @id @default(cuid())
-  userId                 String            @unique
-  theme                  String            @default("bee")
-  defaultActiveMinutes   Int               @default(45)
-  defaultBreakMinutes    Int               @default(15)
-  defaultAutoBreak       Boolean           @default(true)
-  emailNotifications     Boolean           @default(true)
-  reminderNotifications  Boolean           @default(true)
-  courseAlerts           Boolean           @default(true)
-  profileVisibility      ProfileVisibility @default(PUBLIC)
-  activitySharing         Boolean           @default(true)
-  createdAt              DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  userId                String            @unique
+  theme                 String            @default("bee")
+  defaultActiveMinutes  Int               @default(45)
+  defaultBreakMinutes   Int               @default(15)
+  defaultAutoBreak      Boolean           @default(true)
+  emailNotifications    Boolean           @default(true)
+  reminderNotifications Boolean           @default(true)
+  courseAlerts          Boolean           @default(true)
+  profileVisibility     ProfileVisibility @default(PUBLIC)
+  activitySharing       Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -906,25 +991,25 @@ model UserSettings {
 // ==========================================
 
 model ClassroomPost {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   classroomId  String
   authorId     String
   type         PostType
   title        String?
-  content      String?   @db.Text
-  isPinned     Boolean   @default(false)
+  content      String?  @db.Text
+  isPinned     Boolean  @default(false)
   assignmentId String?
   testId       String?
   courseId     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relationships
-  classroom  Classroom    @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  classroom  Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   assignment AssignedWork? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
-  test       Test?        @relation(fields: [testId], references: [id], onDelete: SetNull)
-  course     Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  test       Test?         @relation(fields: [testId], references: [id], onDelete: SetNull)
+  course     Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
   comments   Comment[]
   files      PostFile[]
 
@@ -950,15 +1035,15 @@ model PostFile {
 }
 
 model Comment {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   postId       String?
   submissionId String?
   authorId     String
-  content      String    @db.Text
-  isPrivate    Boolean   @default(false)
+  content      String   @db.Text
+  isPrivate    Boolean  @default(false)
   parentId     String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relationships
   post       ClassroomPost? @relation(fields: [postId], references: [id], onDelete: Cascade)

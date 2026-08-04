@@ -26,7 +26,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
   const [openLink, setOpenLink] = useState(false);
 
   const [isSyncing, setIsSyncing] = useState(false);
-  const lastSyncedValue = useRef<any>(initialValue || null);
+  const lastSyncedValue = useRef<any>(initialValue ?? "");
   const prevId = useRef<string>(id);
 
   // Synchronize internal state with initialValue prop changes (e.g. lesson switch or AI generation)

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
+import { notifyClassroomMembers } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -24,6 +27,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         if (!title?.trim()) {
             return NextResponse.json({ error: "Title required" }, { status: 400 });
+        }
+        if (closesAt && !opensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });
+        if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
+            return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
         }
 
         const test = await prisma.test.create({
@@ -82,41 +89,23 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             },
         });
 
-        // Create event if opensAt is set
-        if (opensAt) {
-            await prisma.event.create({
-                data: {
-                    title: `${type === "EXAM" ? "Exam" : "Test"}: ${title.trim()}`,
-                    description: description?.trim() || null,
-                    startDate: new Date(opensAt),
-                    endDate: closesAt ? new Date(closesAt) : new Date(opensAt),
-                    isAllDay: false,
-                    classroomId: id,
-                    color: (await prisma.classroom.findUnique({ where: { id }, select: { color: true } }))?.color || null,
-                },
-            });
-        }
-
-        // Notify members
-        const members = await prisma.classroomMember.findMany({
-            where: { classroomId: id },
-            select: { userId: true },
+        await syncTestCalendarEvent(test.id);
+        await notifyClassroomMembers({
+            classroomId: id,
+            actorId: userId,
+            title: `New ${type === "EXAM" ? "exam" : "test"}`,
+            body: opensAt ? `${title.trim()} was scheduled.` : `${title.trim()} was created.`,
+            type: "ASSIGNMENT",
+            relatedId: test.id,
+            relatedType: "test",
+            actionUrl: `/classroom/${id}/tests/${test.id}`,
         });
-        const classroom = await prisma.classroom.findUnique({
-            where: { id }, select: { name: true },
-        });
-
-        await prisma.notification.createMany({
-            data: members
-                .filter((m: any) => m.userId !== userId)
-                .map((m: any) => ({
-                    userId: m.userId,
-                    title: `New ${type === "EXAM" ? "Exam" : "Test"} in ${classroom?.name}`,
-                    body: title.trim(),
-                    type: "ASSIGNMENT" as const,
-                    relatedId: test.id,
-                    relatedType: "test",
-                })),
+        await recordMeaningfulActivity({
+            userId,
+            activityType: opensAt ? "TEST_SCHEDULED" : "TEST_CREATED",
+            classroomId: id,
+            relatedId: test.id,
+            dedupeKey: `test:create:${test.id}`,
         });
 
         return NextResponse.json(test, { status: 201 });

@@ -2,24 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FancyCard } from "@/components/ui/fancycard";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { ClassroomFeed } from "@/components/classroom/ClassroomFeed";
 import { ClassroomPeople } from "@/components/classroom/ClassroomPeople";
 import { ClassroomGradebook } from "@/components/classroom/ClassroomGradebook";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { ClassroomSettings } from "@/components/classroom/ClassroomSettings";
 import { AnnouncementBanner } from "@/components/classroom/AnnouncementBanner";
-import { ArrowLeft, Settings, Copy, Check } from "lucide-react";
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Notification01Icon } from '@hugeicons/core-free-icons';
+import { ArrowLeft, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = ["Feed", "People", "Grades", "Settings"] as const;
@@ -46,10 +37,6 @@ export default function ClassroomDetailPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<Tab>("Feed");
     const [codeCopied, setCodeCopied] = useState(false);
-
-    // Announcement state hoisted for Bell placement
-    const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
-    const [showDismissedAnnouncements, setShowDismissedAnnouncements] = useState(false);
 
     const fetchClassroom = useCallback(async () => {
         try {
@@ -92,7 +79,7 @@ export default function ClassroomDetailPage() {
 
     if (!classroom) return null;
 
-    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TA";
+    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -125,7 +112,7 @@ export default function ClassroomDetailPage() {
                     </div>
                 </div>
 
-                {/* Right Header Group: Bell + Code Badge */}
+                {/* Classroom code */}
                 <div className="flex items-center gap-3">
                     {/* Code Badge */}
                     <button
@@ -143,41 +130,6 @@ export default function ClassroomDetailPage() {
                         )}
                     </button>
 
-                    {/* Notification Bell Dropdown */}
-                    <DropdownMenu open={showDismissedAnnouncements} onOpenChange={setShowDismissedAnnouncements}>
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                className={cn(
-                                    "flex items-center justify-center w-10 h-10 rounded-xl corner-squircle transition-colors relative outline-none",
-                                    showDismissedAnnouncements ? "bg-(--theme-card) text-(--theme-text)" : "text-(--theme-text) hover:opacity-80 bg-(--theme-sidebar)"
-                                )}
-                                title="View Announcements"
-                            >
-                                <HugeiconsIcon icon={Notification01Icon} className="h-5 w-5" />
-                                {dismissedAnnouncements.size > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                                        {dismissedAnnouncements.size}
-                                    </span>
-                                )}
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-[380px] p-0 border-(--theme-text)/10 bg-(--theme-bg) shadow-2xl rounded-xl corner-squircle">
-                            <div className="p-4 border-b border-(--theme-text)/10">
-                                <h3 className="font-bold text-(--theme-text) uppercase text-sm">Announcements</h3>
-                            </div>
-                            <ScrollArea className="h-[400px]">
-                                <div className="p-4">
-                                    <AnnouncementBanner
-                                        classroomId={classroomId}
-                                        isTeacher={isTeacher}
-                                        dismissed={dismissedAnnouncements}
-                                        setDismissed={setDismissedAnnouncements}
-                                        showDismissed={true} // Always show all within the dropdown
-                                    />
-                                </div>
-                            </ScrollArea>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
                 </div>
             </div>
 
@@ -186,9 +138,6 @@ export default function ClassroomDetailPage() {
                 <AnnouncementBanner
                     classroomId={classroomId}
                     isTeacher={isTeacher}
-                    dismissed={dismissedAnnouncements}
-                    setDismissed={setDismissedAnnouncements}
-                    showDismissed={false}
                 />
             </div>
 

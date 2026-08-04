@@ -7,12 +7,15 @@ import { CreateCourseModal } from "@/components/course/CreateCourseModal";
 import { CourseCard } from "@/components/course/CourseCard";
 import { Spinner } from "@/components/ui/spinner";
 import { Plus } from "lucide-react";
+import { BookPlus } from "lucide-react";
+import { AddCourseToClassroomModal } from "@/components/course/AddCourseToClassroomModal";
 
 export default function CoursesPage() {
     const router = useRouter();
     const [courses, setCourses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [createOpen, setCreateOpen] = useState(false);
+    const [addToClassroomOpen, setAddToClassroomOpen] = useState(false);
 
     const fetchCourses = useCallback(async () => {
         try {
@@ -44,6 +47,13 @@ export default function CoursesPage() {
                     My Courses
                 </h1>
                 <div className="flex gap-3">
+                    <FancyButton
+                        onClick={() => setAddToClassroomOpen(true)}
+                        className="text-(--theme-text) text-xs md:text-base font-bold uppercase px-4 py-1.5"
+                    >
+                        <BookPlus className="h-4 w-4 mr-2" />
+                        Add to Classroom
+                    </FancyButton>
                     <FancyButton
                         onClick={() => setCreateOpen(true)}
                         className="text-(--theme-text) text-xs md:text-base font-bold uppercase px-4 py-1.5"
@@ -125,6 +135,7 @@ export default function CoursesPage() {
                 onClose={() => setCreateOpen(false)}
                 onCreated={handleCreated}
             />
+            <AddCourseToClassroomModal open={addToClassroomOpen} onClose={() => setAddToClassroomOpen(false)} />
         </div>
     );
 }

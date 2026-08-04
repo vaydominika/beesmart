@@ -12,6 +12,8 @@ interface EventData {
     startTime?: string | null;
     endTime?: string | null;
     isAllDay: boolean;
+    isProtected?: boolean;
+    canEdit?: boolean;
 }
 
 import { useEventSync } from "@/hooks/use-event-sync";

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signOut } from "next-auth/react";
 import { FancyCard } from '../ui/fancycard'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Settings01Icon } from '@hugeicons/core-free-icons'
@@ -34,27 +33,18 @@ export function SettingsModal() {
     setEmailNotifications,
     setReminderNotifications,
     setCourseAlerts,
-    profileVisibility,
-    activitySharing,
-    setProfileVisibility,
-    setActivitySharing,
     saveSettingsToServer,
     isSaving,
   } = useSettings();
 
   const [localActiveMinutes, setLocalActiveMinutes] = useState(defaultActiveMinutes.toString());
   const [localBreakMinutes, setLocalBreakMinutes] = useState(defaultBreakMinutes.toString());
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Section open/close state - all closed by default
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     theme: false,
     focusTimer: false,
-    security: false,
     notifications: false,
-    privacy: false,
   });
 
   const toggleSection = (section: string) => {
@@ -69,40 +59,6 @@ export function SettingsModal() {
     const breakMins = parseInt(localBreakMinutes) || 15;
     setDefaultActiveMinutes(active);
     setDefaultBreakMinutes(breakMins);
-
-    // Handle password change if all fields are filled
-    if (currentPassword && newPassword && confirmPassword) {
-      if (newPassword !== confirmPassword) {
-        toast.error("New passwords don't match!");
-        return;
-      }
-      if (newPassword.length < 6) {
-        toast.error("New password must be at least 6 characters.");
-        return;
-      }
-      try {
-        const res = await fetch("/api/user/profile", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            currentPassword,
-            newPassword,
-          }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          toast.error(data.error ?? "Failed to change password.");
-          return;
-        }
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-        toast.success("Password updated!");
-      } catch {
-        toast.error("Failed to change password.");
-        return;
-      }
-    }
 
     const ok = await saveSettingsToServer({
       defaultActiveMinutes: active,
@@ -125,18 +81,18 @@ export function SettingsModal() {
 
   return (
     <Dialog open={isModalOpen} onOpenChange={closeModal}>
-      <DialogContent className="p-0 max-w-2xl max-h-[85vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-10 flex flex-col max-h-[85vh] md:max-h-[82vh] overflow-hidden">
-          <DialogHeader className="shrink-0 pb-2 md:pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
-              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2} />
-              SETTINGS
+      <DialogContent className="p-0 max-w-2xl max-h-[78vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
+        <FancyCard className="bg-(--theme-bg) p-4 md:p-6 flex flex-col max-h-[78vh] md:max-h-[76vh] overflow-hidden">
+          <DialogHeader className="shrink-0 pb-1">
+            <DialogTitle className="flex items-center gap-2 text-xl md:text-[32px] font-bold text-(--theme-text) uppercase">
+              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-9 md:h-9" strokeWidth={2.2} />
+              GENERAL SETTINGS
             </DialogTitle>
           </DialogHeader>
 
-          <div className="my-2 md:my-8 flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-[35vh] md:h-[40vh] pr-2">
-              <div className="space-y-8 px-2 pb-4">
+          <div className="my-2 md:my-4 flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-[32vh] md:h-[36vh] pr-2">
+              <div className="space-y-5 px-2 pb-3">
                 {/* Theme Section */}
                 <div>
                   <button
@@ -241,66 +197,6 @@ export function SettingsModal() {
                   </div>
                 </div>
 
-                {/* Security */}
-                <div>
-                  <button
-                    onClick={() => toggleSection('security')}
-                    className="w-full flex items-center justify-between text-xs md:text-lg font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
-                  >
-                    <span>SECURITY</span>
-                    {openSections.security ? (
-                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                      openSections.security ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                  >
-                    <div className="space-y-3 pt-2">
-                      <div>
-                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
-                          CURRENT PASSWORD
-                        </label>
-                        <Input
-                          type="password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                          placeholder="Current password"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
-                          NEW PASSWORD
-                        </label>
-                        <Input
-                          type="password"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                          placeholder="New password"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] md:text-sm font-bold text-(--theme-text) uppercase mb-1">
-                          CONFIRM PASSWORD
-                        </label>
-                        <Input
-                          type="password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                          placeholder="Confirm password"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Notifications */}
                 <div>
                   <button
@@ -355,75 +251,13 @@ export function SettingsModal() {
                   </div>
                 </div>
 
-                {/* Privacy */}
-                <div>
-                  <button
-                    onClick={() => toggleSection('privacy')}
-                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
-                  >
-                    <span>PRIVACY</span>
-                    {openSections.privacy ? (
-                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                      openSections.privacy ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                  >
-                    <div className="space-y-3 pt-2">
-                      <div>
-                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                          PROFILE VISIBILITY
-                        </label>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setProfileVisibility("public")}
-                            className={`flex-1 p-2 rounded-xl corner-squircle border-2 transition-all ${profileVisibility === "public"
-                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
-                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                              }`}
-                          >
-                            <span className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                              PUBLIC
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => setProfileVisibility("private")}
-                            className={`flex-1 p-2 rounded-xl corner-squircle border-2 transition-all ${profileVisibility === "private"
-                              ? "border-(--theme-text-important) bg-(--theme-sidebar)"
-                              : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                              }`}
-                          >
-                            <span className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                              PRIVATE
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-1">
-                        <label className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                          ACTIVITY SHARING
-                        </label>
-                        <Switch
-                          checked={activitySharing}
-                          onCheckedChange={setActivitySharing}
-                          className="data-[state=checked]:bg-(--theme-sidebar) scale-90 md:scale-100"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </ScrollArea>
           </div>
 
           <Separator className="shrink-0 my-1 md:my-0" />
 
-          <DialogFooter className="flex flex-col gap-2 md:gap-4 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
+          <DialogFooter className="flex flex-col gap-2 md:gap-4 pt-2 md:pt-4 shrink-0 pb-1 md:pb-0">
             <div className="flex w-full gap-2 md:gap-6">
               <FancyButton
                 onClick={closeModal}

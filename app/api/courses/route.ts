@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { FileType } from "@/lib/generated/prisma";
+import { accessibleCourseWhere } from "@/lib/course-access";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 // Helper to map standard mime types to our Prisma enum
 const mapToFileType = (mimeType: string): FileType => {
@@ -14,17 +16,33 @@ const mapToFileType = (mimeType: string): FileType => {
 };
 
 // GET /api/courses — Get all courses for the current user
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+        const source = req.nextUrl.searchParams.get("source");
+        const search = req.nextUrl.searchParams.get("search")?.trim();
+        const sourceWhere = source === "my"
+            ? { createdById: userId }
+            : source === "all"
+                ? accessibleCourseWhere(userId)
+                : { OR: [
+                    { createdById: userId },
+                    { visibility: "PUBLIC" as const, published: true, enrollments: { some: { userId } } },
+                    { visibility: "PUBLIC" as const, published: true, classroomLinks: { some: { classroom: { members: { some: { userId } } } } } },
+                    { visibility: "INVITATION_ONLY" as const, accessGrants: { some: { userId } } },
+                ] };
         const courses = await prisma.course.findMany({
             where: {
-                OR: [
-                    { createdById: userId },
-                    { enrollments: { some: { userId } } },
-                ]
+                AND: [
+                    sourceWhere,
+                    ...(search ? [{ OR: [
+                        { title: { contains: search } },
+                        { description: { contains: search } },
+                        { creator: { name: { contains: search } } },
+                    ] }] : []),
+                ],
             },
             include: {
                 creator: { select: { id: true, name: true, avatar: true } },
@@ -79,6 +97,9 @@ export async function POST(req: NextRequest) {
 
         const data = await req.json();
         const { title, description, classroomId, isPublic, coverImageUrl, files, published } = data;
+        const visibility = ["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)
+            ? data.visibility
+            : (isPublic ? "PUBLIC" : "PRIVATE");
 
         if (!title?.trim()) {
             return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -89,7 +110,8 @@ export async function POST(req: NextRequest) {
                 title: title.trim(),
                 description: description?.trim() || null,
                 classroomId: classroomId || null,
-                isPublic: isPublic || false,
+                isPublic: visibility === "PUBLIC",
+                visibility,
                 published: published || false,
                 coverImageUrl: coverImageUrl || null,
                 createdById: userId,
@@ -104,6 +126,23 @@ export async function POST(req: NextRequest) {
                         }))
                     }
                 })
+            },
+        });
+
+        await recordMeaningfulActivity({
+            userId, activityType: "COURSE_CREATED", courseId: course.id, relatedId: course.id,
+            dedupeKey: `course:create:${course.id}`,
+        });
+        await prisma.notification.create({
+            data: {
+                userId,
+                title: "Course created",
+                body: `${course.title} is ready for you to build.`,
+                type: "OTHER",
+                category: "GENERAL",
+                relatedId: course.id,
+                relatedType: "course",
+                actionUrl: `/courses/${course.id}/builder`,
             },
         });
 

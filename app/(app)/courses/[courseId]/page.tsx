@@ -8,6 +8,7 @@ import { BadgeCheck, Clock, BookOpen, Layers } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { EnrollButton } from "@/components/course/EnrollButton";
+import { canAccessCourse } from "@/lib/course-access";
 
 type CoursePageProps = { params: Promise<{ courseId: string }> };
 
@@ -28,7 +29,8 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
         }
     });
 
-    if (!course || (!course.published && course.createdById !== userId)) {
+    const hasAccess = course && userId ? await canAccessCourse(courseId, userId) : false;
+    if (!course || (!course.published && course.createdById !== userId) || !hasAccess) {
         redirect("/courses");
     }
 

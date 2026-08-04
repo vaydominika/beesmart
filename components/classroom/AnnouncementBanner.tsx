@@ -7,9 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Info, AlertCircle, Megaphone, Pin, X, CheckCircle2, Circle } from "lucide-react";
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Notification01Icon } from '@hugeicons/core-free-icons';
+import { AlertTriangle, Info, AlertCircle, Megaphone, Pin } from "lucide-react";
 
 interface Announcement {
     id: string;
@@ -47,18 +45,17 @@ const PRIORITY_STYLES: Record<string, { bg: string; icon: React.ReactNode; borde
 interface Props {
     classroomId: string;
     isTeacher: boolean;
-    dismissed: Set<string>;
-    setDismissed: React.Dispatch<React.SetStateAction<Set<string>>>;
-    showDismissed: boolean;
 }
 
-export function AnnouncementBanner({ classroomId, isTeacher, dismissed, setDismissed, showDismissed }: Props) {
+export function AnnouncementBanner({ classroomId, isTeacher }: Props) {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [createOpen, setCreateOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [body, setBody] = useState("");
     const [priority, setPriority] = useState<Announcement["priority"]>("INFO");
     const [saving, setSaving] = useState(false);
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
+    const [announcementToCancel, setAnnouncementToCancel] = useState<Announcement | null>(null);
 
     const fetchAnnouncements = useCallback(async () => {
         try {
@@ -103,39 +100,38 @@ export function AnnouncementBanner({ classroomId, isTeacher, dismissed, setDismi
         }
     };
 
-    const visible = announcements.filter((a) => showDismissed || !dismissed.has(a.id));
+    const handleCancelUrgent = async (announcementId: string) => {
+        setCancellingId(announcementId);
+        try {
+            const res = await fetch(`/api/classrooms/${classroomId}/announcements`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ announcementId }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                toast.error(data.error ?? "Could not cancel the urgent announcement.");
+                return;
+            }
+
+            setAnnouncements((current) => current.filter((announcement) => announcement.id !== announcementId));
+            setAnnouncementToCancel(null);
+            toast.success("Urgent announcement canceled.");
+        } catch {
+            toast.error("Could not cancel the urgent announcement.");
+        } finally {
+            setCancellingId(null);
+        }
+    };
+
+    const visible = announcements.filter((announcement) => announcement.priority === "URGENT");
     if (visible.length === 0 && !isTeacher) return null;
 
     return (
         <div className="space-y-4">
-            {/* Header controls for Dropdown mode */}
-            {showDismissed && announcements.length > 0 && (
-                <div className="flex items-center justify-between px-2">
-                    <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase">
-                        {dismissed.size} Read
-                    </span>
-                    {dismissed.size < announcements.length ? (
-                        <button
-                            onClick={() => setDismissed(new Set(announcements.map(a => a.id)))}
-                            className="text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity"
-                        >
-                            Mark all as read
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => setDismissed(new Set())}
-                            className="text-xs font-bold text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity"
-                        >
-                            Mark all as unread
-                        </button>
-                    )}
-                </div>
-            )}
-
             <div className="mb-6 space-y-2">
                 {visible.map((a) => {
                     const style = PRIORITY_STYLES[a.priority] || PRIORITY_STYLES.INFO;
-                    const isRead = dismissed.has(a.id);
 
                     return (
                         <div
@@ -144,39 +140,27 @@ export function AnnouncementBanner({ classroomId, isTeacher, dismissed, setDismi
                                 "flex items-start gap-3 p-3 rounded-xl corner-squircle border transition-all",
                                 style.bg,
                                 style.border,
-                                isRead ? "opacity-60 grayscale" : "opacity-100"
                             )}
                         >
                             {style.icon}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                    <span className={cn("font-bold text-sm text-(--theme-text) truncate", isRead && "line-through opacity-70")}>{a.title}</span>
+                                    <span className="font-bold text-sm text-(--theme-text) truncate">{a.title}</span>
                                     {a.isPinned && <Pin className="h-3 w-3 text-(--theme-text) opacity-50" />}
                                 </div>
                                 <p className="text-xs text-(--theme-text) opacity-70 mt-0.5 line-clamp-2">{a.body}</p>
                             </div>
-                            <button
-                                onClick={() => {
-                                    setDismissed(prev => {
-                                        const newSet = new Set(prev);
-                                        if (newSet.has(a.id)) newSet.delete(a.id);
-                                        else newSet.add(a.id);
-                                        return newSet;
-                                    });
-                                }}
-                                className={cn(
-                                    "shrink-0 p-1.5 rounded-lg transition-colors flex items-center gap-1.5",
-                                    isRead
-                                        ? "bg-(--theme-card) text-(--theme-text) opacity-50 hover:opacity-100"
-                                        : "bg-(--theme-sidebar) text-(--theme-text) hover:bg-(--theme-card)"
-                                )}
-                                title={isRead ? "Mark as unread" : "Mark as read"}
-                            >
-                                {isRead ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
-                                {showDismissed && (
-                                    <span className="text-[10px] font-bold uppercase">{isRead ? "Mark as unread" : "Mark as Read"}</span>
-                                )}
-                            </button>
+                            {isTeacher && (
+                                <button
+                                    type="button"
+                                    onClick={() => setAnnouncementToCancel(a)}
+                                    disabled={cancellingId === a.id}
+                                    aria-label={`Cancel urgent announcement: ${a.title}`}
+                                    className="shrink-0 rounded-md px-2 py-1 text-[10px] font-bold uppercase text-(--theme-text) opacity-45 transition-all hover:bg-red-500/10 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:cursor-not-allowed disabled:opacity-30"
+                                >
+                                    Cancel
+                                </button>
+                            )}
                         </div>
                     );
                 })}
@@ -248,6 +232,45 @@ export function AnnouncementBanner({ classroomId, isTeacher, dismissed, setDismi
                             </FancyButton>
                             <FancyButton onClick={handleCreate} disabled={saving} className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase">
                                 {saving ? "Posting…" : "Post"}
+                            </FancyButton>
+                        </div>
+                    </FancyCard>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={!!announcementToCancel}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen && !cancellingId) setAnnouncementToCancel(null);
+                }}
+            >
+                <DialogContent className="p-0 max-w-sm border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
+                    <FancyCard className="bg-(--theme-bg) p-5 md:p-6">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl md:text-[28px] font-bold text-(--theme-text) uppercase">
+                                Cancel announcement?
+                            </DialogTitle>
+                        </DialogHeader>
+                        <p className="mt-3 text-sm text-(--theme-text) opacity-70">
+                            <span className="font-bold opacity-100">{announcementToCancel?.title}</span> will be removed for everyone in this Classroom.
+                        </p>
+                        <div className="mt-6 flex gap-3">
+                            <FancyButton
+                                type="button"
+                                onClick={() => setAnnouncementToCancel(null)}
+                                disabled={!!cancellingId}
+                                className="flex-1 text-(--theme-text) text-xs md:text-base font-bold uppercase"
+                            >
+                                Keep
+                            </FancyButton>
+                            <FancyButton
+                                type="button"
+                                onClick={() => announcementToCancel && handleCancelUrgent(announcementToCancel.id)}
+                                disabled={!!cancellingId}
+                                aria-label="Confirm cancel announcement"
+                                className="flex-1 text-(--theme-text) text-xs md:text-base font-bold uppercase bg-red-500/15"
+                            >
+                                {cancellingId ? "Canceling…" : "Cancel announcement"}
                             </FancyButton>
                         </div>
                     </FancyCard>

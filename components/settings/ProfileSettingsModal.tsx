@@ -12,6 +12,7 @@ import {
 import { UserIcon, Upload } from "lucide-react";
 import { FancyButton } from "../ui/fancybutton";
 import { Input } from "../ui/input";
+import { Switch } from "../ui/switch";
 import { useSettings } from "./SettingsProvider";
 import { useDashboard } from "@/lib/DashboardContext";
 import { ScrollArea } from "../ui/scroll-area";
@@ -23,7 +24,16 @@ import Image from "next/image";
 import { toast } from "@/components/ui/sonner";
 
 export function ProfileSettingsModal() {
-  const { isProfileModalOpen, closeProfileModal } = useSettings();
+  const {
+    isProfileModalOpen,
+    closeProfileModal,
+    profileVisibility,
+    activitySharing,
+    setProfileVisibility,
+    setActivitySharing,
+    saveSettingsToServer,
+    isSaving: isSavingSettings,
+  } = useSettings();
   const { data, refetch } = useDashboard();
   const user = data?.user;
 
@@ -46,6 +56,7 @@ export function ProfileSettingsModal() {
     profile: true,
     picture: false,
     banner: false,
+    privacy: false,
     security: false,
   });
 
@@ -147,6 +158,10 @@ export function ProfileSettingsModal() {
         const json = await res.json().catch(() => ({}));
         throw new Error(json.error ?? "Failed to update profile");
       }
+      const settingsSaved = await saveSettingsToServer({ profileVisibility, activitySharing });
+      if (!settingsSaved) {
+        throw new Error("Profile updated, but privacy settings could not be saved.");
+      }
       await refetch();
       toast.success("Profile updated");
       closeProfileModal();
@@ -161,18 +176,18 @@ export function ProfileSettingsModal() {
 
   return (
     <Dialog open={isProfileModalOpen} onOpenChange={closeProfileModal}>
-      <DialogContent className="p-0 max-w-2xl max-h-[85vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-10 flex flex-col max-h-[85vh] md:max-h-[82vh] overflow-hidden">
-          <DialogHeader className="shrink-0 pb-2 md:pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
-              <UserIcon className="h-6 w-6 md:w-12 md:h-12" />
+      <DialogContent className="p-0 max-w-2xl max-h-[78vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
+        <FancyCard className="bg-(--theme-bg) p-4 md:p-6 flex flex-col max-h-[78vh] md:max-h-[76vh] overflow-hidden">
+          <DialogHeader className="shrink-0 pb-1">
+            <DialogTitle className="flex items-center gap-2 text-xl md:text-[32px] font-bold text-(--theme-text) uppercase">
+              <UserIcon className="h-6 w-6 md:w-9 md:h-9" />
               PROFILE SETTINGS
             </DialogTitle>
           </DialogHeader>
 
-          <div className="my-2 md:my-8 flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-[35vh] md:h-[40vh] pr-2">
-              <div className="space-y-8 px-2 pb-4">
+          <div className="my-2 md:my-4 flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-[32vh] md:h-[36vh] pr-2">
+              <div className="space-y-5 px-2 pb-3">
                 {/* Profile: name, role */}
                 <div>
                   <button
@@ -320,6 +335,78 @@ export function ProfileSettingsModal() {
                   </div>
                 </div>
 
+                {/* Profile privacy */}
+                <div>
+                  <button
+                    onClick={() => toggleSection("privacy")}
+                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
+                  >
+                    <span>PROFILE PRIVACY</span>
+                    {openSections.privacy ? (
+                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
+                    )}
+                  </button>
+                  <div
+                    className={cn(
+                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
+                      openSections.privacy
+                        ? "max-h-[600px] opacity-100"
+                        : "max-h-0 opacity-0"
+                    )}
+                  >
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
+                          PROFILE VISIBILITY
+                        </label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProfileVisibility("public")}
+                            className={cn(
+                              "flex-1 p-2 rounded-xl corner-squircle border-2 transition-all",
+                              profileVisibility === "public"
+                                ? "border-(--theme-text-important) bg-(--theme-sidebar)"
+                                : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
+                            )}
+                          >
+                            <span className="text-xs md:text-base font-bold text-(--theme-text) uppercase">PUBLIC</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setProfileVisibility("private")}
+                            className={cn(
+                              "flex-1 p-2 rounded-xl corner-squircle border-2 transition-all",
+                              profileVisibility === "private"
+                                ? "border-(--theme-text-important) bg-(--theme-sidebar)"
+                                : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
+                            )}
+                          >
+                            <span className="text-xs md:text-base font-bold text-(--theme-text) uppercase">PRIVATE</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <label className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
+                            ACTIVITY SHARING
+                          </label>
+                          <p className="text-xs text-(--theme-text)/70 mt-0.5">
+                            Show your learning activity on your profile.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={activitySharing}
+                          onCheckedChange={setActivitySharing}
+                          className="data-[state=checked]:bg-(--theme-sidebar) scale-90 md:scale-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Security / Password */}
                 <div>
                   <button
@@ -396,17 +483,17 @@ export function ProfileSettingsModal() {
 
           <Separator className="shrink-0 my-1 md:my-0" />
 
-          <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
+          <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-4 shrink-0 pb-1 md:pb-0">
             <FancyButton
               onClick={closeProfileModal}
-              disabled={saving}
+              disabled={saving || isSavingSettings}
               className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               CANCEL
             </FancyButton>
             <FancyButton
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || isSavingSettings}
               className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               {saving ? "SAVING…" : "SAVE"}

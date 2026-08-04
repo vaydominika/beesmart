@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { TestView } from "@/components/classroom/TestView";
 import { ArrowLeft } from "lucide-react";
+import { TestScheduleControls } from "@/components/classroom/TestScheduleControls";
 
 interface ClassroomDetail {
     id: string;
@@ -56,7 +57,7 @@ export default function TestPage() {
 
     if (!classroom) return null;
 
-    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TA";
+    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
@@ -84,6 +85,13 @@ export default function TestPage() {
                 testId={testId}
                 isTeacher={isTeacher}
             />
+            {isTeacher && (
+                <TestScheduleControls
+                    classroomId={classroomId}
+                    testId={testId}
+                    onDeleted={() => router.push(`/classroom/${classroomId}`)}
+                />
+            )}
         </div>
     );
 }

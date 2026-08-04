@@ -7,7 +7,7 @@ import { FancyButton } from "@/components/ui/fancybutton";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, LockKeyhole } from "lucide-react";
 import { Reorder, useDragControls } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DragDropVerticalIcon } from "@hugeicons/core-free-icons";
@@ -23,6 +23,8 @@ interface EventData {
     startTime?: string | null;
     endTime?: string | null;
     isAllDay: boolean;
+    isProtected?: boolean;
+    canEdit?: boolean;
 }
 
 interface EventModalProps {
@@ -53,12 +55,16 @@ function SortableEventItem({
             onDragEnd={onDragEnd}
             className="flex items-center justify-between bg-(--theme-sidebar) rounded-xl corner-squircle p-3 mb-2"
         >
-            <div
-                className="cursor-move p-2 -ml-2 text-(--theme-text) opacity-50 hover:opacity-100 touch-none"
-                onPointerDown={(e) => controls.start(e)}
-            >
-                <HugeiconsIcon icon={DragDropVerticalIcon} size={20} strokeWidth={2.2} />
-            </div>
+            {event.isProtected ? (
+                <div className="p-2 -ml-2 text-(--theme-text) opacity-40"><LockKeyhole className="h-4 w-4" /></div>
+            ) : (
+                <div
+                    className="cursor-move p-2 -ml-2 text-(--theme-text) opacity-50 hover:opacity-100 touch-none"
+                    onPointerDown={(e) => controls.start(e)}
+                >
+                    <HugeiconsIcon icon={DragDropVerticalIcon} size={20} strokeWidth={2.2} />
+                </div>
+            )}
             <div className="min-w-0 flex-1 ml-1 select-none">
                 <p className="text-sm md:text-base font-bold text-(--theme-text) truncate">
                     {event.title}
@@ -72,12 +78,14 @@ function SortableEventItem({
                     </p>
                 ) : null}
             </div>
-            <button
-                onClick={() => onDelete(event.id)}
-                className="ml-2 p-1.5 rounded-lg hover:bg-(--theme-card)/50 text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity shrink-0"
-            >
-                <Trash2 className="h-4 w-4" />
-            </button>
+            {event.canEdit !== false && (
+                <button
+                    onClick={() => onDelete(event.id)}
+                    className="ml-2 p-1.5 rounded-lg hover:bg-(--theme-card)/50 text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity shrink-0"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </button>
+            )}
         </Reorder.Item>
     );
 }
@@ -219,7 +227,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     const handleDragEnd = async () => {
         // Save new order to backend
         try {
-            const updates = events.map((event, index) => ({
+            const updates = events.filter((event) => !event.isProtected).map((event, index) => ({
                 id: event.id,
                 order: index,
             }));

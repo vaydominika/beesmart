@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 
@@ -91,6 +92,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 submittedAt: new Date(),
                 score: hasManualGrading ? null : (totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0),
             },
+        });
+        await recordMeaningfulActivity({
+            userId, activityType: "TEST_COMPLETED", classroomId: id, relatedId: attemptId,
+            dedupeKey: `test:complete:${attemptId}`,
         });
 
         return NextResponse.json({

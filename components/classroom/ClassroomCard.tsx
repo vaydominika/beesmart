@@ -39,8 +39,8 @@ export function ClassroomCard({
     creatorName,
     onClick,
 }: ClassroomCardProps) {
-    const roleLabel = role === "TEACHER" ? "Teacher" : role === "TA" ? "TA" : "Student";
-    const roleBg = role === "TEACHER" ? "bg-amber-400/20 text-amber-600" : role === "TA" ? "bg-purple-400/20 text-purple-600" : "bg-blue-400/20 text-blue-600";
+    const roleLabel = role === "TEACHER" ? "Teacher" : role === "TEACHING_ASSISTANT" ? "TA" : "Student";
+    const roleBg = role === "TEACHER" ? "bg-amber-400/20 text-amber-600" : role === "TEACHING_ASSISTANT" ? "bg-purple-400/20 text-purple-600" : "bg-blue-400/20 text-blue-600";
 
     return (
         <FancyCard className="bg-(--theme-card) p-5 group cursor-pointer hover:scale-[1.02] transition-transform duration-200">

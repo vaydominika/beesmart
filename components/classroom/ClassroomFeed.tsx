@@ -9,6 +9,7 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { CreateAssignmentModal } from "@/components/classroom/CreateAssignmentModal";
 import { CreateTestModal } from "@/components/classroom/CreateTestModal";
+import { CoursePostModal, type PostCourse } from "@/components/classroom/CoursePostModal";
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
     FileText, Image, ClipboardList, GraduationCap,
@@ -52,6 +53,7 @@ interface Post {
         opensAt?: string | null;
         closesAt?: string | null;
     } | null;
+    course?: PostCourse | null;
 }
 
 interface Comment {
@@ -99,12 +101,18 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [newPostContent, setNewPostContent] = useState("");
     const [posting, setPosting] = useState(false);
     const [postFiles, setPostFiles] = useState<{ fileName: string; fileUrl: string; fileType: string; fileSize: number }[]>([]);
+    const [postCourse, setPostCourse] = useState<PostCourse | null>(null);
     const [uploadingFiles, setUploadingFiles] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const postEditorRef = useRef<{
+        getHTML: () => string;
+        commands: { clearContent: () => void };
+    } | null>(null);
 
     // Modal state
     const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
     const [testModalOpen, setTestModalOpen] = useState(false);
+    const [courseModalOpen, setCourseModalOpen] = useState(false);
 
     // Comment state
     const [expandedPost, setExpandedPost] = useState<string | null>(null);
@@ -134,27 +142,35 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     }, [fetchPosts]);
 
     const handleCreatePost = async () => {
-        const isContentEmpty = !newPostContent.replace(/<[^>]*>?/gm, '').trim();
-        if (isContentEmpty && postFiles.length === 0) return;
+        const editorContent = postEditorRef.current?.getHTML() ?? newPostContent;
+        const isContentEmpty = !editorContent.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, " ").trim();
+        if (isContentEmpty && postFiles.length === 0 && !postCourse) {
+            toast.error("Write a message, attach a file, or add a course.");
+            return;
+        }
         setPosting(true);
         try {
-            const postType = postFiles.some((f) => f.fileType === "IMAGE") ? "PHOTO" : postFiles.length > 0 ? "MATERIAL" : "TEXT";
+            const postType = postCourse ? "COURSE" : postFiles.some((f) => f.fileType === "IMAGE") ? "PHOTO" : postFiles.length > 0 ? "MATERIAL" : "TEXT";
             const res = await fetch(`/api/classrooms/${classroomId}/posts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     type: postType,
-                    content: isContentEmpty ? null : newPostContent,
+                    content: isContentEmpty ? null : editorContent,
+                    courseId: postCourse?.id,
                     files: postFiles.length > 0 ? postFiles : undefined,
                 }),
             });
             if (!res.ok) {
-                toast.error("Failed to create post.");
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.error ?? "Failed to create post.");
                 return;
             }
             toast.success("Post created!");
             setNewPostContent("");
+            postEditorRef.current?.commands.clearContent();
             setPostFiles([]);
+            setPostCourse(null);
             fetchPosts();
         } catch {
             toast.error("Failed to create post.");
@@ -283,11 +299,15 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <Editor
                         initialValue={newPostContent}
                         onChange={setNewPostContent}
-                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm" id={""} />
+                        onReady={(editor) => { postEditorRef.current = editor; }}
+                        className="flex-1 bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus-within:ring-2 focus-within:ring-(--theme-card) min-h-[60px] p-3 prose dark:prose-invert prose-sm"
+                        id="classroom-post"
+                    />
                     <FancyButton
                         onClick={handleCreatePost}
-                        disabled={posting || (!newPostContent.replace(/<[^>]*>?/gm, '').trim() && postFiles.length === 0)}
-                        className="text-(--theme-text) text-xs font-bold uppercase px-3 self-end"
+                        disabled={posting || uploadingFiles}
+                        aria-label="Publish post"
+                        className="text-(--theme-text) text-xs font-bold uppercase px-3 self-end disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Send className="h-4 w-4" />
                     </FancyButton>
@@ -311,9 +331,31 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     </div>
                 )}
 
+                {postCourse && (
+                    <div className="mt-3 flex items-center gap-3 bg-(--theme-sidebar) rounded-xl p-3">
+                        <div className="w-9 h-9 rounded-lg bg-(--theme-bg) flex items-center justify-center shrink-0">
+                            <BookOpen className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-(--theme-text) truncate">{postCourse.title}</p>
+                            <p className="text-[10px] text-(--theme-text) opacity-45 uppercase truncate">
+                                {postCourse.creator.name} · {postCourse._count?.modules ?? 0} modules
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setPostCourse(null)}
+                            aria-label={`Remove ${postCourse.title}`}
+                            className="p-1.5 opacity-45 hover:opacity-100 transition-opacity"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+
                 {/* Teacher action toolbar */}
                 {isTeacher && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-(--theme-text)/10">
+                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-(--theme-text)/10">
                         <span className="text-[10px] font-bold text-(--theme-text) opacity-30 uppercase mr-1">Create:</span>
                         <button
                             onClick={() => setAssignmentModalOpen(true)}
@@ -328,6 +370,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         >
                             <GraduationCap className="h-3.5 w-3.5" />
                             Test / Exam
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setCourseModalOpen(true)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity"
+                        >
+                            <BookOpen className="h-3.5 w-3.5" />
+                            Course
                         </button>
                         <label className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 bg-(--theme-sidebar) rounded-lg px-2.5 py-1.5 transition-opacity cursor-pointer">
                             <Upload className="h-3.5 w-3.5" />
@@ -454,16 +504,22 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             {POST_TYPE_LABELS[post.type]}
                                         </span>
                                     )}
-                                    {post.isPinned && <Pin className="h-3.5 w-3.5 text-amber-500" />}
-                                    {isTeacher && (
+                                    {isTeacher ? (
                                         <button
+                                            type="button"
                                             onClick={() => handleTogglePin(post.id, post.isPinned)}
-                                            className="text-xs text-(--theme-text) opacity-40 hover:opacity-100 p-1"
+                                            aria-label={post.isPinned ? "Unpin post" : "Pin post"}
+                                            className={cn(
+                                                "p-1 text-xs text-(--theme-text) transition-all hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-text-important) rounded-md",
+                                                post.isPinned ? "opacity-100" : "opacity-40",
+                                            )}
                                             title={post.isPinned ? "Unpin" : "Pin"}
                                         >
-                                            <Pin className="h-3.5 w-3.5" />
+                                            <Pin className={cn("h-3.5 w-3.5", post.isPinned && "rotate-45 text-amber-500")} />
                                         </button>
-                                    )}
+                                    ) : post.isPinned ? (
+                                        <Pin className="h-3.5 w-3.5 rotate-45 text-amber-500" aria-label="Pinned post" />
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -515,6 +571,26 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             )}
                                         </div>
                                         <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase mr-2">{post.test.type}</span>
+                                        <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <ArrowRight className="h-4 w-4 text-(--theme-text)" />
+                                        </div>
+                                    </div>
+                                </Link>
+                            )}
+
+                            {/* Course Badge */}
+                            {post.course && (
+                                <Link href={`/courses/${post.course.id}`} className="block">
+                                    <div className="flex items-center gap-3 mb-3 p-3 bg-(--theme-sidebar) rounded-xl hover:bg-(--theme-text)/5 transition-colors group">
+                                        <div className="w-10 h-10 rounded-lg bg-(--theme-bg) flex items-center justify-center shrink-0">
+                                            <BookOpen className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-bold text-(--theme-text) truncate">{post.course.title}</p>
+                                            <p className="text-[10px] text-(--theme-text) opacity-45 uppercase truncate">
+                                                {post.course.creator.name} · {post.course._count?.modules ?? 0} modules
+                                            </p>
+                                        </div>
                                         <div className="w-8 h-8 rounded-full bg-(--theme-card) flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <ArrowRight className="h-4 w-4 text-(--theme-text)" />
                                         </div>
@@ -623,6 +699,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 onClose={() => setTestModalOpen(false)}
                 classroomId={classroomId}
                 onCreated={fetchPosts}
+            />
+            <CoursePostModal
+                open={courseModalOpen}
+                selectedCourseId={postCourse?.id}
+                onClose={() => setCourseModalOpen(false)}
+                onSelect={setPostCourse}
             />
         </div>
     );

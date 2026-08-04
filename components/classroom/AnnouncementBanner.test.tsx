@@ -1,5 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
@@ -16,7 +16,7 @@ const server = setupServer(
         id: '1',
         title: 'Test Announcement',
         body: 'This is a test body',
-        priority: 'INFO',
+        priority: 'URGENT',
         isPinned: false,
         createdAt: new Date().toISOString(),
         author: { id: 'u1', name: 'Teacher' },
@@ -30,16 +30,12 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 describe('AnnouncementBanner', () => {
-  const mockSetDismissed = vi.fn();
   const defaultProps = {
     classroomId,
     isTeacher: false,
-    dismissed: new Set<string>(),
-    setDismissed: mockSetDismissed,
-    showDismissed: false,
   };
 
-  it('renders announcements fetched from API', async () => {
+  it('renders urgent announcements fetched from API', async () => {
     render(<AnnouncementBanner {...defaultProps} />);
 
     // Wait for the announcement to appear
@@ -57,16 +53,40 @@ describe('AnnouncementBanner', () => {
     expect(screen.getByText(/New Announcement/i)).toBeInTheDocument();
   });
 
-  it('calls setDismissed when the "Mark as read" button is clicked', async () => {
+  it('lets teachers cancel an urgent announcement', async () => {
+    server.use(
+      http.delete(`/api/classrooms/${classroomId}/announcements`, async ({ request }) => {
+        const body = await request.json() as { announcementId: string };
+        expect(body.announcementId).toBe('1');
+        return HttpResponse.json({ success: true });
+      })
+    );
+
+    render(<AnnouncementBanner {...defaultProps} isTeacher={true} />);
+    const cancelButton = await screen.findByRole('button', { name: /Cancel urgent announcement: Test Announcement/i });
+    fireEvent.click(cancelButton);
+    expect(screen.getByText('Cancel announcement?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm cancel announcement' }));
+
+    await waitFor(() => expect(screen.queryByText('Test Announcement')).not.toBeInTheDocument());
+  });
+
+  it('does not show urgent cancellation controls to students', async () => {
     render(<AnnouncementBanner {...defaultProps} />);
+    await screen.findByText('Test Announcement');
+    expect(screen.queryByRole('button', { name: /Cancel urgent announcement/i })).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => screen.getByText('Test Announcement'));
-    
-    // The "Mark as read" button is the one with the Circle icon (not CheckCircle)
-    const markAsReadBtn = screen.getByTitle('Mark as read');
-    fireEvent.click(markAsReadBtn);
-
-    expect(mockSetDismissed).toHaveBeenCalled();
+  it('does not render non-urgent announcements above the Classroom', async () => {
+    server.use(
+      http.get(`/api/classrooms/${classroomId}/announcements`, () => HttpResponse.json([{
+        id: '2', title: 'Regular update', body: 'Visible in notifications only', priority: 'INFO',
+        isPinned: false, createdAt: new Date().toISOString(), author: { id: 'u1', name: 'Teacher' },
+      }]))
+    );
+    render(<AnnouncementBanner {...defaultProps} isTeacher={true} />);
+    await waitFor(() => expect(screen.getByText(/New Announcement/i)).toBeInTheDocument());
+    expect(screen.queryByText('Regular update')).not.toBeInTheDocument();
   });
 
   it('renders nothing if no announcements and not a teacher', async () => {

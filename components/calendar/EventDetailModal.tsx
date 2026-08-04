@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import { Trash2, Clock } from "lucide-react";
+import { Trash2, Clock, LockKeyhole } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
@@ -23,6 +23,9 @@ interface EventData {
     endTime?: string | null;
     isAllDay: boolean;
     color?: string | null;
+    endDate?: string;
+    isProtected?: boolean;
+    canEdit?: boolean;
 }
 
 interface EventDetailModalProps {
@@ -46,6 +49,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     const [endTime, setEndTime] = useState(event.endTime ?? "");
     const [isAllDay, setIsAllDay] = useState(event.isAllDay);
     const [color, setColor] = useState(event.color || "#FEC435");
+    const [eventDate, setEventDate] = useState(event.startDate.slice(0, 10));
 
     // Format date for display
     const d = new Date(displayEvent.startDate);
@@ -58,6 +62,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         setEndTime(displayEvent.endTime ?? "");
         setIsAllDay(displayEvent.isAllDay);
         setColor(displayEvent.color || "#FEC435");
+        setEventDate(displayEvent.startDate.slice(0, 10));
         setEditing(true);
     };
 
@@ -87,6 +92,8 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                     endTime: isAllDay ? null : endTime || null,
                     isAllDay,
                     color,
+                    startDate: `${eventDate}T00:00:00`,
+                    endDate: `${eventDate}T00:00:00`,
                 }),
             });
             if (!res.ok) {
@@ -144,20 +151,24 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                     {/* Top bar: pencil left, cancel right */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex gap-2">
-                            <button
-                                onClick={handleEdit}
-                                className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
-                                aria-label="Edit event"
-                            >
-                                <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
-                            </button>
-                            <button
-                                onClick={handleDeleteClick}
-                                className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
-                                aria-label="Delete event"
-                            >
-                                <Trash2 className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.2} />
-                            </button>
+                            {displayEvent.canEdit !== false && (
+                                <>
+                                    <button
+                                        onClick={handleEdit}
+                                        className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
+                                        aria-label="Edit event"
+                                    >
+                                        <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteClick}
+                                        className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
+                                        aria-label="Delete event"
+                                    >
+                                        <Trash2 className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.2} />
+                                    </button>
+                                </>
+                            )}
                         </div>
                         <button
                             onClick={handleCancel}
@@ -171,6 +182,15 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                     {editing ? (
                         /* ── Edit mode ── */
                         <div className="space-y-2">
+                            <div>
+                                <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">Date</label>
+                                <Input
+                                    type="date"
+                                    value={eventDate}
+                                    onChange={(e) => setEventDate(e.target.value)}
+                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 h-10 md:h-12 w-full"
+                                />
+                            </div>
                             <div>
                                 <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                     Title
@@ -310,6 +330,12 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                 <p className="text-sm md:text-base text-(--theme-text) opacity-80">
                                     {displayEvent.description}
                                 </p>
+                            )}
+                            {displayEvent.isProtected && (
+                                <div className="flex items-center gap-2 pt-3 text-xs font-bold text-(--theme-text) opacity-50">
+                                    <LockKeyhole className="h-4 w-4" />
+                                    {displayEvent.canEdit === false ? "Managed by your teacher" : "Synchronized with Classroom"}
+                                </div>
                             )}
                         </div>
                     )}

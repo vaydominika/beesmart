@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { notifyClassroomUser } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { createHash } from "crypto";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 
@@ -64,15 +67,15 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             select: { title: true },
         });
 
-        await prisma.notification.create({
-            data: {
-                userId: attempt.userId,
-                title: "Test Graded",
-                body: `Your ${test?.title} has been graded: ${Math.round((attempt.score ?? 0) * 10) / 10}%`,
-                type: "GRADE",
-                relatedId: testId,
-                relatedType: "test",
-            },
+        await notifyClassroomUser(attempt.userId, {
+            classroomId: id, actorId: userId, title: "Test graded",
+            body: `Your ${test?.title} was graded: ${Math.round((attempt.score ?? 0) * 10) / 10}%`,
+            type: "GRADE", relatedId: testId, relatedType: "test",
+            actionUrl: `/classroom/${id}/tests/${testId}`,
+        });
+        await recordMeaningfulActivity({
+            userId, activityType: "GRADE_PROVIDED", classroomId: id, relatedId: attemptId,
+            dedupeKey: `test:grade:${attemptId}:${createHash("sha1").update(JSON.stringify(grades)).digest("hex")}`,
         });
 
         return NextResponse.json({ attempt, totalScore, totalPoints });

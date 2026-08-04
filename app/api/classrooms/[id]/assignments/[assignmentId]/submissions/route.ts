@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { recordMeaningfulActivity } from "@/lib/activity";
 
 type RouteContext = { params: Promise<{ id: string; assignmentId: string }> };
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const { content, files } = await req.json();
 
         // Check if assignment exists
-        const assignment = await prisma.assignedWork.findUnique({ where: { id: assignmentId } });
+        const assignment = await prisma.assignedWork.findFirst({ where: { id: assignmentId, classroomId: id } });
         if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
 
         // Check if late
@@ -122,6 +123,11 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                     : undefined,
             },
             include: { files: true },
+        });
+
+        await recordMeaningfulActivity({
+            userId, activityType: "ASSIGNMENT_SUBMITTED", classroomId: id, relatedId: assignmentId,
+            dedupeKey: `assignment:submit:${assignmentId}:${userId}`,
         });
 
         return NextResponse.json(submission);

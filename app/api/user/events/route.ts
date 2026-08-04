@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
-import { Event } from "@/lib/generated/prisma";
+import { notifyClassroomMembers } from "@/lib/notifications";
+
+const accessibleEvents = (userId: string) => ({
+    OR: [
+        { userId },
+        { classroom: { is: { members: { some: { userId } } } } },
+    ],
+});
+
+const eventAccessInclude = (userId: string) => ({
+    classroom: { select: { id: true, members: { where: { userId }, select: { role: true } } } },
+});
+
+function serializeEvent(event: any, userId: string) {
+    const classroomRole = event.classroom?.members?.[0]?.role;
+    return {
+        ...event,
+        canEdit: event.userId === userId || Boolean(classroomRole && classroomRole !== "STUDENT"),
+        classroom: event.classroom ? { id: event.classroom.id } : null,
+    };
+}
+
+function dateWithTime(dateValue: string | Date, time: string | null | undefined) {
+    const date = new Date(dateValue);
+    if (time) {
+        const [hours, minutes] = time.split(":").map(Number);
+        date.setHours(hours, minutes, 0, 0);
+    }
+    return date;
+}
 
 export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId();
@@ -22,7 +51,7 @@ export async function GET(req: NextRequest) {
         // Fetch events starting from today (buffered)
         const events = await prisma.event.findMany({
             where: {
-                userId,
+                ...accessibleEvents(userId),
                 startDate: {
                     gte: startOfToday,
                 },
@@ -32,10 +61,11 @@ export async function GET(req: NextRequest) {
                 { startTime: "asc" }
             ],
             take: limit + 5, // Fetch extra to filter in memory
+            include: eventAccessInclude(userId),
         });
 
         // Filter: Keep future dates OR today if time is later than now
-        const upcomingEvents = events.filter((event: Event) => {
+        const upcomingEvents = events.filter((event: any) => {
             const eventDate = new Date(event.startDate);
             const isToday =
                 eventDate.getDate() === now.getDate() &&
@@ -56,7 +86,7 @@ export async function GET(req: NextRequest) {
             return true; // Future dates (already guaranteed by SQL query to be >= today)
         }).slice(0, limit);
 
-        return NextResponse.json(upcomingEvents);
+        return NextResponse.json(upcomingEvents.map((event: any) => serializeEvent(event, userId)));
     }
 
     // Return events for a specific month
@@ -69,20 +99,22 @@ export async function GET(req: NextRequest) {
 
         const events = await prisma.event.findMany({
             where: {
-                userId,
+                ...accessibleEvents(userId),
                 startDate: { gte: start, lte: end },
             },
             orderBy: [{ order: "asc" }, { startTime: "asc" }],
+            include: eventAccessInclude(userId),
         });
-        return NextResponse.json(events);
+        return NextResponse.json(events.map((event: any) => serializeEvent(event, userId)));
     }
 
     // Default: return all user events
     const events = await prisma.event.findMany({
-        where: { userId },
+        where: accessibleEvents(userId),
         orderBy: [{ order: "asc" }, { startTime: "asc" }],
+        include: eventAccessInclude(userId),
     });
-    return NextResponse.json(events);
+    return NextResponse.json(events.map((event: any) => serializeEvent(event, userId)));
 }
 
 export async function POST(req: Request) {
@@ -143,12 +175,31 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Ensure the event belongs to the current user
-    const event = await prisma.event.findUnique({ where: { id } });
-    if (!event || event.userId !== userId) {
+    const event = await prisma.event.findUnique({ where: { id }, include: eventAccessInclude(userId) });
+    const role = event?.classroom?.members?.[0]?.role;
+    const canEdit = event?.userId === userId || Boolean(role && role !== "STUDENT");
+    if (!event || !canEdit) {
         return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
-    await prisma.event.delete({ where: { id } });
+    if (event.isProtected && event.testId && event.classroomId) {
+        await prisma.$transaction([
+            prisma.event.delete({ where: { id } }),
+            prisma.test.update({ where: { id: event.testId }, data: { opensAt: null, closesAt: null } }),
+        ]);
+        await notifyClassroomMembers({
+            classroomId: event.classroomId,
+            actorId: userId,
+            title: "Test date removed",
+            body: `${event.title} is no longer scheduled.`,
+            type: "EVENT",
+            relatedId: event.testId,
+            relatedType: "test",
+            actionUrl: `/classroom/${event.classroomId}/tests/${event.testId}`,
+        });
+    } else {
+        await prisma.event.delete({ where: { id } });
+    }
     return NextResponse.json({ success: true });
 }
 
@@ -164,8 +215,10 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "Event ID required." }, { status: 400 });
     }
 
-    const event = await prisma.event.findUnique({ where: { id } });
-    if (!event || event.userId !== userId) {
+    const event = await prisma.event.findUnique({ where: { id }, include: eventAccessInclude(userId) });
+    const role = event?.classroom?.members?.[0]?.role;
+    const canEdit = event?.userId === userId || Boolean(role && role !== "STUDENT");
+    if (!event || !canEdit) {
         return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
@@ -177,13 +230,51 @@ export async function PATCH(req: NextRequest) {
     if (body.isAllDay !== undefined) data.isAllDay = Boolean(body.isAllDay);
     if (body.color !== undefined) data.color = body.color || null;
     if (body.order !== undefined) data.order = parseInt(body.order);
+    if (body.startDate !== undefined) data.startDate = new Date(body.startDate);
+    if (body.endDate !== undefined) data.endDate = new Date(body.endDate);
+
+    if (event.isProtected && event.testId && event.classroomId) {
+        const startDate = dateWithTime(
+            body.startDate ?? event.startDate,
+            body.isAllDay ? null : (body.startTime ?? event.startTime),
+        );
+        const endDate = dateWithTime(
+            body.endDate ?? body.startDate ?? event.endDate,
+            body.isAllDay ? null : (body.endTime ?? event.endTime),
+        );
+        data.startDate = startDate;
+        data.endDate = endDate;
+        const [updated] = await prisma.$transaction([
+            prisma.event.update({ where: { id }, data }),
+            prisma.test.update({
+                where: { id: event.testId },
+                data: {
+                    title: body.title !== undefined ? body.title.trim().replace(/^(test|exam):\s*/i, "") : undefined,
+                    description: body.description !== undefined ? body.description || null : undefined,
+                    opensAt: startDate,
+                    closesAt: endDate,
+                },
+            }),
+        ]);
+        await notifyClassroomMembers({
+            classroomId: event.classroomId,
+            actorId: userId,
+            title: "Test rescheduled",
+            body: `${updated.title} was changed in the calendar.`,
+            type: "EVENT",
+            relatedId: event.testId,
+            relatedType: "test",
+            actionUrl: `/classroom/${event.classroomId}/tests/${event.testId}`,
+        });
+        return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom }, userId));
+    }
 
     const updated = await prisma.event.update({
         where: { id },
         data,
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom }, userId));
 }
 
 export async function PUT(req: NextRequest) {
@@ -197,8 +288,12 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Expected array of updates" }, { status: 400 });
     }
 
-    // Bulk update order
-    // In a transaction for safety
+    const ids = body.map((item: { id: string }) => item.id);
+    const ownedCount = await prisma.event.count({ where: { id: { in: ids }, userId, isProtected: false } });
+    if (ownedCount !== ids.length) {
+        return NextResponse.json({ error: "Protected Classroom events cannot be reordered" }, { status: 403 });
+    }
+
     await prisma.$transaction(
         body.map((item: { id: string; order: number }) =>
             prisma.event.update({

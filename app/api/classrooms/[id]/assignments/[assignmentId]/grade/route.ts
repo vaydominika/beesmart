@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { notifyClassroomUser } from "@/lib/notifications";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { createHash } from "crypto";
 
 type RouteContext = { params: Promise<{ id: string; assignmentId: string }> };
 
@@ -65,15 +68,15 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             select: { title: true },
         });
 
-        await prisma.notification.create({
-            data: {
-                userId: studentId,
-                title: "Assignment Graded",
-                body: `Your submission for "${assignment?.title}" has been graded: ${score}${maxScore ? `/${maxScore}` : ""}`,
-                type: "GRADE",
-                relatedId: assignmentId,
-                relatedType: "assignment",
-            },
+        await notifyClassroomUser(studentId, {
+            classroomId: id, actorId: userId, title: "Assignment graded",
+            body: `Your submission for "${assignment?.title}" was graded: ${score}${maxScore ? `/${maxScore}` : ""}`,
+            type: "GRADE", relatedId: assignmentId, relatedType: "assignment",
+            actionUrl: `/classroom/${id}/assignments/${assignmentId}`,
+        });
+        await recordMeaningfulActivity({
+            userId, activityType: "GRADE_PROVIDED", classroomId: id, relatedId: grade.id,
+            dedupeKey: `assignment:grade:${grade.id}:${createHash("sha1").update(JSON.stringify({ score, maxScore, feedback })).digest("hex")}`,
         });
 
         return NextResponse.json(grade);

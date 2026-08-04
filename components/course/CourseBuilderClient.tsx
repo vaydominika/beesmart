@@ -7,6 +7,7 @@ import { ViewIcon, ViewOffIcon, ZapIcon } from "hugeicons-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { CourseInviteButton } from "./CourseInviteButton";
 
 export default function CourseBuilderClient({ initialCourse }: { initialCourse: any }) {
     const [course, setCourse] = useState(initialCourse);
@@ -46,8 +47,6 @@ export default function CourseBuilderClient({ initialCourse }: { initialCourse: 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     published: !course.published,
-                    // If we are publishing, also ensure it's public so it shows in Discover
-                    ...(!course.published ? { isPublic: true } : {})
                 }),
             });
             if (!res.ok) throw new Error();
@@ -123,6 +122,19 @@ export default function CourseBuilderClient({ initialCourse }: { initialCourse: 
                 {/* Header Navbar */}
                 <header className="h-14 border-b bg-white flex items-center justify-between px-6 shrink-0 z-10">
                     <div className="flex items-center gap-4">
+                        {!previewMode && (
+                            <select
+                                aria-label="Course visibility"
+                                value={course.visibility ?? (course.isPublic ? "PUBLIC" : "PRIVATE")}
+                                onChange={(event) => handleCourseUpdate({ visibility: event.target.value })}
+                                className="h-8 rounded-full bg-slate-50 border border-slate-200 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 outline-none"
+                            >
+                                <option value="PRIVATE">Private</option>
+                                <option value="PUBLIC">Public</option>
+                                <option value="INVITATION_ONLY">Invitation-only</option>
+                            </select>
+                        )}
+                        {!previewMode && course.visibility === "INVITATION_ONLY" && <CourseInviteButton courseId={course.id} />}
                         <div className="flex items-center gap-2">
                             {isEditingTitle ? (
                                 <input
