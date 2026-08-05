@@ -1,8 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { FileType } from "@/lib/generated/prisma";
-import { accessibleCourseWhere } from "@/lib/course-access";
+import { accessibleCourseWhere, classroomCourseAccessWhere } from "@/lib/course-access";
 import { recordMeaningfulActivity } from "@/lib/activity";
+import { CourseSummary, dedupeClassrooms } from "@/lib/course-summary";
+
+type CourseQueryRecord = {
+    id: string;
+    title: string;
+    description: string | null;
+    coverImageUrl: string | null;
+    createdById: string;
+    classroomId: string | null;
+    isPublic: boolean;
+    published: boolean;
+    visibility: CourseSummary["visibility"];
+    createdAt: Date;
+    updatedAt: Date;
+    creator: CourseSummary["creator"];
+    _count: CourseSummary["_count"];
+    modules: Array<{ lessons: Array<{ id: string }> }>;
+    enrollments: Array<{ completedAt: Date | null }>;
+    classroom: { id: string; name: string } | null;
+    classroomLinks: Array<{ classroom: { id: string; name: string } }>;
+};
+
+type UploadedCourseFile = {
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    fileType: string;
+};
 
 // Helper to map standard mime types to our Prisma enum
 const mapToFileType = (mimeType: string): FileType => {
@@ -29,9 +57,9 @@ export async function GET(req: NextRequest) {
                 ? accessibleCourseWhere(userId)
                 : { OR: [
                     { createdById: userId },
-                    { visibility: "PUBLIC" as const, published: true, enrollments: { some: { userId } } },
-                    { visibility: "PUBLIC" as const, published: true, classroomLinks: { some: { classroom: { members: { some: { userId } } } } } },
+                    { published: true, visibility: { not: "PRIVATE" as const }, enrollments: { some: { userId } } },
                     { visibility: "INVITATION_ONLY" as const, accessGrants: { some: { userId } } },
+                    classroomCourseAccessWhere(userId),
                 ] };
         const courses = await prisma.course.findMany({
             where: {
@@ -48,41 +76,63 @@ export async function GET(req: NextRequest) {
                 creator: { select: { id: true, name: true, avatar: true } },
                 _count: { select: { modules: true, enrollments: true } },
                 modules: { include: { lessons: { select: { id: true } } } },
+                enrollments: { where: { userId }, select: { completedAt: true } },
+                classroom: { select: { id: true, name: true } },
+                classroomLinks: { select: { classroom: { select: { id: true, name: true } } } },
             },
             orderBy: { createdAt: "desc" },
         });
 
         // Get progress for all these courses
-        const courseIds = courses.map((c: any) => c.id);
+        const courseRecords = courses as CourseQueryRecord[];
+        const courseIds = courseRecords.map((course) => course.id);
         const userProgress = await prisma.courseProgress.findMany({
             where: { userId, courseId: { in: courseIds } },
-            select: { lessonId: true, completedAt: true, courseId: true }
+            select: { lessonId: true, completedAt: true, courseId: true, lastAccessedAt: true }
         });
 
-        const completedLessonIds = new Set(
-            userProgress
-                .filter((p: any) => p.completedAt != null)
-                .map((p: any) => p.lessonId)
-        );
+        const progressByCourse = new Map<string, { completedLessonIds: Set<string>; lastAccessedAt: Date | null }>();
+        for (const item of userProgress) {
+            const current = progressByCourse.get(item.courseId) ?? { completedLessonIds: new Set<string>(), lastAccessedAt: null };
+            if (item.completedAt) current.completedLessonIds.add(item.lessonId);
+            if (!current.lastAccessedAt || item.lastAccessedAt > current.lastAccessedAt) current.lastAccessedAt = item.lastAccessedAt;
+            progressByCourse.set(item.courseId, current);
+        }
 
-        const coursesWithProgress = courses.map((course: any) => {
-            const totalLessons = course.modules.reduce((acc: number, m: any) => acc + m.lessons.length, 0);
-            let progress = 0;
-            if (totalLessons > 0) {
-                const completed = course.modules.reduce(
-                    (acc: number, m: any) => acc + m.lessons.filter((l: any) => completedLessonIds.has(l.id)).length,
-                    0
-                );
-                progress = Math.round((completed / totalLessons) * 100);
-            }
+        const summaries: CourseSummary[] = courseRecords.map((course) => {
+            const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+            const courseProgress = progressByCourse.get(course.id);
+            const completedCount = courseProgress?.completedLessonIds.size ?? 0;
+            const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
+            const classrooms = dedupeClassrooms([
+                ...(course.classroom ? [course.classroom] : []),
+                ...course.classroomLinks.map((link) => link.classroom),
+            ]);
 
             return {
-                ...course,
-                progress
+                id: course.id,
+                title: course.title,
+                description: course.description,
+                coverImageUrl: course.coverImageUrl,
+                createdById: course.createdById,
+                classroomId: course.classroomId,
+                isPublic: course.isPublic,
+                published: course.published,
+                visibility: course.visibility,
+                createdAt: course.createdAt.toISOString(),
+                updatedAt: course.updatedAt.toISOString(),
+                relationship: course.createdById === userId ? "owner" : "learner",
+                isEnrolled: course.enrollments.length > 0,
+                progress,
+                lastAccessedAt: courseProgress?.lastAccessedAt?.toISOString() ?? null,
+                lessonCount,
+                classrooms,
+                creator: course.creator,
+                _count: course._count,
             };
         });
 
-        return NextResponse.json(coursesWithProgress);
+        return NextResponse.json(summaries);
     } catch (e) {
         console.error("GET /api/courses", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -117,7 +167,7 @@ export async function POST(req: NextRequest) {
                 createdById: userId,
                 ...(files && files.length > 0 && {
                     files: {
-                        create: files.map((f: any) => ({
+                        create: (files as UploadedCourseFile[]).map((f) => ({
                             fileName: f.fileName,
                             fileUrl: f.fileUrl,
                             fileSize: f.fileSize,

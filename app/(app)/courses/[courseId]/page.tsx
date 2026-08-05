@@ -1,200 +1,291 @@
-import { redirect } from "next/navigation";
-import { prisma, getCurrentUserId } from "@/lib/db";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { PlayIcon, UserIcon, Book02Icon, Calendar03Icon } from "@hugeicons/core-free-icons";
-import { BadgeCheck, Clock, BookOpen, Layers } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  Layers3,
+  Play,
+  School,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { EnrollButton } from "@/components/course/EnrollButton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { canAccessCourse } from "@/lib/course-access";
+import { plainTextExcerpt } from "@/lib/course-summary";
+import { getCurrentUserId, prisma } from "@/lib/db";
 
 type CoursePageProps = { params: Promise<{ courseId: string }> };
+type ClassroomSummary = { id: string; name: string };
+type CourseOverviewData = {
+  title: string;
+  description: string | null;
+  coverImageUrl: string | null;
+  createdById: string;
+  published: boolean;
+  creator: { name: string | null };
+  classroom: ClassroomSummary | null;
+  classroomLinks: Array<{ classroom: ClassroomSummary }>;
+  modules: Array<{ id: string; title: string; lessons: Array<{ id: string; title: string }> }>;
+  enrollments: Array<{ id: string }>;
+  _count: { enrollments: number };
+};
+
+function countLabel(count: number, singular: string, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 export default async function CourseOverviewPage({ params }: CoursePageProps) {
-    const userId = await getCurrentUserId();
-    const { courseId } = await params;
+  const userId = await getCurrentUserId();
+  if (!userId) redirect("/login");
 
-    const course = await prisma.course.findUnique({
-        where: { id: courseId },
+  const { courseId } = await params;
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      creator: { select: { name: true } },
+      classroom: { select: { id: true, name: true } },
+      classroomLinks: { select: { classroom: { select: { id: true, name: true } } } },
+      modules: {
         include: {
-            creator: { select: { name: true, avatar: true } },
-            modules: {
-                include: { lessons: { select: { id: true, title: true } } },
-                orderBy: { order: "asc" }
-            },
-            enrollments: userId ? { where: { userId } } : false,
-            _count: { select: { enrollments: true, modules: true } }
-        }
-    });
+          lessons: {
+            orderBy: { order: "asc" },
+            select: { id: true, title: true },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
+      enrollments: { where: { userId }, select: { id: true } },
+      _count: { select: { enrollments: true } },
+    },
+  }) as CourseOverviewData | null;
 
-    const hasAccess = course && userId ? await canAccessCourse(courseId, userId) : false;
-    if (!course || (!course.published && course.createdById !== userId) || !hasAccess) {
-        redirect("/courses");
-    }
+  const hasAccess = course ? await canAccessCourse(courseId, userId) : false;
+  if (!course || (!course.published && course.createdById !== userId) || !hasAccess) {
+    redirect("/courses");
+  }
 
-    const isEnrolled = course.enrollments.length > 0;
-    const isCreator = course.createdById === userId;
-    const totalLessons = course.modules.reduce((acc: number, m: any) => acc + m.lessons.length, 0);
+  const isCreator = course.createdById === userId;
+  const isEnrolled = course.enrollments.length > 0;
+  const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+  const completedProgress = isEnrolled
+    ? await prisma.courseProgress.findMany({
+        where: { userId, courseId, completedAt: { not: null } },
+        select: { lessonId: true },
+      }) as Array<{ lessonId: string }>
+    : [];
+  const completedLessonIds = new Set(completedProgress.map((item) => item.lessonId));
+  const completedLessons = completedLessonIds.size;
+  const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const description = plainTextExcerpt(course.description);
+  const classrooms = Array.from(
+    new Map(
+      [course.classroom, ...course.classroomLinks.map((link) => link.classroom)]
+        .filter((classroom): classroom is { id: string; name: string } => Boolean(classroom))
+        .map((classroom) => [classroom.id, classroom]),
+    ).values(),
+  );
+  const destination = `/courses/${courseId}/${isCreator ? "builder" : "viewer"}`;
+  const actionLabel = isCreator ? "Open builder" : progress > 0 ? "Continue course" : "Start course";
 
-    return (
-        <div className="flex-1 bg-slate-50 overflow-y-auto">
-            <div className="max-w-6xl mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column: Info & Syllabus */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div>
-                            <h1 className="text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight mb-4">
-                                {course.title}
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-4 text-slate-500 text-sm font-bold uppercase tracking-wider">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-slate-200 p-1.5 rounded-lg">
-                                        <HugeiconsIcon icon={UserIcon} className="size-4" />
-                                    </div>
-                                    {course.creator.name}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-slate-200 p-1.5 rounded-lg">
-                                        <Layers className="size-4" />
-                                    </div>
-                                    {course.modules.length} Modules
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-slate-200 p-1.5 rounded-lg">
-                                        <BookOpen className="size-4" />
-                                    </div>
-                                    {totalLessons} Lessons
-                                </div>
-                            </div>
-                        </div>
+  return (
+    <div className="course-ui min-h-full overflow-y-auto bg-[var(--course-canvas)] px-4 py-5 md:px-6 md:py-7">
+      <div className="mx-auto max-w-[1500px]">
+        <WorkspaceButton asChild variant="secondary" size="compact">
+          <Link href="/courses">
+            <ArrowLeft />Back to courses
+          </Link>
+        </WorkspaceButton>
 
-                        <FancyCard className="p-8 bg-white border-none shadow-sm overflow-hidden relative">
-                            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                                <HugeiconsIcon icon={Book02Icon} className="size-32" />
-                            </div>
-                            <h3 className="text-xl font-bold text-slate-900 uppercase mb-4 flex items-center gap-2">
-                                <div className="bg-black text-white p-1.5 rounded-lg">
-                                    <BadgeCheck className="size-5" />
-                                </div>
-                                About this course
-                            </h3>
-                            <div
-                                className="prose prose-slate max-w-none text-slate-600 font-medium leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: course.description || "No description provided." }}
-                            />
-                        </FancyCard>
+        <header className="mt-6 max-w-4xl">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--course-text-muted)]">
+            {isCreator || !isEnrolled ? (
+              <span className="rounded-lg bg-[var(--course-accent)] px-2.5 py-1 text-[var(--course-text)]">
+                {isCreator ? "Created by you" : "Available course"}
+              </span>
+            ) : null}
+            {classrooms.map((classroom) => (
+              <span key={classroom.id} className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--course-surface-muted)] px-2.5 py-1">
+                <School className="h-3.5 w-3.5" />{classroom.name}
+              </span>
+            ))}
+          </div>
+          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.04em] text-[var(--course-text)] md:text-[46px]">
+            {course.title}
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--course-text-muted)]">
+            <span className="inline-flex items-center gap-2"><UserRound className="h-4 w-4" />{course.creator.name || "Course creator"}</span>
+            <span className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" />{countLabel(course.modules.length, "module")}</span>
+            <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" />{countLabel(totalLessons, "lesson")}</span>
+          </div>
+        </header>
 
-                        <div className="space-y-4">
-                            <h3 className="text-xl font-bold text-slate-900 uppercase flex items-center gap-2">
-                                <div className="bg-black text-white p-1.5 rounded-lg">
-                                    <Layers className="size-5" />
-                                </div>
-                                Course Syllabus
-                            </h3>
-                            <div className="space-y-3">
-                                {course.modules.map((module: any, idx: number) => (
-                                    <FancyCard key={module.id} className="p-5 bg-white border-slate-100 hover:border-slate-200 transition-all">
-                                        <div className="flex items-start gap-4">
-                                            <div className="bg-slate-100 text-slate-400 font-black text-xl size-10 flex items-center justify-center rounded-xl shrink-0">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-slate-900 uppercase truncate">
-                                                    {module.title}
-                                                </h4>
-                                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-3">
-                                                    {module.lessons.length} Lessons
-                                                </p>
-                                                <div className="space-y-2">
-                                                    {module.lessons.map((lesson: any) => (
-                                                        <div key={lesson.id} className="flex items-center gap-2 text-sm text-slate-600 font-medium border-l-2 border-slate-100 pl-3 py-1">
-                                                            <div className="size-1 bg-slate-300 rounded-full" />
-                                                            {lesson.title}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </FancyCard>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Sticky Enroll Card */}
-                    <div className="lg:col-span-1">
-                        <div className="sticky top-6 space-y-4">
-                            <FancyCard className="bg-white border-none shadow-xl overflow-hidden p-4">
-                                <div className="relative aspect-video w-full rounded-2xl overflow-hidden mb-6 corner-squircle">
-                                    {course.coverImageUrl ? (
-                                        <Image src={course.coverImageUrl} alt={course.title} fill className="object-cover" />
-                                    ) : (
-                                        <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                                            <HugeiconsIcon icon={Book02Icon} className="size-12 text-slate-400" />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="space-y-3 px-2 pb-2">
-                                    {(isEnrolled || isCreator) ? (
-                                        <Link href={`/courses/${courseId}/${isCreator ? 'builder' : 'viewer'}`} className="block">
-                                            <FancyButton className="w-full bg-black text-white hover:opacity-90 py-6 text-xl font-bold uppercase transition-transform hover:scale-[1.02] active:scale-[0.98]">
-                                                <HugeiconsIcon icon={PlayIcon} className="mr-2" />
-                                                Go to Course
-                                            </FancyButton>
-                                        </Link>
-                                    ) : (
-                                        <EnrollButton courseId={courseId} />
-                                    )}
-
-                                    <div className="grid grid-cols-2 gap-3 pt-2">
-                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-                                            <div className="text-slate-400 mb-1">
-                                                <Clock className="size-5 mx-auto" />
-                                            </div>
-                                            <div className="text-xs font-bold text-slate-400 uppercase">Duration</div>
-                                            <div className="text-sm font-black text-slate-900 uppercase">Self-Paced</div>
-                                        </div>
-                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-                                            <div className="text-slate-400 mb-1">
-                                                <HugeiconsIcon icon={Calendar03Icon} className="size-5 mx-auto" />
-                                            </div>
-                                            <div className="text-xs font-bold text-slate-400 uppercase">Level</div>
-                                            <div className="text-sm font-black text-slate-900 uppercase">Beginner</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </FancyCard>
-
-                            <FancyCard className="bg-slate-900 text-white p-6 border-none">
-                                <h4 className="font-bold uppercase tracking-wider mb-2 text-slate-400 text-sm">Course includes:</h4>
-                                <ul className="space-y-3 text-sm font-bold uppercase tracking-tight">
-                                    <li className="flex items-center gap-3">
-                                        <div className="size-6 bg-white/10 rounded-lg flex items-center justify-center">
-                                            <BadgeCheck className="size-4" />
-                                        </div>
-                                        Lifetime Access
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <div className="size-6 bg-white/10 rounded-lg flex items-center justify-center">
-                                            <BookOpen className="size-4" />
-                                        </div>
-                                        {totalLessons} Full Lessons
-                                    </li>
-                                    <li className="flex items-center gap-3">
-                                        <div className="size-6 bg-white/10 rounded-lg flex items-center justify-center">
-                                            <Layers className="size-4" />
-                                        </div>
-                                        Downloadable resources
-                                    </li>
-                                </ul>
-                            </FancyCard>
-                        </div>
-                    </div>
+        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <main className="space-y-5">
+            <section className="rounded-2xl border border-[var(--course-line)] bg-white p-5 md:p-6">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--course-accent)] text-[var(--course-text)]">
+                  <BookOpen className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--course-text)]">About this course</h2>
+                  <p className="text-xs text-[var(--course-text-muted)]">What you can expect before you begin</p>
                 </div>
+              </div>
+              <p className="mt-5 max-w-3xl whitespace-pre-line text-sm leading-6 text-[var(--course-text-muted)] md:text-[15px]">
+                {description || "The creator has not added a course description yet. Review the syllabus below to see what is included."}
+              </p>
+            </section>
+
+            <section className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-white">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--course-line)] px-5 py-4 md:px-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-[var(--course-text)]">Syllabus</h2>
+                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">{countLabel(course.modules.length, "module")} · {countLabel(totalLessons, "lesson")}</p>
+                </div>
+                {isEnrolled && !isCreator ? (
+                  <span className="text-xs font-medium text-[var(--course-text-muted)]">{completedLessons} of {totalLessons} completed</span>
+                ) : null}
+              </div>
+
+              {course.modules.length === 0 ? (
+                <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
+                  <Layers3 className="h-5 w-5 text-[var(--course-text-faint)]" />
+                  <p className="mt-3 text-sm font-medium text-[var(--course-text)]">The syllabus is still being prepared</p>
+                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">Modules and lessons will appear here when they are ready.</p>
+                </div>
+              ) : (
+                <ol className="divide-y divide-[var(--course-line)]">
+                  {course.modules.map((module, moduleIndex) => (
+                    <li key={module.id} className="grid gap-4 px-5 py-5 md:grid-cols-[44px_minmax(0,1fr)] md:px-6">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--course-accent)] font-mono text-xs font-semibold text-[var(--course-text)]">
+                        {String(moduleIndex + 1).padStart(2, "0")}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <h3 className="font-semibold text-[var(--course-text)]">{module.title}</h3>
+                          <span className="text-xs text-[var(--course-text-muted)]">{countLabel(module.lessons.length, "lesson")}</span>
+                        </div>
+                        {module.lessons.length > 0 ? (
+                          <ol className="mt-3 space-y-1.5">
+                            {module.lessons.map((lesson, lessonIndex) => {
+                              const completed = completedLessonIds.has(lesson.id);
+                              return (
+                                <li
+                                  key={lesson.id}
+                                  className={completed
+                                    ? "flex min-h-9 items-center gap-3 rounded-lg border border-[var(--course-accent-hover)] bg-[var(--course-accent)] px-3 py-2 text-sm text-[var(--course-text)]"
+                                    : "flex min-h-9 items-center gap-3 rounded-lg border border-transparent bg-[var(--course-surface-muted)] px-3 py-2 text-sm text-[var(--course-text-muted)]"}
+                                >
+                                  <span className="w-5 shrink-0 font-mono text-[10px] text-[var(--course-text-faint)]">{moduleIndex + 1}.{lessonIndex + 1}</span>
+                                  <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
+                                  {completed ? (
+                                    <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium">
+                                      <CheckCircle2 className="h-4 w-4" />
+                                      <span className="hidden sm:inline">Completed</span>
+                                    </span>
+                                  ) : null}
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        ) : (
+                          <p className="mt-2 text-xs text-[var(--course-text-muted)]">Lessons have not been added yet.</p>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+          </main>
+
+          <aside className="order-first lg:order-last lg:sticky lg:top-5">
+            <div className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-white p-4">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-[var(--course-surface-muted)]">
+                {course.coverImageUrl ? (
+                  <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 340px" />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-[var(--course-accent)]">
+                    <BookOpen className="h-9 w-9 text-[var(--course-text-muted)]" />
+                  </div>
+                )}
+              </div>
+
+              <div className="px-1 pb-1 pt-4">
+                <p className="text-sm font-semibold text-[var(--course-text)]">
+                  {isCreator ? "Continue building your course" : isEnrolled ? (progress > 0 ? "Continue where you left off" : "Your course is ready") : "Ready to start learning?"}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">
+                  {isCreator ? "Open the builder to manage lessons and publishing." : isEnrolled ? "Open the course to view lessons and track your progress." : "Enroll once to unlock the learner view and progress tracking."}
+                </p>
+
+                {isEnrolled && !isCreator ? (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs font-medium text-[var(--course-text-muted)]">
+                      <span>Progress</span><span>{progress}%</span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--course-surface-muted)]">
+                      <div className="h-full rounded-full bg-[var(--app-accent)]" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="mt-4">
+                  {isEnrolled || isCreator ? (
+                    <WorkspaceButton asChild variant="primary" className="w-full">
+                      <Link href={destination}><Play />{actionLabel}</Link>
+                    </WorkspaceButton>
+                  ) : (
+                    <EnrollButton courseId={courseId} />
+                  )}
+                </div>
+              </div>
             </div>
+
+            <div className="mt-3 rounded-2xl border border-[var(--course-line)] bg-white px-4 py-2">
+              <dl className="divide-y divide-[var(--course-line)] text-sm">
+                <div className="flex items-center gap-3 py-3">
+                  <UserRound className="h-4 w-4 text-[var(--course-text-faint)]" />
+                  <dt className="text-[var(--course-text-muted)]">Created by</dt>
+                  <dd className="ml-auto max-w-36 truncate font-medium text-[var(--course-text)]">{course.creator.name || "Course creator"}</dd>
+                </div>
+                <div className="flex items-center gap-3 py-3">
+                  <Layers3 className="h-4 w-4 text-[var(--course-text-faint)]" />
+                  <dt className="text-[var(--course-text-muted)]">Modules</dt>
+                  <dd className="ml-auto font-medium text-[var(--course-text)]">{course.modules.length}</dd>
+                </div>
+                <div className="flex items-center gap-3 py-3">
+                  <BookOpen className="h-4 w-4 text-[var(--course-text-faint)]" />
+                  <dt className="text-[var(--course-text-muted)]">Lessons</dt>
+                  <dd className="ml-auto font-medium text-[var(--course-text)]">{totalLessons}</dd>
+                </div>
+                <div className="flex items-center gap-3 py-3">
+                  <UsersRound className="h-4 w-4 text-[var(--course-text-faint)]" />
+                  <dt className="text-[var(--course-text-muted)]">Learners</dt>
+                  <dd className="ml-auto font-medium text-[var(--course-text)]">{course._count.enrollments}</dd>
+                </div>
+                {classrooms.length > 0 ? (
+                  <div className="flex items-start gap-3 py-3">
+                    <School className="mt-0.5 h-4 w-4 text-[var(--course-text-faint)]" />
+                    <dt className="text-[var(--course-text-muted)]">Classroom</dt>
+                    <dd className="ml-auto max-w-40 text-right font-medium text-[var(--course-text)]">{classrooms.map((classroom) => classroom.name).join(", ")}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+
+            {isEnrolled && progress === 100 ? (
+              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-4 text-sm text-[var(--course-text)]">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <span><strong className="font-semibold">Course completed.</strong> You can revisit any lesson at any time.</span>
+              </div>
+            ) : null}
+          </aside>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

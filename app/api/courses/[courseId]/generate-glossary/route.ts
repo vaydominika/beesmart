@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "No text provided" }, { status: 400 });
         }
 
-        const prompt = `You are an AI glossary assistant. Read the following text snippet from a course lesson. Extract the most difficult or important concept/term, and provide a short, simple, easy-to-understand definition for a student.
+        const prompt = `You are an AI glossary assistant. Read the following text snippet from a course lesson. Extract the most difficult or important concept/term, and provide a short, simple, easy-to-understand definition for a learner.
 
 Text:
 "${textEntry}"`;

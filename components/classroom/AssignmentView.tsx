@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -316,14 +316,15 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                             <input type="file" multiple onChange={handleFileUpload} className="hidden" disabled={uploadingFiles} />
                                         </label>
 
-                                        <FancyButton
+                                        <WorkspaceButton
+                                            type="button"
+                                            variant="primary"
                                             onClick={handleSubmitWork}
                                             disabled={submitting || (submissionFiles.length === 0 && !submissionContent.trim())}
-                                            className="px-6 py-2 text-sm font-bold bg-(--theme-text) text-(--theme-card)"
                                         >
                                             <Send className="h-4 w-4 mr-2" />
                                             Submit Work
-                                        </FancyButton>
+                                        </WorkspaceButton>
                                     </div>
                                 </div>
                             )}
@@ -505,13 +506,15 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                             <span className="text-lg font-bold opacity-30">/</span>
                                                             <span className="text-lg font-bold opacity-50">{assignment?.maxPoints || "-"}</span>
                                                         </div>
-                                                        <FancyButton
+                                                        <WorkspaceButton
+                                                            type="button"
+                                                            variant="primary"
                                                             onClick={() => handleGradeSubmission(selectedStudentId)}
                                                             disabled={grading || !gradeScore}
-                                                            className="w-full py-2 bg-green-500 text-white font-bold text-sm"
+                                                            className="w-full"
                                                         >
                                                             {grading ? "Saving..." : "Save Grade"}
-                                                        </FancyButton>
+                                                        </WorkspaceButton>
                                                     </div>
                                                 </div>
                                             </div>

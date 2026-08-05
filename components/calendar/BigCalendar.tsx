@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { FancyCard } from "@/components/ui/fancycard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -290,49 +291,25 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
                             }
                         </h2>
                         <div className="flex w-full justify-end items-center gap-2">
-                            <FancyCard className="p-2 bg-(--theme-bg)">
-                                <div className="flex items-center gap-2">
-                                    <FancyButton
-                                        onClick={() => setView('year')}
-                                        className={cn(
-                                            "px-3 py-1 text-sm font-medium bg-(--theme-card) text-(--theme-text) hover:bg-(--theme-bg)",
-                                            view === 'year' && "bg-(--theme-text) text-(--theme-bg) hover:bg-(--theme-text)/90"
-                                        )}
-                                    >
-                                        Year
-                                    </FancyButton>
-                                    <FancyButton
-                                        onClick={() => setView('month')}
-                                        className={cn(
-                                            "px-3 py-1 text-sm font-medium bg-(--theme-card) text-(--theme-text) hover:bg-(--theme-bg)",
-                                            view === 'month' && "bg-(--theme-text) text-(--theme-bg) hover:bg-(--theme-text)/90"
-                                        )}
-                                    >
-                                        Month
-                                    </FancyButton>
-                                    <FancyButton
-                                        onClick={() => setView('week')}
-                                        className={cn(
-                                            "px-3 py-1 text-sm font-medium bg-(--theme-card) text-(--theme-text) hover:bg-(--theme-bg)",
-                                            view === 'week' && "bg-(--theme-text) text-(--theme-bg) hover:bg-(--theme-text)/90"
-                                        )}
-                                    >
-                                        Week
-                                    </FancyButton>
-                                </div>
-                            </FancyCard>
+                            <WorkspaceTabs
+                                ariaLabel="Calendar view"
+                                value={view}
+                                onValueChange={setView}
+                                items={[{ value: 'year', label: 'Year' }, { value: 'month', label: 'Month' }, { value: 'week', label: 'Week' }]}
+                                size="compact"
+                            />
 
                             <FancyCard className="p-2 bg-(--theme-bg)">
                                 <div className="flex items-center gap-2">
-                                    <FancyButton onClick={handlePrev} className="w-8 p-1 bg-(--theme-card) hover:bg-(--theme-bg) text-(--theme-text)">
-                                        <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
-                                    </FancyButton>
-                                    <FancyButton onClick={handleToday} className="px-3 py-1 text-sm font-medium bg-(--theme-card) hover:bg-(--theme-bg) text-(--theme-text)">
+                                    <WorkspaceButton variant="secondary" size="icon-compact" onClick={handlePrev} aria-label="Previous period">
+                                        <ChevronLeft strokeWidth={2.5} />
+                                    </WorkspaceButton>
+                                    <WorkspaceButton variant="secondary" size="compact" onClick={handleToday}>
                                         Today
-                                    </FancyButton>
-                                    <FancyButton onClick={handleNext} className="w-8 p-1 bg-(--theme-card) hover:bg-(--theme-bg) text-(--theme-text)">
-                                        <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
-                                    </FancyButton>
+                                    </WorkspaceButton>
+                                    <WorkspaceButton variant="secondary" size="icon-compact" onClick={handleNext} aria-label="Next period">
+                                        <ChevronRight strokeWidth={2.5} />
+                                    </WorkspaceButton>
                                 </div>
                             </FancyCard>
                         </div>

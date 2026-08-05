@@ -21,7 +21,7 @@ export async function checkContentSafety(content: string): Promise<ModerationRes
                 reason: z.string().optional().describe("Why the content was flagged, if unsafe"),
                 flaggedCategories: z.array(z.string()).optional().describe("Categories of safety violation (e.g., Profanity, Explicit, Hate Speech)"),
             }),
-            system: "You are a content moderation AI for an educational platform called beesmart. Your goal is to ensure all content is safe for students and teachers. Flag anything containing profanity, explicit sexual content, hate speech, or harmful/illegal advice.",
+            system: "You are a content moderation AI for an educational platform called beesmart. Your goal is to ensure all content is safe for learners and course creators. Flag anything containing profanity, explicit sexual content, hate speech, or harmful/illegal advice.",
             prompt: `Analyze the following content for safety and appropriateness:\n\n"${content}"`,
         });
 

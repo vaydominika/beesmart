@@ -8,6 +8,8 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2, GripVertical, CheckCircle2, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import type { TestDraft } from "@/lib/classroom-post-drafts";
 
@@ -265,7 +267,7 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
                     </DialogHeader>
 
                     <ScrollArea className="flex-1 min-h-0">
-                        <div className="space-y-4 pl-1 pr-3 py-1">
+                        <div className="space-y-4 pb-1 pl-1 pr-3 pt-3">
                             {/* Basic Info */}
                             <div className="flex gap-3">
                                 <div className="flex-1">
@@ -279,22 +281,14 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
                                 </div>
                                 <div className="w-28">
                                     <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Type</label>
-                                    <div className="flex gap-1">
-                                        {(["TEST", "EXAM"] as const).map((t) => (
-                                            <button
-                                                key={t}
-                                                onClick={() => setTestType(t)}
-                                                className={cn(
-                                                    "text-xs font-bold px-3 py-2 rounded-lg flex-1 transition-all",
-                                                    testType === t
-                                                        ? "bg-(--theme-card) text-(--theme-text)"
-                                                        : "bg-(--theme-sidebar) text-(--theme-text) opacity-50"
-                                                )}
-                                            >
-                                                {t}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <WorkspaceTabs
+                                        ariaLabel="Assessment type"
+                                        value={testType}
+                                        onValueChange={setTestType}
+                                        items={[{ value: "TEST", label: "Test" }, { value: "EXAM", label: "Exam" }]}
+                                        size="compact"
+                                        fill
+                                    />
                                 </div>
                             </div>
 
@@ -535,20 +529,12 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
                     </ScrollArea>
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSave}
-                            className="h-9 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" onClick={handleSave}>
                             Add {testType === "EXAM" ? "exam" : "test"}
-                        </button>
+                        </WorkspaceButton>
                     </div>
                   </div>
                 </FancyCard>

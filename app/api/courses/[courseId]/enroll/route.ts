@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { recordMeaningfulActivity } from "@/lib/activity";
+import { canAccessCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -11,20 +12,7 @@ export async function POST(_req: NextRequest, ctx: RouteContext) {
 
         const { courseId } = await ctx.params;
 
-        // Verify course exists and is published
-        const course = await prisma.course.findUnique({
-            where: { id: courseId },
-            select: {
-                id: true, published: true, visibility: true, createdById: true,
-                accessGrants: { where: { userId }, select: { id: true } },
-            }
-        });
-
-        if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
-        const allowed = course.createdById === userId
-            || (course.published && course.visibility === "PUBLIC")
-            || (course.visibility === "INVITATION_ONLY" && course.accessGrants.length > 0);
-        if (!allowed) {
+        if (!await canAccessCourse(courseId, userId)) {
             return NextResponse.json({ error: "Course not available for enrollment" }, { status: 403 });
         }
 

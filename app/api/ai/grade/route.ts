@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ suggestions: [] });
         }
 
-        const prompt = `You are an expert teaching assistant. Grade the following student responses for the test: "${attempt.test.title}".
+        const prompt = `You are an expert teaching assistant. Grade the following learner responses for the test: "${attempt.test.title}".
 Provide a suggested score (0 to points available) and a brief teacher comment/feedback for each.
 
 Responses:
@@ -58,7 +58,7 @@ ${responsesToGrade.map((r) => `
 [ID: ${r.id}]
 Question: ${r.question.questionText}
 Points Available: ${r.question.points}
-Student Answer: ${r.responseText}
+Learner answer: ${r.responseText}
 `).join("\n")}
 
 Return a JSON array of suggestions.`;

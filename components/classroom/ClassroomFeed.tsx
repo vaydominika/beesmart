@@ -5,6 +5,7 @@ import { FancyCard } from "@/components/ui/fancycard";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
 import { CreateAssignmentModal } from "@/components/classroom/CreateAssignmentModal";
@@ -430,15 +431,17 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         className="min-h-[72px] rounded-xl border border-[var(--classroom-line)] bg-white/70 p-3 pr-14 text-sm font-normal text-[var(--classroom-text)] outline-none focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]/15 prose prose-sm max-w-none"
                         id="classroom-post"
                     />
-                    <button
+                    <WorkspaceButton
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={handleCreatePost}
                         disabled={posting || uploadingFiles}
                         aria-label="Publish post"
-                        className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center bg-transparent text-[var(--classroom-text-muted)] transition-colors hover:text-[var(--classroom-accent-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="absolute bottom-2 right-2"
                     >
                         <Send className="h-5 w-5" />
-                    </button>
+                    </WorkspaceButton>
                 </div>
 
                 {/* Uploaded files preview */}
@@ -530,29 +533,19 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 {isTeacher && (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                         <span className="mr-1 text-xs font-medium text-[var(--classroom-text-muted)]">Add to post</span>
-                        <button
-                            onClick={() => setAssignmentModalOpen(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[var(--classroom-text)]"
-                        >
+                        <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setAssignmentModalOpen(true)}>
                             <ClipboardList className="h-3.5 w-3.5" />
                             Assignment
-                        </button>
-                        <button
-                            onClick={() => setTestModalOpen(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[var(--classroom-text)]"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setTestModalOpen(true)}>
                             <GraduationCap className="h-3.5 w-3.5" />
                             Test / Exam
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setCourseModalOpen(true)}
-                            className="flex items-center gap-1.5 rounded-lg border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[var(--classroom-text)]"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setCourseModalOpen(true)}>
                             <BookOpen className="h-3.5 w-3.5" />
                             Course
-                        </button>
-                        <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[var(--classroom-text)]">
+                        </WorkspaceButton>
+                        <label className={workspaceButtonVariants({ variant: "primary", size: "compact", className: "cursor-pointer" })}>
                             <Upload className="h-3.5 w-3.5" />
                             {uploadingFiles ? "Uploading…" : "Files"}
                             <input
@@ -596,18 +589,9 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-white pl-10 pr-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
                     />
                 </div>
-                <button
-                    type="button"
-                    onClick={() => setShowFilters(!showFilters)}
-                    aria-label="Toggle post filters"
-                    aria-pressed={showFilters}
-                    className={cn(
-                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]",
-                        showFilters && "bg-(--classroom-accent-hover) text-[var(--classroom-text)]"
-                    )}
-                >
+                <WorkspaceButton type="button" variant={showFilters ? "primary" : "secondary"} size="icon" onClick={() => setShowFilters(!showFilters)} aria-label="Toggle post filters" aria-pressed={showFilters}>
                     <SlidersHorizontal className="h-4 w-4" />
-                </button>
+                </WorkspaceButton>
             </div>
 
             {showFilters && (
@@ -910,12 +894,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Edit post</DialogTitle>
                         <DialogDescription className="sr-only">Update the text in your post.</DialogDescription>
                     </DialogHeader>
-                    <DialogClose
-                        aria-label="Close post editor"
-                        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                    >
-                        <X className="h-4 w-4" />
-                    </DialogClose>
+                    <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close post editor" className="absolute right-4 top-4"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                     {editingPost && (
                         <Editor
                             key={editingPost.id}
@@ -928,22 +907,22 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         />
                     )}
                     <div className="flex justify-end gap-2 border-t border-[var(--classroom-line)] pt-4">
-                        <button
+                        <WorkspaceButton
                             type="button"
+                            variant="secondary"
                             onClick={closePostEditor}
                             disabled={savingEdit}
-                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] disabled:opacity-50"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </WorkspaceButton>
+                        <WorkspaceButton
                             type="button"
+                            variant="primary"
                             onClick={handleEditPost}
                             disabled={savingEdit}
-                            className="h-9 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
                         >
                             {savingEdit ? "Saving…" : "Save changes"}
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -956,29 +935,24 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             This removes the post and its comments. This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogClose
-                        aria-label="Close delete confirmation"
-                        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                    >
-                        <X className="h-4 w-4" />
-                    </DialogClose>
+                    <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                     <div className="flex justify-end gap-2 pt-2">
-                        <button
+                        <WorkspaceButton
                             type="button"
+                            variant="secondary"
                             onClick={() => setPostToDelete(null)}
                             disabled={deletingPost}
-                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] disabled:opacity-50"
                         >
                             Cancel
-                        </button>
-                        <button
+                        </WorkspaceButton>
+                        <WorkspaceButton
                             type="button"
+                            variant="danger"
                             onClick={handleDeletePost}
                             disabled={deletingPost}
-                            className="h-9 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50"
                         >
                             {deletingPost ? "Deleting…" : "Delete"}
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </DialogContent>
             </Dialog>

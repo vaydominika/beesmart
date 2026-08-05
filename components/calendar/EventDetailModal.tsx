@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
@@ -153,30 +153,33 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                         <div className="flex gap-2">
                             {displayEvent.canEdit !== false && (
                                 <>
-                                    <button
+                                    <WorkspaceButton
+                                        variant="ghost"
+                                        size="icon-compact"
                                         onClick={handleEdit}
-                                        className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
                                         aria-label="Edit event"
                                     >
-                                        <HugeiconsIcon icon={Pen01Icon} size={20} strokeWidth={2.2} />
-                                    </button>
-                                    <button
+                                        <HugeiconsIcon icon={Pen01Icon} size={16} strokeWidth={2.2} />
+                                    </WorkspaceButton>
+                                    <WorkspaceButton
+                                        variant="danger"
+                                        size="icon-compact"
                                         onClick={handleDeleteClick}
-                                        className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
                                         aria-label="Delete event"
                                     >
-                                        <Trash2 className="w-4 h-4 md:w-5 md:h-5" strokeWidth={2.2} />
-                                    </button>
+                                        <Trash2 strokeWidth={2.2} />
+                                    </WorkspaceButton>
                                 </>
                             )}
                         </div>
-                        <button
+                        <WorkspaceButton
+                            variant="ghost"
+                            size="icon-compact"
                             onClick={handleCancel}
-                            className="p-2 rounded-lg hover:bg-(--theme-sidebar) text-(--theme-text) transition-colors"
                             aria-label="Close"
                         >
-                            <HugeiconsIcon icon={Cancel01Icon} size={20} strokeWidth={2.2} />
-                        </button>
+                            <HugeiconsIcon icon={Cancel01Icon} size={16} strokeWidth={2.2} />
+                        </WorkspaceButton>
                     </div>
 
                     {editing ? (
@@ -293,10 +296,10 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                 </div>
                             </div>
                             <div className="pt-2">
-                                <FancyButton
+                                <WorkspaceButton
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="w-full text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                                    className="w-full"
                                 >
                                     {saving ? (
                                         <div className="flex items-center justify-center gap-2">
@@ -304,9 +307,9 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                             <span>Saving…</span>
                                         </div>
                                     ) : (
-                                        "Save Changes"
+                                        "Save changes"
                                     )}
-                                </FancyButton>
+                                </WorkspaceButton>
                             </div>
                         </div>
                     ) : (

@@ -83,7 +83,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 })).describe("Any potential violations of the safety policy"),
                 accessibilityScore: z.number().min(0).max(100).describe("Estimate of content accessibility (structure, clarity)"),
             }),
-            system: "You are a senior educational auditor for beesmart. Your task is to perform a deep pedagogical and safety audit on the provided course material. Be critical but constructive. Ensure the content is safe, logically structured, and high-quality for students.",
+            system: "You are a senior educational auditor for beesmart. Your task is to perform a deep pedagogical and safety audit on the provided course material. Be critical but constructive. Ensure the content is safe, logically structured, and high-quality for learners.",
             prompt: `Auditor Report for Course: "${course.title}"\n\nContent:\n${fullCourseText.substring(0, 30000)}`, // Limit context to avoid token overflow
         });
 

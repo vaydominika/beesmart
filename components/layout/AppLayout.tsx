@@ -28,7 +28,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
   const isSchedule = pathname.startsWith("/schedule");
-  const isQuietWorkspace = isClassroom || isSchedule;
+  const isCoursesIndex = pathname === "/courses";
+  const isCourseBuilder = /^\/courses\/[^/]+\/builder$/.test(pathname);
+  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder;
+  const isQuietWorkspace = isClassroom || isFocusedWorkspace;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -124,9 +127,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className={cn("relative flex h-screen overflow-x-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
-      <div className="hidden md:block shrink-0 h-screen">
-        <LeftSidebar variant="inline" />
-      </div>
+      {!isCourseBuilder && (
+        <div className="hidden md:block shrink-0 h-screen">
+          <LeftSidebar variant="inline" />
+        </div>
+      )}
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
         <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
@@ -135,7 +140,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </ScrollArea>
         </main>
       </div>
-      {!isSchedule && (
+      {!isFocusedWorkspace && (
         <>
           <div
             className={cn(

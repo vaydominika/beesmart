@@ -1,278 +1,218 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/sonner";
+import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Paperclip, Upload, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Editor } from "@/components/ui/editor";
-import { Image as ImageIcon, Upload, X, Paperclip, Lock, Globe2, Mail } from "lucide-react";
+import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
+import { CourseVisibility } from "@/lib/course-summary";
+import { cn } from "@/lib/utils";
 
 interface CreateCourseModalProps {
-    open: boolean;
-    onClose: () => void;
-    onCreated: (course: any) => void;
+  open: boolean;
+  onClose: () => void;
+  onCreated: (course: { id: string }) => void;
 }
 
+type UploadedFile = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
+
+const VISIBILITY_OPTIONS = [
+  { value: "PRIVATE", label: "Private", hint: "Only you", icon: Lock },
+  { value: "PUBLIC", label: "Public", hint: "Anyone can find it", icon: Globe2 },
+  { value: "INVITATION_ONLY", label: "Invitation only", hint: "Only invited people", icon: Mail },
+] as const;
+
 export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModalProps) {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [coverImageUrl, setCoverImageUrl] = useState("");
-    const [visibility, setVisibility] = useState<"PRIVATE" | "PUBLIC" | "INVITATION_ONLY">("PRIVATE");
-    const [uploadingCover, setUploadingCover] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [visibility, setVisibility] = useState<CourseVisibility>("PRIVATE");
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [validation, setValidation] = useState<string | null>(null);
 
-    // Support file attachments
-    const [files, setFiles] = useState<{ fileName: string; fileUrl: string; fileType: string; fileSize: number }[]>([]);
-    const [uploadingFiles, setUploadingFiles] = useState(false);
+  const reset = () => {
+    setStep(1);
+    setTitle("");
+    setDescription("");
+    setCoverImageUrl("");
+    setVisibility("PRIVATE");
+    setFiles([]);
+    setValidation(null);
+  };
 
-    const [saving, setSaving] = useState(false);
+  const closeAndReset = () => {
+    if (saving) return;
+    reset();
+    onClose();
+  };
 
-    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadingCover(true);
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-            const res = await fetch("/api/upload/local", { method: "POST", body: formData });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            setCoverImageUrl(data.fileUrl);
-        } catch {
-            toast.error("Failed to upload cover image.");
-        } finally {
-            setUploadingCover(false);
-            e.target.value = "";
+  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/upload/local", { method: "POST", body: formData });
+      if (!response.ok) throw new Error();
+      const uploaded = await response.json();
+      setCoverImageUrl(uploaded.fileUrl);
+    } catch {
+      toast.error("The cover image could not be uploaded.");
+    } finally {
+      setUploadingCover(false);
+      event.target.value = "";
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = event.target.files;
+    if (!selectedFiles?.length) return;
+    setUploadingFiles(true);
+    try {
+      for (const file of Array.from(selectedFiles)) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch("/api/upload/local", { method: "POST", body: formData });
+        if (!response.ok) {
+          toast.error(`${file.name} could not be uploaded.`);
+          continue;
         }
-    };
+        const uploaded = await response.json();
+        setFiles((current) => [...current, uploaded]);
+      }
+    } catch {
+      toast.error("The selected files could not be uploaded.");
+    } finally {
+      setUploadingFiles(false);
+      event.target.value = "";
+    }
+  };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const fileList = e.target.files;
-        if (!fileList?.length) return;
-        setUploadingFiles(true);
-        try {
-            for (const file of Array.from(fileList)) {
-                const formData = new FormData();
-                formData.append("file", file);
-                const res = await fetch("/api/upload/local", { method: "POST", body: formData });
-                if (!res.ok) {
-                    toast.error(`Failed to upload ${file.name}`);
-                    continue;
-                }
-                const uploaded = await res.json();
-                setFiles((prev) => [...prev, uploaded]);
-            }
-        } catch {
-            toast.error("Upload failed.");
-        } finally {
-            setUploadingFiles(false);
-            e.target.value = "";
-        }
-    };
+  const continueToDetails = () => {
+    if (!title.trim()) {
+      setValidation("Enter a course title to continue.");
+      return;
+    }
+    setValidation(null);
+    setStep(2);
+  };
 
-    const handleSave = async () => {
-        if (!title.trim()) {
-            toast.error("Please enter a course title.");
-            return;
-        }
-        setSaving(true);
-        try {
-            const res = await fetch("/api/courses", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim() || null,
-                    coverImageUrl: coverImageUrl || null,
-                    files: files
-                    , visibility
-                }),
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                toast.error(data.error ?? "Failed to create course.");
-                return;
-            }
-            const course = await res.json();
+  const handleSave = async () => {
+    if (!title.trim()) {
+      setStep(1);
+      setValidation("Enter a course title to continue.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || null,
+          coverImageUrl: coverImageUrl || null,
+          files,
+          visibility,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data.error ?? "The course could not be created.");
+        return;
+      }
+      toast.success("Course created.");
+      reset();
+      onClose();
+      onCreated(data);
+    } catch {
+      toast.error("The course could not be created.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-            const enrichedCourse = {
-                ...course,
-                _count: { modules: 0, enrollments: 0 },
-                creator: { name: "You" } // Simplified for local update
-            };
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
+      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-white p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[780px] md:max-w-3xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+        <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
+          <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold text-[var(--course-text-muted)]"><span>Step {step} of 2</span><span aria-hidden="true">·</span><span>{step === 1 ? "Basics" : "Details"}</span></div>
+          <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Create course</DialogTitle>
+          <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">{step === 1 ? "Set the course identity and who can access it." : "Add context and optional learning materials."}</DialogDescription>
+        </div>
 
-            toast.success("Course created!");
-            onCreated(enrichedCourse);
-            setTitle("");
-            setDescription("");
-            setCoverImageUrl("");
-            setFiles([]);
-            setVisibility("PRIVATE");
-            onClose();
-        } catch {
-            toast.error("Failed to create course.");
-        } finally {
-            setSaving(false);
-        }
-    };
+        <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
+          {step === 1 ? (
+            <div className="space-y-5">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Course title</span>
+                <input autoFocus value={title} onChange={(event) => { setTitle(event.target.value); if (validation) setValidation(null); }} placeholder="Introduction to biology" className="h-11 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm font-medium text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+              </label>
+              {validation && <p role="alert" className="rounded-xl bg-[var(--course-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--course-danger)]">{validation}</p>}
 
-    return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-4xl max-h-[90vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none flex flex-col">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col h-full overflow-y-auto">
-                    <DialogHeader className="shrink-0 pb-2">
-                        <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
-                            Create Course
-                        </DialogTitle>
-                    </DialogHeader>
+              <fieldset>
+                <legend className="mb-1.5 text-xs font-semibold text-[var(--course-text-muted)]">Visibility</legend>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {VISIBILITY_OPTIONS.map(({ value, label, hint, icon: Icon }) => (
+                    <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={cn("flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", visibility === value ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-white hover:bg-[var(--course-surface-muted)]")}>
+                      <Icon className="h-4 w-4 shrink-0" /><span><span className="block text-sm font-semibold text-[var(--course-text)]">{label}</span><span className="mt-0.5 block text-[11px] text-[var(--course-text-muted)]">{hint}</span></span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
 
-                    <div className="space-y-6 flex-1 py-4">
-                        {/* Title and Cover Image Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                    Course Title *
-                                </label>
-                                <Input
-                                    value={title}
-                                    onChange={(e) => setTitle(e.target.value)}
-                                    className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                    placeholder="e.g. Introduction to React"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                    Banner Photo
-                                </label>
-                                <div className="relative group">
-                                    <div className="bg-(--theme-sidebar) rounded-xl corner-squircle h-10 md:h-12 w-full flex items-center justify-center overflow-hidden border-2 border-dashed border-(--theme-text)/20 transition-colors group-hover:border-(--theme-text)/50">
-                                        {coverImageUrl ? (
-                                            <img src={coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-xs font-bold text-(--theme-text) opacity-50 flex items-center">
-                                                <ImageIcon className="w-4 h-4 mr-2" />
-                                                {uploadingCover ? "Uploading..." : "Upload Cover"}
-                                            </span>
-                                        )}
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleCoverUpload}
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                            disabled={uploadingCover}
-                                        />
-                                    </div>
-                                    {coverImageUrl && (
-                                        <button
-                                            onClick={(e) => { e.preventDefault(); setCoverImageUrl(""); }}
-                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 z-10"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+              <div>
+                <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Cover image <span className="font-normal">(optional)</span></span>
+                <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center" style={coverImageUrl ? { backgroundImage: `linear-gradient(rgba(32,35,31,0.12), rgba(32,35,31,0.12)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
+                  {!coverImageUrl && <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--course-text-muted)]"><ImageIcon className="h-4 w-4" />{uploadingCover ? "Uploading…" : "Choose an image"}</span>}
+                  <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} aria-label="Upload course cover" className="absolute inset-0 cursor-pointer opacity-0" />
+                  {coverImageUrl && <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setCoverImageUrl("")} aria-label="Remove cover image" className="absolute right-2 top-2"><X className="h-4 w-4" /></WorkspaceButton>}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div>
+                <label htmlFor="course-description" className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Description <span className="font-normal">(optional)</span></label>
+                <div className="min-h-48 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 focus-within:border-[var(--course-focus-border)] focus-within:ring-2 focus-within:ring-[var(--course-focus-ring)]">
+                  <Editor id="course-description" initialValue={description} onChange={setDescription} placeholder="Describe what learners will study…" className="min-h-36" />
+                </div>
+              </div>
 
-                        {/* Rich Text Description */}
-                        <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-2">Visibility</label>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                {([
-                                    ["PRIVATE", "Private", "Only you", Lock],
-                                    ["PUBLIC", "Public", "Anyone can find it", Globe2],
-                                    ["INVITATION_ONLY", "Invitation-only", "Only invited people", Mail],
-                                ] as const).map(([value, label, hint, Icon]) => (
-                                    <button
-                                        key={value}
-                                        type="button"
-                                        onClick={() => setVisibility(value)}
-                                        className={`flex items-center gap-3 rounded-xl corner-squircle p-3 text-left transition-colors ${visibility === value ? "bg-(--theme-card)" : "bg-(--theme-sidebar) opacity-60 hover:opacity-100"}`}
-                                    >
-                                        <Icon className="h-4 w-4 shrink-0" />
-                                        <span><span className="block text-xs font-bold text-(--theme-text)">{label}</span><span className="block text-[10px] text-(--theme-text) opacity-55">{hint}</span></span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div><p className="text-xs font-semibold text-[var(--course-text-muted)]">Course materials <span className="font-normal">(optional)</span></p><p className="mt-0.5 text-[11px] text-[var(--course-text-faint)]">PDFs, images, audio, video, or documents</p></div>
+                  <label className={workspaceButtonVariants({ variant: "secondary", size: "compact", className: "cursor-pointer" })}><Upload className="h-3.5 w-3.5" />{uploadingFiles ? "Uploading…" : "Attach files"}<input type="file" multiple onChange={handleFileUpload} disabled={uploadingFiles} className="sr-only" /></label>
+                </div>
+                {files.length ? (
+                  <div className="space-y-2">
+                    {files.map((file, index) => (
+                      <div key={`${file.fileUrl}-${index}`} className="flex items-center gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white"><FileText className="h-4 w-4 text-[var(--course-text-muted)]" /></span>
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--course-text)]">{file.fileName}</span><span className="text-[10px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)} KB</span></span>
+                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${file.fileName}`}><X className="h-4 w-4" /></WorkspaceButton>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] text-center"><Paperclip className="mb-2 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-xs font-medium text-[var(--course-text-muted)]">No materials attached</p></div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
-                        {/* Rich Text Description */}
-                        <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Course Description
-                            </label>
-                            <div className="bg-(--theme-sidebar) rounded-xl corner-squircle border border-(--theme-text)/10 p-4 min-h-[300px]">
-                                <Editor
-                                    id="course-description"
-                                    initialValue={description}
-                                    onChange={(val) => setDescription(val)}
-                                    placeholder="Write your course description here. You can add images, formats, and lists..."
-                                    className="min-h-[250px]"
-                                />
-                            </div>
-                        </div>
-
-                        {/* File Attachments */}
-                        <div>
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                                    Course Materials
-                                </label>
-                                <label className="flex items-center gap-2 bg-(--theme-sidebar) px-3 py-1.5 rounded-lg text-xs font-bold text-(--theme-text) cursor-pointer hover:opacity-80 transition-opacity">
-                                    <Upload className="h-3 w-3 opacity-50" />
-                                    {uploadingFiles ? "Uploading..." : "Attach Files"}
-                                    <input type="file" multiple onChange={handleFileUpload} className="hidden" disabled={uploadingFiles} />
-                                </label>
-                            </div>
-
-                            {files.length === 0 ? (
-                                <div className="bg-(--theme-sidebar)/50 rounded-xl corner-squircle border border-dashed border-(--theme-text)/10 p-6 flex flex-col items-center justify-center text-center">
-                                    <Paperclip className="h-8 w-8 text-(--theme-text) opacity-20 mb-2" />
-                                    <p className="text-sm font-bold text-(--theme-text) opacity-50">No files attached yet.</p>
-                                    <p className="text-xs text-(--theme-text) opacity-40">Add PDFs, images, or documents for your course.</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {files.map((f, i) => (
-                                        <div key={i} className="flex items-center gap-3 bg-(--theme-sidebar) px-3 py-2.5 rounded-xl corner-squircle text-sm font-bold text-(--theme-text)">
-                                            <div className="bg-(--theme-card) p-2 rounded-lg">
-                                                <Paperclip className="h-4 w-4 opacity-50" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <span className="block truncate max-w-[150px]">{f.fileName}</span>
-                                                <span className="block text-[10px] opacity-50 uppercase">{(f.fileSize / 1024).toFixed(1)} KB</span>
-                                            </div>
-                                            <button
-                                                onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
-                                                className="opacity-50 hover:opacity-100 p-1 hover:bg-black/10 rounded-max transition-colors"
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 shrink-0 mt-auto border-t border-(--theme-text)/10">
-                        <FancyButton
-                            onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
-                        >
-                            Cancel
-                        </FancyButton>
-                        <FancyButton
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1 text-xs md:text-xl font-bold uppercase bg-(--theme-text) text-(--theme-bg) hover:opacity-90 transition-opacity !border-none"
-                        >
-                            {saving ? "Creating…" : "Create"}
-                        </FancyButton>
-                    </div>
-                </FancyCard>
-            </DialogContent>
-        </Dialog>
-    );
+        <div className="flex gap-3 border-t border-[var(--course-line)] bg-white px-5 py-4">
+          {step === 1 ? <WorkspaceButton type="button" variant="secondary" onClick={closeAndReset} className="flex-1">Cancel</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setStep(1)} className="flex-1">Back</WorkspaceButton>}
+          {step === 1 ? <WorkspaceButton type="button" variant="primary" onClick={continueToDetails} className="flex-1">Continue</WorkspaceButton> : <WorkspaceButton type="button" variant="primary" onClick={() => void handleSave()} disabled={saving || uploadingFiles} className="flex-1">{saving ? "Creating…" : "Create course"}</WorkspaceButton>}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

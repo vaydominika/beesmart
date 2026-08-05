@@ -1,88 +1,93 @@
 "use client";
 
-import { FancyCard } from "@/components/ui/fancycard";
-import { BookOpen, Users } from "lucide-react";
+import { ArrowUpRight, BookOpen, Layers3, School, UserRound, UsersRound } from "lucide-react";
+import { CourseSummary, learningStatus, plainTextExcerpt } from "@/lib/course-summary";
+import { cn } from "@/lib/utils";
 
 interface CourseCardProps {
-    id: string;
-    title: string;
-    description?: string | null;
-    isPublic: boolean;
-    published?: boolean;
-    _count?: {
-        modules: number;
-        enrollments: number;
-    };
-    creator?: {
-        name: string | null;
-    } | null;
-    progress?: number;
-    onClick?: () => void;
+  course: CourseSummary;
+  onClick: () => void;
 }
 
-export function CourseCard({ title, description, _count, creator, onClick, published, progress }: CourseCardProps) {
-    return (
-        <FancyCard
-            className="flex flex-col h-[200px] cursor-pointer transition-transform hover:scale-[1.02] p-6 bg-(--theme-card) relative"
-            onClick={onClick}
-        >
-            {/* Draft Badge */}
-            {!published && (
-                <div className="absolute top-4 right-4">
-                    <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        Draft
-                    </span>
-                </div>
+const VISIBILITY_LABELS: Record<CourseSummary["visibility"], string> = {
+  PRIVATE: "Private",
+  PUBLIC: "Public",
+  INVITATION_ONLY: "Invitation only",
+};
+
+export function CourseCard({ course, onClick }: CourseCardProps) {
+  const isOwner = course.relationship === "owner";
+  const status = learningStatus(course);
+  const statusLabel = status === "completed" ? "Completed" : status === "in-progress" ? "In progress" : "Not started";
+  const description = plainTextExcerpt(course.description);
+  const firstClassroom = course.classrooms[0];
+  const cardStatus = isOwner ? (course.published ? "Published" : "Draft") : statusLabel;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-[var(--course-accent)] bg-white p-5 text-left transition-colors duration-200 hover:bg-[var(--course-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]"
+      aria-label={`${course.title}, ${isOwner ? "created course" : statusLabel}`}
+    >
+      <div className="mb-2 flex min-h-6 items-center justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--course-text-muted)]">{cardStatus}</span>
+        {isOwner && (
+          <span className="rounded-full bg-[var(--course-surface-muted)] px-2.5 py-1 text-[10px] font-medium text-[var(--course-text-muted)]">
+            {VISIBILITY_LABELS[course.visibility]}
+          </span>
+        )}
+      </div>
+
+      <h2 className="mb-2 line-clamp-2 text-xl font-semibold leading-tight tracking-[-0.025em] text-[var(--course-text)]">{course.title}</h2>
+      {description ? (
+        <p className="line-clamp-2 text-sm leading-relaxed text-[var(--course-text-muted)]">{description}</p>
+      ) : (
+        <p className="text-sm text-[var(--course-text-faint)]">No description</p>
+      )}
+
+      <div className="mt-auto pt-4">
+        {(firstClassroom || (!isOwner && course.creator.name)) && (
+          <div className="mb-3 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-[var(--course-text-muted)]">
+            {firstClassroom && (
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <School className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Classroom · {firstClassroom.name}</span>
+                {course.classrooms.length > 1 && <span className="shrink-0">+{course.classrooms.length - 1}</span>}
+              </span>
             )}
-            <div className="flex-1 mb-4">
-                <h3 className="text-xl md:text-2xl font-black text-(--theme-text) uppercase tracking-tight line-clamp-2 leading-tight mb-2">
-                    {title}
-                </h3>
+            {!isOwner && course.creator.name && (
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <UserRound className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{course.creator.name}</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {!isOwner && (
+          <div className="mb-4">
+            <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold text-[var(--course-text-muted)]">
+              <span>{course.isEnrolled ? "Progress" : "Available to join"}</span>
+              {course.isEnrolled && <span>{course.progress}%</span>}
             </div>
-
-            {description && (
-                <div
-                    className="text-sm font-medium text-(--theme-text)/70 uppercase line-clamp-2 mb-4 tracking-tighter"
-                    dangerouslySetInnerHTML={{ __html: description }}
-                />
-            )}
-
-            {progress !== undefined && progress > 0 && (
-                <div className="mb-4 shrink-0">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-black text-(--theme-secondary) uppercase tracking-widest">
-                            Progress
-                        </span>
-                        <span className="text-[10px] font-black text-(--theme-secondary) uppercase tracking-widest">
-                            {progress}%
-                        </span>
-                    </div>
-                    <div className="w-full bg-(--theme-bg) h-1.5 rounded-full overflow-hidden">
-                        <div
-                            className="bg-(--theme-secondary) h-full transition-all duration-500 ease-out"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                </div>
-            )}
-
-            <div className="flex items-center justify-between text-xs md:text-sm font-bold text-(--theme-text-important) uppercase tracking-wider shrink-0 mt-auto">
-                <div className="flex gap-4">
-                    <span className="flex items-center gap-1.5">
-                        <Users className="h-4 w-4" />
-                        {_count?.enrollments || 0}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" />
-                        {_count?.modules || 0}
-                    </span>
-                </div>
-                {creator?.name && (
-                    <span className="truncate max-w-[120px] ml-4 text-right">
-                        by {creator.name}
-                    </span>
-                )}
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--course-surface-muted)]">
+              <div className="h-full rounded-full bg-[var(--course-focus-border)] transition-[width]" style={{ width: `${course.isEnrolled ? course.progress : 0}%` }} />
             </div>
-        </FancyCard>
-    );
+          </div>
+        )}
+
+        <div className="flex items-center justify-between border-t border-[var(--course-line)] pt-4">
+          <div className="flex items-center gap-3 text-sm font-medium text-[var(--course-text-muted)]">
+            <span className="inline-flex items-center gap-1.5" aria-label={`${course._count.modules} modules`}><Layers3 className="h-4 w-4" />{course._count.modules}</span>
+            <span className="inline-flex items-center gap-1.5" aria-label={`${course.lessonCount} lessons`}><BookOpen className="h-4 w-4" />{course.lessonCount}</span>
+            {isOwner && <span className="inline-flex items-center gap-1.5" aria-label={`${course._count.enrollments} enrollments`}><UsersRound className="h-4 w-4" />{course._count.enrollments}</span>}
+          </div>
+          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--course-accent-hover)] bg-[var(--course-accent)] text-[var(--course-text)] transition-colors", "group-hover:bg-[var(--course-accent-hover)]")}>
+            <ArrowUpRight className="h-4 w-4" />
+          </span>
+        </div>
+      </div>
+    </button>
+  );
 }

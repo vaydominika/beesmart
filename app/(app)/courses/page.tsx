@@ -1,141 +1,160 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FancyButton } from "@/components/ui/fancybutton";
-import { CreateCourseModal } from "@/components/course/CreateCourseModal";
-import { CourseCard } from "@/components/course/CourseCard";
-import { Spinner } from "@/components/ui/spinner";
-import { Plus } from "lucide-react";
-import { BookPlus } from "lucide-react";
+import { BookOpen, BookPlus, Plus, Search } from "lucide-react";
 import { AddCourseToClassroomModal } from "@/components/course/AddCourseToClassroomModal";
+import { CourseCard } from "@/components/course/CourseCard";
+import { CourseStatusFilter } from "@/components/course/CourseStatusFilter";
+import { CreateCourseModal } from "@/components/course/CreateCourseModal";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
+import {
+  CourseSummary,
+  CourseTab,
+  CreatedStatus,
+  LearningStatus,
+  courseMatchesSearch,
+  initialCourseTab,
+  learningStatus,
+  sortCreatedCourses,
+  sortLearningCourses,
+} from "@/lib/course-summary";
+
+const TAB_KEY = "courses-active-tab";
+
+function CourseSkeleton() {
+  return (
+    <div className="min-h-[210px] animate-pulse rounded-2xl border border-[var(--course-accent)] bg-white p-5">
+      <div className="h-3 w-16 rounded bg-[var(--course-surface-muted)]" />
+      <div className="mt-4 h-5 w-2/3 rounded bg-[var(--course-surface-muted)]" />
+      <div className="mt-3 h-3 w-full rounded bg-[var(--course-surface-muted)]" />
+      <div className="mt-2 h-3 w-4/5 rounded bg-[var(--course-surface-muted)]" />
+      <div className="mt-8 flex items-center justify-between border-t border-[var(--course-line)] pt-4">
+        <div className="h-4 w-28 rounded bg-[var(--course-surface-muted)]" />
+        <div className="h-9 w-9 rounded-full bg-[var(--course-accent)]" />
+      </div>
+    </div>
+  );
+}
 
 export default function CoursesPage() {
-    const router = useRouter();
-    const [courses, setCourses] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [createOpen, setCreateOpen] = useState(false);
-    const [addToClassroomOpen, setAddToClassroomOpen] = useState(false);
+  const router = useRouter();
+  const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [activeTab, setActiveTab] = useState<CourseTab | null>(null);
+  const [search, setSearch] = useState("");
+  const [learningFilter, setLearningFilter] = useState<LearningStatus>("all");
+  const [createdFilter, setCreatedFilter] = useState<CreatedStatus>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [addToClassroomOpen, setAddToClassroomOpen] = useState(false);
 
-    const fetchCourses = useCallback(async () => {
-        try {
-            const res = await fetch("/api/courses");
-            if (!res.ok) return;
-            const data = await res.json();
-            setCourses(data);
-        } catch {
-            // ignore
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/courses", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load your courses.");
+      const data = await response.json() as CourseSummary[];
+      setCourses(data);
+      setActiveTab((current) => current ?? initialCourseTab(window.localStorage.getItem(TAB_KEY), data));
+    } catch (fetchError) {
+      setError(fetchError instanceof Error ? fetchError.message : "Could not load your courses.");
+      setActiveTab((current) => current ?? "created");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    useEffect(() => {
-        fetchCourses();
-    }, [fetchCourses]);
+  useEffect(() => {
+    void fetchCourses();
+  }, [fetchCourses]);
 
-    const handleCreated = (course: any) => {
-        setCourses((prev) => [course, ...prev]);
-        router.push(`/courses/${course.id}/builder`);
-    };
+  const changeTab = (tab: CourseTab) => {
+    setActiveTab(tab);
+    window.localStorage.setItem(TAB_KEY, tab);
+  };
 
-    return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                <h1 className="text-3xl md:text-5xl font-bold text-(--theme-text) uppercase tracking-tight">
-                    My Courses
-                </h1>
-                <div className="flex gap-3">
-                    <FancyButton
-                        onClick={() => setAddToClassroomOpen(true)}
-                        className="text-(--theme-text) text-xs md:text-base font-bold uppercase px-4 py-1.5"
-                    >
-                        <BookPlus className="h-4 w-4 mr-2" />
-                        Add to Classroom
-                    </FancyButton>
-                    <FancyButton
-                        onClick={() => setCreateOpen(true)}
-                        className="text-(--theme-text) text-xs md:text-base font-bold uppercase px-4 py-1.5"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Continue
-                    </FancyButton>
-                </div>
-            </div>
+  const visibleCourses = useMemo(() => {
+    if (!activeTab) return [];
+    const relationship = activeTab === "learning" ? "learner" : "owner";
+    const matching = courses.filter((course) => course.relationship === relationship && courseMatchesSearch(course, search));
+    if (activeTab === "learning") {
+      const filtered = learningFilter === "all" ? matching : matching.filter((course) => learningStatus(course) === learningFilter);
+      return sortLearningCourses(filtered);
+    }
+    const filtered = createdFilter === "all" ? matching : matching.filter((course) => createdFilter === "published" ? course.published : !course.published);
+    return sortCreatedCourses(filtered);
+  }, [activeTab, courses, createdFilter, learningFilter, search]);
 
-            {/* Content */}
-            {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Spinner />
-                </div>
-            ) : courses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="text-6xl mb-4">📚</div>
-                    <h2 className="text-xl md:text-2xl font-bold text-(--theme-text) uppercase mb-2">
-                        No Courses Yet
-                    </h2>
-                    <p className="text-sm text-(--theme-text) opacity-60 max-w-md mb-6">
-                        Create a new course to organize your learning materials, or enroll in an existing one.
-                    </p>
-                    <div className="flex gap-3">
-                        <FancyButton
-                            onClick={() => setCreateOpen(true)}
-                            className="text-(--theme-text) text-sm font-bold uppercase px-4 py-1.5"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Continue
-                        </FancyButton>
-                    </div>
-                </div>
-            ) : (
-                <div className="space-y-12">
-                    {/* Active Courses */}
-                    {courses.filter(c => c.progress < 100).length > 0 && (
-                        <section>
-                            <h2 className="text-xl md:text-2xl font-bold text-(--theme-text) uppercase tracking-tight mb-6">
-                                Active Courses
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {courses.filter(c => c.progress < 100).map((c) => (
-                                    <CourseCard
-                                        key={c.id}
-                                        {...c}
-                                        progress={undefined} // Creators don't see progress
-                                        onClick={() => router.push(`/courses/${c.id}/builder`)}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
+  const hasActiveFilters = Boolean(search.trim()) || (activeTab === "learning" ? learningFilter !== "all" : createdFilter !== "all");
 
-                    {/* Finished Courses */}
-                    {courses.filter(c => c.progress === 100).length > 0 && (
-                        <section>
-                            <h2 className="text-xl md:text-2xl font-bold text-emerald-600 uppercase tracking-tight mb-6">
-                                Finished Courses
-                            </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                                {courses.filter(c => c.progress === 100).map((c) => (
-                                    <CourseCard
-                                        key={c.id}
-                                        {...c}
-                                        onClick={() => router.push(`/courses/${c.id}`)}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                </div>
+  return (
+    <div className="course-ui min-h-full bg-[var(--course-canvas)] px-4 py-5 md:px-6 md:py-7">
+      <div className="mx-auto max-w-[1500px]">
+        <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--course-text)] md:text-[42px]">Courses</h1>
+          <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" />New course
+          </WorkspaceButton>
+        </header>
+
+        <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--course-line)] bg-white p-3 lg:flex-row lg:items-center lg:justify-between">
+          <WorkspaceTabs
+            ariaLabel="Course library"
+            value={activeTab ?? "created"}
+            onValueChange={changeTab}
+            items={[{ value: "learning", label: "Learning" }, { value: "created", label: "Created" }] satisfies Array<{ value: CourseTab; label: string }>}
+            fill
+            className="sm:w-auto"
+          />
+
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--course-text-faint)]" />
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+            </label>
+            <CourseStatusFilter activeTab={activeTab ?? "created"} learningFilter={learningFilter} createdFilter={createdFilter} onLearningChange={setLearningFilter} onCreatedChange={setCreatedFilter} />
+            {activeTab === "created" && (
+              <WorkspaceButton type="button" variant="secondary" onClick={() => setAddToClassroomOpen(true)}>
+                <BookPlus className="h-4 w-4" />Add to classroom
+              </WorkspaceButton>
             )}
-
-            {/* Modals */}
-            <CreateCourseModal
-                open={createOpen}
-                onClose={() => setCreateOpen(false)}
-                onCreated={handleCreated}
-            />
-            <AddCourseToClassroomModal open={addToClassroomOpen} onClose={() => setAddToClassroomOpen(false)} />
+          </div>
         </div>
-    );
+
+        {loading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label="Loading courses">
+            {Array.from({ length: 4 }, (_, index) => <CourseSkeleton key={index} />)}
+          </div>
+        ) : error ? (
+          <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-[var(--course-line)] bg-white px-6 text-center">
+            <BookOpen className="mb-4 h-7 w-7 text-[var(--course-text-faint)]" />
+            <h2 className="text-lg font-semibold text-[var(--course-text)]">Your courses could not be loaded</h2>
+            <p className="mt-2 text-sm text-[var(--course-text-muted)]">{error}</p>
+            <WorkspaceButton type="button" variant="primary" onClick={() => void fetchCourses()} className="mt-5">Try again</WorkspaceButton>
+          </div>
+        ) : visibleCourses.length ? (
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "learning" ? "Courses you are learning" : "Courses you created"}>
+            {visibleCourses.map((course) => <CourseCard key={course.id} course={course} onClick={() => router.push(course.relationship === "owner" ? `/courses/${course.id}/builder` : `/courses/${course.id}`)} />)}
+          </section>
+        ) : (
+          <section className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-[var(--course-line)] bg-white px-6 text-center">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--course-accent)]"><BookOpen className="h-5 w-5" /></div>
+            <h2 className="text-lg font-semibold text-[var(--course-text)]">{hasActiveFilters ? "No courses match these filters" : activeTab === "learning" ? "No courses to learn yet" : "Create your first course"}</h2>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--course-text-muted)]">{hasActiveFilters ? "Try a different search or status." : activeTab === "learning" ? "Courses you join or receive through a Classroom will appear here." : "Build lessons, add materials, and share the course when it is ready."}</p>
+            {hasActiveFilters ? (
+              <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setLearningFilter("all"); setCreatedFilter("all"); }} className="mt-5">Clear filters</WorkspaceButton>
+            ) : activeTab === "created" && (
+              <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)} className="mt-5">New course</WorkspaceButton>
+            )}
+          </section>
+        )}
+      </div>
+
+      <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(course) => router.push(`/courses/${course.id}/builder`)} />
+      <AddCourseToClassroomModal open={addToClassroomOpen} onClose={() => setAddToClassroomOpen(false)} onAdded={() => void fetchCourses()} />
+    </div>
+  );
 }

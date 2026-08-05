@@ -3,6 +3,7 @@
 import { BookOpen, CalendarDays, CalendarPlus, Clock3, LockKeyhole, School, UserRound } from "lucide-react";
 import { ScheduleEvent, dateKey, eventSourceLabel, parseDateKey } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 interface ScheduleAgendaViewProps {
   events: ScheduleEvent[];
@@ -56,9 +57,9 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
                 <span className="block text-sm font-semibold text-[var(--schedule-text)]">{date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
                 <span className="text-xs text-[var(--schedule-text-muted)]">{dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}</span>
               </button>
-              <button type="button" onClick={() => onCreateDate(date)} aria-label={`New event on ${key}`} className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--schedule-line)] bg-white text-[var(--schedule-text-muted)] hover:bg-[var(--schedule-accent)] hover:text-[var(--schedule-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]">
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onCreateDate(date)} aria-label={`New event on ${key}`}>
                 <CalendarPlus className="h-4 w-4" />
-              </button>
+              </WorkspaceButton>
             </header>
             <div className="divide-y divide-[var(--schedule-line)]">
               {dayEvents.map((event) => {

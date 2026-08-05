@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -301,10 +301,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 <span className="text-sm font-bold text-(--theme-text)">Make sure you have a stable connection.</span>
                             </div>
                         </div>
-                        <FancyButton onClick={handleStartTest} className="px-8 py-3 text-lg font-bold">
+                        <WorkspaceButton type="button" variant="primary" onClick={handleStartTest}>
                             <Play className="h-5 w-5 mr-2" />
                             Start Test
-                        </FancyButton>
+                        </WorkspaceButton>
                     </FancyCard>
                 )}
 
@@ -370,14 +370,15 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 <span className="text-sm font-bold text-(--theme-text) opacity-60">
                                     {Object.keys(responses).length} of {test.questions.length} answered
                                 </span>
-                                <FancyButton
+                                <WorkspaceButton
+                                    type="button"
+                                    variant="primary"
                                     onClick={handleSubmitTest}
                                     disabled={submitting}
-                                    className="px-8 py-2 text-sm font-bold bg-(--theme-text) text-(--theme-card)"
                                 >
                                     {submitting ? "Submitting..." : "Submit Exam"}
                                     {!submitting && <ArrowRight className="h-4 w-4 ml-2" />}
-                                </FancyButton>
+                                </WorkspaceButton>
                             </div>
                         </div>
                     </div>

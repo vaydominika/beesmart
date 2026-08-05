@@ -37,7 +37,7 @@ Lesson Text:
                 question: z.string().describe("The question text"),
                 options: z.array(z.string()).optional().describe("The options, if multiple choice. Maximum 4 options. Include the correct answer."),
                 correctAnswer: z.string().describe("The correct answer (exact string match for options or true/false)"),
-                explanation: z.string().describe("Why is this the correct answer? Shown to student after they guess."),
+                explanation: z.string().describe("Why is this the correct answer? Shown to the learner after they guess."),
             }),
             prompt,
         });

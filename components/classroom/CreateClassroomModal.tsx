@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 
@@ -101,19 +101,23 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                     </div>
 
                     <div className="flex gap-3 pt-5 shrink-0">
-                        <FancyButton
+                        <WorkspaceButton
+                            type="button"
+                            variant="secondary"
                             onClick={onClose}
-                            className="flex-1 bg-[var(--classroom-surface-muted)] text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1"
                         >
                             Cancel
-                        </FancyButton>
-                        <FancyButton
+                        </WorkspaceButton>
+                        <WorkspaceButton
+                            type="button"
+                            variant="primary"
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1"
                         >
                             {saving ? "Creating…" : "Create"}
-                        </FancyButton>
+                        </WorkspaceButton>
                     </div>
                 </FancyCard>
             </DialogContent>

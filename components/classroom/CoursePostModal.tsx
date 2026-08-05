@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 
 type CourseSource = "all" | "my";
 
@@ -102,33 +104,18 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="relative mt-3 grid shrink-0 grid-cols-2 border-b border-(--classroom-line)" role="tablist" aria-label="Course source">
-                        <span
-                            aria-hidden="true"
-                            className={cn(
-                                "absolute bottom-[-1px] left-0 h-0.5 w-1/2 bg-(--classroom-accent) transition-transform duration-200 motion-reduce:transition-none",
-                                source === "my" && "translate-x-full",
-                            )}
-                        />
-                        {(["all", "my"] as CourseSource[]).map((tab) => (
-                            <button
-                                key={tab}
-                                type="button"
-                                role="tab"
-                                aria-selected={source === tab}
-                                onClick={() => {
-                                    setSource(tab);
-                                    setCourseId("");
-                                }}
-                                className={cn(
-                                    "h-10 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)",
-                                    source === tab ? "font-semibold text-(--classroom-text)" : "font-medium text-(--classroom-text-muted) hover:text-(--classroom-text)",
-                                )}
-                            >
-                                {tab === "all" ? "All courses" : "My courses"}
-                            </button>
-                        ))}
-                    </div>
+                    <WorkspaceTabs
+                        ariaLabel="Course source"
+                        value={source}
+                        onValueChange={(tab) => {
+                            setSource(tab);
+                            setCourseId("");
+                        }}
+                        items={[{ value: "all", label: "All courses" }, { value: "my", label: "My courses" }] satisfies Array<{ value: CourseSource; label: string }>}
+                        size="compact"
+                        fill
+                        className="mt-3 shrink-0"
+                    />
 
                     <div className="relative my-3 shrink-0">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--classroom-text-muted)" />
@@ -206,21 +193,12 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                     </div>
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-(--classroom-line) pt-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="h-9 rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-4 text-sm font-medium text-(--classroom-text-muted) transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleAdd}
-                            disabled={!selectedCourse}
-                            className="h-9 rounded-xl border border-(--classroom-accent-hover) bg-(--classroom-accent) px-4 text-sm font-semibold text-(--classroom-text) transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring) disabled:cursor-not-allowed disabled:border-(--classroom-line) disabled:bg-(--classroom-surface-muted) disabled:text-(--classroom-text-faint)"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" onClick={handleAdd} disabled={!selectedCourse}>
                             Add course
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </div>
             </DialogContent>

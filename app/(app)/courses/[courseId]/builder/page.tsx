@@ -20,6 +20,7 @@ export default async function CourseBuilderPage({
                 include: {
                     lessons: {
                         orderBy: { order: "asc" },
+                        include: { files: true },
                     },
                 },
             },
@@ -30,12 +31,11 @@ export default async function CourseBuilderPage({
 
     // Check if user is the creator
     if (course.createdById !== userId) {
-        redirect(`/courses/${courseId}`); // redirect to student view if not creator
+        redirect(`/courses/${courseId}`); // Redirect to the learner view when the user is not the creator.
     }
 
-    // Pass data to client component
     return (
-        <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-background">
+        <div className="course-ui flex h-[calc(100dvh-65px)] min-h-0 w-full overflow-hidden bg-[var(--course-canvas)] md:h-screen">
             <CourseBuilderClient initialCourse={course} />
         </div>
     );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CalendarClock, Trash2 } from "lucide-react";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 
@@ -69,8 +69,8 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
                 <div><label className="text-[10px] font-bold uppercase opacity-50">Opens</label><Input type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
                 <div><label className="text-[10px] font-bold uppercase opacity-50">Closes</label><Input type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
                 <div className="flex gap-2">
-                    <FancyButton onClick={save} disabled={saving} className="h-10 text-xs font-bold uppercase">{saving ? "Saving…" : "Save"}</FancyButton>
-                    <button onClick={remove} aria-label="Delete test" className="h-10 w-10 rounded-xl bg-(--theme-sidebar) flex items-center justify-center hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                    <WorkspaceButton type="button" variant="primary" onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</WorkspaceButton>
+                    <WorkspaceButton type="button" variant="danger" size="icon" onClick={remove} aria-label="Delete test"><Trash2 className="h-4 w-4" /></WorkspaceButton>
                 </div>
             </div>
         </FancyCard>

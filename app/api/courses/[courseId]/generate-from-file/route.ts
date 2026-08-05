@@ -18,24 +18,28 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         }
 
         const formData = await req.formData();
-        const file = formData.get("file") as File;
+        const fileEntry = formData.get("file");
+        const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
+        const suppliedText = String(formData.get("text") ?? "").trim();
 
-        if (!file) {
-            return NextResponse.json({ error: "No file provided" }, { status: 400 });
+        if (!file && !suppliedText) {
+            return NextResponse.json({ error: "Add source text or a file" }, { status: 400 });
         }
 
-        const buffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(buffer);
-
-        // Extract text from file for DeepSeek (it doesn't natively support file content parts for docs)
-        const { extractTextFromFile } = await import("@/lib/ai/file-utils");
-        const extractedText = await extractTextFromFile(file);
+        let extractedText = "";
+        if (file) {
+            // Extract text from files because DeepSeek does not natively support document content parts.
+            const { extractTextFromFile } = await import("@/lib/ai/file-utils");
+            extractedText = await extractTextFromFile(file);
+        }
+        const sourceParts = [suppliedText, extractedText].filter(Boolean);
+        const source = sourceParts.join("\n\n--- SOURCE FILE ---\n\n").substring(0, 30000);
 
         const prompt = `You are an expert curriculum designer. Extract the key subjects, knowledge, and structure from the provided text and create a comprehensive course outline.
 The outline should be broken down into logically sequenced modules, and each module should contain lessons. Return a strict JSON structure.
 
 SOURCE TEXT:
-${extractedText.substring(0, 30000)}`; // Limit to avoid token overflow
+${source}`; // Limit to avoid token overflow
 
         const { object } = await generateObject({
             model: deepseek("deepseek-chat"),
@@ -59,13 +63,13 @@ ${extractedText.substring(0, 30000)}`; // Limit to avoid token overflow
 
         if (!safetyResult.safe) {
             await flagContent(userId, courseId, "AI_GENERATED_UNSAFE_FILE", safetyResult.reason);
-            return NextResponse.json({ error: "Generated content was flagged as inappropriate. Please check your source file." }, { status: 400 });
+            return NextResponse.json({ error: "Generated content was flagged as inappropriate. Please check your source material." }, { status: 400 });
         }
 
         return NextResponse.json({ outline: object });
 
     } catch (e) {
         console.error("POST /api/courses/[courseId]/generate-from-file", e);
-        return NextResponse.json({ error: "Server error or unsupported file type" }, { status: 500 });
+        return NextResponse.json({ error: "Server error or unsupported source material" }, { status: 500 });
     }
 }

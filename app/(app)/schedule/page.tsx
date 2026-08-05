@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarPlus, Check, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { ScheduleAgendaView } from "@/components/calendar/ScheduleAgendaView";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
 import { ScheduleMonthView } from "@/components/calendar/ScheduleMonthView";
 import { ScheduleWeekView } from "@/components/calendar/ScheduleWeekView";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
+import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { useIsMobile } from "@/components/layout/useIsMobile";
 import {
@@ -23,7 +26,6 @@ import {
   rangeForView,
   sourceLabel,
 } from "@/lib/schedule";
-import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/sonner";
 
 const ALL_SOURCES: EventSource[] = ["personal", "classroom", "course"];
@@ -335,24 +337,18 @@ export default function SchedulePage() {
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--schedule-text)] md:text-[42px]">Schedule</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex rounded-xl border border-[var(--schedule-line)] bg-white p-1">
-                {VIEWS.map((item) => (
-                  <button key={item.value} type="button" onClick={() => changeView(item.value)} aria-pressed={view === item.value} className={cn("h-9 rounded-lg px-3 text-sm font-semibold text-[var(--schedule-text-muted)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]", view === item.value && "bg-[var(--schedule-accent)] text-[var(--schedule-text)]")}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              <button type="button" onClick={() => startCreate(selectedDate)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--schedule-accent-hover)] bg-[var(--schedule-accent)] px-4 text-sm font-semibold text-[var(--schedule-text)] hover:bg-[var(--schedule-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]">
+              <WorkspaceTabs ariaLabel="Schedule view" items={VIEWS} value={view} onValueChange={changeView} />
+              <WorkspaceButton type="button" variant="primary" onClick={() => startCreate(selectedDate)}>
                 <CalendarPlus className="h-4 w-4" />New event
-              </button>
+              </WorkspaceButton>
             </div>
           </div>
 
           <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-white p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => navigate(-1)} aria-label="Previous date range" className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--schedule-line)] text-[var(--schedule-text-muted)] hover:bg-[var(--schedule-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"><ChevronLeft className="h-4 w-4" /></button>
-              <button type="button" onClick={goToToday} className="h-9 rounded-xl border border-[var(--schedule-line)] px-3 text-sm font-semibold text-[var(--schedule-text)] hover:bg-[var(--schedule-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]">Today</button>
-              <button type="button" onClick={() => navigate(1)} aria-label="Next date range" className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--schedule-line)] text-[var(--schedule-text-muted)] hover:bg-[var(--schedule-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"><ChevronRight className="h-4 w-4" /></button>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label="Previous date range"><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>Today</WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(1)} aria-label="Next date range"><ChevronRight className="h-4 w-4" /></WorkspaceButton>
               <h2 className="ml-1 text-sm font-semibold text-[var(--schedule-text)] md:text-base">{viewTitle(view, selectedDate)}</h2>
             </div>
             <div className="flex min-w-0 items-center gap-2">
@@ -361,19 +357,18 @@ export default function SchedulePage() {
                 <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" className="h-9 w-full rounded-xl border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] pl-9 pr-3 text-sm text-[var(--schedule-text)] outline-none placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-2 focus:ring-[var(--schedule-focus-ring)]" />
               </label>
               <div ref={filterMenuRef} className="relative">
-                <button type="button" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-haspopup="true" className="inline-flex h-9 items-center gap-2 rounded-xl border border-[var(--schedule-line)] px-3 text-sm font-semibold text-[var(--schedule-text-muted)] hover:bg-[var(--schedule-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></button>
+                <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-haspopup="true"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
                 {filtersOpen && (
                   <div role="group" aria-label="Event sources" className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-[var(--schedule-line)] bg-white p-1.5 shadow-[0_10px_30px_rgba(32,35,31,0.12)]">
                     {ALL_SOURCES.map((source) => {
                       const checked = sources.has(source);
                       return (
-                        <label key={source} className={cn("flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium text-[var(--schedule-text-muted)] transition-colors hover:bg-[var(--schedule-surface-muted)]", checked && "text-[var(--schedule-text)]")}>
-                          <input type="checkbox" checked={checked} onChange={() => setSources((current) => { const next = new Set(current); if (next.has(source)) next.delete(source); else next.add(source); return next; })} className="peer sr-only" />
-                          <span aria-hidden="true" className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border bg-white transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--schedule-focus-border)] peer-focus-visible:ring-offset-1", checked ? "border-[var(--schedule-focus-border)] bg-[var(--schedule-accent)]" : "border-[var(--schedule-line-strong)]")}>
-                            {checked && <Check className="h-3.5 w-3.5 stroke-[2.5] text-[var(--schedule-text)]" />}
-                          </span>
-                          <span>{sourceLabel(source)}</span>
-                        </label>
+                        <WorkspaceCheckbox
+                          key={source}
+                          label={sourceLabel(source)}
+                          checked={checked}
+                          onCheckedChange={() => setSources((current) => { const next = new Set(current); if (next.has(source)) next.delete(source); else next.add(source); return next; })}
+                        />
                       );
                     })}
                   </div>
@@ -387,7 +382,7 @@ export default function SchedulePage() {
           <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-white px-6 text-center">
             <p className="font-semibold text-[var(--schedule-text)]">Your schedule could not be loaded</p>
             <p className="mt-2 text-sm text-[var(--schedule-text-muted)]">{error}</p>
-            <button type="button" onClick={() => void fetchEvents()} className="mt-5 h-10 rounded-xl bg-[var(--schedule-accent)] px-4 text-sm font-semibold text-[var(--schedule-text)]">Try again</button>
+            <WorkspaceButton type="button" variant="primary" onClick={() => void fetchEvents()} className="mt-5">Try again</WorkspaceButton>
           </div>
         ) : (
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -413,7 +408,7 @@ export default function SchedulePage() {
         <DialogContent className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-white p-0 shadow-2xl md:hidden">
           <DialogTitle className="sr-only">Schedule details</DialogTitle>
           <DialogDescription className="sr-only">View or edit events for the selected date.</DialogDescription>
-          <button type="button" onClick={() => setMobilePanelOpen(false)} aria-label="Close schedule details" className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--schedule-surface-muted)] text-[var(--schedule-text-muted)]"><X className="h-4 w-4" /></button>
+          <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobilePanelOpen(false)} aria-label="Close schedule details" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton>
           <div className="h-[min(78vh,720px)]">{panel}</div>
         </DialogContent>
       </Dialog>
@@ -423,8 +418,8 @@ export default function SchedulePage() {
           <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete event?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">“{deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">
-            <button type="button" onClick={() => setDeleteTarget(null)} disabled={deleting} className="h-10 rounded-xl border border-[var(--schedule-line)] px-4 text-sm font-semibold text-[var(--schedule-text)]">Cancel</button>
-            <button type="button" onClick={() => void confirmDelete()} disabled={deleting} className="h-10 rounded-xl bg-[var(--schedule-danger)] px-4 text-sm font-semibold text-white disabled:opacity-60">{deleting ? "Deleting…" : "Delete event"}</button>
+            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</WorkspaceButton>
+            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : "Delete event"}</WorkspaceButton>
           </div>
         </DialogContent>
       </Dialog>

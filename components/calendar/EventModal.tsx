@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
@@ -389,19 +389,20 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                     </div>
 
                     <div className="flex gap-3 pt-4 shrink-0">
-                        <FancyButton
+                        <WorkspaceButton
+                            variant="secondary"
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1"
                         >
                             Cancel
-                        </FancyButton>
-                        <FancyButton
+                        </WorkspaceButton>
+                        <WorkspaceButton
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
+                            className="flex-1"
                         >
-                            {saving ? "Saving…" : "Add Event"}
-                        </FancyButton>
+                            {saving ? "Saving…" : "Add event"}
+                        </WorkspaceButton>
                     </div>
                 </FancyCard>
             </DialogContent>

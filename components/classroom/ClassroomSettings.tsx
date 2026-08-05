@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { Trash2 } from "lucide-react";
 import { DeleteConfirmationModal } from "@/components/calendar/DeleteConfirmationModal";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 interface Props {
     classroom: {
@@ -105,13 +106,15 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                             className="h-10 w-full rounded-xl border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-sm font-normal focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-[var(--classroom-focus-ring)]/20"
                         />
                     </div>
-                    <button
+                    <WorkspaceButton
+                        type="button"
+                        variant="primary"
                         onClick={handleSave}
                         disabled={saving}
-                        className="mt-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 py-2.5 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) disabled:opacity-50"
+                        className="mt-2"
                     >
                         {saving ? "Saving…" : "Save Changes"}
-                    </button>
+                    </WorkspaceButton>
                 </div>
             </section>
 
@@ -121,13 +124,14 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                 <p className="mb-4 mt-1 text-sm leading-5 text-[var(--classroom-text-muted)]">
                     Deleting this classroom will permanently remove all posts, assignments, tests, and grades.
                 </p>
-                <button
+                <WorkspaceButton
+                    type="button"
+                    variant="danger"
                     onClick={() => setDeleteOpen(true)}
-                    className="inline-flex items-center rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
                 >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Classroom
-                </button>
+                </WorkspaceButton>
             </section>
 
             <DeleteConfirmationModal

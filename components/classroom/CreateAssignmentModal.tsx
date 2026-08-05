@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Paperclip, Upload, X } from "lucide-react";
 import type { AssignmentDraft, PostAttachmentFile } from "@/lib/classroom-post-drafts";
 
@@ -225,21 +226,12 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                     </ScrollArea>
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="h-9 rounded-xl border border-[var(--classroom-line)] bg-white px-4 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={onClose}>
                             Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSave}
-                            disabled={uploading}
-                            className="h-9 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={uploading}>
                             Add assignment
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </div>
             </DialogContent>

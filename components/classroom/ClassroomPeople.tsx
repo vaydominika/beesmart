@@ -12,6 +12,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { cn } from "@/lib/utils";
 import { Crown, Mail, MoreVertical, Trash2, UserCircle, UserPlus, X } from "lucide-react";
 
@@ -199,15 +201,16 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
 
                 {canManage && (
                     <div className="relative">
-                        <button
+                        <WorkspaceButton
                             type="button"
+                            variant="ghost"
+                            size="icon-compact"
                             aria-label={`Manage ${member.user.name}`}
                             aria-expanded={menuOpen === member.id}
                             onClick={() => setMenuOpen(menuOpen === member.id ? null : member.id)}
-                            className="rounded-lg p-2 text-(--classroom-text-muted) transition-colors hover:bg-(--classroom-surface-muted) hover:text-(--classroom-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
                         >
                             <MoreVertical className="h-4 w-4" />
-                        </button>
+                        </WorkspaceButton>
                         {menuOpen === member.id && (
                             <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] rounded-xl border border-(--classroom-line-strong) bg-(--classroom-surface) py-1 shadow-lg">
                                 {ROLE_OPTIONS.filter((option) => option.value !== member.role).map((option) => (
@@ -245,13 +248,9 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                         Teachers <span className="font-normal text-(--classroom-text-muted)">{teachers.length}</span>
                     </h2>
                     {isTeacher && (
-                        <button
-                            type="button"
-                            onClick={() => setInviteOpen(true)}
-                            className="flex h-9 items-center gap-2 rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-3 text-sm font-medium text-(--classroom-text) transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={() => setInviteOpen(true)}>
                             <UserPlus className="h-4 w-4" /> Add teacher
-                        </button>
+                        </WorkspaceButton>
                     )}
                 </div>
                 <div className="space-y-2">{teachers.map(memberRow)}</div>
@@ -271,14 +270,15 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                             <p className="text-xs text-(--classroom-text-muted)">{roleLabel(invitation.role)}</p>
                                         </div>
                                     </div>
-                                    <button
+                                    <WorkspaceButton
                                         type="button"
+                                        variant="danger"
+                                        size="icon-compact"
                                         onClick={() => cancelInvitation(invitation.id)}
                                         aria-label={`Cancel invitation for ${invitation.email}`}
-                                        className="rounded-lg p-2 text-(--classroom-text-muted) hover:bg-(--classroom-danger-soft) hover:text-(--classroom-danger)"
                                     >
                                         <X className="h-4 w-4" />
-                                    </button>
+                                    </WorkspaceButton>
                                 </div>
                             ))}
                         </div>
@@ -298,11 +298,10 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
 
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
                 <DialogContent className="classroom-dialog w-[calc(100%-1.5rem)] max-w-md gap-0 rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-5 shadow-2xl">
-                    <DialogClose
-                        aria-label="Close teacher invitation"
-                        className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-(--classroom-text-muted) hover:bg-(--classroom-surface-muted) hover:text-(--classroom-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
-                    >
-                        <X className="h-4 w-4" />
+                    <DialogClose asChild>
+                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close teacher invitation" className="absolute right-4 top-4">
+                            <X className="h-4 w-4" />
+                        </WorkspaceButton>
                     </DialogClose>
                     <DialogHeader className="border-b border-(--classroom-line) pb-4 pr-10 text-left">
                         <DialogTitle className="text-xl font-semibold text-(--classroom-text)">Add a teacher</DialogTitle>
@@ -324,34 +323,27 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                         </div>
                         <div>
                             <label htmlFor="teacher-role" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">Role</label>
-                            <select
+                            <WorkspaceSelect
                                 id="teacher-role"
                                 value={inviteRole}
-                                onChange={(event) => setInviteRole(event.target.value as ClassroomRole)}
-                                className="h-10 w-full rounded-xl px-3 text-sm"
-                            >
-                                <option value="TEACHER">Teacher</option>
-                                <option value="TEACHING_ASSISTANT">Teaching assistant</option>
-                            </select>
+                                onValueChange={setInviteRole}
+                                ariaLabel="Teacher role"
+                                options={[
+                                    { value: "TEACHER", label: "Teacher" },
+                                    { value: "TEACHING_ASSISTANT", label: "Teaching assistant" },
+                                ] satisfies Array<{ value: ClassroomRole; label: string }>}
+                                className="h-10 w-full"
+                            />
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-2 border-t border-(--classroom-line) pt-3">
-                        <button
-                            type="button"
-                            onClick={() => setInviteOpen(false)}
-                            className="h-9 rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-4 text-sm font-medium text-(--classroom-text-muted) hover:bg-(--classroom-surface-hover)"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={() => setInviteOpen(false)}>
                             Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleInvite}
-                            disabled={inviting || !inviteEmail.trim()}
-                            className="h-9 rounded-xl border border-(--classroom-accent-hover) bg-(--classroom-accent) px-4 text-sm font-semibold text-(--classroom-text) hover:bg-(--classroom-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
                             {inviting ? "Adding..." : "Add teacher"}
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Course ID required" }, { status: 400 });
         }
 
-        // 1. Fetch student's past mistakes in this course
+        // 1. Fetch the learner's past mistakes in this course
         const pastAttempts = await prisma.testAttempt.findMany({
             where: {
                 userId,
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
             select: { title: true }
         });
 
-        const prompt = `You are a personalized tutor. The student is studying the course: "${course?.title}".
+        const prompt = `You are a personalized tutor. The learner is studying the course: "${course?.title}".
 Below is a list of questions they recently got WRONG in this course. 
 Analyze their mistakes and generate 5 NEW practice questions that help them reinforce those specific concepts.
 

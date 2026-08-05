@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 
 interface DeleteConfirmationModalProps {
@@ -36,16 +36,20 @@ export function DeleteConfirmationModal({
                         {description}
                     </p>
                     <div className="flex gap-3 w-full">
-                        <FancyButton
+                        <WorkspaceButton
+                            type="button"
+                            variant="secondary"
                             onClick={onClose}
-                            className="flex-1 text-(--theme-text) text-sm font-bold uppercase"
+                            className="flex-1"
                         >
                             Cancel
-                        </FancyButton>
-                        <FancyButton
+                        </WorkspaceButton>
+                        <WorkspaceButton
+                            type="button"
+                            variant="danger"
                             onClick={onConfirm}
                             disabled={isDeleting}
-                            className="flex-1 text-(--theme-text) text-sm font-bold uppercase bg-red-400 hover:bg-red-500 border-red-500"
+                            className="flex-1"
                         >
                             {isDeleting ? (
                                 <div className="flex items-center justify-center gap-2">
@@ -55,7 +59,7 @@ export function DeleteConfirmationModal({
                             ) : (
                                 "Delete"
                             )}
-                        </FancyButton>
+                        </WorkspaceButton>
                     </div>
                 </FancyCard>
             </DialogContent>

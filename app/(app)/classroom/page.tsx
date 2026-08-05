@@ -6,6 +6,7 @@ import { ClassroomCard } from "@/components/classroom/ClassroomCard";
 import { CreateClassroomModal } from "@/components/classroom/CreateClassroomModal";
 import { JoinClassroomModal } from "@/components/classroom/JoinClassroomModal";
 import { Spinner } from "@/components/ui/spinner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Plus, LogIn, School } from "lucide-react";
 
 interface ClassroomData {
@@ -53,20 +54,12 @@ export default function ClassroomPage() {
                         </h1>
                     </div>
                     <div className="flex gap-3">
-                        <button
-                            type="button"
-                            onClick={() => setJoinOpen(true)}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-white px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-[var(--classroom-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                        >
+                        <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>
                             <LogIn className="h-4 w-4" /> Join classroom
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setCreateOpen(true)}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold text-[var(--classroom-text)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                        >
+                        </WorkspaceButton>
+                        <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>
                             <Plus className="h-4 w-4" /> New classroom
-                        </button>
+                        </WorkspaceButton>
                     </div>
                 </header>
 
@@ -82,8 +75,8 @@ export default function ClassroomPage() {
                             Create a classroom to start teaching, or join one with a code from your teacher.
                         </p>
                         <div className="flex gap-3">
-                            <button type="button" onClick={() => setJoinOpen(true)} className="h-10 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold hover:bg-(--classroom-accent-hover)">Join a classroom</button>
-                            <button type="button" onClick={() => setCreateOpen(true)} className="h-10 rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-4 text-sm font-semibold hover:bg-(--classroom-accent-hover)">Create a classroom</button>
+                            <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>Join a classroom</WorkspaceButton>
+                            <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>Create a classroom</WorkspaceButton>
                         </div>
                     </section>
                 ) : (

@@ -14,6 +14,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 interface Lesson {
     id: string;
@@ -205,13 +206,17 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 bg-white min-h-screen">
                 <div className="max-w-4xl mx-auto py-12 px-6 lg:px-12">
-                    <button
+                    <WorkspaceButton
+                        type="button"
+                        variant="secondary"
+                        size="icon"
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="fixed bottom-24 z-20 p-2 bg-white border border-slate-200 rounded-full shadow-lg hover:bg-slate-50 transition-all text-slate-500"
+                        aria-label={sidebarOpen ? "Close course navigation" : "Open course navigation"}
+                        className="fixed bottom-24 z-20"
                         style={{ left: sidebarOpen ? "272px" : "16px" }}
                     >
                         <HugeiconsIcon icon={Menu01Icon} className="size-5" />
-                    </button>
+                    </WorkspaceButton>
 
                     <div className="mb-12 flex flex-col gap-6">
                         <div className="flex flex-col gap-1">
@@ -307,47 +312,43 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
                     {/* Navigation Footer */}
                     <footer className="mt-24 pt-10 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <button
+                        <WorkspaceButton
+                            type="button"
+                            variant="secondary"
                             onClick={() => prevLesson && setActiveLessonId(prevLesson.id)}
                             disabled={!prevLesson}
-                            className={cn(
-                                "flex items-center gap-4 px-8 py-4 rounded-3xl font-black uppercase text-sm tracking-widest transition-all border-2 w-full sm:w-auto",
-                                prevLesson
-                                    ? "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-900 hover:text-slate-900 shadow-sm"
-                                    : "opacity-0 pointer-events-none"
-                            )}
+                            className={cn("w-full sm:w-auto", !prevLesson && "invisible")}
                         >
                             <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-                            Prev
-                        </button>
+                            Previous
+                        </WorkspaceButton>
 
                         {nextLesson ? (
-                            <button
+                            <WorkspaceButton
+                                type="button"
+                                variant="primary"
                                 onClick={async () => {
                                     if (!completedLessonIds.has(activeLesson.id)) {
                                         await toggleComplete(activeLesson.id, true);
                                     }
                                     setActiveLessonId(nextLesson.id);
                                 }}
-                                className="flex items-center gap-4 px-10 py-5 rounded-3xl font-black uppercase text-sm tracking-widest transition-all bg-emerald-500 text-white hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 w-full sm:w-auto"
+                                className="w-full sm:w-auto"
                             >
                                 {completedLessonIds.has(activeLesson.id) ? "Next Lesson" : "Complete & Next"}
                                 <HugeiconsIcon icon={Tick01Icon} className="size-4" />
-                            </button>
+                            </WorkspaceButton>
                         ) : (
-                            <button
+                            <WorkspaceButton
+                                type="button"
+                                variant={completedLessonIds.has(activeLesson.id) ? "secondary" : "primary"}
                                 onClick={() => toggleComplete(activeLesson.id, !completedLessonIds.has(activeLesson.id))}
                                 disabled={isUpdatingProgress}
-                                className={cn(
-                                    "flex items-center gap-4 px-10 py-5 rounded-3xl font-black uppercase text-sm tracking-widest border-2 transition-all w-full sm:w-auto",
-                                    completedLessonIds.has(activeLesson.id)
-                                        ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                                        : "bg-slate-900 text-white border-slate-900 shadow-xl"
-                                )}
+                                className="w-full sm:w-auto"
                             >
                                 <HugeiconsIcon icon={Tick01Icon} className="size-4" />
                                 {completedLessonIds.has(activeLesson.id) ? "Lesson Completed" : "Mark as Finished"}
-                            </button>
+                            </WorkspaceButton>
                         )}
                     </footer>
                 </div>
