@@ -384,3 +384,106 @@ input[type="number"] {
   color: var(--classroom-text);
   font-weight: inherit;
 }
+
+/* Schedule follows the same quiet workspace language as Classroom. */
+.schedule-ui,
+.schedule-dialog {
+  --schedule-canvas: var(--app-canvas);
+  --schedule-surface: var(--app-surface);
+  --schedule-surface-muted: var(--app-surface-muted);
+  --schedule-surface-hover: var(--app-surface-hover);
+  --schedule-accent: var(--app-accent-soft);
+  --schedule-accent-hover: var(--app-accent-hover);
+  --schedule-accent-text: var(--app-accent-text);
+  --schedule-text: var(--app-text);
+  --schedule-text-muted: var(--app-text-muted);
+  --schedule-text-faint: var(--app-text-faint);
+  --schedule-line: var(--app-border);
+  --schedule-line-strong: var(--app-border-strong);
+  --schedule-focus-ring: var(--app-focus-ring);
+  --schedule-focus-border: var(--app-focus-border);
+  --schedule-danger: var(--app-danger);
+  --schedule-danger-soft: var(--app-danger-soft);
+  --schedule-today: color-mix(in srgb, var(--app-accent-soft) 38%, transparent);
+  --theme-bg: var(--schedule-canvas);
+  --theme-card: var(--schedule-accent);
+  --theme-sidebar: var(--schedule-surface-muted);
+  --theme-text: var(--schedule-text);
+  --theme-text-important: var(--schedule-text);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  letter-spacing: normal;
+}
+
+.schedule-ui {
+  color: var(--schedule-text);
+  background: var(--schedule-canvas);
+}
+
+.schedule-ui button,
+.schedule-dialog button,
+.schedule-dialog label {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.schedule-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: var(--theme-card) transparent;
+}
+
+.schedule-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.schedule-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.schedule-scroll::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--theme-card);
+  background-clip: padding-box;
+}
+
+.schedule-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.schedule-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.schedule-event-surface {
+  border-color: var(--schedule-line-strong);
+  background-color: var(--schedule-accent);
+  background-color: color-mix(in srgb, var(--event-color, #fada6d) 34%, var(--schedule-canvas));
+  border-color: color-mix(in srgb, var(--event-color, #fada6d) 55%, var(--schedule-line));
+}
+
+.schedule-event-card {
+  container-type: inline-size;
+}
+
+.schedule-event-end-time {
+  display: none;
+}
+
+@container (min-width: 112px) {
+  .schedule-event-end-time {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-ui *,
+  .schedule-dialog * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

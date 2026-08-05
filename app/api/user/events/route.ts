@@ -10,16 +10,42 @@ const accessibleEvents = (userId: string) => ({
 });
 
 const eventAccessInclude = (userId: string) => ({
-    classroom: { select: { id: true, members: { where: { userId }, select: { role: true } } } },
+    classroom: { select: { id: true, name: true, members: { where: { userId }, select: { role: true } } } },
 });
 
-function serializeEvent(event: any, userId: string) {
+type EventAccessRecord = {
+    userId?: string | null;
+    classroomId?: string | null;
+    courseId?: string | null;
+    startDate: Date;
+    startTime?: string | null;
+    isAllDay: boolean;
+    classroom?: { id: string; name: string; members: Array<{ role: string }> } | null;
+} & Record<string, unknown>;
+
+function serializeEvent(event: EventAccessRecord, userId: string) {
     const classroomRole = event.classroom?.members?.[0]?.role;
     return {
         ...event,
+        source: event.classroomId ? "classroom" : event.courseId ? "course" : "personal",
         canEdit: event.userId === userId || Boolean(classroomRole && classroomRole !== "STUDENT"),
-        classroom: event.classroom ? { id: event.classroom.id } : null,
+        classroomName: event.classroom?.name ?? null,
+        classroom: event.classroom ? { id: event.classroom.id, name: event.classroom.name } : null,
     };
+}
+
+function parseDateParam(value: string | null, endOfDay = false) {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+    ) return null;
+    if (endOfDay) date.setHours(23, 59, 59, 999);
+    else date.setHours(0, 0, 0, 0);
+    return date;
 }
 
 function dateWithTime(dateValue: string | Date, time: string | null | undefined) {
@@ -40,6 +66,43 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const month = searchParams.get("month"); // YYYY-MM
     const upcoming = searchParams.get("upcoming"); // number
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+
+    if (from || to) {
+        const start = parseDateParam(from);
+        const end = parseDateParam(to, true);
+        if (!start || !end || end < start) {
+            return NextResponse.json(
+                { error: "A valid from/to date range is required." },
+                { status: 400 },
+            );
+        }
+
+        const rangeDays = Math.ceil((end.getTime() - start.getTime()) / 86_400_000);
+        if (rangeDays > 62) {
+            return NextResponse.json(
+                { error: "The requested date range is too large." },
+                { status: 400 },
+            );
+        }
+
+        const events = await prisma.event.findMany({
+            where: {
+                ...accessibleEvents(userId),
+                startDate: { gte: start, lte: end },
+            },
+            orderBy: [
+                { startDate: "asc" },
+                { isAllDay: "desc" },
+                { startTime: "asc" },
+                { order: "asc" },
+            ],
+            include: eventAccessInclude(userId),
+        });
+
+        return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
+    }
 
     // Return next N upcoming events
     if (upcoming) {
@@ -65,7 +128,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Filter: Keep future dates OR today if time is later than now
-        const upcomingEvents = events.filter((event: any) => {
+        const upcomingEvents = events.filter((event: EventAccessRecord) => {
             const eventDate = new Date(event.startDate);
             const isToday =
                 eventDate.getDate() === now.getDate() &&
@@ -86,7 +149,7 @@ export async function GET(req: NextRequest) {
             return true; // Future dates (already guaranteed by SQL query to be >= today)
         }).slice(0, limit);
 
-        return NextResponse.json(upcomingEvents.map((event: any) => serializeEvent(event, userId)));
+        return NextResponse.json(upcomingEvents.map((event: EventAccessRecord) => serializeEvent(event, userId)));
     }
 
     // Return events for a specific month
@@ -105,7 +168,7 @@ export async function GET(req: NextRequest) {
             orderBy: [{ order: "asc" }, { startTime: "asc" }],
             include: eventAccessInclude(userId),
         });
-        return NextResponse.json(events.map((event: any) => serializeEvent(event, userId)));
+        return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
     }
 
     // Default: return all user events
@@ -114,7 +177,7 @@ export async function GET(req: NextRequest) {
         orderBy: [{ order: "asc" }, { startTime: "asc" }],
         include: eventAccessInclude(userId),
     });
-    return NextResponse.json(events.map((event: any) => serializeEvent(event, userId)));
+    return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
 }
 
 export async function POST(req: Request) {

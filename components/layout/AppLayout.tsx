@@ -27,6 +27,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
+  const isSchedule = pathname.startsWith("/schedule");
+  const isQuietWorkspace = isClassroom || isSchedule;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -55,10 +57,10 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   if (isMobile) {
     return (
-      <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
+      <div className={cn("relative flex h-screen overflow-x-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
         <div className="flex flex-col flex-1 overflow-hidden min-w-0 w-full">
           <Header />
-          <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
+          <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
             <ScrollArea className="h-full">
               {children}
             </ScrollArea>
@@ -121,38 +123,42 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className={cn("relative flex h-screen overflow-x-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
+    <div className={cn("relative flex h-screen overflow-x-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
       <div className="hidden md:block shrink-0 h-screen">
         <LeftSidebar variant="inline" />
       </div>
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
-        <main ref={mainRef} className={cn("flex-1 overflow-hidden", isClassroom ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
+        <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
           <ScrollArea className="h-full">
             {children}
           </ScrollArea>
         </main>
       </div>
-      <div
-        className={cn(
-          "relative transition-all duration-300 overflow-hidden shrink-0 h-screen hidden md:block",
-          isRightSidebarOpen ? "w-72" : "w-0"
-        )}
-      >
-        <RightSidebar variant="inline" />
-      </div>
-      <button
-        onClick={toggleRightSidebar}
-        className="fixed bottom-36 w-8 h-10 md:w-5 md:h-9 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] md:rounded-tl-[10px] md:rounded-bl-[10px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
-        style={{ right: isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
-        aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
-      >
-        {isRightSidebarOpen ? (
-          <ChevronRight className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5 md:translate-x-0.5" />
-        ) : (
-          <ChevronLeft className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5" />
-        )}
-      </button>
+      {!isSchedule && (
+        <>
+          <div
+            className={cn(
+              "relative transition-all duration-300 overflow-hidden shrink-0 h-screen hidden md:block",
+              isRightSidebarOpen ? "w-72" : "w-0"
+            )}
+          >
+            <RightSidebar variant="inline" />
+          </div>
+          <button
+            onClick={toggleRightSidebar}
+            className="fixed bottom-36 w-8 h-10 md:w-5 md:h-9 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] md:rounded-tl-[10px] md:rounded-bl-[10px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
+            style={{ right: isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
+            aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          >
+            {isRightSidebarOpen ? (
+              <ChevronRight className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5 md:translate-x-0.5" />
+            ) : (
+              <ChevronLeft className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5" />
+            )}
+          </button>
+        </>
+      )}
       <FancyButton
         onClick={scrollToTop}
         aria-label="Back to top"
