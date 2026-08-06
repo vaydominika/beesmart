@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -15,13 +15,22 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { CourseRatingModal } from "@/components/course/CourseRatingModal";
 
 interface Lesson {
     id: string;
     title: string;
     content: string | null;
     isLocked?: boolean;
-    files?: any[];
+    files?: LessonFile[];
+}
+
+interface LessonFile {
+    id: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize: number;
+    isVisible: boolean;
 }
 
 interface Module {
@@ -43,14 +52,14 @@ interface CourseViewerProps {
 export default function CourseViewerClient({ course, initialLessonId, initialCompletedLessonIds = [] }: CourseViewerProps) {
     const router = useRouter();
     const allLessons = useMemo(() =>
-        course.modules.flatMap((m: any) => m.lessons),
+        course.modules.flatMap((module) => module.lessons),
         [course.modules]);
 
     const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(
         new Set(initialCompletedLessonIds)
     );
 
-    const isLessonLocked = (lesson: Lesson) => {
+    const isLessonLocked = useCallback((lesson: Lesson) => {
         if (!lesson) return false;
         const index = allLessons.findIndex(l => l.id === lesson.id);
         if (index === -1) return false;
@@ -62,7 +71,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             }
         }
         return false;
-    };
+    }, [allLessons, completedLessonIds]);
 
     const initialLessonIdToUse = useMemo(() => {
         const initial = initialLessonId || allLessons[0]?.id || null;
@@ -75,11 +84,12 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             return firstAvailable?.id || allLessons[0]?.id || null;
         }
         return initial;
-    }, [initialLessonId, allLessons, completedLessonIds]); // Changed initialCompletedLessonIds to completedLessonIds for better tracking
+    }, [initialLessonId, allLessons, isLessonLocked]);
 
     const [activeLessonId, setActiveLessonId] = useState<string | null>(initialLessonIdToUse);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
+    const [ratingOpen, setRatingOpen] = useState(false);
 
     const activeLesson = useMemo(() =>
         allLessons.find(l => l.id === activeLessonId),
@@ -101,11 +111,14 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             });
 
             if (!res.ok) throw new Error("Failed to update progress");
+            const result: { newlyCompleted?: boolean } = await res.json();
 
             const newCompleted = new Set(completedLessonIds);
             if (completed) newCompleted.add(lessonId);
             else newCompleted.delete(lessonId);
             setCompletedLessonIds(newCompleted);
+
+            if (result.newlyCompleted) setRatingOpen(true);
 
             router.refresh(); // Sync dashboard progress
         } catch (error) {
@@ -132,6 +145,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
     return (
         <div className="flex-1 flex min-h-full bg-white relative">
+            <CourseRatingModal open={ratingOpen} onOpenChange={setRatingOpen} courseId={course.id} courseTitle={course.title} />
             {/* Sidebar Syllabus */}
             <aside
                 className={cn(
@@ -222,7 +236,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 mb-2">
                                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] bg-emerald-50 px-2 py-0.5 rounded-full">
-                                    Module {course.modules.findIndex((m: any) => m.lessons.some((l: any) => l.id === activeLessonId)) + 1}
+                                    Module {course.modules.findIndex((module) => module.lessons.some((lesson) => lesson.id === activeLessonId)) + 1}
                                 </span>
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                                     Lesson {currentIndex + 1} of {allLessons.length}
@@ -279,14 +293,14 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                     </article>
 
                     {/* Lesson Materials */}
-                    {activeLesson.files && activeLesson.files.filter((f: any) => f.isVisible).length > 0 && !isLessonLocked(activeLesson) && (
+                    {activeLesson.files && activeLesson.files.filter((file) => file.isVisible).length > 0 && !isLessonLocked(activeLesson) && (
                         <div className="mt-16 p-10 bg-slate-50 rounded-[40px] border border-slate-100 shadow-sm">
                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
                                 <HugeiconsIcon icon={Layers01Icon} className="size-5" />
                                 Lesson Resources
                             </h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                {activeLesson.files.filter((f: any) => f.isVisible).map((file: any) => (
+                                {activeLesson.files.filter((file) => file.isVisible).map((file) => (
                                     <a
                                         key={file.id}
                                         href={file.fileUrl}

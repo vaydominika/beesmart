@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lock, Mail, Menu, Send, X } from "lucide-react";
+import { ArrowLeft, BookOpen, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lock, Mail, Menu, Send, ShieldCheck, X } from "lucide-react";
 import CourseBuilderSidebar from "./CourseBuilderSidebar";
 import CourseBuilderEditor from "./CourseBuilderEditor";
 import { CourseInviteButton } from "./CourseInviteButton";
@@ -19,6 +19,7 @@ import {
 } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
 import type { CourseVisibility } from "@/lib/course-summary";
+import { CourseAuditDialog } from "./CourseAuditDialog";
 
 interface CourseBuilderClientProps {
   initialCourse: CourseBuilderCourse;
@@ -54,6 +55,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [courseTitle, setCourseTitle] = useState(initialCourse.title);
   const [mobileSyllabusOpen, setMobileSyllabusOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
 
   const activeLesson = findLesson(course, activeLessonId);
   const totalLessons = lessonCount(course);
@@ -214,6 +216,8 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
               </div>
             )}
 
+            {!previewMode && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => setAuditOpen(true)}><ShieldCheck className="h-3.5 w-3.5" /><span className="hidden xl:inline">Audit course</span></WorkspaceButton>}
+
             <WorkspaceButton type="button" variant={previewMode ? "primary" : "secondary"} size="compact" onClick={() => setPreviewMode((current) => !current)}>
               {previewMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}<span className="hidden sm:inline">{previewMode ? "Exit preview" : "Preview"}</span>
             </WorkspaceButton>
@@ -238,6 +242,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
           )}
         </main>
       </section>
+      <CourseAuditDialog open={auditOpen} onOpenChange={setAuditOpen} courseId={course.id} onSelectLesson={selectLesson} />
     </div>
   );
 }

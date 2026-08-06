@@ -18,17 +18,23 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
-        const { textEntry } = await req.json();
+        const { textEntry, lessonId } = await req.json();
 
-        if (!textEntry || typeof textEntry !== "string") {
+        if (!lessonId || !textEntry || typeof textEntry !== "string") {
             return NextResponse.json({ error: "No text provided" }, { status: 400 });
+        }
+        const lesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, module: { courseId } }, select: { id: true } });
+        if (!lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+        const normalizedText = textEntry.trim();
+        if (normalizedText.length < 20 || normalizedText.length > 12000) {
+            return NextResponse.json({ error: "Select between 20 and 12,000 characters" }, { status: 400 });
         }
 
         const prompt = `You are an expert teacher. Read the following lesson text and generate exactly ONE "Check for Understanding" question based on the key concepts in this text.
 The question can be multiple choice, true/false, or a short answer.
 
 Lesson Text:
-"${textEntry}"`;
+"${normalizedText}"`;
 
         const { object } = await generateObject({
             model: deepseek("deepseek-chat"),

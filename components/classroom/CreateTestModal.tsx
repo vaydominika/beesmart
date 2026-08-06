@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FancyCard } from "@/components/ui/fancycard";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, GripVertical, CheckCircle2, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, CheckCircle2, X, Sparkles, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
@@ -33,6 +33,7 @@ interface Props {
     open: boolean;
     onClose: () => void;
     onAdd: (test: TestDraft) => void;
+    classroomId: string;
 }
 
 const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
@@ -42,7 +43,9 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
     ESSAY: "Essay",
 };
 
-export function CreateTestModal({ open, onClose, onAdd }: Props) {
+type SourceCourse = { id: string; title: string; relationship?: string; classrooms?: Array<{ id: string }> };
+
+export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
     const nextQuestionId = useRef(2);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -51,6 +54,13 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
     const [passingScore, setPassingScore] = useState("");
     const [opensAt, setOpensAt] = useState("");
     const [closesAt, setClosesAt] = useState("");
+    const [courseId, setCourseId] = useState("");
+    const [sourceMode, setSourceMode] = useState<"course" | "text">("course");
+    const [sourceText, setSourceText] = useState("");
+    const [sourceCourses, setSourceCourses] = useState<SourceCourse[]>([]);
+    const [difficulty, setDifficulty] = useState("Intermediate");
+    const [questionCount, setQuestionCount] = useState(5);
+    const [generating, setGenerating] = useState(false);
     const [questions, setQuestions] = useState<Question[]>([
         {
             id: "question-1",
@@ -65,6 +75,73 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
             ],
         },
     ]);
+
+    useEffect(() => {
+        if (!open) return;
+        let active = true;
+        fetch("/api/courses?source=all")
+            .then(async (response) => {
+                if (!response.ok) throw new Error("Could not load courses");
+                return response.json() as Promise<SourceCourse[]>;
+            })
+            .then((items) => {
+                if (!active) return;
+                setSourceCourses(items.filter((course) => course.relationship === "owner" || course.classrooms?.some((classroom) => classroom.id === classroomId)));
+            })
+            .catch(() => active && toast.error("Course sources could not be loaded."));
+        return () => { active = false; };
+    }, [classroomId, open]);
+
+    const generateTest = async () => {
+        if (sourceMode === "course" && !courseId) {
+            toast.error("Choose a source course first.");
+            return;
+        }
+        if (sourceMode === "text" && sourceText.trim().length < 50) {
+            toast.error("Paste at least 50 characters of source text.");
+            return;
+        }
+        setGenerating(true);
+        try {
+            const endpoint = sourceMode === "course"
+                ? `/api/courses/${courseId}/tests/generate`
+                : `/api/classrooms/${classroomId}/tests/generate-from-text`;
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: title.trim() || undefined,
+                    description: description.trim() || undefined,
+                    classroomId,
+                    difficulty,
+                    questionCount,
+                    sourceText: sourceMode === "text" ? sourceText.trim() : undefined,
+                }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Test generation failed");
+            setTitle(result.test.title);
+            setDescription(result.test.description || "");
+            setQuestions(result.test.questions.map((question: { text: string; type: QuestionType; points?: number; options?: Array<{ text: string; isCorrect: boolean }>; correctAnswer?: string }, index: number) => ({
+                id: `question-${Date.now()}-${index}`,
+                questionText: question.text,
+                questionType: question.type,
+                points: Math.max(1, Number(question.points) || 1),
+                options: question.type === "TRUE_FALSE"
+                    ? [
+                        { optionText: "True", isCorrect: question.correctAnswer?.toLowerCase() === "true" },
+                        { optionText: "False", isCorrect: question.correctAnswer?.toLowerCase() === "false" },
+                    ]
+                    : (question.options ?? []).map((option) => ({ optionText: option.text, isCorrect: option.isCorrect })),
+                correctAnswer: question.correctAnswer,
+            })));
+            toast.success("Generated draft loaded. Review every question before adding it.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Test generation failed");
+        } finally {
+            setGenerating(false);
+        }
+    };
 
     const addQuestion = () => {
         setQuestions((prev) => [
@@ -98,7 +175,7 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
         });
     };
 
-    const updateQuestion = (index: number, field: keyof Question, value: any) => {
+    const updateQuestion = <K extends keyof Question>(index: number, field: K, value: Question[K]) => {
         setQuestions((prev) => {
             const updated = [...prev];
             updated[index] = { ...updated[index], [field]: value };
@@ -147,7 +224,7 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
         });
     };
 
-    const updateOption = (qIndex: number, oIndex: number, field: keyof QuestionOption, value: any) => {
+    const updateOption = <K extends keyof QuestionOption>(qIndex: number, oIndex: number, field: K, value: QuestionOption[K]) => {
         setQuestions((prev) => {
             const updated = [...prev];
             const opts = [...updated[qIndex].options];
@@ -198,6 +275,7 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
         }
 
         const payload: TestDraft = {
+                courseId: sourceMode === "course" ? courseId || null : null,
                 title: title.trim(),
                 description: description.trim() || null,
                 type: testType,
@@ -232,6 +310,9 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
         setPassingScore("");
         setOpensAt("");
         setClosesAt("");
+        setCourseId("");
+        setSourceMode("course");
+        setSourceText("");
         setQuestions([
             {
                 id: "question-1",
@@ -268,6 +349,37 @@ export function CreateTestModal({ open, onClose, onAdd }: Props) {
 
                     <ScrollArea className="flex-1 min-h-0">
                         <div className="space-y-4 pb-1 pl-1 pr-3 pt-3">
+                            <div className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-4">
+                                <div className="flex items-start gap-3">
+                                    <Sparkles className="mt-0.5 h-5 w-5 text-[var(--classroom-text-muted)]" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-[var(--classroom-text)]">Generate an editable draft</p>
+                                        <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Questions stay local to this post until you review, add, and publish them.</p>
+                                    </div>
+                                </div>
+                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" className="mt-3 w-fit" />
+                                {sourceMode === "course" ? (
+                                    <select aria-label="Source course" value={courseId} onChange={(event) => setCourseId(event.target.value)} className="mt-3 h-10 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-[var(--classroom-text)] focus:ring-2 focus:ring-[var(--classroom-focus-border)]">
+                                        <option value="">Choose source course</option>
+                                        {sourceCourses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
+                                    </select>
+                                ) : (
+                                    <label className="mt-3 block">
+                                        <span className="sr-only">Source text</span>
+                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-white px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                        <span className="mt-1 block text-right text-[10px] text-[var(--classroom-text-muted)]">{sourceText.length}/20,000</span>
+                                    </label>
+                                )}
+                                <div className="mt-3 grid gap-3 sm:grid-cols-[150px_110px_auto] sm:justify-end">
+                                    <select aria-label="Difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="h-10 rounded-xl border-0 bg-white px-3 text-sm font-medium">
+                                        <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+                                    </select>
+                                    <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 border-0 bg-white" />
+                                    <WorkspaceButton type="button" variant="secondary" onClick={generateTest} disabled={generating || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
+                                        {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
+                                    </WorkspaceButton>
+                                </div>
+                            </div>
                             {/* Basic Info */}
                             <div className="flex gap-3">
                                 <div className="flex-1">

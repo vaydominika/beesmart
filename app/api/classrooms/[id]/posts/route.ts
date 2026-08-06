@@ -31,8 +31,10 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
         const search = url.searchParams.get("search") || "";
         const type = url.searchParams.get("type") || "";
         const sort = url.searchParams.get("sort") || "newest";
-        const page = parseInt(url.searchParams.get("page") || "1");
-        const limit = parseInt(url.searchParams.get("limit") || "20");
+        const requestedPage = Number.parseInt(url.searchParams.get("page") || "1", 10);
+        const requestedLimit = Number.parseInt(url.searchParams.get("limit") || "20", 10);
+        const page = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1;
+        const limit = Number.isFinite(requestedLimit) ? Math.min(50, Math.max(1, requestedLimit)) : 20;
 
         const where: Record<string, unknown> = { classroomId: id };
         if (type) where.type = type;
@@ -75,6 +77,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                 orderBy: [
                     { isPinned: "desc" },
                     { createdAt: sort === "oldest" ? "asc" : "desc" },
+                    { id: sort === "oldest" ? "asc" : "desc" },
                 ],
                 skip: (page - 1) * limit,
                 take: limit,
@@ -90,6 +93,8 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             total,
             page,
             limit,
+            hasMore: page * limit < total,
+            totalPages: Math.max(1, Math.ceil(total / limit)),
         });
     } catch (e) {
         console.error("GET /api/classrooms/[id]/posts", e);
@@ -113,6 +118,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const { type, title, content, isPinned, files } = data;
         const assignment = data.assignment as AssignmentDraft | null | undefined;
         const test = data.test as TestDraft | null | undefined;
+        const testCourseId = test?.courseId && typeof test.courseId === "string" ? test.courseId : null;
         const courseId = typeof data.courseId === "string" && data.courseId ? data.courseId : null;
         const structuredAttachmentCount = Number(Boolean(assignment)) + Number(Boolean(test)) + Number(Boolean(courseId));
         if (structuredAttachmentCount > 1) {
@@ -150,6 +156,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }
             if (test.opensAt && test.closesAt && new Date(test.closesAt) < new Date(test.opensAt)) {
                 return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
+            }
+            if (testCourseId && !await canAccessCourse(testCourseId, userId)) {
+                return NextResponse.json({ error: "The selected source course is not available" }, { status: 403 });
             }
         }
 
@@ -218,6 +227,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         opensAt: test.opensAt ? new Date(test.opensAt) : null,
                         closesAt: test.closesAt ? new Date(test.closesAt) : null,
                         classroomId: id,
+                        courseId: testCourseId,
                         createdById: userId,
                         questions: {
                             create: test.questions.map((question, questionIndex) => ({

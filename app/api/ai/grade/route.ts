@@ -22,13 +22,23 @@ export async function POST(req: NextRequest) {
                     include: { question: true }
                 },
                 test: {
-                    select: { title: true }
+                    select: { title: true, classroomId: true }
                 }
             }
         });
 
         if (!attempt) {
             return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
+        }
+        if (!attempt.isCompleted || !attempt.test.classroomId) {
+            return NextResponse.json({ error: "Only completed classroom attempts can be reviewed" }, { status: 400 });
+        }
+        const membership = await prisma.classroomMember.findUnique({
+            where: { userId_classroomId: { userId, classroomId: attempt.test.classroomId } },
+            select: { role: true },
+        });
+        if (!membership || membership.role === "STUDENT") {
+            return NextResponse.json({ error: "Only teachers/TAs can request grading suggestions" }, { status: 403 });
         }
 
         interface ResponseWithQuestion {
@@ -76,7 +86,16 @@ Return a JSON array of suggestions.`;
             prompt,
         });
 
-        return NextResponse.json(object);
+        const maxByResponse = new Map(responsesToGrade.map((response) => [response.id, response.question.points]));
+        return NextResponse.json({
+            suggestions: object.suggestions
+                .filter((suggestion) => maxByResponse.has(suggestion.responseId))
+                .map((suggestion) => {
+                    const max = maxByResponse.get(suggestion.responseId) ?? 0;
+                    const suggestedScore = Math.min(max, Math.max(0, suggestion.suggestedScore));
+                    return { ...suggestion, suggestedScore, isCorrect: suggestedScore === max };
+                }),
+        });
 
     } catch (e) {
         console.error("POST /api/ai/grade", e);

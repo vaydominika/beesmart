@@ -35,6 +35,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             }
         });
 
+        let courseCompleted = false;
+        let newlyCompleted = false;
+
         if (completed) {
             await recordMeaningfulActivity({
                 userId, activityType: "LESSON_COMPLETED", courseId, relatedId: lessonId,
@@ -61,6 +64,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             );
 
             if (isFullyCompleted) {
+                courseCompleted = true;
                 await prisma.courseEnrollment.update({
                     where: { userId_courseId: { userId, courseId } },
                     data: { completedAt: new Date() }
@@ -69,6 +73,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
                     userId, activityType: "COURSE_COMPLETED", courseId, relatedId: courseId,
                     dedupeKey: `course:complete:${userId}:${courseId}`,
                 });
+                newlyCompleted = completionActivity.recorded;
                 if (completionActivity.recorded) {
                     const completedCourse = await prisma.course.findUnique({ where: { id: courseId }, select: { title: true } });
                     await prisma.notification.create({
@@ -90,7 +95,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             });
         }
 
-        return NextResponse.json(progress);
+        return NextResponse.json({ progress, courseCompleted, newlyCompleted });
     } catch (e) {
         console.error("PATCH /api/courses/[courseId]/lessons/[lessonId]/progress", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });

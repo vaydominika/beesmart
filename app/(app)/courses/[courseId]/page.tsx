@@ -12,6 +12,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { EnrollButton } from "@/components/course/EnrollButton";
+import { CourseRatingButton } from "@/components/course/CourseRatingButton";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { canAccessCourse } from "@/lib/course-access";
 import { plainTextExcerpt } from "@/lib/course-summary";
@@ -278,9 +279,10 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
             </div>
 
             {isEnrolled && progress === 100 ? (
-              <div className="mt-3 flex items-center gap-3 rounded-2xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-4 text-sm text-[var(--course-text)]">
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-4 text-sm text-[var(--course-text)]">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
-                <span><strong className="font-semibold">Course completed.</strong> You can revisit any lesson at any time.</span>
+                <span className="min-w-0 flex-1"><strong className="font-semibold">Course completed.</strong> You can revisit any lesson at any time.</span>
+                <CourseRatingButton courseId={courseId} courseTitle={course.title} />
               </div>
             ) : null}
           </aside>

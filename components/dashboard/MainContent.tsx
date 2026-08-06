@@ -8,6 +8,8 @@ import { ReportCourseModal } from "./ReportCourseModal";
 import type { CourseCard } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CourseRail } from "./CourseRail";
+import { CourseRatingModal } from "@/components/course/CourseRatingModal";
 
 function courseTitleById(courses: CourseCard[], id: string): string {
   return courses.find((c) => c.id === id)?.title ?? "Course";
@@ -15,9 +17,10 @@ function courseTitleById(courses: CourseCard[], id: string): string {
 
 export function MainContent() {
   const router = useRouter();
-  const { data, loading } = useDashboard();
+  const { data, loading, refetch } = useDashboard();
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportCourseId, setReportCourseId] = useState<string | null>(null);
+  const [ratingCourseId, setRatingCourseId] = useState<string | null>(null);
 
   const continueLearning = data?.continueLearning ?? [];
   const popularCourses = data?.popularCourses ?? [];
@@ -25,8 +28,8 @@ export function MainContent() {
   const myCourses = data?.myCourses ?? [];
 
   const allCourses = useMemo(
-    () => [...continueLearning, ...popularCourses, ...discoverCourses, ...myCourses],
-    [continueLearning, popularCourses, discoverCourses, myCourses]
+    () => [...(data?.continueLearning ?? []), ...(data?.popularCourses ?? []), ...(data?.discoverCourses ?? []), ...(data?.myCourses ?? []), ...(data?.finishedCourses ?? [])],
+    [data]
   );
   const reportCourseTitle = reportCourseId
     ? courseTitleById(allCourses, reportCourseId)
@@ -43,14 +46,7 @@ export function MainContent() {
     <ScrollArea className="flex-1 bg-(--theme-bg)">
       <div className="p-6 space-y-8">
         {myCourses.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
-              YOUR COURSES
-            </h2>
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              style={{ gridAutoRows: "1fr" }}
-            >
+          <CourseRail title="Your courses">
               {myCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -64,19 +60,11 @@ export function MainContent() {
                   onButtonClick={() => router.push(`/courses/${course.id}/builder`)}
                 />
               ))}
-            </div>
-          </section>
+          </CourseRail>
         )}
 
         {continueLearning.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
-              CONTINUE LEARNING
-            </h2>
-            <div
-              className="grid grid-cols-1 md:md:grid-cols-2 lg:grid-cols-3 gap-4"
-              style={{ gridAutoRows: "1fr" }}
-            >
+          <CourseRail title="Continue learning">
               {continueLearning.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -87,22 +75,15 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  onRateClick={(course.progress ?? 0) > 0 ? setRatingCourseId : undefined}
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
-            </div>
-          </section>
+          </CourseRail>
         )}
 
         {popularCourses.length > 0 && (
-          <section>
-            <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
-              POPULAR NOW
-            </h2>
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              style={{ gridAutoRows: "1fr" }}
-            >
+          <CourseRail title="Popular now">
               {popularCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -116,19 +97,11 @@ export function MainContent() {
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
-            </div>
-          </section>
+          </CourseRail>
         )}
 
         {(data?.finishedCourses && data.finishedCourses.length > 0) && (
-          <section>
-            <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
-              FINISHED
-            </h2>
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              style={{ gridAutoRows: "1fr" }}
-            >
+          <CourseRail title="Finished">
               {data.finishedCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -139,27 +112,23 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  onRateClick={setRatingCourseId}
                   buttonText="Review"
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
-            </div>
-          </section>
+          </CourseRail>
         )}
 
-        <section id="discover">
-          <h2 className="text-2xl md:text-[40px] font-bold uppercase tracking-tight text-(--theme-text) mb-4">
-            DISCOVER
-          </h2>
-          {loading ? (
+        {loading ? (
+          <section id="discover">
+            <h2 className="mb-4 text-2xl font-bold uppercase tracking-tight text-(--theme-text) md:text-[40px]">Discover</h2>
             <div className="flex items-center justify-center py-12">
               <Spinner className="h-8 w-8 text-(--theme-text)" />
             </div>
-          ) : discoverCourses.length > 0 ? (
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              style={{ gridAutoRows: "1fr" }}
-            >
+          </section>
+        ) : discoverCourses.length > 0 ? (
+            <CourseRail title="Discover" id="discover">
               {discoverCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -172,13 +141,15 @@ export function MainContent() {
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
-            </div>
-          ) : (
+            </CourseRail>
+        ) : (
+          <section id="discover">
+            <h2 className="mb-4 text-2xl font-bold uppercase tracking-tight text-(--theme-text) md:text-[40px]">Discover</h2>
             <p className="text-(--theme-text) text-lg">
               There are no courses yet. Create your first course or check back later for new content.
             </p>
-          )}
-        </section>
+          </section>
+        )}
 
         <ReportCourseModal
           open={reportModalOpen}
@@ -186,6 +157,7 @@ export function MainContent() {
           courseId={reportCourseId}
           courseTitle={reportCourseTitle}
         />
+        <CourseRatingModal open={Boolean(ratingCourseId)} onOpenChange={(open) => { if (!open) setRatingCourseId(null); }} courseId={ratingCourseId} courseTitle={ratingCourseId ? courseTitleById(allCourses, ratingCourseId) : ""} onSaved={refetch} />
       </div>
     </ScrollArea>
   );

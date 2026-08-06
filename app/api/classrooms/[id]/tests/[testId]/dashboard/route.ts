@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
+type DashboardResponse = { pointsAwarded: number | null; question: { questionType: string } } & Record<string, unknown>;
+type DashboardAttempt = { id: string; userId: string; isCompleted: boolean; responses: DashboardResponse[] } & Record<string, unknown>;
+type StudentMembership = { userId: string; user: { id: string; name: string } };
 
 export async function GET(_req: Request, ctx: RouteContext) {
     const userId = await getCurrentUserId();
@@ -15,6 +18,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
         include: {
             questions: { orderBy: { order: "asc" }, include: { options: { orderBy: { order: "asc" } }, answers: true } },
             attempts: {
+                orderBy: { startedAt: "desc" },
                 include: {
                     user: { select: { id: true, name: true, email: true, avatar: true } },
                     responses: { include: { question: { include: { options: true, answers: true } } } },
@@ -27,14 +31,31 @@ export async function GET(_req: Request, ctx: RouteContext) {
         where: { classroomId: id, role: "STUDENT" },
         include: { user: { select: { id: true, name: true } } },
     });
-    const attemptedIds = new Set(test.attempts.map((attempt: any) => attempt.userId));
-    const { attempts, ...testDetails } = test;
+    const dashboardTest = test as unknown as { attempts: DashboardAttempt[] } & Record<string, unknown>;
+    const studentMemberships = students as unknown as StudentMembership[];
+    const attemptedIds = new Set(dashboardTest.attempts.map((attempt) => attempt.userId));
+    const { attempts, ...testDetails } = dashboardTest;
+    const decorateAttempt = (attempt: DashboardAttempt) => {
+        const manualResponses = attempt.responses.filter((response) =>
+            response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY"
+        );
+        const manualResponsesRemaining = manualResponses.filter((response) => response.pointsAwarded == null).length;
+        return {
+            ...attempt,
+            manualResponsesRemaining,
+            gradingStatus: !attempt.isCompleted
+                ? "IN_PROGRESS"
+                : manualResponsesRemaining > 0
+                    ? "NEEDS_REVIEW"
+                    : "GRADED",
+        };
+    };
     return NextResponse.json({
         test: testDetails,
         dashboard: {
-            completed: attempts.filter((attempt: any) => attempt.isCompleted),
-            inProgress: attempts.filter((attempt: any) => !attempt.isCompleted),
-            notStarted: students.filter((student: any) => !attemptedIds.has(student.userId)).map((student: any) => ({ user: student.user })),
+            completed: attempts.filter((attempt) => attempt.isCompleted).map(decorateAttempt),
+            inProgress: attempts.filter((attempt) => !attempt.isCompleted).map(decorateAttempt),
+            notStarted: studentMemberships.filter((student) => !attemptedIds.has(student.userId)).map((student) => ({ user: student.user })),
         },
     });
 }

@@ -12,11 +12,21 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId } = await ctx.params;
+        const body = await req.json();
+        const { title, description, classroomId, difficulty = "Intermediate" } = body;
+        const questionCount = Number.parseInt(String(body.questionCount ?? 5), 10);
+        if (!Number.isFinite(questionCount) || questionCount < 1 || questionCount > 20) {
+            return NextResponse.json({ error: "Question count must be between 1 and 20" }, { status: 400 });
+        }
+        if (!["Beginner", "Intermediate", "Advanced"].includes(difficulty)) {
+            return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
+        }
 
         // Verify ownership/access
         const course = await prisma.course.findUnique({
             where: { id: courseId },
             include: {
+                classroomLinks: { select: { classroomId: true } },
                 modules: {
                     include: {
                         lessons: {
@@ -30,12 +40,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }
         });
 
-        if (!course || course.createdById !== userId) {
+        if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+        const membership = classroomId ? await prisma.classroomMember.findUnique({
+            where: { userId_classroomId: { userId, classroomId } },
+            select: { role: true },
+        }) : null;
+        const linkedToClassroom = Boolean(classroomId) && (
+            course.classroomId === classroomId || course.classroomLinks.some((link: { classroomId: string }) => link.classroomId === classroomId)
+        );
+        const canGenerate = course.createdById === userId || Boolean(membership && membership.role !== "STUDENT" && linkedToClassroom);
+        if (!canGenerate) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
-
-        const body = await req.json();
-        const { title, description, questionCount = 5, difficulty = "Intermediate" } = body;
 
         interface TestLesson {
             title: string;
@@ -89,7 +105,7 @@ Return a JSON structure suitable for the Test model. Each question should have o
         }
 
         // Return the generated test for preview
-        return NextResponse.json({ test: object });
+        return NextResponse.json({ test: object, courseId });
 
     } catch (e) {
         console.error("POST /api/courses/[courseId]/tests/generate", e);

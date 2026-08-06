@@ -24,6 +24,7 @@ export interface TestQuestionDraft {
 }
 
 export interface TestDraft {
+    courseId?: string | null;
     title: string;
     description: string | null;
     type: "TEST" | "EXAM";

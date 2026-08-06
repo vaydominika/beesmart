@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
-import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
@@ -13,7 +12,7 @@ import { CreateTestModal } from "@/components/classroom/CreateTestModal";
 import { CoursePostModal, type PostCourse } from "@/components/classroom/CoursePostModal";
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
-    FileText, Image, ClipboardList, GraduationCap,
+    FileText, Image as ImageIcon, ClipboardList, GraduationCap,
     BookOpen, Paperclip, Send, Upload, X, ArrowRight,
     MoreHorizontal, Pencil, Trash2
 } from "lucide-react";
@@ -77,7 +76,7 @@ interface Comment {
 
 const POST_TYPE_ICONS: Record<string, React.ReactNode> = {
     TEXT: <FileText className="h-4 w-4" />,
-    PHOTO: <Image className="h-4 w-4" />,
+    PHOTO: <ImageIcon className="h-4 w-4" />,
     ASSIGNMENT: <ClipboardList className="h-4 w-4" />,
     TEST: <GraduationCap className="h-4 w-4" />,
     COURSE: <BookOpen className="h-4 w-4" />,
@@ -102,9 +101,17 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState("");
     const [sort, setSort] = useState("newest");
     const [showFilters, setShowFilters] = useState(false);
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [loadMoreError, setLoadMoreError] = useState(false);
+    const [initialError, setInitialError] = useState(false);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     // Create post state
     const [newPostContent, setNewPostContent] = useState("");
@@ -140,26 +147,61 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [commentText, setCommentText] = useState("");
     const [postingComment, setPostingComment] = useState(false);
 
-    const fetchPosts = useCallback(async () => {
+    useEffect(() => {
+        const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+        return () => window.clearTimeout(timer);
+    }, [search]);
+
+    const fetchPosts = useCallback(async (requestedPage = 1, append = false) => {
+        if (append) setLoadingMore(true);
+        else setLoading(true);
+        setLoadMoreError(false);
+        if (!append) setInitialError(false);
         try {
             const params = new URLSearchParams();
-            if (search) params.set("search", search);
+            if (debouncedSearch) params.set("search", debouncedSearch);
             if (typeFilter) params.set("type", typeFilter);
             params.set("sort", sort);
+            params.set("page", String(requestedPage));
+            params.set("limit", "20");
             const res = await fetch(`/api/classrooms/${classroomId}/posts?${params}`);
-            if (!res.ok) return;
+            if (!res.ok) throw new Error();
             const data = await res.json();
-            setPosts(data.posts);
+            setPosts((current) => {
+                if (!append) return data.posts;
+                const byId = new Map(current.map((post) => [post.id, post]));
+                for (const post of data.posts as Post[]) byId.set(post.id, post);
+                return Array.from(byId.values());
+            });
+            setPage(data.page);
+            setTotal(data.total);
+            setHasMore(Boolean(data.hasMore));
         } catch {
-            // ignore
+            if (append) setLoadMoreError(true);
+            else {
+                setInitialError(true);
+                setPosts([]);
+                toast.error("Posts could not be loaded.");
+            }
         } finally {
-            setLoading(false);
+            if (append) setLoadingMore(false);
+            else setLoading(false);
         }
-    }, [classroomId, search, typeFilter, sort]);
+    }, [classroomId, debouncedSearch, typeFilter, sort]);
 
     useEffect(() => {
-        fetchPosts();
+        void fetchPosts(1, false);
     }, [fetchPosts]);
+
+    useEffect(() => {
+        const target = loadMoreRef.current;
+        if (!target || !hasMore || loading || loadingMore || loadMoreError) return;
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting) void fetchPosts(page + 1, true);
+        }, { rootMargin: "240px" });
+        observer.observe(target);
+        return () => observer.disconnect();
+    }, [fetchPosts, hasMore, loadMoreError, loading, loadingMore, page]);
 
     const handleAddAssignment = (assignment: AssignmentDraft) => {
         setPostAssignment(assignment);
@@ -638,6 +680,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             {/* Posts */}
             {loading ? (
                 <div className="flex justify-center py-10"><Spinner /></div>
+            ) : initialError ? (
+                <div className="py-10 text-center"><p className="text-sm text-[var(--classroom-text-muted)]">The classroom feed could not be loaded.</p><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(1, false)} className="mt-3">Retry</WorkspaceButton></div>
             ) : posts.length === 0 ? (
                 <div className="text-center py-10">
                     <p className="text-sm text-(--theme-text) opacity-50">No posts yet. Be the first to share!</p>
@@ -884,6 +928,9 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             )}
                         </FancyCard>
                     ))}
+                    <div ref={loadMoreRef} className="flex min-h-12 items-center justify-center py-2" aria-live="polite">
+                        {loadingMore ? <><Spinner className="h-5 w-5" /><span className="ml-2 text-xs text-[var(--classroom-text-muted)]">Loading more posts...</span></> : loadMoreError ? <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(page + 1, true)}>Retry loading posts</WorkspaceButton> : !hasMore && posts.length > 0 ? <span className="text-xs text-[var(--classroom-text-faint)]">You have reached the end · {total} posts</span> : null}
+                    </div>
                 </div>
             )}
 
@@ -966,6 +1013,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 open={testModalOpen}
                 onClose={() => setTestModalOpen(false)}
                 onAdd={handleAddTest}
+                classroomId={classroomId}
             />
             <CoursePostModal
                 open={courseModalOpen}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
 import {
     Calendar, Clock, FileText, Upload, Paperclip,
-    CheckCircle2, XCircle, Send, Plus, X
+    CheckCircle2, XCircle, Send, X
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -28,6 +28,8 @@ interface AssignmentDetails {
     isGraded: boolean;
     maxPoints?: number | null;
     createdAt: string;
+    assigner: { id: string; name: string; avatar?: string | null };
+    files: Array<{ id: string; fileName: string; fileUrl: string; fileType: string; fileSize: number }>;
 }
 
 interface AssignmentSubmission {
@@ -48,6 +50,8 @@ interface TeacherSubmissionsView {
 export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) {
     const [assignment, setAssignment] = useState<AssignmentDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    const [assignmentError, setAssignmentError] = useState<string | null>(null);
+    const [submissionsError, setSubmissionsError] = useState<string | null>(null);
 
     // Student specific state
     const [mySubmission, setMySubmission] = useState<AssignmentSubmission | null>(null);
@@ -64,39 +68,34 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     const [gradeFeedback, setGradeFeedback] = useState("");
 
     const fetchAssignmentAndSubmissions = useCallback(async () => {
+        setLoading(true);
+        setAssignmentError(null);
+        setSubmissionsError(null);
         try {
-            // First fetch the assignment details (we need a new endpoint for just the assignment,
-            // or we use the feed endpoint with a filter. For now, let's assume we can fetch it via the assignments route, 
-            // but we might need to rely on the submissions route which has the assignment context implicitly, or fetch feed posts)
+            const [assignmentResult, submissionsResult] = await Promise.allSettled([
+                fetch(`/api/classrooms/${classroomId}/assignments/${assignmentId}`),
+                fetch(`/api/classrooms/${classroomId}/assignments/${assignmentId}/submissions`),
+            ]);
 
-            // For now, let's just fetch the submissions and assume we have the assignment details from a parent or we fetch it.
-            // Since there's no direct GET /assignment endpoint, we'll get it from the submissions response if we wrap it later.
-            // Actually, we need the assignment details. Let's create a GET route if necessary or fetch from posts.
-            // Let's rely on the parent page or a specific fetch. Assuming we'll add a simple GET /api/classrooms/[id]/assignments/[assignmentId] later.
-            // For now, just focus on submissions.
-
-            const res = await fetch(`/api/classrooms/${classroomId}/assignments/${assignmentId}/submissions`);
-            if (!res.ok) {
-                toast.error("Failed to load submissions.");
-                return;
-            }
-
-            const data = await res.json();
-
-            if (isTeacher) {
-                setAllSubmissions(data as TeacherSubmissionsView);
+            if (assignmentResult.status === "fulfilled" && assignmentResult.value.ok) {
+                setAssignment(await assignmentResult.value.json());
             } else {
-                setMySubmission(data[0] || null);
+                const message = assignmentResult.status === "fulfilled"
+                    ? (await assignmentResult.value.json().catch(() => ({}))).error
+                    : null;
+                setAssignmentError(message || "Assignment details could not be loaded.");
             }
 
-            // Fetch assignment details (we'll implement this endpoint if it's missing)
-            const assignRes = await fetch(`/api/classrooms/${classroomId}/assignments/${assignmentId}`);
-            if (assignRes.ok) {
-                setAssignment(await assignRes.json());
+            if (submissionsResult.status === "fulfilled" && submissionsResult.value.ok) {
+                const data = await submissionsResult.value.json();
+                if (isTeacher) setAllSubmissions(data as TeacherSubmissionsView);
+                else setMySubmission(data[0] || null);
+            } else {
+                setSubmissionsError("Submissions could not be loaded.");
             }
-
         } catch {
-            toast.error("Failed to load assignment details.");
+            setAssignmentError("Assignment details could not be loaded.");
+            setSubmissionsError("Submissions could not be loaded.");
         } finally {
             setLoading(false);
         }
@@ -198,15 +197,18 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
         return <div className="flex justify-center py-20"><Spinner /></div>;
     }
 
-    // Default mock assignment details if API not yet created
-    const displayAssignment = assignment || {
-        id: assignmentId,
-        title: "Loading Assignment Details...",
-        dueDate: new Date().toISOString(),
-        isGraded: false,
-        maxPoints: null,
-        createdAt: new Date().toISOString()
-    };
+    if (!assignment) {
+        return (
+            <FancyCard className="border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
+                <XCircle className="mx-auto h-8 w-8 text-red-500" />
+                <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">Assignment unavailable</h1>
+                <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? "Assignment details could not be loaded."}</p>
+                <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">Try again</WorkspaceButton>
+            </FancyCard>
+        );
+    }
+
+    const displayAssignment = assignment;
 
     return (
         <div className="space-y-6">
@@ -233,9 +235,25 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 </div>
                             )}
                         </div>
+                        {displayAssignment.files.length > 0 && (
+                            <div className="mt-4 flex flex-wrap gap-2" aria-label="Assignment attachments">
+                                {displayAssignment.files.map((file) => (
+                                    <a key={file.id} href={file.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 py-2 text-xs font-medium text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)]">
+                                        <Paperclip className="h-3.5 w-3.5" />{file.fileName}
+                                    </a>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </FancyCard>
+
+            {submissionsError && (
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <span>{submissionsError}</span>
+                    <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchAssignmentAndSubmissions()}>Retry</WorkspaceButton>
+                </div>
+            )}
 
             {/* Content Switch based on Role */}
             {!isTeacher ? (

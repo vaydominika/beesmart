@@ -2,7 +2,7 @@ import { FancyCard } from "@/components/ui/fancycard";
 import { FancyButton } from "@/components/ui/fancybutton";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { PlayIcon } from "@hugeicons/core-free-icons";
-import { Flag } from "lucide-react";
+import { Flag, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -20,21 +20,15 @@ interface LearningCardProps {
   buttonText?: string;
   onButtonClick?: () => void;
   onReportClick?: (courseId: string) => void;
+  onRateClick?: (courseId: string) => void;
 }
 
 function StarRating({ value }: { value: number }) {
-  const full = Math.floor(value);
-  const half = value - full >= 0.5 ? 1 : 0;
-  const empty = 5 - full - half;
   return (
-    <div className="flex items-center gap-0.5" aria-label={`${value} out of 5 stars`}>
-      {Array.from({ length: full }, (_, i) => (
-        <span key={`f-${i}`} className="text-(--theme-secondary) text-sm">★</span>
-      ))}
-      {half ? <span className="text-(--theme-secondary) text-sm opacity-70">★</span> : null}
-      {Array.from({ length: empty }, (_, i) => (
-        <span key={`e-${i}`} className="text-(--theme-text) text-sm opacity-40">★</span>
-      ))}
+    <div className="flex items-center gap-1.5" aria-label={`${value} out of 5 stars`}>
+      <Star className="h-4 w-4 fill-(--theme-secondary) text-(--theme-secondary)" aria-hidden="true" />
+      <span className="text-xs font-semibold text-(--theme-text)">{value.toFixed(1)}</span>
+      <span className="text-[10px] font-medium text-(--theme-text) opacity-55">/ 5</span>
     </div>
   );
 }
@@ -50,6 +44,7 @@ export function LearningCard({
   buttonText,
   onButtonClick,
   onReportClick,
+  onRateClick,
 }: LearningCardProps) {
   const imageSrc =
     coverImageUrl && coverImageUrl.trim() !== ""
@@ -80,6 +75,11 @@ export function LearningCard({
               unoptimized={imageSrc.startsWith("http")}
             />
             <div className="absolute top-2 right-2 z-10 flex gap-1">
+              {onRateClick && (
+                <FancyButton className="p-0 cursor-pointer size-9" onClick={(event) => { event.stopPropagation(); onRateClick(id); }} aria-label="Rate course">
+                  <Star className="size-6 text-(--theme-text)" strokeWidth={2.5} />
+                </FancyButton>
+              )}
               {onReportClick && (
                 <FancyButton
                   className="p-0 cursor-pointer size-9"
@@ -122,11 +122,11 @@ export function LearningCard({
                 dangerouslySetInnerHTML={{ __html: description ?? "" }}
               />
             </div>
-            {averageRating != null && averageRating > 0 && (
-              <div className="mb-1">
-                <StarRating value={Math.round(averageRating * 2) / 2} />
-              </div>
-            )}
+            <div className="mb-1 min-h-5">
+              {averageRating != null && averageRating > 0
+                ? <StarRating value={Math.round(averageRating * 10) / 10} />
+                : <span className="text-xs font-medium text-(--theme-text) opacity-55">No ratings yet</span>}
+            </div>
             {progress !== undefined && (
               <div className="pt-2 shrink-0 relative">
                 <span
