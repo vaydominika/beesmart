@@ -35,12 +35,14 @@ interface TestDetails {
     passingScore?: number | null;
     opensAt?: string | null;
     closesAt?: string | null;
+    maxAttempts: number;
     questions: TestQuestion[];
 }
 
 interface TestAttempt {
     id: string;
     userId: string;
+    attemptNumber: number;
     startedAt: string;
     submittedAt?: string | null;
     isCompleted: boolean;
@@ -63,6 +65,15 @@ interface TeacherTestAttempt extends TestAttempt {
     manualResponsesRemaining: number;
 }
 
+interface AttemptPolicy {
+    maxAttempts: number;
+    completedAttempts: number;
+    remainingAttempts: number;
+    activeAttemptId: string | null;
+    nextAttemptNumber: number | null;
+    canStart: boolean;
+}
+
 interface TeacherDashboardView {
     completed: TeacherTestAttempt[];
     inProgress: TeacherTestAttempt[];
@@ -83,6 +94,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     const [responses, setResponses] = useState<Record<string, { selectedOptionId?: string, responseText?: string }>>({});
     const [submitting, setSubmitting] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
+    const [attemptPolicy, setAttemptPolicy] = useState<AttemptPolicy | null>(null);
+    const [attemptHistory, setAttemptHistory] = useState<TestAttempt[]>([]);
+    const [bestAttempt, setBestAttempt] = useState<TestAttempt | null>(null);
+    const [saveState, setSaveState] = useState<"IDLE" | "SAVING" | "SAVED" | "ERROR">("IDLE");
+    const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
     // --- TEACHER STATE ---
     const [dashboardData, setDashboardData] = useState<TeacherDashboardView | null>(null);
@@ -110,31 +126,20 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 setSelectedAttemptId((current) => current ?? data.dashboard.completed[0]?.id ?? null);
 
             } else {
-                // Student flow mostly handled by the `start` endpoint.
-                // We'll blindly try to start/resume an attempt. If it returns standard test info, we use it. 
-                const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}/start`, { method: "POST" });
+                const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}`);
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.error || "Could not load test.");
                 }
                 const data = await res.json();
-                setTest(data.test);
-
-                if (data.attempt) {
-                    setAttempt(data.attempt);
-                    if (data.attempt.isCompleted) {
-                        setTestState("COMPLETED");
-                    } else {
-                        // Resuming an attempt
-                        setTestState("IN_PROGRESS");
-                        // Calculate time left if there's a time limit
-                        if (data.test.timeLimit) {
-                            const elapsed = (Date.now() - new Date(data.attempt.startedAt).getTime()) / 1000 / 60;
-                            const remaining = data.test.timeLimit - elapsed;
-                            setTimeLeft(remaining > 0 ? remaining * 60 : 0); // stored in seconds
-                        }
-                    }
-                }
+                setTest(data);
+                setAttemptPolicy(data.attemptPolicy);
+                setAttemptHistory(data.attemptHistory ?? []);
+                setBestAttempt(data.bestAttempt ?? null);
+                setAttempt(null);
+                setResponses({});
+                setSaveState("IDLE");
+                setTestState((data.attemptHistory?.some((item: TestAttempt) => item.isCompleted) && !data.attemptPolicy.activeAttemptId) ? "COMPLETED" : "PRE_TEST");
             }
         } catch (cause) {
             const message = cause instanceof Error ? cause.message : "Error loading test details.";
@@ -148,6 +153,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     useEffect(() => {
         fetchInitialData();
     }, [fetchInitialData]);
+
+    useEffect(() => () => {
+        Object.values(saveTimers.current).forEach(clearTimeout);
+    }, []);
 
     // Timer logic
     useEffect(() => {
@@ -169,30 +178,68 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
     // --- STUDENT ACTIONS ---
     const handleStartTest = async () => {
-        setTestState("IN_PROGRESS");
-        if (test?.timeLimit) {
-            setTimeLeft(test.timeLimit * 60);
+        try {
+            const response = await fetch(`/api/classrooms/${classroomId}/tests/${testId}/start`, { method: "POST" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "The attempt could not be started");
+            setTest(data.test);
+            setAttempt(data.attempt);
+            setResponses(Object.fromEntries((data.responses ?? []).map((saved: { questionId: string; selectedOptionId?: string | null; responseText?: string | null }) => [
+                saved.questionId,
+                { selectedOptionId: saved.selectedOptionId ?? undefined, responseText: saved.responseText ?? undefined },
+            ])));
+            setTestState("IN_PROGRESS");
+            if (data.test.timeLimit) {
+                const elapsedSeconds = (Date.now() - new Date(data.attempt.startedAt).getTime()) / 1000;
+                setTimeLeft(Math.max(0, data.test.timeLimit * 60 - elapsedSeconds));
+            } else {
+                setTimeLeft(null);
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "The attempt could not be started.");
         }
     };
 
+    const saveDraftResponse = useCallback(async (questionId: string, responseValue: { selectedOptionId?: string; responseText?: string }) => {
+        if (!attempt) return;
+        setSaveState("SAVING");
+        const response = await fetch(`/api/classrooms/${classroomId}/tests/${testId}/attempts/${attempt.id}/responses`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ questionId, ...responseValue }),
+        });
+        if (!response.ok) {
+            setSaveState("ERROR");
+            throw new Error("Draft response could not be saved");
+        }
+        setSaveState("SAVED");
+    }, [attempt, classroomId, testId]);
+
     const handleAnswerChange = (questionId: string, value: string, type: string) => {
+        const nextValue = type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE"
+            ? { selectedOptionId: value }
+            : { responseText: value };
         setResponses(prev => ({
             ...prev,
-            [questionId]: {
-                ...prev[questionId],
-                ...(type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE" ? { selectedOptionId: value } : { responseText: value })
-            }
+            [questionId]: nextValue,
         }));
+        setSaveState("SAVING");
+        clearTimeout(saveTimers.current[questionId]);
+        saveTimers.current[questionId] = setTimeout(() => {
+            void saveDraftResponse(questionId, nextValue).catch(() => undefined);
+        }, 500);
     };
 
     const handleSubmitTest = async () => {
         setSubmitting(true);
         try {
+            Object.values(saveTimers.current).forEach(clearTimeout);
             const formattedResponses = Object.entries(responses).map(([qId, r]) => ({
                 questionId: qId,
                 selectedOptionId: r.selectedOptionId,
                 responseText: r.responseText
             }));
+            await Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response)));
 
             const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}/submit`, {
                 method: "POST",
@@ -203,15 +250,25 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 })
             });
 
-            if (!res.ok) throw new Error();
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || "Test submission failed");
 
-            const data = await res.json();
             setAttempt(data.attempt);
             setTestState("COMPLETED");
+            setBestAttempt(data.attempt.score == null || (bestAttempt?.score ?? -1) > data.attempt.score ? bestAttempt : data.attempt);
+            setAttemptHistory((current) => [...current.filter((item) => item.id !== data.attempt.id), data.attempt]);
+            setAttemptPolicy((current) => current ? {
+                ...current,
+                completedAttempts: current.completedAttempts + 1,
+                remainingAttempts: Math.max(0, current.remainingAttempts - 1),
+                activeAttemptId: null,
+                nextAttemptNumber: current.remainingAttempts > 1 ? data.attempt.attemptNumber + 1 : null,
+                canStart: current.remainingAttempts > 1,
+            } : current);
             toast.success("Test submitted successfully!");
 
-        } catch {
-            toast.error("Failed to submit test.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to submit test.");
         } finally {
             setSubmitting(false);
         }
@@ -359,14 +416,14 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             </div>
                         )}
 
-                        {testState === "COMPLETED" && attempt && attempt.score !== null && (
+                        {testState === "COMPLETED" && bestAttempt && bestAttempt.score !== null && (
                             <div className="text-right">
                                 <span className="text-xs uppercase font-bold opacity-50 block mb-1">Final Score</span>
                                 <div className={cn(
                                     "text-3xl font-black",
-                                    (attempt.score ?? 0) >= (test.passingScore ?? 50) ? "text-green-500" : "text-orange-500"
+                                    (bestAttempt.score ?? 0) >= (test.passingScore ?? 50) ? "text-green-500" : "text-orange-500"
                                 )}>
-                                    {Math.round(attempt.score ?? 0)}%
+                                    {Math.round(bestAttempt.score ?? 0)}%
                                 </div>
                             </div>
                         )}
@@ -391,10 +448,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 <span className="text-sm font-bold text-(--theme-text)">Make sure you have a stable connection.</span>
                             </div>
                         </div>
-                        <WorkspaceButton type="button" variant="primary" onClick={handleStartTest}>
+                        <WorkspaceButton type="button" variant="primary" onClick={handleStartTest} disabled={!attemptPolicy?.canStart}>
                             <Play className="h-5 w-5 mr-2" />
-                            Start Test
+                            {attemptPolicy?.activeAttemptId ? `Resume attempt ${attemptPolicy.nextAttemptNumber} of ${attemptPolicy.maxAttempts}` : `Start attempt ${attemptPolicy?.nextAttemptNumber ?? 1} of ${attemptPolicy?.maxAttempts ?? test.maxAttempts}`}
                         </WorkspaceButton>
+                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts !== 0 && <p className="mt-3 text-xs font-medium text-[var(--classroom-text-muted)]">This assessment is not currently open.</p>}
                     </FancyCard>
                 )}
 
@@ -457,9 +515,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         {/* Sticky Submit Bar */}
                         <div className="fixed bottom-0 left-0 w-full bg-(--theme-card) border-t border-(--theme-text)/10 p-4 shadow-2xl z-20">
                             <div className="max-w-3xl mx-auto flex items-center justify-between">
-                                <span className="text-sm font-bold text-(--theme-text) opacity-60">
-                                    {Object.keys(responses).length} of {test.questions.length} answered
-                                </span>
+                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-red-600" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50">Retry save</button>}</div>
                                 <WorkspaceButton
                                     type="button"
                                     variant="primary"
@@ -480,11 +536,17 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-green-500" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-2">Test Submitted</h2>
 
-                        {attempt?.score !== null ? (
+                        {(attempt?.score ?? bestAttempt?.score) != null ? (
                             <p className="text-sm text-(--theme-text) opacity-80 mb-6">Your test was auto-graded. Check the header for your final score.</p>
                         ) : (
-                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">Your test has been submitted and is pending manual review by your teacher for short answer/essay questions.</p>
+                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">Your test has been submitted and is pending review for essay responses.</p>
                         )}
+                        {attemptPolicy?.canStart && attemptPolicy.remainingAttempts > 0 && (
+                            <WorkspaceButton type="button" variant="primary" onClick={() => void handleStartTest()}>
+                                <Play className="h-4 w-4" />Start attempt {(attempt?.attemptNumber ?? attemptHistory.length) + 1} of {attemptPolicy.maxAttempts}
+                            </WorkspaceButton>
+                        )}
+                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts === 0 && <p className="text-xs font-semibold text-[var(--classroom-text-muted)]">No attempts remaining.</p>}
                     </FancyCard>
                 )}
             </div>
@@ -546,7 +608,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                     <div className="flex items-center gap-3">
                                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--classroom-text-muted)]"><UserRound className="h-4 w-4" /></span>
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{item.user.name}</p>
+                                            <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{item.user.name}{attemptItem ? ` · Attempt ${item.attemptNumber}` : ""}</p>
                                             {attemptItem ? <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{item.isCompleted ? new Date(item.submittedAt ?? item.startedAt).toLocaleString() : `Started ${new Date(item.startedAt).toLocaleString()}`}</p> : <p className="text-xs text-[var(--classroom-text-muted)]">No attempt</p>}
                                         </div>
                                     </div>
@@ -566,7 +628,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         <>
                             <FancyCard className="border border-[var(--classroom-line)] bg-white p-5 shadow-none">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div><h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2><p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.id.slice(-6)} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p></div>
+                                    <div><h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2><p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p></div>
                                     <div className="flex flex-wrap gap-2">
                                         <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleSuggestGrades()} disabled={suggestingGrades}>{suggestingGrades ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{suggestingGrades ? "Reviewing..." : "Suggest grades"}</WorkspaceButton>
                                         {gradeSuggestions && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={applyAllSuggestions}>Apply all suggestions</WorkspaceButton>}
@@ -583,7 +645,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                     <FancyCard key={response.id} className="border border-[var(--classroom-line)] bg-white p-5 shadow-none">
                                         <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
                                         <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">Learner answer</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || "No answer"}</p></div>
-                                        {(correctOption || response.question.answers?.[0]?.answerText) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Expected: {correctOption?.optionText || response.question.answers?.[0]?.answerText}</p>}
+                                        {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Expected: {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
                                         {manual ? (
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
                                                 <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-white px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>

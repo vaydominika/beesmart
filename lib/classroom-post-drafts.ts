@@ -10,6 +10,7 @@ export interface AssignmentDraft {
     description: string | null;
     dueDate: string;
     dueTime: string | null;
+    timeZone: string;
     isGraded: boolean;
     maxPoints: string | null;
     files: PostAttachmentFile[];
@@ -21,6 +22,7 @@ export interface TestQuestionDraft {
     points: number;
     options?: Array<{ optionText: string; isCorrect: boolean }>;
     correctAnswer: string | null;
+    acceptedAnswers?: string[];
 }
 
 export interface TestDraft {
@@ -32,5 +34,6 @@ export interface TestDraft {
     passingScore: string | null;
     opensAt: string | null;
     closesAt: string | null;
+    maxAttempts: number;
     questions: TestQuestionDraft[];
 }

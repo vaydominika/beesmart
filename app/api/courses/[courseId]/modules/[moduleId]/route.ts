@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string }> };
 
@@ -10,9 +11,11 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId, moduleId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
         const data = await req.json();
         const updateData: any = {};
@@ -39,9 +42,11 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId, moduleId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
         await prisma.courseModule.delete({ where: { id: moduleId, courseId } });
         return NextResponse.json({ success: true });

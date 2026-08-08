@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const {
             title, description, type = "TEST", timeLimit,
-            passingScore, opensAt, closesAt, questions,
+            passingScore, opensAt, closesAt, maxAttempts = 1, questions,
         } = await req.json();
 
         if (!title?.trim()) {
@@ -31,6 +31,16 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (closesAt && !opensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });
         if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
             return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
+        }
+        const parsedMaxAttempts = Number(maxAttempts);
+        if (!Number.isSafeInteger(parsedMaxAttempts) || parsedMaxAttempts < 1) {
+            return NextResponse.json({ error: "Attempts allowed must be a positive integer" }, { status: 400 });
+        }
+        if (Array.isArray(questions)) {
+            const invalidShortAnswer = questions.find((question: any) => question.questionType === "SHORT_ANSWER"
+                && !(Array.isArray(question.acceptedAnswers) ? question.acceptedAnswers : [question.correctAnswer])
+                    .some((answer: unknown) => typeof answer === "string" && Boolean(answer.trim())));
+            if (invalidShortAnswer) return NextResponse.json({ error: "Every short-answer question needs an accepted answer" }, { status: 400 });
         }
 
         const test = await prisma.test.create({
@@ -42,6 +52,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 passingScore: passingScore ? parseFloat(passingScore) : null,
                 opensAt: opensAt ? new Date(opensAt) : null,
                 closesAt: closesAt ? new Date(closesAt) : null,
+                maxAttempts: parsedMaxAttempts,
                 classroomId: id,
                 createdById: userId,
                 questions: questions?.length
@@ -60,12 +71,14 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                                     })),
                                 }
                                 : undefined,
-                            answers: q.correctAnswer
+                            answers: ((Array.isArray(q.acceptedAnswers) && q.acceptedAnswers.length > 0) || q.correctAnswer)
                                 ? {
-                                    create: {
-                                        answerText: q.correctAnswer,
-                                        isCorrect: true,
-                                    },
+                                    create: (Array.isArray(q.acceptedAnswers) ? q.acceptedAnswers : [q.correctAnswer])
+                                        .filter((answer: unknown): answer is string => typeof answer === "string" && Boolean(answer.trim()))
+                                        .map((answer: string) => ({
+                                            answerText: answer.trim(),
+                                            isCorrect: true,
+                                        })),
                                 }
                                 : undefined,
                         })),

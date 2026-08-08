@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -10,9 +11,9 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const data = await req.json();
         const { list } = data; // Array of { id: string, order: number }

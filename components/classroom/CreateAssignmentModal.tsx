@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Dialog,
     DialogClose,
@@ -30,10 +30,15 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [dueTime, setDueTime] = useState("");
+    const [timeZone, setTimeZone] = useState("UTC");
     const [isGraded, setIsGraded] = useState(true);
     const [maxPoints, setMaxPoints] = useState("100");
     const [files, setFiles] = useState<UploadedFile[]>([]);
     const [uploading, setUploading] = useState(false);
+
+    useEffect(() => {
+        setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+    }, []);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
@@ -81,6 +86,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
             description: description.trim() || null,
             dueDate,
             dueTime: dueTime || null,
+            timeZone,
             isGraded,
             maxPoints: isGraded ? maxPoints : null,
             files,
@@ -158,6 +164,9 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                     />
                                 </div>
                             </div>
+                            <p className="-mt-2 text-xs text-[var(--classroom-text-faint)]">
+                                Deadline timezone: {timeZone}. A date without a time is due at 23:59.
+                            </p>
 
                             <div className="grid items-end gap-3 sm:grid-cols-[1fr_9rem]">
                                 <div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canAccessCourse, canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -10,22 +11,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({
-            where: { id: courseId },
-            select: { isPublic: true, createdById: true },
-        });
-
-        if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
-
-        // Check if user has access
-        const isCreator = course.createdById === userId;
-        const isEnrolled = await prisma.courseEnrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } }
-        });
-
-        if (!isCreator && !isEnrolled && !course.isPublic) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        }
+        const courseExists = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
+        if (!courseExists) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+        if (!await canAccessCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const modules = await prisma.courseModule.findMany({
             where: { courseId },
@@ -52,9 +40,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { courseId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const data = await req.json();
         const { title, description } = data;

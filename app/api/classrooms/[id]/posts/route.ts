@@ -4,6 +4,7 @@ import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { canAccessCourse } from "@/lib/course-access";
 import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
+import { DeadlineValidationError, parseAssignmentDeadline } from "@/lib/assignment-deadline";
 import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
 import type { FileType, PostType, Prisma } from "@/lib/generated/prisma";
 
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                     files: true,
                     assignment: {
                         select: {
-                            id: true, title: true, dueDate: true, dueTime: true,
+                            id: true, title: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true,
                             isGraded: true, maxPoints: true, isCompleted: true,
                             _count: { select: { submissions: true } },
                         },
@@ -141,11 +142,11 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         }
 
         if (assignment) {
-            const dueDate = new Date(assignment.dueDate);
-            if (!assignment.title?.trim() || !assignment.dueDate || Number.isNaN(dueDate.getTime())) {
+            if (!assignment.title?.trim() || !assignment.dueDate) {
                 return NextResponse.json({ error: "Assignment title and due date are required" }, { status: 400 });
             }
         }
+        const assignmentDeadline = assignment ? parseAssignmentDeadline(assignment) : null;
 
         if (test) {
             if (!test.title?.trim() || !Array.isArray(test.questions) || test.questions.length === 0) {
@@ -159,6 +160,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }
             if (testCourseId && !await canAccessCourse(testCourseId, userId)) {
                 return NextResponse.json({ error: "The selected source course is not available" }, { status: 403 });
+            }
+            if (!Number.isSafeInteger(Number(test.maxAttempts ?? 1)) || Number(test.maxAttempts ?? 1) < 1) {
+                return NextResponse.json({ error: "Attempts allowed must be a positive integer" }, { status: 400 });
+            }
+            if (test.questions.some((question) => question.questionType === "SHORT_ANSWER" && !(question.acceptedAnswers?.length || question.correctAnswer?.trim()))) {
+                return NextResponse.json({ error: "Every short-answer question needs an accepted answer" }, { status: 400 });
             }
         }
 
@@ -194,8 +201,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         description: assignment.description?.trim() || null,
                         assignedById: userId,
                         classroomId: id,
-                        dueDate: new Date(assignment.dueDate),
-                        dueTime: assignment.dueTime || null,
+                        ...assignmentDeadline!,
                         isGraded: assignment.isGraded,
                         maxPoints: assignment.maxPoints ? parseFloat(assignment.maxPoints) : null,
                     },
@@ -206,8 +212,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                     data: {
                         title: `Assignment: ${assignment.title.trim()}`,
                         description: assignment.description?.trim() || null,
-                        startDate: new Date(assignment.dueDate),
-                        endDate: new Date(assignment.dueDate),
+                        startDate: assignmentDeadline!.deadlineAt,
+                        endDate: assignmentDeadline!.deadlineAt,
                         startTime: assignment.dueTime || null,
                         endTime: assignment.dueTime || null,
                         isAllDay: !assignment.dueTime,
@@ -226,6 +232,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         passingScore: test.passingScore ? parseFloat(test.passingScore) : null,
                         opensAt: test.opensAt ? new Date(test.opensAt) : null,
                         closesAt: test.closesAt ? new Date(test.closesAt) : null,
+                        maxAttempts: Number(test.maxAttempts ?? 1),
                         classroomId: id,
                         courseId: testCourseId,
                         createdById: userId,
@@ -244,12 +251,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                                         })),
                                     }
                                     : undefined,
-                                answers: question.correctAnswer
+                                answers: (question.acceptedAnswers?.length || question.correctAnswer)
                                     ? {
-                                        create: {
-                                            answerText: question.correctAnswer,
+                                        create: (question.acceptedAnswers?.length ? question.acceptedAnswers : [question.correctAnswer!]).map((answer) => ({
+                                            answerText: answer.trim(),
                                             isCorrect: true,
-                                        },
+                                        })),
                                     }
                                     : undefined,
                             })),
@@ -362,6 +369,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         return NextResponse.json(post, { status: 201 });
     } catch (e) {
+        if (e instanceof DeadlineValidationError) {
+            return NextResponse.json({ error: e.message }, { status: 400 });
+        }
         console.error("POST /api/classrooms/[id]/posts", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

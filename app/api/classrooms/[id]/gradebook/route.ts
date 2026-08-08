@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         // Get all graded assignments in the classroom
         const assignments = await prisma.assignedWork.findMany({
             where: { classroomId: id, isGraded: true },
-            select: { id: true, title: true, maxPoints: true, dueDate: true },
+            select: { id: true, title: true, maxPoints: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true },
             orderBy: { createdAt: "asc" },
         });
 
@@ -70,7 +70,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     };
                 }),
                 tests: tests.map((t: any) => {
-                    const attempt = testAttempts.find((a: any) => a.testId === t.id);
+                    const attempts = testAttempts.filter((a: any) => a.testId === t.id && a.score != null);
+                    const attempt = attempts.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))[0];
                     return {
                         ...t,
                         attempt: attempt ? { score: attempt.score, submittedAt: attempt.submittedAt } : null,
@@ -114,7 +115,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     };
                 }),
                 testGrades: tests.map((t: any) => {
-                    const attempt = allAttempts.find((a: any) => a.testId === t.id && a.userId === s.userId);
+                    const attempt = allAttempts
+                        .filter((a: any) => a.testId === t.id && a.userId === s.userId && a.score != null)
+                        .sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))[0];
                     return {
                         testId: t.id,
                         score: attempt?.score ?? null,

@@ -23,8 +23,9 @@ interface AssignmentDetails {
     id: string;
     title: string;
     description?: string | null;
-    dueDate: string;
-    dueTime?: string | null;
+    deadlineAt: string;
+    deadlineTimeZone: string;
+    deadlineHasTime: boolean;
     isGraded: boolean;
     maxPoints?: number | null;
     createdAt: string;
@@ -225,8 +226,13 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         <div className="flex flex-wrap items-center gap-4">
                             <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">
                                 <Calendar className="h-4 w-4" />
-                                <span>Due: {formatDateYmd(displayAssignment.dueDate)}</span>
-                                {displayAssignment.dueTime && <span>at {displayAssignment.dueTime}</span>}
+                                <span>
+                                    Due: {new Intl.DateTimeFormat(undefined, {
+                                        dateStyle: "medium",
+                                        ...(displayAssignment.deadlineHasTime ? { timeStyle: "short" as const } : {}),
+                                    }).format(new Date(displayAssignment.deadlineAt))}
+                                </span>
+                                <span title={`Deadline set in ${displayAssignment.deadlineTimeZone}`}>({displayAssignment.deadlineTimeZone})</span>
                             </div>
                             {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
                                 <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">

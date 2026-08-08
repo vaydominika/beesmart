@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
         interface ResponseWithQuestion {
             id: string;
             responseText: string | null;
+            pointsAwarded: number | null;
             question: {
                 questionText: string;
                 questionType: string;
@@ -51,9 +52,9 @@ export async function POST(req: NextRequest) {
             };
         }
 
-        // Only process short answer and essay questions for AI suggestions
+        // Normalized short answers are automatic; AI only reviews answered essays still awaiting a teacher.
         const responsesToGrade = (attempt.responses as unknown as ResponseWithQuestion[]).filter((r) =>
-            r.question.questionType === "SHORT_ANSWER" || r.question.questionType === "ESSAY"
+            r.question.questionType === "ESSAY" && r.pointsAwarded == null && Boolean(r.responseText?.trim())
         );
 
         if (responsesToGrade.length === 0) {

@@ -82,8 +82,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const assignment = await prisma.assignedWork.findFirst({ where: { id: assignmentId, classroomId: id } });
         if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
 
-        // Check if late
-        const isLate = new Date() > new Date(assignment.dueDate);
+        const submittedAt = new Date();
+        const isLate = submittedAt.getTime() > assignment.deadlineAt.getTime();
         const status = isLate ? "LATE" : "SUBMITTED";
 
         // Upsert submission
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             update: {
                 content: content?.trim() || null,
                 status,
-                submittedAt: new Date(),
+                submittedAt,
                 files: files?.length
                     ? {
                         deleteMany: {},
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 userId,
                 content: content?.trim() || null,
                 status,
-                submittedAt: new Date(),
+                submittedAt,
                 files: files?.length
                     ? {
                         create: files.map((f: { fileName: string; fileUrl: string; fileType: string; fileSize: number }) => ({

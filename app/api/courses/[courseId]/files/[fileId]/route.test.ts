@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { canManageCourse } from "@/lib/course-access";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -10,6 +11,7 @@ vi.mock("@/lib/db", () => ({
     courseFile: { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
+vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn() }));
 
 const context = { params: Promise.resolve({ courseId: "course-1", fileId: "file-1" }) };
 
@@ -26,6 +28,7 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUserId).mockResolvedValue("owner-1");
     vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "owner-1" } as never);
+    vi.mocked(canManageCourse).mockResolvedValue(true);
     vi.mocked(prisma.courseFile.findUnique).mockResolvedValue({
       id: "file-1",
       courseId: "course-1",
@@ -51,6 +54,7 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
 
   it("rejects non-owners", async () => {
     vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "other-user" } as never);
+    vi.mocked(canManageCourse).mockResolvedValue(false);
     const response = await PATCH(request(false), context);
     expect(response.status).toBe(403);
     expect(prisma.courseFile.update).not.toHaveBeenCalled();

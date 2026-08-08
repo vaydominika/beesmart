@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { recordMeaningfulActivity } from "@/lib/activity";
-import { canAccessCourse } from "@/lib/course-access";
+import { getLessonAccess } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string; lessonId: string }> };
 
@@ -12,9 +12,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
         const { courseId, lessonId } = await ctx.params;
         const { completed } = await req.json();
-        if (!await canAccessCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const lesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, module: { courseId } }, select: { id: true } });
-        if (!lesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+        const access = await getLessonAccess({ courseId, lessonId, userId });
+        if (!access.allowed) {
+            if (access.reason === "COURSE_FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            if (access.reason === "LESSON_LOCKED") return NextResponse.json({ error: "Lesson is locked", code: access.reason, blockingLessonIds: access.blockingLessonIds }, { status: 423 });
+            return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
+        }
 
         // Upsert progress
         const progress = await prisma.courseProgress.upsert({

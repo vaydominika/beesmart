@@ -386,6 +386,7 @@ model Test {
   passingScore Float?
   opensAt      DateTime?
   closesAt     DateTime?
+  maxAttempts  Int       @default(1)
   createdById  String
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -455,6 +456,7 @@ model TestAttempt {
   id          String    @id @default(cuid())
   testId      String
   userId      String
+  attemptNumber Int       @default(1)
   startedAt   DateTime  @default(now())
   submittedAt DateTime?
   score       Float?
@@ -470,6 +472,7 @@ model TestAttempt {
 
   @@index([testId])
   @@index([userId])
+  @@unique([testId, userId, attemptNumber])
 }
 
 model TestAttemptResponse {
@@ -490,6 +493,7 @@ model TestAttemptResponse {
 
   @@index([attemptId])
   @@index([questionId])
+  @@unique([attemptId, questionId])
 }
 
 model FlashcardSet {
@@ -588,8 +592,9 @@ model AssignedWork {
   classroomId  String?
   courseId     String?
   testId       String?
-  dueDate      DateTime
-  dueTime      String?
+  deadlineAt       DateTime
+  deadlineTimeZone String
+  deadlineHasTime  Boolean  @default(false)
   isCompleted  Boolean   @default(false)
   completedAt  DateTime?
   isGraded     Boolean   @default(true)
@@ -612,7 +617,7 @@ model AssignedWork {
   @@index([assignedToId])
   @@index([classroomId])
   @@index([courseId])
-  @@index([dueDate])
+  @@index([deadlineAt])
 }
 
 model Schedule {

@@ -4,6 +4,7 @@ import { notifyClassroomUser } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
 import type { Prisma } from "@/lib/generated/prisma";
+import { calculateAttemptTotals } from "@/lib/test-scoring";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type GradingResponse = {
@@ -84,12 +85,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const stillUngraded = manualResponses.some((response) => response.pointsAwarded == null && !submittedGradeIds.has(response.id));
         if (stillUngraded) return NextResponse.json({ error: "Grade every manual response before saving" }, { status: 400 });
 
-        const totalPoints = gradingAttempt.test.questions.reduce((sum, question) => sum + question.points, 0);
         const updatedPoints = new Map(parsedGrades.map(({ response, pointsAwarded }) => [response.id, pointsAwarded]));
-        const totalScore = gradingAttempt.responses.reduce(
-            (sum, response) => sum + (updatedPoints.get(response.id) ?? response.pointsAwarded ?? 0),
-            0,
-        );
+        const responsePoints = gradingAttempt.responses.map((response) => ({
+            questionId: response.question.id,
+            pointsAwarded: updatedPoints.get(response.id) ?? response.pointsAwarded ?? 0,
+        }));
+        const { totalPoints, totalScore, percentage } = calculateAttemptTotals(gradingAttempt.test.questions, responsePoints);
 
         const attempt = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             for (const { response, pointsAwarded, teacherComment } of parsedGrades) {
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }
             return tx.testAttempt.update({
                 where: { id: attemptId },
-                data: { score: totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0 },
+                data: { score: percentage },
             });
         });
 

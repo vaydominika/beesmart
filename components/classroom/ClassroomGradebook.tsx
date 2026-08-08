@@ -17,7 +17,9 @@ interface GradebookData {
         id: string;
         title: string;
         maxPoints?: number | null;
-        dueDate: string;
+        deadlineAt: string;
+        deadlineTimeZone: string;
+        deadlineHasTime: boolean;
         grade?: { score: number; maxScore?: number | null; feedback?: string | null } | null;
         submission?: { status: string; submittedAt?: string | null } | null;
     }>;

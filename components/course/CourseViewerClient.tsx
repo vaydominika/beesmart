@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -20,7 +20,7 @@ import { CourseRatingModal } from "@/components/course/CourseRatingModal";
 interface Lesson {
     id: string;
     title: string;
-    content: string | null;
+    content?: string | null;
     isLocked?: boolean;
     files?: LessonFile[];
 }
@@ -90,10 +90,39 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
     const [ratingOpen, setRatingOpen] = useState(false);
+    const [lessonContent, setLessonContent] = useState<Record<string, { content: string | null; files: LessonFile[] }>>({});
+    const [contentState, setContentState] = useState<"IDLE" | "LOADING" | "LOADED" | "ERROR">("IDLE");
+    const [contentRetry, setContentRetry] = useState(0);
 
-    const activeLesson = useMemo(() =>
-        allLessons.find(l => l.id === activeLessonId),
-        [allLessons, activeLessonId]);
+    const activeLesson = useMemo(() => {
+        const outline = allLessons.find(l => l.id === activeLessonId);
+        return outline ? { ...outline, ...lessonContent[outline.id] } : undefined;
+    }, [allLessons, activeLessonId, lessonContent]);
+
+    useEffect(() => {
+        if (!activeLessonId || lessonContent[activeLessonId]) return;
+        const lesson = allLessons.find((item) => item.id === activeLessonId);
+        if (!lesson || isLessonLocked(lesson)) {
+            setContentState("IDLE");
+            return;
+        }
+        const module = course.modules.find((item) => item.lessons.some((candidate) => candidate.id === activeLessonId));
+        if (!module) return;
+        const controller = new AbortController();
+        setContentState("LOADING");
+        fetch(`/api/courses/${course.id}/modules/${module.id}/lessons/${activeLessonId}`, { signal: controller.signal })
+            .then(async (response) => {
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(data.error || "Lesson content could not be loaded");
+                setLessonContent((current) => ({ ...current, [activeLessonId]: { content: data.content ?? null, files: data.files ?? [] } }));
+                setContentState("LOADED");
+            })
+            .catch((error) => {
+                if (error instanceof DOMException && error.name === "AbortError") return;
+                setContentState("ERROR");
+            });
+        return () => controller.abort();
+    }, [activeLessonId, allLessons, contentRetry, course.id, course.modules, isLessonLocked, lessonContent]);
 
     const currentIndex = useMemo(() =>
         allLessons.findIndex(l => l.id === activeLessonId),
@@ -281,7 +310,11 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                             "transition-all duration-700",
                             isLessonLocked(activeLesson) ? "blur-[20px] grayscale opacity-50 select-none pointer-events-none" : ""
                         )}>
-                            {activeLesson.content ? (
+                            {contentState === "LOADING" ? (
+                                <div className="py-20 text-center text-sm font-bold uppercase tracking-wider text-slate-400">Loading lesson...</div>
+                            ) : contentState === "ERROR" ? (
+                                <div className="py-20 text-center"><p className="text-sm font-bold text-red-600">Lesson content could not be loaded.</p><button type="button" onClick={() => setContentRetry((value) => value + 1)} className="mt-3 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Try again</button></div>
+                            ) : activeLesson.content ? (
                                 <div dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
                             ) : (
                                 <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">

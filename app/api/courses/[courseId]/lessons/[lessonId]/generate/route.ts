@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canManageCourse } from "@/lib/course-access";
 import { streamText } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
 import { writeFile, mkdir } from "fs/promises";
@@ -19,7 +20,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         // Verify ownership
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
-        if (!course || course.createdById !== userId) {
+        if (!course) {
+            return NextResponse.json({ error: "Course not found" }, { status: 404 });
+        }
+        if (!await canManageCourse(courseId, userId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 
@@ -45,8 +49,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             existingContent = data.existingContent;
         }
 
-        const lesson = await prisma.courseLesson.findUnique({
-            where: { id: lessonId },
+        const lesson = await prisma.courseLesson.findFirst({
+            where: { id: lessonId, module: { courseId } },
             include: { module: { select: { title: true } } }
         });
 

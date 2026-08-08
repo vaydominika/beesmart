@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
+import { DeadlineValidationError, parseAssignmentDeadline } from "@/lib/assignment-deadline";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -20,13 +21,14 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         }
 
         const {
-            title, description, dueDate, dueTime,
+            title, description, dueDate, dueTime, timeZone,
             isGraded = true, maxPoints, assignedToId, files,
         } = await req.json();
 
         if (!title?.trim() || !dueDate) {
             return NextResponse.json({ error: "Title and due date required" }, { status: 400 });
         }
+        const deadline = parseAssignmentDeadline({ dueDate, dueTime, timeZone });
 
         // Create the assigned work
         const assignment = await prisma.assignedWork.create({
@@ -36,8 +38,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 assignedById: userId,
                 assignedToId: assignedToId || null,
                 classroomId: id,
-                dueDate: new Date(dueDate),
-                dueTime: dueTime || null,
+                ...deadline,
                 isGraded,
                 maxPoints: maxPoints ? parseFloat(maxPoints) : null,
             },
@@ -76,8 +77,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             data: {
                 title: `Assignment: ${title.trim()}`,
                 description: description?.trim() || null,
-                startDate: new Date(dueDate),
-                endDate: new Date(dueDate),
+                startDate: deadline.deadlineAt,
+                endDate: deadline.deadlineAt,
                 startTime: dueTime || null,
                 endTime: dueTime || null,
                 isAllDay: !dueTime,
@@ -97,6 +98,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         return NextResponse.json(post, { status: 201 });
     } catch (e) {
+        if (e instanceof DeadlineValidationError) {
+            return NextResponse.json({ error: e.message }, { status: 400 });
+        }
         console.error("POST assignment", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

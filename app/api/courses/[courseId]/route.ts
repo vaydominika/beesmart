@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
-import { canAccessCourse } from "@/lib/course-access";
+import { canAccessCourse, canManageCourse } from "@/lib/course-access";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
 
@@ -54,7 +54,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true, published: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         const data = await req.json();
         const updateData: any = {};
@@ -105,7 +105,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
 
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         await prisma.course.delete({ where: { id: courseId } });
         return NextResponse.json({ success: true });

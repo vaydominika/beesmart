@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string; fileId: string }> };
 
@@ -15,7 +16,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     });
 
     if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
-    if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const data = await req.json();
     if (typeof data.isVisible !== "boolean") {

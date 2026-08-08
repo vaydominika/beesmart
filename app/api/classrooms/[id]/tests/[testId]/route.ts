@@ -6,6 +6,7 @@ import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
+type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; isCompleted: boolean; score: number | null };
 
 async function teacherAccess(userId: string, classroomId: string) {
     const membership = await prisma.classroomMember.findUnique({
@@ -23,10 +24,39 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
     const test = await prisma.test.findFirst({
         where: { id: testId, classroomId: id },
-        select: { id: true, title: true, description: true, type: true, timeLimit: true, passingScore: true, opensAt: true, closesAt: true },
+        select: { id: true, title: true, description: true, type: true, timeLimit: true, passingScore: true, opensAt: true, closesAt: true, maxAttempts: true },
     });
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
-    return NextResponse.json(test);
+    if (membership.role !== "STUDENT") return NextResponse.json(test);
+
+    const attempts = await prisma.testAttempt.findMany({
+        where: { testId, userId },
+        orderBy: { attemptNumber: "asc" },
+        select: { id: true, attemptNumber: true, startedAt: true, submittedAt: true, isCompleted: true, score: true },
+    }) as LearnerAttemptSummary[];
+    const activeAttempt = attempts.find((attempt) => !attempt.isCompleted) ?? null;
+    const completedAttempts = attempts.filter((attempt) => attempt.isCompleted).length;
+    const remainingAttempts = Math.max(0, test.maxAttempts - completedAttempts);
+    const highestAttemptNumber = attempts.reduce((highest, attempt) => Math.max(highest, attempt.attemptNumber), 0);
+    const bestAttempt = attempts
+        .filter((attempt) => attempt.isCompleted && attempt.score != null)
+        .sort((left, right) => (right.score ?? -1) - (left.score ?? -1))[0] ?? null;
+    const now = new Date();
+    const available = (!test.opensAt || now >= test.opensAt) && (!test.closesAt || now <= test.closesAt);
+    return NextResponse.json({
+        ...test,
+        questions: [],
+        attemptPolicy: {
+            maxAttempts: test.maxAttempts,
+            completedAttempts,
+            remainingAttempts,
+            activeAttemptId: activeAttempt?.id ?? null,
+            nextAttemptNumber: activeAttempt?.attemptNumber ?? (remainingAttempts > 0 ? highestAttemptNumber + 1 : null),
+            canStart: available && Boolean(activeAttempt || remainingAttempts > 0),
+        },
+        attemptHistory: attempts,
+        bestAttempt,
+    });
 }
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
@@ -46,6 +76,17 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (body.passingScore !== undefined) data.passingScore = body.passingScore ? Number(body.passingScore) : null;
     if (body.opensAt !== undefined) data.opensAt = body.opensAt ? new Date(body.opensAt) : null;
     if (body.closesAt !== undefined) data.closesAt = body.closesAt ? new Date(body.closesAt) : null;
+    if (body.maxAttempts !== undefined) {
+        const maxAttempts = Number(body.maxAttempts);
+        if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
+            return NextResponse.json({ error: "Attempts allowed must be a positive integer" }, { status: 400 });
+        }
+        const highestAttempt = await prisma.testAttempt.aggregate({ where: { testId }, _max: { attemptNumber: true } });
+        if (maxAttempts < (highestAttempt._max.attemptNumber ?? 0)) {
+            return NextResponse.json({ error: "Attempts allowed cannot be lower than an existing attempt number" }, { status: 400 });
+        }
+        data.maxAttempts = maxAttempts;
+    }
     const nextOpensAt = body.opensAt !== undefined ? (body.opensAt ? new Date(body.opensAt) : null) : existing.opensAt;
     const nextClosesAt = body.closesAt !== undefined ? (body.closesAt ? new Date(body.closesAt) : null) : existing.closesAt;
     if (nextClosesAt && !nextOpensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });

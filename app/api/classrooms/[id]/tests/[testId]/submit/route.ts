@@ -1,111 +1,121 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { recordMeaningfulActivity } from "@/lib/activity";
+import { calculateAttemptTotals, scoreAutomaticResponse, type ScoringResponse } from "@/lib/test-scoring";
+import type { Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
+type SubmittedResponse = { questionId: string; responseText?: string | null; selectedOptionId?: string | null };
+type LoadedQuestion = {
+    id: string;
+    questionType: string;
+    points: number;
+    options: Array<{ id: string; isCorrect: boolean }>;
+    answers: Array<{ answerText: string | null }>;
+};
+type StoredResponse = ScoringResponse & { id: string; responseText: string | null; selectedOptionId: string | null };
 
-// POST /api/classrooms/[id]/tests/[testId]/submit — Submit test answers
-export async function POST(req: NextRequest, ctx: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const { id, testId } = await ctx.params;
-
+        const { id: classroomId, testId } = await context.params;
         const membership = await prisma.classroomMember.findUnique({
-            where: { userId_classroomId: { userId, classroomId: id } },
+            where: { userId_classroomId: { userId, classroomId } }, select: { role: true },
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
+        if (membership.role !== "STUDENT") return NextResponse.json({ error: "Only learners can submit attempts" }, { status: 403 });
 
-        const { attemptId, responses } = await req.json();
-        if (!attemptId || !responses?.length) {
-            return NextResponse.json({ error: "Attempt ID and responses required" }, { status: 400 });
+        const body = await request.json() as { attemptId?: string; responses?: SubmittedResponse[] };
+        const responses = body.responses ?? [];
+        if (!body.attemptId || !Array.isArray(responses)) {
+            return NextResponse.json({ error: "Attempt ID and a response list are required" }, { status: 400 });
+        }
+        if (new Set(responses.map((response) => response.questionId)).size !== responses.length) {
+            return NextResponse.json({ error: "Each question can only be submitted once" }, { status: 400 });
+        }
+        if (responses.some((response) => !response.questionId || (response.responseText != null && typeof response.responseText !== "string") || (response.selectedOptionId != null && typeof response.selectedOptionId !== "string"))) {
+            return NextResponse.json({ error: "Invalid response payload" }, { status: 400 });
         }
 
-        const attempt = await prisma.testAttempt.findUnique({
-            where: { id: attemptId },
+        const attempt = await prisma.testAttempt.findFirst({
+            where: { id: body.attemptId, testId, userId, isCompleted: false, test: { classroomId } },
+            select: { id: true, startedAt: true },
         });
-        if (!attempt || attempt.userId !== userId || attempt.isCompleted) {
-            return NextResponse.json({ error: "Invalid attempt" }, { status: 400 });
-        }
-
-        // Check time limit
-        const test = await prisma.test.findUnique({ where: { id: testId } });
-        if (test?.timeLimit) {
-            const elapsed = (Date.now() - attempt.startedAt.getTime()) / 1000 / 60;
-            if (elapsed > test.timeLimit + 1) { // 1 min grace
-                return NextResponse.json({ error: "Time limit exceeded" }, { status: 400 });
-            }
-        }
-
-        // Get questions with correct answers for auto-grading
-        const questions = await prisma.testQuestion.findMany({
-            where: { testId },
-            include: {
-                options: true,
-                answers: true,
-            },
+        if (!attempt) return NextResponse.json({ error: "Active attempt not found" }, { status: 404 });
+        const test = await prisma.test.findFirst({
+            where: { id: testId, classroomId },
+            include: { questions: { orderBy: { order: "asc" }, include: { options: true, answers: true } } },
         });
+        if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
+        if (test.timeLimit) {
+            const elapsedMinutes = (Date.now() - attempt.startedAt.getTime()) / 60_000;
+            if (elapsedMinutes > test.timeLimit + 1) return NextResponse.json({ error: "Time limit exceeded" }, { status: 400 });
+        }
 
-        const questionMap = new Map(questions.map((q: any) => [q.id, q]));
-        let totalScore = 0;
-        let totalPoints = 0;
-
-        // Create response records
+        const questions = test.questions as LoadedQuestion[];
+        const questionById = new Map(questions.map((question) => [question.id, question]));
         for (const response of responses) {
-            const question: any = questionMap.get(response.questionId);
-            if (!question) continue;
-
-            totalPoints += question.points;
-            let isCorrect: boolean | null = null;
-            let pointsAwarded: number | null = null;
-
-            if (question.questionType === "MULTIPLE_CHOICE" || question.questionType === "TRUE_FALSE") {
-                // Auto-grade
-                const correctOption = question.options.find((o: any) => o.isCorrect);
-                isCorrect = response.selectedOptionId === correctOption?.id;
-                pointsAwarded = isCorrect ? question.points : 0;
-                totalScore += pointsAwarded ?? 0;
+            const question = questionById.get(response.questionId);
+            if (!question) return NextResponse.json({ error: "A response does not belong to this test" }, { status: 400 });
+            if (response.selectedOptionId && !question.options.some((option) => option.id === response.selectedOptionId)) {
+                return NextResponse.json({ error: "A selected option does not belong to its question" }, { status: 400 });
             }
-            // SHORT_ANSWER and ESSAY need manual grading
+        }
 
-            await prisma.testAttemptResponse.create({
+        const submittedAt = new Date();
+        const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            for (const response of responses) {
+                await tx.testAttemptResponse.upsert({
+                    where: { attemptId_questionId: { attemptId: attempt.id, questionId: response.questionId } },
+                    update: { responseText: response.responseText ?? null, selectedOptionId: response.selectedOptionId ?? null },
+                    create: { attemptId: attempt.id, questionId: response.questionId, responseText: response.responseText ?? null, selectedOptionId: response.selectedOptionId ?? null },
+                });
+            }
+
+            const storedResponses = await tx.testAttemptResponse.findMany({ where: { attemptId: attempt.id } }) as StoredResponse[];
+            const storedByQuestion = new Map(storedResponses.map((response) => [response.questionId, response]));
+            const scoredResponses: ScoringResponse[] = [];
+            let needsManualGrading = false;
+
+            for (const question of questions) {
+                const stored = storedByQuestion.get(question.id);
+                const scoring = scoreAutomaticResponse(question, stored);
+                needsManualGrading ||= scoring.needsManualGrading;
+                const saved = await tx.testAttemptResponse.upsert({
+                    where: { attemptId_questionId: { attemptId: attempt.id, questionId: question.id } },
+                    update: { isCorrect: scoring.isCorrect, pointsAwarded: scoring.pointsAwarded },
+                    create: {
+                        attemptId: attempt.id,
+                        questionId: question.id,
+                        responseText: null,
+                        selectedOptionId: null,
+                        isCorrect: scoring.isCorrect,
+                        pointsAwarded: scoring.pointsAwarded,
+                    },
+                });
+                scoredResponses.push(saved);
+            }
+
+            const totals = calculateAttemptTotals(questions, scoredResponses);
+            const updatedAttempt = await tx.testAttempt.update({
+                where: { id: attempt.id },
                 data: {
-                    attemptId,
-                    questionId: response.questionId,
-                    responseText: response.responseText || null,
-                    selectedOptionId: response.selectedOptionId || null,
-                    isCorrect,
-                    pointsAwarded,
+                    isCompleted: true,
+                    submittedAt,
+                    score: needsManualGrading ? null : totals.percentage,
                 },
             });
-        }
-
-        // Check if all questions are auto-gradeable
-        const hasManualGrading = questions.some(
-            (q: any) => q.questionType === "SHORT_ANSWER" || q.questionType === "ESSAY"
-        );
-
-        const updated = await prisma.testAttempt.update({
-            where: { id: attemptId },
-            data: {
-                isCompleted: true,
-                submittedAt: new Date(),
-                score: hasManualGrading ? null : (totalPoints > 0 ? (totalScore / totalPoints) * 100 : 0),
-            },
+            return { attempt: updatedAttempt, ...totals, needsManualGrading };
         });
+
         await recordMeaningfulActivity({
-            userId, activityType: "TEST_COMPLETED", classroomId: id, relatedId: attemptId,
-            dedupeKey: `test:complete:${attemptId}`,
+            userId, activityType: "TEST_COMPLETED", classroomId, relatedId: attempt.id,
+            dedupeKey: `test:complete:${attempt.id}`,
         });
-
-        return NextResponse.json({
-            attempt: updated,
-            score: totalScore,
-            totalPoints,
-            needsManualGrading: hasManualGrading,
-        });
-    } catch (e) {
-        console.error("POST submit test", e);
+        return NextResponse.json(result);
+    } catch (error) {
+        console.error("POST submit test", error);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }

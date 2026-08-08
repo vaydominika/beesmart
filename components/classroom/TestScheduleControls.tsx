@@ -7,7 +7,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 
-type TestDetails = { title: string; opensAt?: string | null; closesAt?: string | null };
+type TestDetails = { title: string; opensAt?: string | null; closesAt?: string | null; maxAttempts: number };
 
 function toLocalInput(value?: string | null) {
     if (!value) return "";
@@ -20,6 +20,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
     const [title, setTitle] = useState("");
     const [opensAt, setOpensAt] = useState("");
     const [closesAt, setClosesAt] = useState("");
+    const [maxAttempts, setMaxAttempts] = useState("1");
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -30,17 +31,19 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
                 setTitle(test.title);
                 setOpensAt(toLocalInput(test.opensAt));
                 setClosesAt(toLocalInput(test.closesAt));
+                setMaxAttempts(String(test.maxAttempts ?? 1));
             });
     }, [classroomId, testId]);
 
     const save = async () => {
         if (!title.trim()) return toast.error("Title is required.");
         if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) return toast.error("Closing time must be after opening time.");
+        if (!Number.isSafeInteger(Number(maxAttempts)) || Number(maxAttempts) < 1) return toast.error("Attempts allowed must be a positive integer.");
         setSaving(true);
         try {
             const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}`, {
                 method: "PATCH", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ title, opensAt: opensAt || null, closesAt: closesAt || null }),
+                body: JSON.stringify({ title, opensAt: opensAt || null, closesAt: closesAt || null, maxAttempts: Number(maxAttempts) }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) return toast.error(data.error ?? "Could not update the test.");
@@ -64,8 +67,9 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
                 <CalendarClock className="h-4 w-4" />
                 <h3 className="text-sm font-bold uppercase text-(--theme-text)">Schedule & sync</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_190px_190px_auto] gap-2 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_190px_190px_auto] gap-2 items-end">
                 <div><label className="text-[10px] font-bold uppercase opacity-50">Title</label><Input value={title} onChange={(e) => setTitle(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
+                <div><label className="text-[10px] font-bold uppercase opacity-50">Attempts allowed</label><Input type="number" min="1" step="1" value={maxAttempts} onChange={(e) => setMaxAttempts(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
                 <div><label className="text-[10px] font-bold uppercase opacity-50">Opens</label><Input type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
                 <div><label className="text-[10px] font-bold uppercase opacity-50">Closes</label><Input type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
                 <div className="flex gap-2">

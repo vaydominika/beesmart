@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { canManageCourse, getLessonAccess } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string; lessonId: string }> };
 
@@ -8,28 +9,34 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const { courseId, lessonId } = await ctx.params;
+        const { courseId, moduleId, lessonId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({
-            where: { id: courseId },
-            select: { isPublic: true, createdById: true },
-        });
-
-        if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
-
-        const isCreator = course.createdById === userId;
-        const isEnrolled = await prisma.courseEnrollment.findUnique({
-            where: { userId_courseId: { userId, courseId } }
-        });
-
-        if (!isCreator && !isEnrolled && !course.isPublic) {
-            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const access = await getLessonAccess({ courseId, moduleId, lessonId, userId });
+        if (!access.allowed) {
+            if (access.reason === "COURSE_FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+            if (access.reason === "LESSON_LOCKED") return NextResponse.json({ error: "Lesson is locked", code: access.reason, blockingLessonIds: access.blockingLessonIds }, { status: 423 });
+            return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
         }
 
-        const lesson = await prisma.courseLesson.findUnique({
-            where: { id: lessonId },
-            include: { files: true }
-        });
+        const lesson = access.isCreator
+            ? await prisma.courseLesson.findFirst({
+                where: { id: lessonId, moduleId, module: { courseId } },
+                include: { files: true },
+            })
+            : await prisma.courseLesson.findFirst({
+                where: { id: lessonId, moduleId, module: { courseId } },
+                select: {
+                    id: true,
+                    moduleId: true,
+                    title: true,
+                    description: true,
+                    content: true,
+                    order: true,
+                    isLocked: true,
+                    updatedAt: true,
+                    files: { where: { isVisible: true } },
+                },
+            });
 
         if (!lesson) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
@@ -45,11 +52,13 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const { courseId, lessonId } = await ctx.params;
+        const { courseId, moduleId, lessonId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true } });
+        if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
         const data = await req.json();
         const { autoPublish, publishNow } = data;
@@ -119,11 +128,13 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        const { courseId, lessonId } = await ctx.params;
+        const { courseId, moduleId, lessonId } = await ctx.params;
 
-        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
+        const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true } });
+        if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
         await prisma.courseLesson.delete({ where: { id: lessonId } });
         return NextResponse.json({ success: true });

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Plus, Trash2, GripVertical, CheckCircle2, X, Sparkles, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import type { TestDraft } from "@/lib/classroom-post-drafts";
@@ -43,6 +44,14 @@ const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
     ESSAY: "Essay",
 };
 
+const DIFFICULTY_OPTIONS = [
+    { value: "Beginner", label: "Beginner" },
+    { value: "Intermediate", label: "Intermediate" },
+    { value: "Advanced", label: "Advanced" },
+] as const;
+
+type Difficulty = (typeof DIFFICULTY_OPTIONS)[number]["value"];
+
 type SourceCourse = { id: string; title: string; relationship?: string; classrooms?: Array<{ id: string }> };
 
 export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
@@ -52,13 +61,14 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
     const [testType, setTestType] = useState<"TEST" | "EXAM">("TEST");
     const [timeLimit, setTimeLimit] = useState("");
     const [passingScore, setPassingScore] = useState("");
+    const [maxAttempts, setMaxAttempts] = useState("1");
     const [opensAt, setOpensAt] = useState("");
     const [closesAt, setClosesAt] = useState("");
     const [courseId, setCourseId] = useState("");
     const [sourceMode, setSourceMode] = useState<"course" | "text">("course");
     const [sourceText, setSourceText] = useState("");
     const [sourceCourses, setSourceCourses] = useState<SourceCourse[]>([]);
-    const [difficulty, setDifficulty] = useState("Intermediate");
+    const [difficulty, setDifficulty] = useState<Difficulty>("Intermediate");
     const [questionCount, setQuestionCount] = useState(5);
     const [generating, setGenerating] = useState(false);
     const [questions, setQuestions] = useState<Question[]>([
@@ -254,6 +264,10 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             toast.error("Closing time must be after opening time.");
             return;
         }
+        if (!Number.isSafeInteger(Number(maxAttempts)) || Number(maxAttempts) < 1) {
+            toast.error("Attempts allowed must be a positive integer.");
+            return;
+        }
 
         // Validate questions
         for (let i = 0; i < questions.length; i++) {
@@ -272,6 +286,10 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     return;
                 }
             }
+            if (q.questionType === "SHORT_ANSWER" && !(q.correctAnswer ?? "").split("\n").some((answer) => answer.trim())) {
+                toast.error(`Question ${i + 1} needs at least one accepted answer.`);
+                return;
+            }
         }
 
         const payload: TestDraft = {
@@ -283,6 +301,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                 passingScore: passingScore || null,
                 opensAt: opensAt || null,
                 closesAt: closesAt || null,
+                maxAttempts: Number(maxAttempts),
                 questions: questions.map((q) => ({
                     questionText: q.questionText.trim(),
                     questionType: q.questionType,
@@ -298,6 +317,9 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                             : undefined,
                     correctAnswer:
                         q.questionType === "SHORT_ANSWER" ? q.correctAnswer?.trim() || null : null,
+                    acceptedAnswers: q.questionType === "SHORT_ANSWER"
+                        ? (q.correctAnswer ?? "").split("\n").map((answer) => answer.trim()).filter(Boolean)
+                        : undefined,
                 })),
             };
 
@@ -308,6 +330,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         setTestType("TEST");
         setTimeLimit("");
         setPassingScore("");
+        setMaxAttempts("1");
         setOpensAt("");
         setClosesAt("");
         setCourseId("");
@@ -357,31 +380,39 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Questions stay local to this post until you review, add, and publish them.</p>
                                     </div>
                                 </div>
-                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" className="mt-3 w-fit" />
+                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="mt-3 bg-white!" />
                                 {sourceMode === "course" ? (
-                                    <select aria-label="Source course" value={courseId} onChange={(event) => setCourseId(event.target.value)} className="mt-3 h-10 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-[var(--classroom-text)] focus:ring-2 focus:ring-[var(--classroom-focus-border)]">
-                                        <option value="">Choose source course</option>
-                                        {sourceCourses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
-                                    </select>
+                                    <WorkspaceSelect
+                                        ariaLabel="Source course"
+                                        value={courseId}
+                                        options={sourceCourses.map((course) => ({ value: course.id, label: course.title }))}
+                                        onValueChange={setCourseId}
+                                        placeholder="Choose source course"
+                                        className="mt-3 h-10 w-full rounded-xl border-0 bg-white!"
+                                    />
                                 ) : (
                                     <label className="mt-3 block">
                                         <span className="sr-only">Source text</span>
-                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-white px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-white! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
                                         <span className="mt-1 block text-right text-[10px] text-[var(--classroom-text-muted)]">{sourceText.length}/20,000</span>
                                     </label>
                                 )}
-                                <div className="mt-3 grid gap-3 sm:grid-cols-[150px_110px_auto] sm:justify-end">
-                                    <select aria-label="Difficulty" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="h-10 rounded-xl border-0 bg-white px-3 text-sm font-medium">
-                                        <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
-                                    </select>
-                                    <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 border-0 bg-white" />
-                                    <WorkspaceButton type="button" variant="secondary" onClick={generateTest} disabled={generating || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
+                                <div className="mt-3 grid items-end gap-3 sm:grid-cols-3">
+                                    <label>
+                                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Difficulty</span>
+                                        <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border-0 bg-white" />
+                                    </label>
+                                    <label>
+                                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Question count</span>
+                                        <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border-0 bg-white! shadow-none" />
+                                    </label>
+                                    <WorkspaceButton type="button" variant="secondary" className="h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
                                         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
                                     </WorkspaceButton>
                                 </div>
                             </div>
                             {/* Basic Info */}
-                            <div className="flex gap-3">
+                            <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="flex-1">
                                     <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Title *</label>
                                     <Input
@@ -391,15 +422,27 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         placeholder="e.g. Midterm Exam"
                                     />
                                 </div>
-                                <div className="w-28">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Attempts allowed</label>
+                                    <Input
+                                        type="number"
+                                        value={maxAttempts}
+                                        onChange={(e) => setMaxAttempts(e.target.value)}
+                                        className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
+                                        min="1"
+                                        step="1"
+                                    />
+                                </div>
+                                <div className="flex-1">
                                     <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Type</label>
                                     <WorkspaceTabs
                                         ariaLabel="Assessment type"
                                         value={testType}
                                         onValueChange={setTestType}
                                         items={[{ value: "TEST", label: "Test" }, { value: "EXAM", label: "Exam" }]}
-                                        size="compact"
                                         fill
+                                        className="h-10"
+                                        tabClassName="h-8"
                                     />
                                 </div>
                             </div>
@@ -523,24 +566,15 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                             </div>
 
                                             {/* Question Type Selector */}
-                                            <div className="flex flex-wrap gap-1">
-                                                {(Object.entries(QUESTION_TYPE_LABELS) as [QuestionType, string][]).map(
-                                                    ([key, label]) => (
-                                                        <button
-                                                            key={key}
-                                                            onClick={() => updateQuestion(qIndex, "questionType", key)}
-                                                            className={cn(
-                                                                "text-[10px] font-bold px-2 py-1 rounded-md transition-all",
-                                                                q.questionType === key
-                                                                    ? "bg-(--theme-card) text-(--theme-text)"
-                                                                    : "bg-(--theme-bg) text-(--theme-text) opacity-50 hover:opacity-80"
-                                                            )}
-                                                        >
-                                                            {label}
-                                                        </button>
-                                                    )
-                                                )}
-                                            </div>
+                                            <WorkspaceTabs
+                                                ariaLabel={`Question ${qIndex + 1} type`}
+                                                value={q.questionType}
+                                                onValueChange={(value) => updateQuestion(qIndex, "questionType", value)}
+                                                items={(Object.entries(QUESTION_TYPE_LABELS) as [QuestionType, string][]).map(([value, label]) => ({ value, label }))}
+                                                fill
+                                                className="h-10 bg-(--theme-bg)"
+                                                tabClassName="h-8 px-2 text-xs"
+                                            />
 
                                             {/* Question Text */}
                                             <textarea
@@ -572,7 +606,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                                 onChange={(e) =>
                                                                     updateOption(qIndex, oIndex, "optionText", e.target.value)
                                                                 }
-                                                                className="bg-(--theme-bg) rounded-lg text-sm font-bold border-0 focus-visible:ring-1 focus-visible:ring-(--theme-card) h-9 flex-1"
+                                                                className="h-10 flex-1 rounded-xl border-0 bg-(--theme-bg) text-sm font-bold focus-visible:ring-1 focus-visible:ring-(--theme-card)"
                                                                 placeholder={`Option ${oIndex + 1}`}
                                                                 disabled={q.questionType === "TRUE_FALSE"}
                                                             />
@@ -604,12 +638,13 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                     <label className="block text-[10px] font-bold text-(--theme-text) opacity-50 mb-1">
                                                         Correct Answer (for auto-grading)
                                                     </label>
-                                                    <Input
+                                                    <textarea
                                                         value={q.correctAnswer || ""}
                                                         onChange={(e) => updateQuestion(qIndex, "correctAnswer", e.target.value)}
-                                                        className="bg-(--theme-bg) rounded-lg text-sm font-bold border-0 focus-visible:ring-1 focus-visible:ring-(--theme-card) h-9 w-full"
-                                                        placeholder="Expected answer"
+                                                        className="min-h-20 w-full resize-y rounded-lg border-0 bg-(--theme-bg) p-3 text-sm font-bold outline-none focus:ring-1 focus:ring-(--theme-card)"
+                                                        placeholder="One accepted answer per line"
                                                     />
+                                                    <p className="mt-1 text-[10px] text-(--theme-text) opacity-50">Automatically graded after case, whitespace, and Unicode normalization.</p>
                                                 </div>
                                             )}
 
@@ -641,10 +676,10 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     </ScrollArea>
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
-                        <WorkspaceButton type="button" variant="secondary" onClick={onClose}>
+                        <WorkspaceButton type="button" variant="secondary" className="h-10 rounded-xl" onClick={onClose}>
                             Cancel
                         </WorkspaceButton>
-                        <WorkspaceButton type="button" variant="primary" onClick={handleSave}>
+                        <WorkspaceButton type="button" variant="primary" className="h-10 rounded-xl" onClick={handleSave}>
                             Add {testType === "EXAM" ? "exam" : "test"}
                         </WorkspaceButton>
                     </div>

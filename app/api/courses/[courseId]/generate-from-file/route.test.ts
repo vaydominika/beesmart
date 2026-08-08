@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { checkContentSafety } from "@/lib/ai/moderation";
 import { POST } from "./route";
+import { canManageCourse } from "@/lib/course-access";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("ai", () => ({ generateObject: vi.fn() }));
 vi.mock("@ai-sdk/deepseek", () => ({ deepseek: vi.fn(() => "model") }));
 vi.mock("@/lib/ai/moderation", () => ({ checkContentSafety: vi.fn(), flagContent: vi.fn() }));
+vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn() }));
 
 const context = { params: Promise.resolve({ courseId: "course-1" }) };
 
@@ -21,6 +23,7 @@ describe("POST /api/courses/[courseId]/generate-from-file", () => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUserId).mockResolvedValue("teacher-1");
     vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "teacher-1" } as never);
+    vi.mocked(canManageCourse).mockResolvedValue(true);
     vi.mocked(generateObject).mockResolvedValue({
       object: { modules: [{ title: "Cells", description: "Cell biology", lessons: [{ title: "Cell structure", description: "Organelles" }] }] },
     } as never);

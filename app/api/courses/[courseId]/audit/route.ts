@@ -3,6 +3,7 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { generateObject } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
+import { canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
 
         // Check ownership (only teachers can audit their own courses)
-        if (course.createdById !== userId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
         interface AuditLesson {
             id: string;

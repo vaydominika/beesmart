@@ -4,6 +4,7 @@ import { generateObject } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 import { checkContentSafety, flagContent } from "@/lib/ai/moderation";
+import { canManageCourse } from "@/lib/course-access";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -15,7 +16,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         // Verify ownership
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { createdById: true } });
-        if (!course || course.createdById !== userId) {
+        if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
+        if (!await canManageCourse(courseId, userId)) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
 

@@ -49,8 +49,9 @@ interface Post {
     assignment?: {
         id: string;
         title: string;
-        dueDate: string;
-        dueTime?: string | null;
+        deadlineAt: string;
+        deadlineTimeZone: string;
+        deadlineHasTime: boolean;
         isGraded: boolean;
         maxPoints?: number | null;
         _count: { submissions: number };
@@ -787,9 +788,9 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
-                                            {post.assignment.dueDate && (
-                                                <span className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.dueDate).color)}>
-                                                    {getDueDateBadge(post.assignment.dueDate).text}
+                                            {post.assignment.deadlineAt && (
+                                                <span title={`Deadline set in ${post.assignment.deadlineTimeZone}`} className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.deadlineAt).color)}>
+                                                    {getDueDateBadge(post.assignment.deadlineAt).text}
                                                 </span>
                                             )}
                                         </div>

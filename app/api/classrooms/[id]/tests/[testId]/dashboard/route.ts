@@ -3,7 +3,7 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type DashboardResponse = { pointsAwarded: number | null; question: { questionType: string } } & Record<string, unknown>;
-type DashboardAttempt = { id: string; userId: string; isCompleted: boolean; responses: DashboardResponse[] } & Record<string, unknown>;
+type DashboardAttempt = { id: string; userId: string; attemptNumber: number; isCompleted: boolean; responses: DashboardResponse[] } & Record<string, unknown>;
 type StudentMembership = { userId: string; user: { id: string; name: string } };
 
 export async function GET(_req: Request, ctx: RouteContext) {
@@ -36,9 +36,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
     const attemptedIds = new Set(dashboardTest.attempts.map((attempt) => attempt.userId));
     const { attempts, ...testDetails } = dashboardTest;
     const decorateAttempt = (attempt: DashboardAttempt) => {
-        const manualResponses = attempt.responses.filter((response) =>
-            response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY"
-        );
+        const manualResponses = attempt.responses.filter((response) => response.question.questionType === "ESSAY");
         const manualResponsesRemaining = manualResponses.filter((response) => response.pointsAwarded == null).length;
         return {
             ...attempt,
