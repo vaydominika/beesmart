@@ -25,12 +25,10 @@ interface SettingsContextType {
   setDefaultAutoBreak: (enabled: boolean) => void;
 
   // Notifications
-  emailNotifications: boolean;
   reminderNotifications: boolean;
-  courseAlerts: boolean;
-  setEmailNotifications: (enabled: boolean) => void;
+  classroomNotifications: boolean;
   setReminderNotifications: (enabled: boolean) => void;
-  setCourseAlerts: (enabled: boolean) => void;
+  setClassroomNotifications: (enabled: boolean) => void;
 
   // Privacy
   profileVisibility: "public" | "private";
@@ -41,6 +39,7 @@ interface SettingsContextType {
   // Persistence
   saveSettingsToServer: (overrides?: Record<string, unknown>) => Promise<boolean>;
   isSaving: boolean;
+  isHydrated: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -77,6 +76,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Load from localStorage as instant fallback
   const saved = loadLocalSettings();
@@ -85,10 +85,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [defaultActiveMinutes, setDefaultActiveMinutes] = useState(saved?.defaultActiveMinutes || 45);
   const [defaultBreakMinutes, setDefaultBreakMinutes] = useState(saved?.defaultBreakMinutes || 15);
   const [defaultAutoBreak, setDefaultAutoBreak] = useState(saved?.defaultAutoBreak ?? true);
-  const [emailNotifications, setEmailNotifications] = useState(saved?.emailNotifications ?? true);
   const [reminderNotifications, setReminderNotifications] = useState(saved?.reminderNotifications ?? true);
-  const [courseAlerts, setCourseAlerts] = useState(saved?.courseAlerts ?? true);
-  const [profileVisibility, setProfileVisibility] = useState<"public" | "private">(saved?.profileVisibility || "public");
+  const [classroomNotifications, setClassroomNotifications] = useState(saved?.classroomNotifications ?? saved?.courseAlerts ?? true);
+  const [profileVisibility, setProfileVisibility] = useState<"public" | "private">(saved?.profileVisibility || "private");
   const [activitySharing, setActivitySharing] = useState(saved?.activitySharing ?? true);
 
   // Load settings from the server on mount
@@ -102,13 +101,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDefaultActiveMinutes(data.defaultActiveMinutes ?? 45);
         setDefaultBreakMinutes(data.defaultBreakMinutes ?? 15);
         setDefaultAutoBreak(data.defaultAutoBreak ?? true);
-        setEmailNotifications(data.emailNotifications ?? true);
         setReminderNotifications(data.reminderNotifications ?? true);
-        setCourseAlerts(data.courseAlerts ?? true);
-        setProfileVisibility(data.profileVisibility || "public");
+        setClassroomNotifications(data.classroomNotifications ?? true);
+        setProfileVisibility(data.profileVisibility || "private");
         setActivitySharing(data.activitySharing ?? true);
       } catch {
         // Network error — keep localStorage values
+      } finally {
+        setIsHydrated(true);
       }
     }
     fetchSettings();
@@ -130,14 +130,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       defaultActiveMinutes,
       defaultBreakMinutes,
       defaultAutoBreak,
-      emailNotifications,
       reminderNotifications,
-      courseAlerts,
+      classroomNotifications,
       profileVisibility,
       activitySharing,
     });
   }, [theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak,
-    emailNotifications, reminderNotifications, courseAlerts, profileVisibility, activitySharing]);
+    reminderNotifications, classroomNotifications, profileVisibility, activitySharing]);
 
   // Save settings to the server (overrides let callers pass freshly-computed values that haven't hit state yet)
   const saveSettingsToServer = useCallback(async (overrides?: Record<string, unknown>): Promise<boolean> => {
@@ -148,9 +147,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         defaultActiveMinutes,
         defaultBreakMinutes,
         defaultAutoBreak,
-        emailNotifications,
         reminderNotifications,
-        courseAlerts,
+        classroomNotifications,
         profileVisibility,
         activitySharing,
         ...overrides,
@@ -167,7 +165,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setIsSaving(false);
     }
   }, [theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak,
-    emailNotifications, reminderNotifications, courseAlerts, profileVisibility, activitySharing]);
+    reminderNotifications, classroomNotifications, profileVisibility, activitySharing]);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -191,18 +189,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDefaultActiveMinutes,
         setDefaultBreakMinutes,
         setDefaultAutoBreak,
-        emailNotifications,
         reminderNotifications,
-        courseAlerts,
-        setEmailNotifications,
+        classroomNotifications,
         setReminderNotifications,
-        setCourseAlerts,
+        setClassroomNotifications,
         profileVisibility,
         activitySharing,
         setProfileVisibility,
         setActivitySharing,
         saveSettingsToServer,
         isSaving,
+        isHydrated,
       }}
     >
       {children}

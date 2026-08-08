@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { toast } from "@/components/ui/sonner";
 
 type Category = "GENERAL" | "CLASSROOM";
 type NotificationItem = {
@@ -18,6 +19,9 @@ type NotificationItem = {
     readAt?: string | null;
     classroomName?: string | null;
     actorName?: string | null;
+    actorId?: string | null;
+    relatedId?: string | null;
+    relatedType?: string | null;
     actionUrl?: string | null;
     createdAt: string;
 };
@@ -38,6 +42,7 @@ export function NotificationCenter() {
             const data = await res.json();
             setItems(data.notifications);
             setUnreadCount(data.unreadCount);
+            for (const reminder of data.triggeredReminders ?? []) toast.info(`Reminder: ${reminder.task}`);
         } finally {
             setLoading(false);
         }
@@ -50,7 +55,11 @@ export function NotificationCenter() {
     useEffect(() => {
         const refresh = () => loadNotifications();
         window.addEventListener("focus", refresh);
-        return () => window.removeEventListener("focus", refresh);
+        const interval = window.setInterval(refresh, 60_000);
+        return () => {
+            window.removeEventListener("focus", refresh);
+            window.clearInterval(interval);
+        };
     }, [loadNotifications]);
 
     const setRead = async (notification: NotificationItem, read = true) => {
@@ -84,6 +93,9 @@ export function NotificationCenter() {
         await setRead(notification, true);
         if (notification.actionUrl) {
             setOpen(false);
+            if (notification.relatedType === "event" && notification.relatedId) {
+                window.dispatchEvent(new CustomEvent("beesmart:open-event", { detail: notification.relatedId }));
+            }
             router.push(notification.actionUrl);
         }
     };
@@ -166,7 +178,7 @@ export function NotificationCenter() {
                                         </div>
                                         {notification.category === "CLASSROOM" && (
                                             <p className="text-[10px] font-bold uppercase text-(--theme-text) opacity-45 mt-0.5">
-                                                {notification.classroomName ?? "Classroom"} · {notification.actorName ?? "BeeSmart"}
+                                                {notification.classroomName ?? "Classroom"} · {notification.actorId ? <span role="link" tabIndex={0} onClick={(event) => { event.stopPropagation(); router.push(`/profile/${notification.actorId}`); }} onKeyDown={(event) => { if (event.key === "Enter") { event.stopPropagation(); router.push(`/profile/${notification.actorId}`); } }} className="hover:underline">{notification.actorName ?? "BeeSmart"}</span> : notification.actorName ?? "BeeSmart"}
                                             </p>
                                         )}
                                         <p className="text-[11px] text-(--theme-text) opacity-65 mt-1 line-clamp-2">{notification.body}</p>

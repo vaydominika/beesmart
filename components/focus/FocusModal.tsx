@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,18 +26,18 @@ export function FocusModal() {
     setBreakMinutes,
     setAutoBreak,
     startSession,
+    stats,
+    isStatsLoading,
+    statsError,
   } = useFocus();
 
-  const [localActiveMinutes, setLocalActiveMinutes] = useState(activeMinutes.toString());
-  const [localBreakMinutes, setLocalBreakMinutes] = useState(breakMinutes.toString());
-
   const handleStart = () => {
-    const active = parseInt(localActiveMinutes) || 45;
-    const breakMins = parseInt(localBreakMinutes) || 15;
+    const active = Math.min(120, Math.max(1, activeMinutes || 45));
+    const breakMins = Math.min(60, Math.max(1, breakMinutes || 15));
     
     setActiveMinutes(active);
     setBreakMinutes(breakMins);
-    startSession();
+    startSession({ activeMinutes: active, breakMinutes: breakMins, autoBreak });
   };
 
   return (
@@ -58,6 +57,18 @@ export function FocusModal() {
               <span className="text-(--theme-secondary)">BEE</span> PRODUCTIVE!
             </p>
 
+            <div aria-label="All-time focus statistics" className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl corner-squircle bg-(--theme-sidebar) px-3 py-2.5">
+                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wide text-(--theme-text)/65">Focus sessions</p>
+                <p className="mt-1 text-2xl md:text-3xl font-bold text-(--theme-text)">{isStatsLoading ? "–" : stats.focusCount}</p>
+              </div>
+              <div className="rounded-xl corner-squircle bg-(--theme-card) px-3 py-2.5">
+                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wide text-(--theme-text)/65">Breaks</p>
+                <p className="mt-1 text-2xl md:text-3xl font-bold text-(--theme-text)">{isStatsLoading ? "–" : stats.breakCount}</p>
+              </div>
+            </div>
+            {statsError && <p role="status" className="text-xs font-semibold text-red-700">{statsError}</p>}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-2">
@@ -65,8 +76,8 @@ export function FocusModal() {
                 </label>
                 <Input
                   type="number"
-                  value={localActiveMinutes}
-                  onChange={(e) => setLocalActiveMinutes(e.target.value)}
+                  value={activeMinutes || ""}
+                  onChange={(e) => setActiveMinutes(Number(e.target.value))}
                   className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-20 md:w-24 h-12 md:h-14"
                   min="1"
                   max="120"
@@ -79,8 +90,8 @@ export function FocusModal() {
                 </label>
                 <Input
                   type="number"
-                  value={localBreakMinutes}
-                  onChange={(e) => setLocalBreakMinutes(e.target.value)}
+                  value={breakMinutes || ""}
+                  onChange={(e) => setBreakMinutes(Number(e.target.value))}
                   className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-20 md:w-24 h-12 md:h-14"
                   min="1"
                   max="60"

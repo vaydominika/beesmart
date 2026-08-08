@@ -27,12 +27,10 @@ export function SettingsModal() {
     setDefaultActiveMinutes,
     setDefaultBreakMinutes,
     setDefaultAutoBreak,
-    emailNotifications,
     reminderNotifications,
-    courseAlerts,
-    setEmailNotifications,
+    classroomNotifications,
     setReminderNotifications,
-    setCourseAlerts,
+    setClassroomNotifications,
     saveSettingsToServer,
     isSaving,
   } = useSettings();
@@ -219,16 +217,6 @@ export function SettingsModal() {
                     <div className="space-y-2 pt-2">
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] md:text-sm font-bold text-(--theme-text) uppercase">
-                          EMAIL
-                        </label>
-                        <Switch
-                          checked={emailNotifications}
-                          onCheckedChange={setEmailNotifications}
-                          className="data-[state=checked]:bg-(--theme-sidebar) scale-75 md:scale-90"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] md:text-sm font-bold text-(--theme-text) uppercase">
                           REMINDERS
                         </label>
                         <Switch
@@ -239,11 +227,11 @@ export function SettingsModal() {
                       </div>
                       <div className="flex items-center justify-between">
                         <label className="text-[10px] md:text-sm font-bold text-(--theme-text) uppercase">
-                          COURSE ALERTS
+                          CLASSROOM ALERTS
                         </label>
                         <Switch
-                          checked={courseAlerts}
-                          onCheckedChange={setCourseAlerts}
+                          checked={classroomNotifications}
+                          onCheckedChange={setClassroomNotifications}
                           className="data-[state=checked]:bg-(--theme-sidebar) scale-75 md:scale-90"
                         />
                       </div>

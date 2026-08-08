@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { materializeDueReminderNotifications } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const triggeredReminders = await materializeDueReminderNotifications(userId);
 
     const requestedCategory = req.nextUrl.searchParams.get("category");
     const category = requestedCategory === "CLASSROOM" || requestedCategory === "GENERAL"
@@ -16,7 +19,7 @@ export async function GET(req: NextRequest) {
     });
     const unreadCount = await prisma.notification.count({ where: { userId, readAt: null } });
 
-    return NextResponse.json({ notifications, unreadCount });
+    return NextResponse.json({ notifications, unreadCount, triggeredReminders });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -43,4 +46,3 @@ export async function PATCH(req: NextRequest) {
     const updated = await prisma.notification.update({ where: { id: notification.id }, data: { readAt } });
     return NextResponse.json(updated);
 }
-

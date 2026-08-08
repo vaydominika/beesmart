@@ -9,10 +9,11 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Pen01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
-import { Trash2, Clock, LockKeyhole } from "lucide-react";
+import { BellRing, Trash2, Clock, LockKeyhole } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
+import { useSettings } from "@/components/settings/SettingsProvider";
 
 interface EventData {
     id: string;
@@ -26,6 +27,7 @@ interface EventData {
     endDate?: string;
     isProtected?: boolean;
     canEdit?: boolean;
+    reminder?: { notifyAt: string; notificationProcessedAt: string | null } | null;
 }
 
 interface EventDetailModalProps {
@@ -36,11 +38,18 @@ interface EventDetailModalProps {
 }
 
 export function EventDetailModal({ open, onClose, event, onEventUpdated }: EventDetailModalProps) {
+    const { reminderNotifications } = useSettings();
     const [displayEvent, setDisplayEvent] = useState(event);
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const initialReminder = event.reminder?.notifyAt ? new Date(event.reminder.notifyAt) : null;
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const [reminderEnabled, setReminderEnabled] = useState(Boolean(initialReminder));
+    const [reminderDate, setReminderDate] = useState(initialReminder ? `${initialReminder.getFullYear()}-${pad(initialReminder.getMonth() + 1)}-${pad(initialReminder.getDate())}` : "");
+    const [reminderTime, setReminderTime] = useState(initialReminder ? `${pad(initialReminder.getHours())}:${pad(initialReminder.getMinutes())}` : "");
+    const [savingReminder, setSavingReminder] = useState(false);
 
     // Edit state
     const [title, setTitle] = useState(event.title);
@@ -143,6 +152,45 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         }
     };
 
+    const handleSaveReminder = async () => {
+        setSavingReminder(true);
+        try {
+            if (!reminderEnabled) {
+                const response = await fetch(`/api/user/events/${displayEvent.id}/reminder`, { method: "DELETE" });
+                if (!response.ok) throw new Error("Could not remove event reminder");
+                setDisplayEvent((current) => ({ ...current, reminder: null }));
+                toast.success("Event reminder removed.");
+                onEventUpdated();
+                return;
+            }
+            if (!reminderNotifications) throw new Error("Turn on reminder notifications in Settings first");
+            if (!reminderDate || !reminderTime) throw new Error("Choose a reminder date and time");
+            const notifyAt = new Date(`${reminderDate}T${reminderTime}:00`);
+            const eventDay = displayEvent.startDate.slice(0, 10);
+            const eventBoundary = new Date(`${eventDay}T${displayEvent.isAllDay ? "23:59" : displayEvent.startTime || "23:59"}:00`);
+            if (notifyAt.getTime() <= Date.now()) throw new Error("Reminder time must be in the future");
+            if (notifyAt > eventBoundary) throw new Error("Reminder time cannot be after the event starts");
+            const response = await fetch(`/api/user/events/${displayEvent.id}/reminder`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    notifyAt: notifyAt.toISOString(),
+                    eventStartsAt: eventBoundary.toISOString(),
+                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+                }),
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || "Could not save event reminder");
+            setDisplayEvent((current) => ({ ...current, reminder: data.reminder }));
+            toast.success(`Event reminder set for ${notifyAt.toLocaleString()}.`);
+            onEventUpdated();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not save event reminder.");
+        } finally {
+            setSavingReminder(false);
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="p-0 max-w-lg border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none [&>button]:hidden">
@@ -239,8 +287,8 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                                 onClick={(e) => {
                                                     if ("showPicker" in HTMLInputElement.prototype) {
                                                         try {
-                                                            (e.currentTarget as any).showPicker();
-                                                        } catch (err) {
+                                                            e.currentTarget.showPicker();
+                                                        } catch {
                                                             // ignore
                                                         }
                                                     }
@@ -263,7 +311,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                                     if ('showPicker' in HTMLInputElement.prototype) {
                                                         try {
                                                             e.currentTarget.showPicker();
-                                                        } catch (err) {
+                                                        } catch {
                                                             // ignore
                                                         }
                                                     }
@@ -340,6 +388,17 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                                     {displayEvent.canEdit === false ? "Managed by your teacher" : "Synchronized with Classroom"}
                                 </div>
                             )}
+                            <div className="mt-4 border-t border-(--theme-text)/10 pt-4">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex min-w-0 items-start gap-2.5">
+                                        <div className="rounded-xl bg-(--theme-sidebar) p-2"><BellRing className="h-4 w-4 text-(--theme-text)" /></div>
+                                        <div><p className="text-xs font-bold uppercase text-(--theme-text)">Event reminder</p><p className="mt-0.5 text-[11px] leading-4 text-(--theme-text)/60">{reminderNotifications ? "Get an in-app notification before this event." : "Reminder notifications are off in Settings."}</p></div>
+                                    </div>
+                                    <Switch checked={reminderEnabled} disabled={!reminderNotifications && !reminderEnabled} onCheckedChange={setReminderEnabled} aria-label="Event reminder" />
+                                </div>
+                                {reminderEnabled && <div className="mt-3 grid grid-cols-2 gap-2"><Input type="date" aria-label="Reminder date" value={reminderDate} onChange={(event) => setReminderDate(event.target.value)} className="h-10 rounded-xl bg-(--theme-sidebar)" /><Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="h-10 rounded-xl bg-(--theme-sidebar)" /></div>}
+                                <WorkspaceButton type="button" variant={reminderEnabled ? "primary" : "secondary"} onClick={handleSaveReminder} disabled={savingReminder || (reminderEnabled && !reminderNotifications) || (!reminderEnabled && !displayEvent.reminder)} className="mt-3 w-full">{savingReminder ? "Saving…" : reminderEnabled ? displayEvent.reminder ? "Update reminder" : "Set reminder" : displayEvent.reminder ? "Remove reminder" : "No reminder"}</WorkspaceButton>
+                            </div>
                         </div>
                     )}
                 </FancyCard>

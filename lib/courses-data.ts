@@ -1,7 +1,6 @@
 import { prisma, getCurrentUserId } from "@/lib/db";
 import type {
   CourseCard,
-  ReminderItem,
   CurrentUser,
   DashboardData,
 } from "@/lib/types";
@@ -232,21 +231,6 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
   });
 }
 
-export async function getRemindersForUser(
-  userId: string
-): Promise<ReminderItem[]> {
-  const list = (await prisma.reminder.findMany({
-    where: { userId },
-    orderBy: [{ date: "asc" }, { time: "asc" }],
-  })) as { id: string; task: string; date: Date; time: string | null }[];
-  return list.map((r) => ({
-    id: r.id,
-    task: r.task,
-    date: r.date.toISOString().slice(0, 10),
-    time: r.time,
-  }));
-}
-
 export async function getStreakForUser(userId: string): Promise<number> {
   const row = await prisma.streak.findUnique({
     where: { userId },
@@ -288,7 +272,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     popularCourses,
     discoverCourses,
     myCourses,
-    reminders,
     streak,
     user,
   ] = await Promise.all([
@@ -296,7 +279,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     getPopularCourses(),
     uid ? getDiscoverCoursesForUser(uid) : Promise.resolve([]),
     uid ? getMyCoursesForUser(uid) : Promise.resolve([]),
-    uid ? getRemindersForUser(uid) : Promise.resolve([]),
     uid ? getStreakForUser(uid) : Promise.resolve(0),
     uid ? getCurrentUserById(uid) : Promise.resolve(null),
   ]);
@@ -331,7 +313,6 @@ export async function getDashboardData(): Promise<DashboardData> {
     discoverCourses,
     myCourses: filteredMy,
     finishedCourses,
-    reminders,
     streak,
     user,
   };

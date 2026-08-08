@@ -608,7 +608,6 @@ model AssignedWork {
   classroom   Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   course      Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
   test        Test?           @relation(fields: [testId], references: [id], onDelete: SetNull)
-  reminders   Reminder[]
   grades      Grade[]
   submissions Submission[]
   posts       ClassroomPost[]
@@ -647,26 +646,30 @@ model Schedule {
 }
 
 model Reminder {
-  id             String   @id @default(cuid())
-  userId         String
-  task           String
-  date           DateTime
-  time           String?
-  completed      Boolean  @default(false)
-  eventId        String?
-  assignedWorkId String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                      String    @id @default(cuid())
+  userId                  String
+  task                    String
+  date                    DateTime
+  time                    String?
+  timeZone                String?
+  dueAt                   DateTime?
+  notifyAt                DateTime?
+  notificationProcessedAt DateTime?
+  completed               Boolean   @default(false)
+  eventId                 String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   // Relationships
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event        Event?        @relation(fields: [eventId], references: [id], onDelete: SetNull)
-  assignedWork AssignedWork? @relation(fields: [assignedWorkId], references: [id], onDelete: SetNull)
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@unique([userId, eventId])
   @@index([eventId])
-  @@index([assignedWorkId])
   @@index([date])
+  @@index([dueAt])
+  @@index([notifyAt])
 }
 
 model Notification {
@@ -791,13 +794,14 @@ model Streak {
 }
 
 model FocusSession {
-  id        String           @id @default(cuid())
-  userId    String
-  duration  Int
-  type      FocusSessionType
-  startedAt DateTime
-  endedAt   DateTime
-  createdAt DateTime         @default(now())
+  id              String           @id @default(cuid())
+  userId          String
+  completionId    String?          @unique
+  durationSeconds Int
+  type            FocusSessionType
+  startedAt       DateTime
+  endedAt         DateTime
+  createdAt       DateTime         @default(now())
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -939,10 +943,9 @@ model UserSettings {
   defaultActiveMinutes  Int               @default(45)
   defaultBreakMinutes   Int               @default(15)
   defaultAutoBreak      Boolean           @default(true)
-  emailNotifications    Boolean           @default(true)
   reminderNotifications Boolean           @default(true)
-  courseAlerts          Boolean           @default(true)
-  profileVisibility     ProfileVisibility @default(PUBLIC)
+  classroomNotifications Boolean          @default(true)
+  profileVisibility     ProfileVisibility @default(PRIVATE)
   activitySharing       Boolean           @default(true)
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt

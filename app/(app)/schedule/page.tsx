@@ -47,6 +47,24 @@ function normalizeEvent(event: Partial<ScheduleEvent> & Pick<ScheduleEvent, "id"
   } as ScheduleEvent;
 }
 
+async function syncEventReminder(event: ScheduleEvent, reminder: ScheduleEventInput["reminder"]): Promise<ScheduleEvent> {
+  if (!reminder) {
+    if (!event.reminder) return event;
+    const response = await fetch(`/api/user/events/${event.id}/reminder`, { method: "DELETE" });
+    if (!response.ok) throw new Error("the reminder could not be removed");
+    return { ...event, reminder: null };
+  }
+
+  const response = await fetch(`/api/user/events/${event.id}/reminder`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(reminder),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "the reminder could not be saved");
+  return { ...event, reminder: data.reminder };
+}
+
 function viewTitle(view: ScheduleView, date: Date) {
   if (view === "month") return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   if (view === "agenda") return `Next 30 days · ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
@@ -63,6 +81,7 @@ export default function SchedulePage() {
   const [view, setView] = useState<ScheduleView>("agenda");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const [loadedRangeKey, setLoadedRangeKey] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<ScheduleEvent | null>(null);
   const [editor, setEditor] = useState<ScheduleEditorState | null>(null);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
@@ -75,6 +94,7 @@ export default function SchedulePage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ScheduleEvent | null>(null);
   const filterMenuRef = useRef<HTMLDivElement>(null);
+  const fetchRequestRef = useRef(0);
 
   useEffect(() => {
     const key = isMobile ? "schedule-view-mobile" : "schedule-view-desktop";
@@ -105,8 +125,10 @@ export default function SchedulePage() {
   const range = rangeForView(view, selectedDate);
   const rangeStart = dateKey(range.start);
   const rangeEnd = dateKey(range.end);
+  const rangeKey = `${view}:${rangeStart}:${rangeEnd}`;
 
   const fetchEvents = useCallback(async () => {
+    const requestId = ++fetchRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -116,13 +138,16 @@ export default function SchedulePage() {
       });
       if (!response.ok) throw new Error("Could not load this date range.");
       const data = await response.json();
+      if (requestId !== fetchRequestRef.current) return;
       setEvents(data.map(normalizeEvent));
+      setLoadedRangeKey(rangeKey);
     } catch (fetchError) {
+      if (requestId !== fetchRequestRef.current) return;
       setError(fetchError instanceof Error ? fetchError.message : "Could not load your schedule.");
     } finally {
-      setLoading(false);
+      if (requestId === fetchRequestRef.current) setLoading(false);
     }
-  }, [rangeStart, rangeEnd]);
+  }, [rangeStart, rangeEnd, rangeKey]);
 
   useEffect(() => {
     void fetchEvents();
@@ -132,11 +157,12 @@ export default function SchedulePage() {
 
   const filteredEvents = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return events.filter((event) => {
+    const rangeEvents = loadedRangeKey === rangeKey ? events : [];
+    return rangeEvents.filter((event) => {
       if (!sources.has(event.source)) return false;
       return !query || event.title.toLowerCase().includes(query) || event.description?.toLowerCase().includes(query) || event.classroomName?.toLowerCase().includes(query);
     });
-  }, [events, search, sources]);
+  }, [events, loadedRangeKey, rangeKey, search, sources]);
 
   const changeView = (nextView: ScheduleView) => {
     setView(nextView);
@@ -243,11 +269,19 @@ export default function SchedulePage() {
           endTime: input.endTime,
           isAllDay: input.isAllDay,
           color: input.color,
-        }, "Event updated.");
+        });
         if (updated) {
-          setSelectedEvent(updated);
-          setSelectedDate(parseDateKey(input.date));
-          setEditor(null);
+          try {
+            const eventWithReminder = await syncEventReminder(updated, input.reminder);
+            setEvents((current) => current.map((event) => event.id === eventWithReminder.id ? eventWithReminder : event));
+            setSelectedEvent(eventWithReminder);
+            setSelectedDate(parseDateKey(input.date));
+            setEditor(null);
+            toast.success(input.reminder ? `Event updated. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString()}.` : selectedEvent.reminder ? "Event updated. Reminder removed." : "Event updated.");
+            triggerUpdate();
+          } catch (reminderError) {
+            toast.error(`Event updated, but ${reminderError instanceof Error ? reminderError.message : "the reminder could not be saved"}.`);
+          }
         }
       } else {
         const response = await fetch("/api/user/events", {
@@ -265,12 +299,23 @@ export default function SchedulePage() {
           }),
         });
         if (!response.ok) throw new Error();
-        const created = normalizeEvent(await response.json());
+        let created = normalizeEvent(await response.json());
         setEvents((current) => [...current, created]);
+        let reminderError: string | null = null;
+        if (input.reminder) {
+          try {
+            created = await syncEventReminder(created, input.reminder);
+            setEvents((current) => current.map((event) => event.id === created.id ? created : event));
+          } catch (error) {
+            reminderError = error instanceof Error ? error.message : "the reminder could not be saved";
+          }
+        }
         setSelectedEvent(created);
         setSelectedDate(parseDateKey(input.date));
         setEditor(null);
-        toast.success("Event added.");
+        if (reminderError) toast.error(`Event added, but ${reminderError}.`);
+        else if (input.reminder) toast.success(`Event added. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString()}.`);
+        else toast.success("Event added.");
         triggerUpdate();
       }
     } catch {

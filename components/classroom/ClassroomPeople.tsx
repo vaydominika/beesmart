@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
     Dialog,
     DialogClose,
@@ -183,7 +184,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                     </div>
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate text-sm font-semibold text-(--classroom-text)">{member.user.name}</span>
+                            <Link href={`/profile/${member.user.id}`} className="truncate text-sm font-semibold text-(--classroom-text) hover:underline">{member.user.name}</Link>
                             <span className={cn(
                                 "rounded-full px-2 py-0.5 text-[10px] font-semibold",
                                 member.role === "TEACHER"

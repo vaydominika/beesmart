@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, BookOpen, CalendarDays, CalendarPlus, Clock3, LockKeyhole, Pencil, School, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, BellRing, BookOpen, CalendarDays, CalendarPlus, Clock3, LockKeyhole, Pencil, School, Trash2, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -14,6 +14,7 @@ import {
   formatLongDate,
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/components/settings/SettingsProvider";
 
 export interface ScheduleEditorState {
   mode: "create" | "edit";
@@ -66,8 +67,11 @@ function ScheduleContextPanelContent({
   onSave,
   onDelete,
 }: ScheduleContextPanelProps) {
+  const { reminderNotifications } = useSettings();
   const dayEvents = eventsForDate(events, selectedDate);
   const editingEvent = editor?.mode === "edit" ? selectedEvent : null;
+  const initialReminder = editingEvent?.reminder?.notifyAt ? new Date(editingEvent.reminder.notifyAt) : null;
+  const pad = (value: number) => String(value).padStart(2, "0");
   const [title, setTitle] = useState(editingEvent?.title || "");
   const [description, setDescription] = useState(editingEvent?.description || "");
   const [eventDate, setEventDate] = useState(editingEvent ? dateKey(editingEvent.startDate) : editor ? dateKey(editor.date) : dateKey(selectedDate));
@@ -75,6 +79,9 @@ function ScheduleContextPanelContent({
   const [endTime, setEndTime] = useState(editingEvent?.endTime || editor?.endTime || "");
   const [isAllDay, setIsAllDay] = useState(editingEvent?.isAllDay || false);
   const [color, setColor] = useState(editingEvent?.color || COLORS[0]);
+  const [reminderEnabled, setReminderEnabled] = useState(Boolean(initialReminder));
+  const [reminderDate, setReminderDate] = useState(initialReminder ? `${initialReminder.getFullYear()}-${pad(initialReminder.getMonth() + 1)}-${pad(initialReminder.getDate())}` : "");
+  const [reminderTime, setReminderTime] = useState(initialReminder ? `${pad(initialReminder.getHours())}:${pad(initialReminder.getMinutes())}` : "");
   const [validation, setValidation] = useState<string | null>(null);
 
   if (editor) {
@@ -102,6 +109,32 @@ function ScheduleContextPanelContent({
                 setValidation("End time must be later than start time.");
                 return;
               }
+              let reminder = null;
+              if (reminderEnabled) {
+                if (!reminderNotifications) {
+                  setValidation("Turn on reminder notifications in Settings first.");
+                  return;
+                }
+                if (!reminderDate || !reminderTime) {
+                  setValidation("Choose a reminder date and time.");
+                  return;
+                }
+                const notifyAt = new Date(`${reminderDate}T${reminderTime}:00`);
+                const eventStartsAt = new Date(`${eventDate}T${isAllDay ? "23:59" : startTime || "23:59"}:00`);
+                if (Number.isNaN(notifyAt.getTime()) || notifyAt.getTime() <= Date.now()) {
+                  setValidation("Reminder time must be in the future.");
+                  return;
+                }
+                if (Number.isNaN(eventStartsAt.getTime()) || notifyAt > eventStartsAt) {
+                  setValidation("Reminder time cannot be after the event starts.");
+                  return;
+                }
+                reminder = {
+                  notifyAt: notifyAt.toISOString(),
+                  eventStartsAt: eventStartsAt.toISOString(),
+                  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+                };
+              }
               setValidation(null);
               onSave({
                 title: title.trim(),
@@ -111,6 +144,7 @@ function ScheduleContextPanelContent({
                 endTime: isAllDay ? null : endTime || null,
                 isAllDay,
                 color,
+                reminder,
               });
             }}
           >
@@ -145,6 +179,30 @@ function ScheduleContextPanelContent({
                 </label>
               </div>
             )}
+            <div className="rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-[var(--schedule-text-muted)]" />
+                  <div>
+                    <span className="block text-sm font-medium text-[var(--schedule-text)]">Event reminder</span>
+                    <span className="text-[11px] leading-4 text-[var(--schedule-text-muted)]">{reminderNotifications ? "Get an in-app notification before this event." : "Reminder notifications are off in Settings."}</span>
+                  </div>
+                </div>
+                <Switch checked={reminderEnabled} disabled={!reminderNotifications && !reminderEnabled} onCheckedChange={setReminderEnabled} aria-label="Event reminder" className="data-[state=checked]:bg-[var(--schedule-focus-border)] data-[state=unchecked]:bg-[var(--schedule-line-strong)]" />
+              </div>
+              {reminderEnabled && (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label>
+                    <span className="sr-only">Reminder date</span>
+                    <Input type="date" aria-label="Reminder date" value={reminderDate} max={eventDate} onChange={(event) => setReminderDate(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-white text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+                  </label>
+                  <label>
+                    <span className="sr-only">Reminder time</span>
+                    <Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-white text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+                  </label>
+                </div>
+              )}
+            </div>
             <fieldset>
               <legend className="mb-1.5 text-xs font-semibold text-[var(--schedule-text-muted)]">Color</legend>
               <div className="flex flex-wrap gap-2">

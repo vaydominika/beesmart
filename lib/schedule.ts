@@ -19,6 +19,18 @@ export interface ScheduleEvent {
   testId?: string | null;
   isProtected?: boolean;
   canEdit?: boolean;
+  reminder?: ScheduleEventReminder | null;
+}
+
+export interface ScheduleEventReminder {
+  notifyAt: string;
+  notificationProcessedAt: string | null;
+}
+
+export interface ScheduleEventReminderInput {
+  notifyAt: string;
+  eventStartsAt: string;
+  timeZone: string;
 }
 
 export interface ScheduleEventInput {
@@ -29,6 +41,7 @@ export interface ScheduleEventInput {
   endTime: string | null;
   isAllDay: boolean;
   color: string;
+  reminder: ScheduleEventReminderInput | null;
 }
 
 export interface ScheduleRange {

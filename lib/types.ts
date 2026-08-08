@@ -7,13 +7,6 @@ export type CourseCard = {
   averageRating: number | null;
 };
 
-export type ReminderItem = {
-  id: string;
-  task: string;
-  date: string;
-  time: string | null;
-};
-
 export type CurrentUser = {
   id: string;
   name: string;
@@ -28,7 +21,6 @@ export type DashboardData = {
   discoverCourses: CourseCard[];
   myCourses: CourseCard[];
   finishedCourses: CourseCard[];
-  reminders: ReminderItem[];
   streak: number;
   user: CurrentUser | null;
 };

@@ -11,6 +11,7 @@ const accessibleEvents = (userId: string) => ({
 
 const eventAccessInclude = (userId: string) => ({
     classroom: { select: { id: true, name: true, members: { where: { userId }, select: { role: true } } } },
+    reminders: { where: { userId }, select: { notifyAt: true, notificationProcessedAt: true } },
 });
 
 type EventAccessRecord = {
@@ -21,16 +22,23 @@ type EventAccessRecord = {
     startTime?: string | null;
     isAllDay: boolean;
     classroom?: { id: string; name: string; members: Array<{ role: string }> } | null;
+    reminders?: Array<{ notifyAt: Date | null; notificationProcessedAt: Date | null }>;
 } & Record<string, unknown>;
 
 function serializeEvent(event: EventAccessRecord, userId: string) {
     const classroomRole = event.classroom?.members?.[0]?.role;
+    const { reminders, ...eventFields } = event;
+    const reminder = reminders?.[0];
     return {
-        ...event,
+        ...eventFields,
         source: event.classroomId ? "classroom" : event.courseId ? "course" : "personal",
         canEdit: event.userId === userId || Boolean(classroomRole && classroomRole !== "STUDENT"),
         classroomName: event.classroom?.name ?? null,
         classroom: event.classroom ? { id: event.classroom.id, name: event.classroom.name } : null,
+        reminder: reminder?.notifyAt ? {
+            notifyAt: reminder.notifyAt.toISOString(),
+            notificationProcessedAt: reminder.notificationProcessedAt?.toISOString() ?? null,
+        } : null,
     };
 }
 
@@ -57,6 +65,16 @@ function dateWithTime(dateValue: string | Date, time: string | null | undefined)
     return date;
 }
 
+async function syncEventReminders(event: { id: string; title: string; startDate: Date; startTime: string | null; isAllDay: boolean }) {
+    const boundary = dateWithTime(event.startDate, event.isAllDay ? null : event.startTime);
+    if (event.isAllDay) boundary.setHours(23, 59, 0, 0);
+    await prisma.reminder.deleteMany({ where: { eventId: event.id, notifyAt: { gt: boundary } } });
+    await prisma.reminder.updateMany({
+        where: { eventId: event.id },
+        data: { task: event.title, date: event.startDate, time: event.startTime, dueAt: boundary },
+    });
+}
+
 export async function GET(req: NextRequest) {
     const userId = await getCurrentUserId();
     if (!userId) {
@@ -66,8 +84,18 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const month = searchParams.get("month"); // YYYY-MM
     const upcoming = searchParams.get("upcoming"); // number
+    const id = searchParams.get("id");
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+
+    if (id) {
+        const event = await prisma.event.findFirst({
+            where: { id, ...accessibleEvents(userId) },
+            include: eventAccessInclude(userId),
+        });
+        if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+        return NextResponse.json(serializeEvent(event as EventAccessRecord, userId));
+    }
 
     if (from || to) {
         const start = parseDateParam(from);
@@ -329,7 +357,8 @@ export async function PATCH(req: NextRequest) {
             relatedType: "test",
             actionUrl: `/classroom/${event.classroomId}/tests/${event.testId}`,
         });
-        return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom }, userId));
+        await syncEventReminders(updated);
+        return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom, reminders: event.reminders }, userId));
     }
 
     const updated = await prisma.event.update({
@@ -337,7 +366,9 @@ export async function PATCH(req: NextRequest) {
         data,
     });
 
-    return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom }, userId));
+    await syncEventReminders(updated);
+
+    return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom, reminders: event.reminders }, userId));
 }
 
 export async function PUT(req: NextRequest) {

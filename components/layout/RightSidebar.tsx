@@ -31,6 +31,7 @@ interface EventData {
   color?: string | null;
   isProtected?: boolean;
   canEdit?: boolean;
+  reminder?: { notifyAt: string; notificationProcessedAt: string | null } | null;
 }
 
 const BANNER_HEIGHT = 80;
@@ -74,10 +75,9 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     }
   }, [currentMonth]);
 
-  // Fetch next 2 upcoming events (for reminders)
   const fetchUpcomingEvents = useCallback(async () => {
     try {
-      const res = await fetch(`/api/user/events?upcoming=2&ts=${Date.now()}`, {
+      const res = await fetch(`/api/user/events?upcoming=3&ts=${Date.now()}`, {
         cache: "no-store",
         headers: { "Pragma": "no-cache" }
       });
@@ -90,12 +90,29 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   }, []);
 
   useEffect(() => {
-    fetchMonthEvents();
+    const timeout = window.setTimeout(fetchMonthEvents, 0);
+    return () => window.clearTimeout(timeout);
   }, [fetchMonthEvents]);
 
   useEffect(() => {
-    fetchUpcomingEvents();
+    const timeout = window.setTimeout(fetchUpcomingEvents, 0);
+    return () => window.clearTimeout(timeout);
   }, [fetchUpcomingEvents]);
+
+  useEffect(() => {
+    const openEvent = async (eventId: string) => {
+      const response = await fetch(`/api/user/events?id=${encodeURIComponent(eventId)}`, { cache: "no-store" });
+      if (response.ok) setDetailEvent(await response.json());
+    };
+    const initialId = new URLSearchParams(window.location.search).get("event");
+    const timeout = initialId ? window.setTimeout(() => void openEvent(initialId), 0) : null;
+    const handleOpenEvent = (event: Event) => void openEvent((event as CustomEvent<string>).detail);
+    window.addEventListener("beesmart:open-event", handleOpenEvent);
+    return () => {
+      if (timeout) window.clearTimeout(timeout);
+      window.removeEventListener("beesmart:open-event", handleOpenEvent);
+    };
+  }, []);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -120,7 +137,6 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     fetchUpcomingEvents();
   };
 
-  // Format upcoming event date for display: "2026. December 12. Friday"
   const formatEventDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const year = d.getFullYear();
@@ -198,9 +214,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           </div>
 
           <div>
-            <h3 className="text-[32px] md:text-xl font-semibold uppercase tracking-wide text-(--theme-text) mb-2 md:mb-0">
-              REMINDERS
-            </h3>
+            <h3 className="mb-2 text-[32px] font-semibold uppercase tracking-wide text-(--theme-text) md:mb-0 md:text-xl">REMINDERS</h3>
             <div>
               {upcomingEvents.length > 0 ? (
                 upcomingEvents.map((event) => (
@@ -212,16 +226,12 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                     <ReminderItem
                       task={event.title}
                       date={formatEventDate(event.startDate)}
-                      time={
-                        event.isAllDay
-                          ? "All day"
-                          : `${event.startTime || ""}${event.endTime ? ` - ${event.endTime}` : ""}`
-                      }
+                      time={event.isAllDay ? "All day" : `${event.startTime || ""}${event.endTime ? ` - ${event.endTime}` : ""}`}
                     />
                   </button>
                 ))
               ) : (
-                <p className="text-sm text-(--theme-text) py-2">No upcoming events</p>
+                <p className="py-2 text-sm text-(--theme-text)/65">No upcoming events</p>
               )}
             </div>
           </div>
@@ -235,14 +245,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         onEventsChanged={handleEventsChanged}
       />
 
-      {detailEvent && (
-        <EventDetailModal
-          open={!!detailEvent}
-          onClose={() => setDetailEvent(null)}
-          event={detailEvent}
-          onEventUpdated={handleEventsChanged}
-        />
-      )}
+      {detailEvent && <EventDetailModal key={detailEvent.id} open onClose={() => setDetailEvent(null)} event={detailEvent} onEventUpdated={handleEventsChanged} />}
     </>
   );
 }

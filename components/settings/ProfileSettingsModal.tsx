@@ -9,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
-import { UserIcon, Upload } from "lucide-react";
+import { ExternalLink, UserIcon, Upload } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FancyButton } from "../ui/fancybutton";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
@@ -24,6 +25,7 @@ import Image from "next/image";
 import { toast } from "@/components/ui/sonner";
 
 export function ProfileSettingsModal() {
+  const router = useRouter();
   const {
     isProfileModalOpen,
     closeProfileModal,
@@ -361,6 +363,7 @@ export function ProfileSettingsModal() {
                         <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                           PROFILE VISIBILITY
                         </label>
+                        <p className="mb-2 text-xs text-(--theme-text)/70">Public profiles are visible to signed-in BeeSmart users.</p>
                         <div className="flex gap-2">
                           <button
                             type="button"
@@ -480,6 +483,8 @@ export function ProfileSettingsModal() {
               {error ?? uploadError}
             </p>
           )}
+
+          {user?.id && <button type="button" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="mb-2 inline-flex w-fit items-center gap-1.5 text-xs font-bold uppercase text-(--theme-text)/65 hover:text-(--theme-text)"><ExternalLink className="h-3.5 w-3.5" /> View profile</button>}
 
           <Separator className="shrink-0 my-1 md:my-0" />
 

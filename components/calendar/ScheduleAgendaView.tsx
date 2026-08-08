@@ -74,7 +74,6 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
                     <div className="w-16 shrink-0 font-mono text-xs font-semibold text-[var(--schedule-text-muted)]">
                       {event.isAllDay ? "All day" : event.startTime || "—"}
                     </div>
-                    <span className="mt-0.5 h-3 w-3 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: event.color || "var(--schedule-accent)" }} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-semibold text-[var(--schedule-text)]">{event.title}</span>

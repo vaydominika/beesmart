@@ -18,10 +18,9 @@ export async function GET() {
             defaultActiveMinutes: 45,
             defaultBreakMinutes: 15,
             defaultAutoBreak: true,
-            emailNotifications: true,
             reminderNotifications: true,
-            courseAlerts: true,
-            profileVisibility: "public",
+            classroomNotifications: true,
+            profileVisibility: "private",
             activitySharing: true,
         });
     }
@@ -31,9 +30,8 @@ export async function GET() {
         defaultActiveMinutes: settings.defaultActiveMinutes,
         defaultBreakMinutes: settings.defaultBreakMinutes,
         defaultAutoBreak: settings.defaultAutoBreak,
-        emailNotifications: settings.emailNotifications,
         reminderNotifications: settings.reminderNotifications,
-        courseAlerts: settings.courseAlerts,
+        classroomNotifications: settings.classroomNotifications,
         profileVisibility: settings.profileVisibility.toLowerCase(),
         activitySharing: settings.activitySharing,
     });
@@ -47,6 +45,19 @@ export async function PATCH(req: Request) {
 
     const body = await req.json();
 
+    if (body.reminderNotifications === true) {
+        const current = await prisma.userSettings.findUnique({
+            where: { userId },
+            select: { reminderNotifications: true },
+        });
+        if (current?.reminderNotifications === false) {
+            await prisma.reminder.updateMany({
+                where: { userId, completed: false, notifyAt: { not: null, lte: new Date() }, notificationProcessedAt: null },
+                data: { notificationProcessedAt: new Date() },
+            });
+        }
+    }
+
     // Build the data object from allowed fields
     const data: Record<string, unknown> = {};
 
@@ -57,12 +68,10 @@ export async function PATCH(req: Request) {
         data.defaultBreakMinutes = Number(body.defaultBreakMinutes);
     if (body.defaultAutoBreak !== undefined)
         data.defaultAutoBreak = Boolean(body.defaultAutoBreak);
-    if (body.emailNotifications !== undefined)
-        data.emailNotifications = Boolean(body.emailNotifications);
     if (body.reminderNotifications !== undefined)
         data.reminderNotifications = Boolean(body.reminderNotifications);
-    if (body.courseAlerts !== undefined)
-        data.courseAlerts = Boolean(body.courseAlerts);
+    if (body.classroomNotifications !== undefined)
+        data.classroomNotifications = Boolean(body.classroomNotifications);
     if (body.profileVisibility !== undefined)
         data.profileVisibility =
             body.profileVisibility === "private" ? "PRIVATE" : "PUBLIC";
@@ -80,9 +89,8 @@ export async function PATCH(req: Request) {
         defaultActiveMinutes: settings.defaultActiveMinutes,
         defaultBreakMinutes: settings.defaultBreakMinutes,
         defaultAutoBreak: settings.defaultAutoBreak,
-        emailNotifications: settings.emailNotifications,
         reminderNotifications: settings.reminderNotifications,
-        courseAlerts: settings.courseAlerts,
+        classroomNotifications: settings.classroomNotifications,
         profileVisibility: settings.profileVisibility.toLowerCase(),
         activitySharing: settings.activitySharing,
     });
