@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { FancyCard } from "@/components/ui/fancycard";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -18,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Editor } from "@/components/ui/editor";
-import type { AssignmentDraft, TestDraft } from "@/lib/classroom-post-drafts";
+import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
     DropdownMenu,
@@ -99,6 +100,8 @@ interface Props {
 }
 
 export function ClassroomFeed({ classroomId, isTeacher }: Props) {
+    const searchParams = useSearchParams();
+    const focusedPostId = searchParams.get("post");
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -113,11 +116,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [loadMoreError, setLoadMoreError] = useState(false);
     const [initialError, setInitialError] = useState(false);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const focusFetchAttemptedRef = useRef<string | null>(null);
+    const focusScrollDoneRef = useRef<string | null>(null);
 
     // Create post state
     const [newPostContent, setNewPostContent] = useState("");
     const [posting, setPosting] = useState(false);
-    const [postFiles, setPostFiles] = useState<{ fileName: string; fileUrl: string; fileType: string; fileSize: number }[]>([]);
+    const [postFiles, setPostFiles] = useState<PostAttachmentFile[]>([]);
     const [postCourse, setPostCourse] = useState<PostCourse | null>(null);
     const [postAssignment, setPostAssignment] = useState<AssignmentDraft | null>(null);
     const [postTest, setPostTest] = useState<TestDraft | null>(null);
@@ -195,6 +200,36 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     }, [fetchPosts]);
 
     useEffect(() => {
+        focusFetchAttemptedRef.current = null;
+        focusScrollDoneRef.current = null;
+    }, [focusedPostId]);
+
+    useEffect(() => {
+        if (!focusedPostId || loading) return;
+        const hasFocusedPost = posts.some((post) => post.id === focusedPostId);
+        if (hasFocusedPost) {
+            if (focusScrollDoneRef.current === focusedPostId) return;
+            focusScrollDoneRef.current = focusedPostId;
+            const frame = window.requestAnimationFrame(() => {
+                document.getElementById(`classroom-post-${focusedPostId}`)?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            });
+            return () => window.cancelAnimationFrame(frame);
+        }
+        if (focusFetchAttemptedRef.current === focusedPostId) return;
+        focusFetchAttemptedRef.current = focusedPostId;
+        void fetch(`/api/classrooms/${classroomId}/posts/${focusedPostId}`)
+            .then(async (response) => response.ok ? await response.json() as Post : null)
+            .then((post) => {
+                if (!post) return;
+                setPosts((current) => current.some((item) => item.id === post.id) ? current : [post, ...current]);
+            })
+            .catch(() => undefined);
+    }, [classroomId, focusedPostId, loading, posts]);
+
+    useEffect(() => {
         const target = loadMoreRef.current;
         if (!target || !hasMore || loading || loadingMore || loadMoreError) return;
         const observer = new IntersectionObserver((entries) => {
@@ -251,7 +286,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     courseId: postCourse?.id,
                     assignment: postAssignment,
                     test: postTest,
-                    files: postFiles.length > 0 ? postFiles : undefined,
+                    uploadIds: postFiles.map((file) => file.uploadId),
                 }),
             });
             if (!res.ok) {
@@ -282,7 +317,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             for (const file of Array.from(fileList)) {
                 const formData = new FormData();
                 formData.append("file", file);
-                const res = await fetch("/api/upload/local", { method: "POST", body: formData });
+                formData.append("purpose", "POST_ATTACHMENT");
+                const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     toast.error(`Failed to upload ${file.name}`);
                     continue;
@@ -690,7 +726,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             ) : (
                 <div className="space-y-4">
                     {posts.map((post) => (
-                        <FancyCard key={post.id} data-testid="classroom-post-card" className="bg-white p-4 md:p-5 border border-[var(--classroom-line)] shadow-none">
+                        <FancyCard id={`classroom-post-${post.id}`} key={post.id} data-testid="classroom-post-card" className="scroll-mt-6 bg-white p-4 md:p-5 border border-[var(--classroom-line)] shadow-none target:ring-2 target:ring-[var(--classroom-focus-border)] target:ring-offset-2">
                             {/* Post Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">

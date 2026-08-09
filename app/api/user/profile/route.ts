@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { getCurrentUserById } from "@/lib/courses-data";
+import { unlink } from "node:fs/promises";
+import path from "node:path";
+
+async function removeReplacedProfileImage(url: string | null, subdir: "avatars" | "banners") {
+  if (!url?.startsWith(`/uploads/${subdir}/`)) return;
+  const root = path.resolve(process.cwd(), "public", "uploads", subdir);
+  const target = path.resolve(process.cwd(), "public", `.${url}`);
+  if (!target.startsWith(`${root}${path.sep}`)) return;
+  try { await unlink(target); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") console.error("profile_image_cleanup_failed", { subdir, error: error instanceof Error ? error.message : String(error) });
+  }
+}
 
 export async function PATCH(request: Request) {
   const userId = await getCurrentUserId();
@@ -67,6 +79,9 @@ export async function PATCH(request: Request) {
     where: { id: userId },
     data: updateData,
   });
+
+  if (body.avatar !== undefined && user.avatar !== updateData.avatar) await removeReplacedProfileImage(user.avatar, "avatars");
+  if (body.bannerImageUrl !== undefined && user.bannerImageUrl !== updateData.bannerImageUrl) await removeReplacedProfileImage(user.bannerImageUrl, "banners");
 
   const updatedUser = await getCurrentUserById(userId);
   return NextResponse.json({ user: updatedUser });

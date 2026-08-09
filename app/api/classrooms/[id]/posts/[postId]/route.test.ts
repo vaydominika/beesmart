@@ -5,6 +5,8 @@ import { getCurrentUserId, prisma } from "@/lib/db";
 
 vi.mock("@/lib/db", () => ({
     prisma: {
+        $transaction: vi.fn(),
+        storedFile: { updateMany: vi.fn(), findMany: vi.fn(), delete: vi.fn() },
         classroomMember: { findUnique: vi.fn() },
         classroomPost: {
             findUnique: vi.fn(),
@@ -20,6 +22,8 @@ describe("classroom post ownership", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        (prisma.$transaction as any).mockImplementation((callback: any) => callback(prisma));
+        (prisma.storedFile.findMany as any).mockResolvedValue([]);
         (getCurrentUserId as any).mockResolvedValue("author-1");
         (prisma.classroomPost.findUnique as any).mockResolvedValue({
             id: "post-1",
@@ -31,8 +35,9 @@ describe("classroom post ownership", () => {
             testId: null,
             courseId: null,
             _count: { files: 0 },
+            files: [],
         });
-        (prisma.classroomPost.update as any).mockResolvedValue({ id: "post-1", content: "Updated" });
+        (prisma.classroomPost.update as any).mockResolvedValue({ id: "post-1", content: "Updated", files: [] });
         (prisma.classroomPost.delete as any).mockResolvedValue({ id: "post-1" });
     });
 

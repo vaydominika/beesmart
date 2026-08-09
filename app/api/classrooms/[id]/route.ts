@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import type { Prisma } from "@/lib/generated/prisma";
+import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -75,13 +77,27 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         const { id } = await ctx.params;
 
-        const classroom = await prisma.classroom.findUnique({ where: { id } });
+        const classroom = await prisma.classroom.findUnique({
+            where: { id },
+            include: {
+                posts: { select: { files: { select: { storedFileId: true } } } },
+                assignedWork: { select: { submissions: { select: { files: { select: { storedFileId: true } } } } } },
+            },
+        });
         if (!classroom) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (classroom.createdById !== userId) {
             return NextResponse.json({ error: "Only the creator can delete" }, { status: 403 });
         }
 
-        await prisma.classroom.delete({ where: { id } });
+        const storedFileIds = [
+            ...(classroom.posts ?? []).flatMap((post: any) => post.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : [])),
+            ...(classroom.assignedWork ?? []).flatMap((work: any) => work.submissions.flatMap((submission: any) => submission.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []))),
+        ];
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await markFilesForDeletion(tx, storedFileIds);
+            await tx.classroom.delete({ where: { id } });
+        });
+        await purgeStoredFiles(storedFileIds);
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE /api/classrooms/[id]", e);

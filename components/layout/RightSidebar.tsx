@@ -35,7 +35,7 @@ interface EventData {
 }
 
 const BANNER_HEIGHT = 80;
-const DEFAULT_BANNER_URL = "/images/BannerBackground.png";
+const DEFAULT_BANNER_URL = "/images/BannerBackground.avif";
 
 export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

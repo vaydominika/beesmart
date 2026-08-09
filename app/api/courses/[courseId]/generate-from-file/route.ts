@@ -4,6 +4,8 @@ import { generateObject } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 import { canManageCourse } from "@/lib/course-access";
+import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
+import { UploadValidationError, validateUpload } from "@/lib/files/validation";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
@@ -32,7 +34,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (file) {
             // Extract text from files because DeepSeek does not natively support document content parts.
             const { extractTextFromFile } = await import("@/lib/ai/file-utils");
-            extractedText = await extractTextFromFile(file);
+            const validated = await validateUpload(file, "COURSE_ATTACHMENT");
+            await scanForMalware(validated.buffer);
+            extractedText = await extractTextFromFile(new File([new Uint8Array(validated.buffer)], validated.originalName, { type: validated.detectedMime }));
         }
         const sourceParts = [suppliedText, extractedText].filter(Boolean);
         const source = sourceParts.join("\n\n--- SOURCE FILE ---\n\n").substring(0, 30000);
@@ -71,6 +75,8 @@ ${source}`; // Limit to avoid token overflow
         return NextResponse.json({ outline: object });
 
     } catch (e) {
+        if (e instanceof UploadValidationError) return NextResponse.json({ error: e.message }, { status: e.status });
+        if (e instanceof MalwareScanError) return NextResponse.json({ error: e.message }, { status: e.infected ? 400 : 503 });
         console.error("POST /api/courses/[courseId]/generate-from-file", e);
         return NextResponse.json({ error: "Server error or unsupported source material" }, { status: 500 });
     }

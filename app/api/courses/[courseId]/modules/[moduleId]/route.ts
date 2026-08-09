@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { canManageCourse } from "@/lib/course-access";
+import type { Prisma } from "@/lib/generated/prisma";
+import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string }> };
 
@@ -45,10 +47,18 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        const module = await prisma.courseModule.findFirst({
+            where: { id: moduleId, courseId },
+            select: { id: true, lessons: { select: { files: { select: { storedFileId: true } } } } },
+        });
         if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
-        await prisma.courseModule.delete({ where: { id: moduleId, courseId } });
+        const storedFileIds = module.lessons.flatMap((lesson: any) => lesson.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []));
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await markFilesForDeletion(tx, storedFileIds);
+            await tx.courseModule.delete({ where: { id: moduleId, courseId } });
+        });
+        await purgeStoredFiles(storedFileIds);
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE /api/courses/[courseId]/modules/[moduleId]", e);

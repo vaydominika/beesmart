@@ -17,6 +17,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { canAccessCourse } from "@/lib/course-access";
 import { plainTextExcerpt } from "@/lib/course-summary";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { storedFileUrl } from "@/lib/files/types";
 
 type CoursePageProps = { params: Promise<{ courseId: string }> };
 type ClassroomSummary = { id: string; name: string };
@@ -24,6 +25,7 @@ type CourseOverviewData = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  coverStoredFileId: string | null;
   createdById: string;
   published: boolean;
   creator: { name: string | null };
@@ -69,6 +71,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
   }
 
   const isCreator = course.createdById === userId;
+  course.coverImageUrl = storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null;
   const isEnrolled = course.enrollments.length > 0;
   const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
   const completedProgress = isEnrolled

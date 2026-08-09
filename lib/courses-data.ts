@@ -4,6 +4,7 @@ import type {
   CurrentUser,
   DashboardData,
 } from "@/lib/types";
+import { storedFileUrl } from "@/lib/files/types";
 
 export async function getContinueLearningForUser(
   userId: string
@@ -14,6 +15,7 @@ export async function getContinueLearningForUser(
       title: string;
       description: string | null;
       coverImageUrl: string | null;
+      coverStoredFileId: string | null;
       modules: { lessons: { id: string }[] }[];
       ratings: { rating: number }[];
     };
@@ -61,7 +63,7 @@ export async function getContinueLearningForUser(
       id: course.id,
       title: course.title,
       description: course.description,
-      coverImageUrl: course.coverImageUrl,
+      coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null,
       progress,
       averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
     };
@@ -113,6 +115,7 @@ type CourseWithRatings = {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  coverStoredFileId: string | null;
   ratings: { rating: number }[];
   enrollments: unknown[];
 };
@@ -161,7 +164,7 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
     id: course.id,
     title: course.title,
     description: course.description,
-    coverImageUrl: course.coverImageUrl,
+    coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null,
     isEnrolled,
     progress: progressMap.get(course.id),
     averageRating:
@@ -188,7 +191,7 @@ export async function getDiscoverCoursesForUser(
     include: { ratings: true },
     orderBy: { createdAt: "desc" },
     take: 12,
-  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; ratings: { rating: number }[] }[];
+  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; coverStoredFileId: string | null; ratings: { rating: number }[] }[];
 
   return courses.map((c) => {
     const avg =
@@ -199,7 +202,7 @@ export async function getDiscoverCoursesForUser(
       id: c.id,
       title: c.title,
       description: c.description,
-      coverImageUrl: c.coverImageUrl,
+      coverImageUrl: storedFileUrl(c.coverStoredFileId, c.coverImageUrl) || null,
       averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
     };
   });
@@ -210,7 +213,7 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
     where: { createdById: userId },
     include: { ratings: true },
     orderBy: { updatedAt: "desc" },
-  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; ratings: { rating: number }[] }[];
+  })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; coverStoredFileId: string | null; ratings: { rating: number }[] }[];
 
   const courseIds = courses.map(c => c.id);
   const progressMap = await getProgressForCourses(userId, courseIds);
@@ -224,7 +227,7 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
       id: c.id,
       title: c.title,
       description: c.description,
-      coverImageUrl: c.coverImageUrl,
+      coverImageUrl: storedFileUrl(c.coverStoredFileId, c.coverImageUrl) || null,
       progress: progressMap.get(c.id),
       averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
     };

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { storedFileUrl } from "@/lib/files/types";
 
 type RouteContext = { params: Promise<{ id: string; assignmentId: string }> };
 
@@ -39,7 +40,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { posts, ...details } = assignment;
   return NextResponse.json({
     ...details,
-    files: posts[0]?.files ?? [],
+    files: (posts[0]?.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
     viewerRole: membership.role,
   });
 }

@@ -12,7 +12,7 @@ export interface ModerationResult {
 /**
  * Checks content for safety (nudity, cussing, hate speech, etc.)
  */
-export async function checkContentSafety(content: string): Promise<ModerationResult> {
+export async function checkContentSafety(content: string, context?: Record<string, string>): Promise<ModerationResult> {
     try {
         const { object } = await generateObject({
             model: deepseek("deepseek-chat"),
@@ -23,11 +23,15 @@ export async function checkContentSafety(content: string): Promise<ModerationRes
             }),
             system: "You are a content moderation AI for an educational platform called beesmart. Your goal is to ensure all content is safe for learners and course creators. Flag anything containing profanity, explicit sexual content, hate speech, or harmful/illegal advice.",
             prompt: `Analyze the following content for safety and appropriateness:\n\n"${content}"`,
+            abortSignal: AbortSignal.timeout(Number(process.env.MODERATION_TIMEOUT_MS || 15_000)),
         });
 
         return object;
     } catch (error) {
-        console.error("Moderation check failed:", error);
+        console.error("moderation_check_failed", {
+            ...context,
+            error: error instanceof Error ? error.message : String(error),
+        });
         // If moderation fails, we default to safe but log the error, 
         // or we could default to unsafe for maximum security.
         // For now, let's assume safe to avoid blocking users due to API issues.
@@ -39,7 +43,7 @@ export async function checkContentSafety(content: string): Promise<ModerationRes
  * Creates a system report for flagged content
  */
 export async function flagContent(userId: string, courseId: string, reason: string, details?: string) {
-    return await prisma.report.create({
+    return prisma.report.create({
         data: {
             userId,
             courseId,

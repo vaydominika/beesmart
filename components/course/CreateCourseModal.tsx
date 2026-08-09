@@ -15,7 +15,7 @@ interface CreateCourseModalProps {
   onCreated: (course: { id: string }) => void;
 }
 
-type UploadedFile = { fileName: string; fileUrl: string; fileType: string; fileSize: number };
+type UploadedFile = { uploadId: string; fileName: string; detectedMime: string; fileType: string; fileSize: number; scanStatus: string; previewUrl: string };
 
 const VISIBILITY_OPTIONS = [
   { value: "PRIVATE", label: "Private", hint: "Only you", icon: Lock },
@@ -28,6 +28,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [coverUploadId, setCoverUploadId] = useState("");
   const [visibility, setVisibility] = useState<CourseVisibility>("PRIVATE");
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -40,6 +41,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
     setTitle("");
     setDescription("");
     setCoverImageUrl("");
+    setCoverUploadId("");
     setVisibility("PRIVATE");
     setFiles([]);
     setValidation(null);
@@ -58,10 +60,12 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch("/api/upload/local", { method: "POST", body: formData });
+      formData.append("purpose", "COURSE_COVER");
+      const response = await fetch("/api/uploads", { method: "POST", body: formData });
       if (!response.ok) throw new Error();
       const uploaded = await response.json();
-      setCoverImageUrl(uploaded.fileUrl);
+      setCoverImageUrl(uploaded.previewUrl);
+      setCoverUploadId(uploaded.uploadId);
     } catch {
       toast.error("The cover image could not be uploaded.");
     } finally {
@@ -78,7 +82,8 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
       for (const file of Array.from(selectedFiles)) {
         const formData = new FormData();
         formData.append("file", file);
-        const response = await fetch("/api/upload/local", { method: "POST", body: formData });
+        formData.append("purpose", "COURSE_ATTACHMENT");
+        const response = await fetch("/api/uploads", { method: "POST", body: formData });
         if (!response.ok) {
           toast.error(`${file.name} could not be uploaded.`);
           continue;
@@ -117,8 +122,8 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim() || null,
-          coverImageUrl: coverImageUrl || null,
-          files,
+          coverUploadId: coverUploadId || null,
+          uploadIds: files.map((file) => file.uploadId),
           visibility,
         }),
       });
@@ -172,7 +177,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                 <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center" style={coverImageUrl ? { backgroundImage: `linear-gradient(rgba(32,35,31,0.12), rgba(32,35,31,0.12)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
                   {!coverImageUrl && <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--course-text-muted)]"><ImageIcon className="h-4 w-4" />{uploadingCover ? "Uploading…" : "Choose an image"}</span>}
                   <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} aria-label="Upload course cover" className="absolute inset-0 cursor-pointer opacity-0" />
-                  {coverImageUrl && <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setCoverImageUrl("")} aria-label="Remove cover image" className="absolute right-2 top-2"><X className="h-4 w-4" /></WorkspaceButton>}
+                  {coverImageUrl && <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => { setCoverImageUrl(""); setCoverUploadId(""); }} aria-label="Remove cover image" className="absolute right-2 top-2"><X className="h-4 w-4" /></WorkspaceButton>}
                 </div>
               </div>
             </div>
@@ -193,7 +198,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                 {files.length ? (
                   <div className="space-y-2">
                     {files.map((file, index) => (
-                      <div key={`${file.fileUrl}-${index}`} className="flex items-center gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3">
+                      <div key={file.uploadId} className="flex items-center gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3">
                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white"><FileText className="h-4 w-4 text-[var(--course-text-muted)]" /></span>
                         <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--course-text)]">{file.fileName}</span><span className="text-[10px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)} KB</span></span>
                         <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${file.fileName}`}><X className="h-4 w-4" /></WorkspaceButton>

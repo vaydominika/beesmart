@@ -3,10 +3,10 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { canManageCourse } from "@/lib/course-access";
 import { streamText } from "ai";
 import { deepseek } from "@ai-sdk/deepseek";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+import { createHash, randomUUID } from "node:crypto";
+import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
+import { deletePrivateFile, writePrivateFile } from "@/lib/files/storage";
+import { UploadValidationError, validateUpload } from "@/lib/files/validation";
 
 type RouteContext = { params: Promise<{ courseId: string; lessonId: string }> };
 
@@ -61,42 +61,30 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         let extractedFileText = "";
         if (file) {
             const { extractTextFromFile } = await import("@/lib/ai/file-utils");
+            const validated = await validateUpload(file, "COURSE_ATTACHMENT");
+            const normalizedFile = new File([new Uint8Array(validated.buffer)], validated.originalName, { type: validated.detectedMime });
+            extractedFileText = await extractTextFromFile(normalizedFile);
+            const scanStatus = await scanForMalware(validated.buffer);
+            const checksum = createHash("sha256").update(validated.buffer).digest("hex");
+            const storageKey = `${checksum.slice(0, 2)}/${randomUUID()}`;
+            await writePrivateFile(storageKey, validated.buffer);
             try {
-                // 1. Extract text for AI
-                extractedFileText = await extractTextFromFile(file);
-
-                // 2. Save file to filesystem
-                await mkdir(UPLOAD_DIR, { recursive: true });
-                const ext = path.extname(file.name);
-                const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "_");
-                const uniqueName = `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-                const bytes = await file.arrayBuffer();
-                await writeFile(path.join(UPLOAD_DIR, uniqueName), Buffer.from(bytes));
-
-                // 3. Determine file type for database
-                const mimeType = file.type || "";
-                let fileType: "PDF" | "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT" | "OTHER" = "OTHER";
-                if (mimeType === "application/pdf") fileType = "PDF";
-                else if (mimeType.startsWith("image/")) fileType = "IMAGE";
-                else if (mimeType.startsWith("video/")) fileType = "VIDEO";
-                else if (mimeType.startsWith("audio/")) fileType = "AUDIO";
-                else if (mimeType.includes("document") || mimeType.includes("word")) fileType = "DOCUMENT";
-
-                // 4. Create database record
-                await prisma.courseFile.create({
+                await prisma.storedFile.create({
                     data: {
-                        lessonId,
-                        courseId,
-                        fileName: file.name,
-                        fileUrl: `/uploads/${uniqueName}`,
-                        fileType,
-                        fileSize: file.size,
-                        isVisible,
-                        uploadedById: userId,
-                    }
+                        ownerId: userId, purpose: "COURSE_ATTACHMENT", storageKey,
+                        originalName: validated.originalName, detectedMime: validated.detectedMime,
+                        fileType: validated.fileType, size: validated.size, checksum, scanStatus,
+                        state: "ATTACHED", expiresAt: new Date("9999-12-31T23:59:59.000Z"),
+                        courseFile: { create: {
+                            lessonId, courseId, fileName: validated.originalName,
+                            fileType: validated.fileType, fileSize: validated.size,
+                            isVisible, uploadedById: userId,
+                        } },
+                    },
                 });
-            } catch (err) {
-                console.error("File processing failed:", err);
+            } catch (error) {
+                await deletePrivateFile(storageKey);
+                throw error;
             }
         }
 
@@ -133,6 +121,8 @@ Your goal is to write engaging, high-quality educational content formatted in cl
         return result.toTextStreamResponse();
 
     } catch (e) {
+        if (e instanceof UploadValidationError) return NextResponse.json({ error: e.message }, { status: e.status });
+        if (e instanceof MalwareScanError) return NextResponse.json({ error: e.message }, { status: e.infected ? 400 : 503 });
         console.error("POST /api/courses/[courseId]/lessons/[lessonId]/generate", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

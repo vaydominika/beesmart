@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { canManageCourse } from "@/lib/course-access";
+import type { Prisma } from "@/lib/generated/prisma";
+import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
+import { storedFileUrl } from "@/lib/files/types";
 
 type RouteContext = { params: Promise<{ courseId: string; fileId: string }> };
 
@@ -46,14 +49,40 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         id: true,
         fileName: true,
         fileUrl: true,
+        storedFileId: true,
         fileSize: true,
         isVisible: true,
       },
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json({ ...updated, fileUrl: storedFileUrl(updated.storedFileId, updated.fileUrl) });
   } catch (error) {
     console.error("PATCH /api/courses/[courseId]/files/[fileId]", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(_req: NextRequest, ctx: RouteContext) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { courseId, fileId } = await ctx.params;
+    if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const file = await prisma.courseFile.findUnique({
+      where: { id: fileId },
+      include: { lesson: { select: { module: { select: { courseId: true } } } } },
+    });
+    const belongsToCourse = file?.courseId === courseId || file?.lesson?.module.courseId === courseId;
+    if (!file || !belongsToCourse) return NextResponse.json({ error: "File not found" }, { status: 404 });
+    const ids = file.storedFileId ? [file.storedFileId] : [];
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      await markFilesForDeletion(tx, ids);
+      await tx.courseFile.delete({ where: { id: fileId } });
+    });
+    await purgeStoredFiles(ids);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("DELETE /api/courses/[courseId]/files/[fileId]", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

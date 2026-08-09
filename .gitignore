@@ -22,6 +22,7 @@
 
 # user uploads (profile images)
 /public/uploads
+/.data/uploads
 
 # misc
 .DS_Store

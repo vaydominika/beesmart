@@ -1,8 +1,11 @@
 export interface PostAttachmentFile {
+    uploadId: string;
     fileName: string;
-    fileUrl: string;
+    detectedMime: string;
     fileType: string;
     fileSize: number;
+    scanStatus: string;
+    previewUrl: string;
 }
 
 export interface AssignmentDraft {

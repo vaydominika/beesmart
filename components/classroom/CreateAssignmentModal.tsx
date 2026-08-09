@@ -49,7 +49,8 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
             for (const file of Array.from(fileList)) {
                 const formData = new FormData();
                 formData.append("file", file);
-                const res = await fetch("/api/upload/local", {
+                formData.append("purpose", "POST_ATTACHMENT");
+                const res = await fetch("/api/uploads", {
                     method: "POST",
                     body: formData,
                 });

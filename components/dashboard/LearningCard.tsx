@@ -119,8 +119,7 @@ export function LearningCard({
               <h3 className="font-semibold text-(--theme-text) mb-1">{title}</h3>
               <div
                 className="text-sm text-(--theme-text) mb-2 line-clamp-2"
-                dangerouslySetInnerHTML={{ __html: description ?? "" }}
-              />
+              >{description ?? ""}</div>
             </div>
             <div className="mb-1 min-h-5">
               {averageRating != null && averageRating > 0

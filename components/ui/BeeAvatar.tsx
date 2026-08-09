@@ -5,14 +5,15 @@ const DEFAULT_AVATAR_URL = "/images/ProfilePicture.png";
 interface BeeAvatarProps {
   avatarUrl?: string | null;
   className?: string;
+  borderClassName?: string;
 }
 
-export function BeeAvatar({ avatarUrl, className }: BeeAvatarProps) {
+export function BeeAvatar({ avatarUrl, className, borderClassName = "border-(--theme-sidebar)" }: BeeAvatarProps) {
   const src = avatarUrl ?? DEFAULT_AVATAR_URL;
   return (
     <div className={className ?? "relative"}>
       {/* White outer circle */}
-      <div className="w-16 h-16 rounded-full bg-white border-4 border-(--theme-sidebar) flex items-center justify-center overflow-hidden">
+      <div className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 bg-white ${borderClassName}`}>
         <Image
           src={src}
           alt="Profile"

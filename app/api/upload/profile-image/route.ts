@@ -2,20 +2,8 @@ import { NextResponse } from "next/server";
 import { getCurrentUserId } from "@/lib/db";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
-
-const ALLOWED_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-] as const;
-
-const EXT_BY_MIME: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
+import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
+import { UploadValidationError, validateUpload } from "@/lib/files/validation";
 
 const MAX_SIZE_AVATAR = 2 * 1024 * 1024; // 2 MB
 const MAX_SIZE_BANNER = 4 * 1024 * 1024; // 4 MB
@@ -49,14 +37,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const mime = file.type;
-  if (!ALLOWED_TYPES.includes(mime as (typeof ALLOWED_TYPES)[number])) {
-    return NextResponse.json(
-      { error: "Invalid file type. Use JPEG, PNG, WebP, or GIF." },
-      { status: 400 }
-    );
-  }
-
   if (file.size > maxSize) {
     const maxMB = maxSize / (1024 * 1024);
     return NextResponse.json(
@@ -65,15 +45,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const ext = EXT_BY_MIME[mime] ?? "jpg";
+  let validated;
+  try {
+    validated = await validateUpload(file, "COURSE_COVER");
+    await scanForMalware(validated.buffer);
+  } catch (error) {
+    const status = error instanceof UploadValidationError ? error.status : error instanceof MalwareScanError && error.infected ? 400 : 503;
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Image validation failed" }, { status });
+  }
+  const ext = validated.extension === "jpeg" ? "jpg" : validated.extension;
   const filename = `${userId}-${Date.now()}.${ext}`;
   const uploadDir = path.join(process.cwd(), "public", "uploads", subdir);
 
   try {
     await mkdir(uploadDir, { recursive: true });
     const filePath = path.join(uploadDir, filename);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
+    await writeFile(filePath, validated.buffer);
   } catch (e) {
     console.error("Profile image upload failed:", e);
     return NextResponse.json(

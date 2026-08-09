@@ -26,6 +26,26 @@ enum FileType {
   OTHER
 }
 
+enum UploadPurpose {
+  COURSE_ATTACHMENT
+  POST_ATTACHMENT
+  SUBMISSION_ATTACHMENT
+  COURSE_COVER
+}
+
+enum StoredFileState {
+  PENDING
+  ATTACHED
+  DELETE_PENDING
+}
+
+enum FileScanStatus {
+  NOT_REQUIRED
+  CLEAN
+  INFECTED
+  ERROR
+}
+
 enum TestType {
   TEST
   EXAM
@@ -118,8 +138,9 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // NextAuth
-  accounts Account[]
-  sessions Session[]
+  accounts    Account[]
+  sessions    Session[]
+  storedFiles StoredFile[]
 
   // Relationships
   createdCourses         Course[]                @relation("CourseCreator")
@@ -208,16 +229,16 @@ model Classroom {
   updatedAt   DateTime @updatedAt
 
   // Relationships
-  creator       User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  members       ClassroomMember[]
-  courses       Course[]
-  events        Event[]
-  assignedWork  AssignedWork[]
-  schedules     Schedule[]
-  invitations   ClassroomInvitation[]
-  posts         ClassroomPost[]
-  tests         Test[]
-  courseLinks   ClassroomCourse[]
+  creator      User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  members      ClassroomMember[]
+  courses      Course[]
+  events       Event[]
+  assignedWork AssignedWork[]
+  schedules    Schedule[]
+  invitations  ClassroomInvitation[]
+  posts        ClassroomPost[]
+  tests        Test[]
+  courseLinks  ClassroomCourse[]
 
   @@index([createdById])
   @@index([code])
@@ -240,38 +261,40 @@ model ClassroomMember {
 }
 
 model Course {
-  id            String           @id @default(cuid())
-  title         String
-  description   String?
-  coverImageUrl String?
-  createdById   String
-  classroomId   String?
-  isPublic      Boolean          @default(false)
-  visibility    CourseVisibility @default(PRIVATE)
-  published     Boolean          @default(false)
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id                String           @id @default(cuid())
+  title             String
+  description       String?
+  coverImageUrl     String?
+  coverStoredFileId String?          @unique
+  createdById       String
+  classroomId       String?
+  isPublic          Boolean          @default(false)
+  visibility        CourseVisibility @default(PRIVATE)
+  published         Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   // Relationships
-  creator        User               @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  classroom      Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  modules        CourseModule[]
-  enrollments    CourseEnrollment[]
-  progress       CourseProgress[]
-  files          CourseFile[]
-  tests          Test[]
-  flashcardSets  FlashcardSet[]
-  events         Event[]
-  assignedWork   AssignedWork[]
-  tags           CourseTag[]
-  bookmarks      Bookmark[]
-  certificates   Certificate[]
-  grades         Grade[]
-  ratings        CourseRating[]
-  reports        Report[]
-  classroomPosts ClassroomPost[]
-  classroomLinks ClassroomCourse[]
-  accessGrants   CourseAccess[]
+  creator         User               @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  coverStoredFile StoredFile?        @relation("CourseCover", fields: [coverStoredFileId], references: [id], onDelete: SetNull)
+  classroom       Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  modules         CourseModule[]
+  enrollments     CourseEnrollment[]
+  progress        CourseProgress[]
+  files           CourseFile[]
+  tests           Test[]
+  flashcardSets   FlashcardSet[]
+  events          Event[]
+  assignedWork    AssignedWork[]
+  tags            CourseTag[]
+  bookmarks       Bookmark[]
+  certificates    Certificate[]
+  grades          Grade[]
+  ratings         CourseRating[]
+  reports         Report[]
+  classroomPosts  ClassroomPost[]
+  classroomLinks  ClassroomCourse[]
+  accessGrants    CourseAccess[]
 
   @@index([createdById])
   @@index([classroomId])
@@ -321,7 +344,8 @@ model CourseFile {
   lessonId     String?
   courseId     String?
   fileName     String
-  fileUrl      String
+  fileUrl      String?
+  storedFileId String?  @unique
   fileType     FileType
   fileSize     Int
   isVisible    Boolean  @default(true)
@@ -329,9 +353,10 @@ model CourseFile {
   createdAt    DateTime @default(now())
 
   // Relationships
-  lesson   CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  course   Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  uploader User          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  lesson     CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course     Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  uploader   User          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  storedFile StoredFile?   @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
 
   @@index([lessonId])
   @@index([courseId])
@@ -453,16 +478,16 @@ model TestAnswer {
 }
 
 model TestAttempt {
-  id          String    @id @default(cuid())
-  testId      String
-  userId      String
+  id            String    @id @default(cuid())
+  testId        String
+  userId        String
   attemptNumber Int       @default(1)
-  startedAt   DateTime  @default(now())
-  submittedAt DateTime?
-  score       Float?
-  isCompleted Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  startedAt     DateTime  @default(now())
+  submittedAt   DateTime?
+  score         Float?
+  isCompleted   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relationships
   test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
@@ -470,9 +495,9 @@ model TestAttempt {
   responses TestAttemptResponse[]
   grades    Grade[]
 
+  @@unique([testId, userId, attemptNumber])
   @@index([testId])
   @@index([userId])
-  @@unique([testId, userId, attemptNumber])
 }
 
 model TestAttemptResponse {
@@ -491,9 +516,9 @@ model TestAttemptResponse {
   question       TestQuestion        @relation(fields: [questionId], references: [id], onDelete: Cascade)
   selectedOption TestQuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
 
+  @@unique([attemptId, questionId])
   @@index([attemptId])
   @@index([questionId])
-  @@unique([attemptId, questionId])
 }
 
 model FlashcardSet {
@@ -584,23 +609,23 @@ model Event {
 }
 
 model AssignedWork {
-  id           String    @id @default(cuid())
-  title        String
-  description  String?   @db.Text
-  assignedById String
-  assignedToId String?
-  classroomId  String?
-  courseId     String?
-  testId       String?
+  id               String    @id @default(cuid())
+  title            String
+  description      String?   @db.Text
+  assignedById     String
+  assignedToId     String?
+  classroomId      String?
+  courseId         String?
+  testId           String?
   deadlineAt       DateTime
   deadlineTimeZone String
-  deadlineHasTime  Boolean  @default(false)
-  isCompleted  Boolean   @default(false)
-  completedAt  DateTime?
-  isGraded     Boolean   @default(true)
-  maxPoints    Float?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  deadlineHasTime  Boolean   @default(false)
+  isCompleted      Boolean   @default(false)
+  completedAt      DateTime?
+  isGraded         Boolean   @default(true)
+  maxPoints        Float?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   // Relationships
   assigner    User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
@@ -661,11 +686,11 @@ model Reminder {
   updatedAt               DateTime  @updatedAt
 
   // Relationships
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@unique([userId, eventId])
+  @@index([userId])
   @@index([eventId])
   @@index([date])
   @@index([dueAt])
@@ -937,18 +962,18 @@ model Report {
 }
 
 model UserSettings {
-  id                    String            @id @default(cuid())
-  userId                String            @unique
-  theme                 String            @default("bee")
-  defaultActiveMinutes  Int               @default(45)
-  defaultBreakMinutes   Int               @default(15)
-  defaultAutoBreak      Boolean           @default(true)
-  reminderNotifications Boolean           @default(true)
-  classroomNotifications Boolean          @default(true)
-  profileVisibility     ProfileVisibility @default(PRIVATE)
-  activitySharing       Boolean           @default(true)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  id                     String            @id @default(cuid())
+  userId                 String            @unique
+  theme                  String            @default("bee")
+  defaultActiveMinutes   Int               @default(45)
+  defaultBreakMinutes    Int               @default(15)
+  defaultAutoBreak       Boolean           @default(true)
+  reminderNotifications  Boolean           @default(true)
+  classroomNotifications Boolean           @default(true)
+  profileVisibility      ProfileVisibility @default(PRIVATE)
+  activitySharing        Boolean           @default(true)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -990,16 +1015,18 @@ model ClassroomPost {
 }
 
 model PostFile {
-  id        String   @id @default(cuid())
-  postId    String
-  fileName  String
-  fileUrl   String
-  fileType  FileType
-  fileSize  Int
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  postId       String
+  fileName     String
+  fileUrl      String?
+  storedFileId String?  @unique
+  fileType     FileType
+  fileSize     Int
+  createdAt    DateTime @default(now())
 
   // Relationships
-  post ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post       ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  storedFile StoredFile?   @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
 
   @@index([postId])
 }
@@ -1053,13 +1080,41 @@ model SubmissionFile {
   id           String   @id @default(cuid())
   submissionId String
   fileName     String
-  fileUrl      String
+  fileUrl      String?
+  storedFileId String?  @unique
   fileType     FileType
   fileSize     Int
   createdAt    DateTime @default(now())
 
   // Relationships
-  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  submission Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  storedFile StoredFile? @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
 
   @@index([submissionId])
+}
+
+model StoredFile {
+  id           String          @id @default(cuid())
+  ownerId      String
+  purpose      UploadPurpose
+  storageKey   String          @unique
+  originalName String
+  detectedMime String
+  fileType     FileType
+  size         Int
+  checksum     String
+  scanStatus   FileScanStatus
+  state        StoredFileState @default(PENDING)
+  expiresAt    DateTime
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  courseFile     CourseFile?
+  postFile       PostFile?
+  submissionFile SubmissionFile?
+  courseCover    Course?         @relation("CourseCover")
+
+  @@index([ownerId])
+  @@index([state, expiresAt])
 }

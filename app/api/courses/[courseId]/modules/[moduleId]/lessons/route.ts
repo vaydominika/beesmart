@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { canAccessCourse, canManageCourse } from "@/lib/course-access";
+import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string }> };
 
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             data: {
                 title: title.trim(),
                 description: description?.trim() || null,
-                content: content || null,
+                content: content ? sanitizeRichTextHtml(content) || null : null,
                 moduleId,
                 order: nextOrder,
             },

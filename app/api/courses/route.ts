@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
-import { FileType } from "@/lib/generated/prisma";
+import type { Prisma } from "@/lib/generated/prisma";
 import { accessibleCourseWhere, classroomCourseAccessWhere } from "@/lib/course-access";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { CourseSummary, dedupeClassrooms } from "@/lib/course-summary";
+import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
+import { storedFileUrl } from "@/lib/files/types";
 
 type CourseQueryRecord = {
     id: string;
@@ -23,24 +25,6 @@ type CourseQueryRecord = {
     enrollments: Array<{ completedAt: Date | null }>;
     classroom: { id: string; name: string } | null;
     classroomLinks: Array<{ classroom: { id: string; name: string } }>;
-};
-
-type UploadedCourseFile = {
-    fileName: string;
-    fileUrl: string;
-    fileSize: number;
-    fileType: string;
-};
-
-// Helper to map standard mime types to our Prisma enum
-const mapToFileType = (mimeType: string): FileType => {
-    if (!mimeType) return FileType.OTHER;
-    if (mimeType.includes("pdf")) return FileType.PDF;
-    if (mimeType.includes("image")) return FileType.IMAGE;
-    if (mimeType.includes("video")) return FileType.VIDEO;
-    if (mimeType.includes("audio")) return FileType.AUDIO;
-    if (mimeType.includes("word") || mimeType.includes("document")) return FileType.DOCUMENT;
-    return FileType.OTHER;
 };
 
 // GET /api/courses — Get all courses for the current user
@@ -113,7 +97,7 @@ export async function GET(req: NextRequest) {
                 id: course.id,
                 title: course.title,
                 description: course.description,
-                coverImageUrl: course.coverImageUrl,
+                coverImageUrl: storedFileUrl((course as any).coverStoredFileId, course.coverImageUrl),
                 createdById: course.createdById,
                 classroomId: course.classroomId,
                 isPublic: course.isPublic,
@@ -146,7 +130,7 @@ export async function POST(req: NextRequest) {
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
         const data = await req.json();
-        const { title, description, classroomId, isPublic, coverImageUrl, files, published } = data;
+        const { title, description, classroomId, isPublic, published } = data;
         const visibility = ["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)
             ? data.visibility
             : (isPublic ? "PUBLIC" : "PRIVATE");
@@ -155,28 +139,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Title is required" }, { status: 400 });
         }
 
-        const course = await prisma.course.create({
-            data: {
+        const uploadIds = Array.isArray(data.uploadIds) ? data.uploadIds : [];
+        const coverUploadIds = typeof data.coverUploadId === "string" ? [data.coverUploadId] : [];
+        const course = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const attachments = await claimUploads(tx, uploadIds, userId, "COURSE_ATTACHMENT");
+            const covers = await claimUploads(tx, coverUploadIds, userId, "COURSE_COVER");
+            return tx.course.create({ data: {
                 title: title.trim(),
                 description: description?.trim() || null,
                 classroomId: classroomId || null,
                 isPublic: visibility === "PUBLIC",
                 visibility,
                 published: published || false,
-                coverImageUrl: coverImageUrl || null,
+                coverStoredFileId: covers[0]?.id ?? null,
                 createdById: userId,
-                ...(files && files.length > 0 && {
+                ...(attachments.length > 0 && {
                     files: {
-                        create: (files as UploadedCourseFile[]).map((f) => ({
-                            fileName: f.fileName,
-                            fileUrl: f.fileUrl,
-                            fileSize: f.fileSize,
-                            fileType: mapToFileType(f.fileType),
+                        create: attachments.map((file) => ({
+                            fileName: file.originalName,
+                            fileSize: file.size,
+                            fileType: file.fileType,
+                            storedFileId: file.id,
                             uploadedById: userId,
                         }))
                     }
                 })
-            },
+            } });
         });
 
         await recordMeaningfulActivity({
@@ -198,6 +186,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(course);
     } catch (e) {
+        if (e instanceof UploadClaimError) return NextResponse.json({ error: e.message }, { status: 400 });
         console.error("POST /api/courses", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

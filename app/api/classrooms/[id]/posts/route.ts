@@ -5,16 +5,13 @@ import { recordMeaningfulActivity } from "@/lib/activity";
 import { canAccessCourse } from "@/lib/course-access";
 import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
 import { DeadlineValidationError, parseAssignmentDeadline } from "@/lib/assignment-deadline";
-import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
-import type { FileType, PostType, Prisma } from "@/lib/generated/prisma";
+import type { AssignmentDraft, TestDraft } from "@/lib/classroom-post-drafts";
+import type { PostType, Prisma } from "@/lib/generated/prisma";
+import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
+import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
+import { storedFileUrl } from "@/lib/files/types";
 
 type RouteContext = { params: Promise<{ id: string }> };
-
-const FILE_TYPES = new Set<FileType>(["PDF", "IMAGE", "VIDEO", "DOCUMENT", "AUDIO", "OTHER"]);
-
-function normalizeFileType(value: string): FileType {
-    return FILE_TYPES.has(value as FileType) ? value as FileType : "OTHER";
-}
 
 // GET /api/classrooms/[id]/posts — List posts with search/filter/sort
 export async function GET(req: NextRequest, ctx: RouteContext) {
@@ -69,7 +66,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                     },
                     course: {
                         select: {
-                            id: true, title: true, description: true, visibility: true, coverImageUrl: true,
+                            id: true, title: true, description: true, visibility: true, coverImageUrl: true, coverStoredFileId: true,
                             creator: { select: { name: true } },
                             _count: { select: { modules: true } },
                         },
@@ -87,8 +84,10 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
         ]);
 
         return NextResponse.json({
-            posts: posts.map((post: { author: { id: string }; [key: string]: unknown }) => ({
+            posts: posts.map((post: any) => ({
                 ...post,
+                files: post.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                course: post.course ? { ...post.course, coverImageUrl: storedFileUrl(post.course.coverStoredFileId, post.course.coverImageUrl) || null } : null,
                 isOwnPost: post.author.id === userId,
             })),
             total,
@@ -116,7 +115,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
         const data = await req.json();
-        const { type, title, content, isPinned, files } = data;
+        const { type, title, content, isPinned } = data;
         const assignment = data.assignment as AssignmentDraft | null | undefined;
         const test = data.test as TestDraft | null | undefined;
         const testCourseId = test?.courseId && typeof test.courseId === "string" ? test.courseId : null;
@@ -179,18 +178,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Private courses cannot be shared. Change the course visibility first." }, { status: 403 });
         }
 
-        const postFiles = (Array.isArray(files) ? files : []) as PostAttachmentFile[];
-        const assignmentFiles = assignment?.files ?? [];
-        const allFiles = [...postFiles, ...assignmentFiles];
-        const plainText = typeof content === "string"
-            ? content.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim()
-            : "";
-        const hasFiles = allFiles.length > 0;
+        const postUploadIds = Array.isArray(data.uploadIds) ? data.uploadIds : [];
+        const assignmentUploadIds = assignment?.files?.map((file) => file.uploadId) ?? [];
+        const allUploadIds = [...postUploadIds, ...assignmentUploadIds];
+        const sanitizedContent = sanitizeRichTextHtml(content);
+        const plainText = richTextToPlainText(sanitizedContent);
+        const hasFiles = allUploadIds.length > 0;
         if (!title?.trim() && !plainText && !hasFiles && !courseId && !assignment && !test) {
             return NextResponse.json({ error: "Write a message or add something to the post" }, { status: 400 });
         }
 
         const post = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            const claimedFiles = await claimUploads(tx, allUploadIds, userId, "POST_ATTACHMENT");
             let assignmentId = typeof data.assignmentId === "string" ? data.assignmentId : null;
             let testId = typeof data.testId === "string" ? data.testId : null;
 
@@ -272,18 +271,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                     authorId: userId,
                     type: normalizedType,
                     title: title?.trim() || null,
-                    content: typeof content === "string" && plainText ? content.trim() : null,
+                    content: plainText ? sanitizedContent : null,
                     isPinned: Boolean(isPinned),
                     courseId,
                     assignmentId,
                     testId,
                     files: hasFiles
                         ? {
-                            create: allFiles.map((file) => ({
-                                fileName: file.fileName,
-                                fileUrl: file.fileUrl,
-                                fileType: normalizeFileType(file.fileType),
-                                fileSize: file.fileSize,
+                            create: claimedFiles.map((file) => ({
+                                fileName: file.originalName,
+                                fileType: file.fileType,
+                                fileSize: file.size,
+                                storedFileId: file.id,
                             })),
                         }
                         : undefined,
@@ -367,8 +366,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             if (result.status === "rejected") console.error("Classroom post side effect failed", result.reason);
         });
 
-        return NextResponse.json(post, { status: 201 });
+        return NextResponse.json({ ...post, files: post.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) }, { status: 201 });
     } catch (e) {
+        if (e instanceof UploadClaimError) return NextResponse.json({ error: e.message }, { status: 400 });
         if (e instanceof DeadlineValidationError) {
             return NextResponse.json({ error: e.message }, { status: 400 });
         }

@@ -12,6 +12,7 @@ import {
     CheckCircle2, XCircle, Send, X
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { PostAttachmentFile } from "@/lib/classroom-post-drafts";
 
 interface Props {
     classroomId: string;
@@ -57,7 +58,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     // Student specific state
     const [mySubmission, setMySubmission] = useState<AssignmentSubmission | null>(null);
     const [submissionContent, setSubmissionContent] = useState("");
-    const [submissionFiles, setSubmissionFiles] = useState<{ fileName: string; fileUrl: string; fileType: string; fileSize: number }[]>([]);
+    const [submissionFiles, setSubmissionFiles] = useState<PostAttachmentFile[]>([]);
     const [uploadingFiles, setUploadingFiles] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
@@ -114,7 +115,8 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
             for (const file of Array.from(fileList)) {
                 const formData = new FormData();
                 formData.append("file", file);
-                const res = await fetch("/api/upload/local", { method: "POST", body: formData });
+                formData.append("purpose", "SUBMISSION_ATTACHMENT");
+                const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     toast.error(`Failed to upload ${file.name}`);
                     continue;
@@ -143,7 +145,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     content: submissionContent.trim(),
-                    files: submissionFiles,
+                    uploadIds: submissionFiles.map((file) => file.uploadId),
                 }),
             });
 

@@ -30,7 +30,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isSchedule = pathname.startsWith("/schedule");
   const isCoursesIndex = pathname === "/courses";
   const isCourseBuilder = /^\/courses\/[^/]+\/builder$/.test(pathname);
-  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder;
+  const isProfile = /^\/profile\/[^/]+$/.test(pathname);
+  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isProfile;
   const isQuietWorkspace = isClassroom || isFocusedWorkspace;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
@@ -39,8 +40,9 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     const main = mainRef.current;
     if (!main) return;
-    const scrollEl =
-      main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;
+    const scrollEl = isProfile && !isMobile
+      ? main
+      : main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;
 
     const handleScroll = () => {
       setShowBackToTop(scrollEl.scrollTop > SCROLL_THRESHOLD);
@@ -48,13 +50,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     scrollEl.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
     return () => scrollEl.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [isMobile, isProfile]);
 
   const scrollToTop = () => {
     const main = mainRef.current;
     if (!main) return;
-    const scrollEl =
-      main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;
+    const scrollEl = isProfile && !isMobile
+      ? main
+      : main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;
     scrollEl.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -135,9 +138,11 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
         <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
-          <ScrollArea className="h-full">
-            {children}
-          </ScrollArea>
+          {isProfile ? children : (
+            <ScrollArea className="h-full">
+              {children}
+            </ScrollArea>
+          )}
         </main>
       </div>
       {!isFocusedWorkspace && (

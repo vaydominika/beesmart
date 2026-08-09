@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
+import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
+import { storedFileUrl } from "@/lib/files/types";
+import type { Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ id: string; postId: string }> };
 
@@ -52,7 +56,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        return NextResponse.json({ ...post, isOwnPost: post.author.id === userId });
+        return NextResponse.json({ ...post, files: (post.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })), isOwnPost: post.author.id === userId });
     } catch (e) {
         console.error("GET /api/classrooms/[id]/posts/[postId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -90,7 +94,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             updateData.title = typeof data.title === "string" ? data.title.trim() || null : null;
         }
         if (data.content !== undefined) {
-            updateData.content = typeof data.content === "string" ? data.content.trim() || null : null;
+            const sanitized = sanitizeRichTextHtml(data.content);
+            updateData.content = richTextToPlainText(sanitized) ? sanitized : null;
         }
         if (data.isPinned !== undefined && membership.role === "TEACHER") {
             updateData.isPinned = Boolean(data.isPinned);
@@ -103,9 +108,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (editsContent) {
             const nextTitle = data.title !== undefined ? updateData.title : post.title;
             const nextContent = data.content !== undefined ? updateData.content : post.content;
-            const plainText = typeof nextContent === "string"
-                ? nextContent.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim()
-                : "";
+            const plainText = richTextToPlainText(nextContent);
             const hasAttachment = Boolean(post.assignmentId || post.testId || post.courseId || post._count.files);
             if (!nextTitle && !plainText && !hasAttachment) {
                 return NextResponse.json({ error: "A post without attachments needs text" }, { status: 400 });
@@ -122,7 +125,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             },
         });
 
-        return NextResponse.json(updated);
+        return NextResponse.json({ ...updated, files: (updated.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
     } catch (e) {
         console.error("PATCH /api/classrooms/[id]/posts/[postId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -141,7 +144,7 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-        const post = await prisma.classroomPost.findUnique({ where: { id: postId } });
+        const post = await prisma.classroomPost.findUnique({ where: { id: postId }, include: { files: { select: { storedFileId: true } } } });
         if (!post || post.classroomId !== id) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
@@ -150,7 +153,12 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Not authorized" }, { status: 403 });
         }
 
-        await prisma.classroomPost.delete({ where: { id: postId } });
+        const storedFileIds = (post.files ?? []).flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []);
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await markFilesForDeletion(tx, storedFileIds);
+            await tx.classroomPost.delete({ where: { id: postId } });
+        });
+        await purgeStoredFiles(storedFileIds);
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE /api/classrooms/[id]/posts/[postId]", e);

@@ -1,6 +1,7 @@
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import CourseBuilderClient from "@/components/course/CourseBuilderClient";
+import { storedFileUrl } from "@/lib/files/types";
 
 export default async function CourseBuilderPage({
     params,
@@ -36,7 +37,17 @@ export default async function CourseBuilderPage({
 
     return (
         <div className="course-ui flex h-[calc(100dvh-65px)] min-h-0 w-full overflow-hidden bg-[var(--course-canvas)] md:h-screen">
-            <CourseBuilderClient initialCourse={course} />
+            <CourseBuilderClient initialCourse={{
+                ...course,
+                coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null,
+                modules: course.modules.map((module: any) => ({
+                    ...module,
+                    lessons: module.lessons.map((lesson: any) => ({
+                        ...lesson,
+                        files: lesson.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                    })),
+                })),
+            }} />
         </div>
     );
 }

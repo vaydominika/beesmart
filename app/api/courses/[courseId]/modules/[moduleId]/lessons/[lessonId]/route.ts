@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { canManageCourse, getLessonAccess } from "@/lib/course-access";
+import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
+import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
+import { storedFileUrl } from "@/lib/files/types";
+import type { Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string; lessonId: string }> };
 
@@ -40,7 +44,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
         if (!lesson) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        return NextResponse.json(lesson);
+        return NextResponse.json({ ...lesson, files: lesson.files?.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
     } catch (e) {
         console.error("GET /api/courses/.../lessons/[lessonId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -57,11 +61,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true } });
+        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true, files: { select: { storedFileId: true } } } });
         if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
         const data = await req.json();
         const { autoPublish, publishNow } = data;
+        const sanitizedContent = data.content !== undefined ? sanitizeRichTextHtml(data.content) : undefined;
         const updateData: {
             title?: string;
             description?: string | null;
@@ -76,22 +81,22 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
 
         // PUBLISHING LOGIC (Phase 9):
         if (data.content !== undefined) {
-            updateData.contentDraft = data.content; // Changes always go to Draft first
+            updateData.contentDraft = sanitizedContent; // Changes always go to Draft first
             if (autoPublish) {
-                updateData.content = data.content; // If auto-publishing, also hit the Live content
+                updateData.content = sanitizedContent; // If auto-publishing, also hit the Live content
             }
         }
 
         if (publishNow) {
             // Manual publish: copy draft to live
             if (data.content !== undefined) {
-                updateData.content = data.content;
+                updateData.content = sanitizedContent;
             } else {
                 const current = await prisma.courseLesson.findUnique({
                     where: { id: lessonId },
                     select: { contentDraft: true }
                 });
-                updateData.content = current?.contentDraft || "";
+                updateData.content = sanitizeRichTextHtml(current?.contentDraft || "");
             }
         }
 
@@ -100,20 +105,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             data: updateData,
         });
 
-        // Background moderation check for manual content updates
+        // Await advisory moderation so flagged reports are durable before responding.
         if (data.content !== undefined || data.title !== undefined) {
             const { checkContentSafety, flagContent } = await import("@/lib/ai/moderation");
-            const textToCheck = `Title: ${data.title || ""} \nContent: ${data.content || ""}`;
-
-            // We don't await this to avoid blocking the user's response, 
-            // though in Vercel/Next.js this might be killed if the response finishes.
-            // For better reliability, we should await or use a background job, 
-            // but here we'll await a bit to ensure it starts.
-            checkContentSafety(textToCheck).then(async (safety) => {
-                if (!safety.safe) {
-                    await flagContent(userId, courseId, "MANUAL_CONTENT_UNSAFE", safety.reason);
-                }
-            }).catch(err => console.error("Background moderation failed:", err));
+            const textToCheck = `Title: ${updated.title}\nContent: ${richTextToPlainText(updated.contentDraft ?? updated.content ?? "")}`;
+            const safety = await checkContentSafety(textToCheck, { courseId, lessonId, operation: "manual_lesson_update" });
+            if (!safety.safe) await flagContent(userId, courseId, "MANUAL_CONTENT_UNSAFE", safety.reason);
         }
 
         return NextResponse.json(updated);
@@ -136,7 +133,12 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true } });
         if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
-        await prisma.courseLesson.delete({ where: { id: lessonId } });
+        const storedFileIds = scopedLesson.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []);
+        await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+            await markFilesForDeletion(tx, storedFileIds);
+            await tx.courseLesson.delete({ where: { id: lessonId } });
+        });
+        await purgeStoredFiles(storedFileIds);
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("DELETE /api/courses/.../lessons/[lessonId]", e);

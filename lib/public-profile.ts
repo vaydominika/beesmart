@@ -1,5 +1,6 @@
 import { accessibleCourseWhere } from "@/lib/course-access";
 import { prisma } from "@/lib/db";
+import { storedFileUrl } from "@/lib/files/types";
 
 const ACTIVITY_COPY: Record<string, string> = {
   COURSE_STARTED: "Started",
@@ -21,6 +22,20 @@ const ACTIVITY_COPY: Record<string, string> = {
   CLASSROOM_COURSE_PUBLISHED: "Published a classroom course",
   GRADE_PROVIDED: "Provided feedback",
 };
+const DIRECT_POST_ACTIVITY_TYPES = new Set(["CLASSROOM_POST_PUBLISHED", "MATERIAL_UPLOADED"]);
+
+type ProfileActivityRecord = {
+  id: string;
+  activityType: string;
+  courseId: string | null;
+  classroomId: string | null;
+  relatedId: string | null;
+  createdAt: Date;
+};
+
+function classroomPostKey(classroomId: string, relatedId: string) {
+  return `${classroomId}:${relatedId}`;
+}
 
 export async function getPublicProfile(targetUserId: string, viewerUserId: string) {
   const user = await prisma.user.findUnique({
@@ -46,7 +61,7 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
   const courses = await prisma.course.findMany({
     where: { createdById: targetUserId, published: true, visibility: "PUBLIC" },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, description: true, coverImageUrl: true, updatedAt: true },
+    select: { id: true, title: true, description: true, coverImageUrl: true, coverStoredFileId: true, updatedAt: true },
   });
 
   let activity: Array<{ id: string; text: string; createdAt: string; actionUrl: string | null }> = [];
@@ -55,7 +70,7 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
       where: { userId: targetUserId },
       orderBy: { createdAt: "desc" },
       take: 60,
-      select: { id: true, activityType: true, courseId: true, classroomId: true, createdAt: true },
+      select: { id: true, activityType: true, courseId: true, classroomId: true, relatedId: true, createdAt: true },
     });
     const courseIds = [...new Set(records.flatMap((record: { courseId: string | null }) => record.courseId ? [record.courseId] : []))];
     const classroomIds = [...new Set(records.flatMap((record: { classroomId: string | null }) => record.classroomId ? [record.classroomId] : []))];
@@ -71,19 +86,58 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
     ]);
     const courseMap = new Map<string, string>(accessibleCourses.map((course: { id: string; title: string }) => [course.id, course.title]));
     const classroomMap = new Map<string, string>(sharedMemberships.map((membership: { classroomId: string; classroom: { name: string } }) => [membership.classroomId, membership.classroom.name]));
-    activity = records.flatMap((record: { id: string; activityType: string; courseId: string | null; classroomId: string | null; createdAt: Date }) => {
+    const relatedIds = [...new Set(records.flatMap((record: ProfileActivityRecord) => record.relatedId ? [record.relatedId] : []))];
+    const sharedClassroomIds = [...classroomMap.keys()];
+    const relatedPosts = sharedClassroomIds.length && relatedIds.length ? await prisma.classroomPost.findMany({
+      where: {
+        classroomId: { in: sharedClassroomIds },
+        OR: [
+          { id: { in: relatedIds } },
+          { assignmentId: { in: relatedIds } },
+          { testId: { in: relatedIds } },
+          { courseId: { in: relatedIds } },
+        ],
+      },
+      select: { id: true, classroomId: true, assignmentId: true, testId: true, courseId: true },
+    }) : [];
+    const directPostMap = new Map<string, string>();
+    const assignmentPostMap = new Map<string, string>();
+    const testPostMap = new Map<string, string>();
+    const coursePostMap = new Map<string, string>();
+    relatedPosts.forEach((post: { id: string; classroomId: string; assignmentId: string | null; testId: string | null; courseId: string | null }) => {
+      directPostMap.set(classroomPostKey(post.classroomId, post.id), post.id);
+      if (post.assignmentId) assignmentPostMap.set(classroomPostKey(post.classroomId, post.assignmentId), post.id);
+      if (post.testId) testPostMap.set(classroomPostKey(post.classroomId, post.testId), post.id);
+      if (post.courseId) coursePostMap.set(classroomPostKey(post.classroomId, post.courseId), post.id);
+    });
+
+    activity = records.flatMap((record: ProfileActivityRecord) => {
       if (record.courseId && !courseMap.has(record.courseId)) return [];
       if (record.classroomId && !classroomMap.has(record.classroomId)) return [];
       const verb = ACTIVITY_COPY[record.activityType];
       if (!verb) return [];
+      if (record.classroomId && DIRECT_POST_ACTIVITY_TYPES.has(record.activityType) && !record.relatedId) return [];
       const resource = record.courseId ? courseMap.get(record.courseId) : record.classroomId ? classroomMap.get(record.classroomId) : null;
+      let actionUrl = record.courseId ? `/courses/${record.courseId}` : record.classroomId ? `/classroom/${record.classroomId}` : null;
+      if (record.classroomId && record.relatedId) {
+        const key = classroomPostKey(record.classroomId, record.relatedId);
+        if (DIRECT_POST_ACTIVITY_TYPES.has(record.activityType) && !directPostMap.has(key)) return [];
+        const postId = record.activityType === "ASSIGNMENT_CREATED"
+          ? assignmentPostMap.get(key)
+          : record.activityType === "TEST_CREATED" || record.activityType === "TEST_SCHEDULED"
+            ? testPostMap.get(key)
+            : record.activityType === "CLASSROOM_COURSE_PUBLISHED"
+              ? coursePostMap.get(key)
+              : directPostMap.get(key);
+        if (postId) actionUrl = `/classroom/${record.classroomId}?post=${postId}#classroom-post-${postId}`;
+      }
       return [{
         id: record.id,
         text: resource ? `${verb} ${resource}` : verb,
         createdAt: record.createdAt.toISOString(),
-        actionUrl: record.courseId ? `/courses/${record.courseId}` : null,
+        actionUrl,
       }];
-    }).slice(0, 20);
+    });
   }
 
   return {
@@ -97,7 +151,9 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
       isOwner,
       isPrivate,
       activitySharing: user.settings?.activitySharing !== false,
-      courses: courses.map((course: { id: string; title: string; description: string | null; coverImageUrl: string | null; updatedAt: Date }) => ({ ...course, updatedAt: course.updatedAt.toISOString() })),
+      courses: courses.map((course: { id: string; title: string; description: string | null; coverImageUrl: string | null; coverStoredFileId: string | null; updatedAt: Date }) => ({
+        ...course, coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null, updatedAt: course.updatedAt.toISOString(),
+      })),
       activity,
     },
   };

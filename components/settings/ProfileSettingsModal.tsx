@@ -309,7 +309,7 @@ export function ProfileSettingsModal() {
                     <div className="pt-2 space-y-3">
                       <div className="w-full min-w-[200px] h-20 min-h-[80px] rounded-xl overflow-hidden border border-(--theme-card) bg-[#fef9c3] relative">
                         <Image
-                          src={bannerImageUrl ? bannerImageUrl : "/images/BannerBackground.png"}
+                          src={bannerImageUrl ? bannerImageUrl : "/images/BannerBackground.avif"}
                           alt="Banner preview"
                           fill
                           sizes="(max-width: 768px) 100vw, 512px"
