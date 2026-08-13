@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { FancyCard } from '../ui/fancycard'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Settings01Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { FancyButton } from '../ui/fancybutton'
+import { WorkspaceButton } from '../ui/workspace-button'
 import { Input } from '../ui/input'
 import { Switch } from '../ui/switch'
 import { useSettings } from './SettingsProvider'
@@ -80,7 +79,7 @@ export function SettingsModal() {
   return (
     <Dialog open={isModalOpen} onOpenChange={closeModal}>
       <DialogContent className="p-0 max-w-2xl max-h-[78vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-6 flex flex-col max-h-[78vh] md:max-h-[76vh] overflow-hidden">
+        <div className="flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:max-h-[76vh] md:p-6">
           <DialogHeader className="shrink-0 pb-1">
             <DialogTitle className="flex items-center gap-2 text-xl md:text-[32px] font-bold text-(--theme-text) uppercase">
               <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-9 md:h-9" strokeWidth={2.2} />
@@ -247,22 +246,26 @@ export function SettingsModal() {
 
           <DialogFooter className="flex flex-col gap-2 md:gap-4 pt-2 md:pt-4 shrink-0 pb-1 md:pb-0">
             <div className="flex w-full gap-2 md:gap-6">
-              <FancyButton
+              <WorkspaceButton
+                type="button"
+                variant="secondary"
                 onClick={closeModal}
                 className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
               >
                 CANCEL
-              </FancyButton>
-              <FancyButton
+              </WorkspaceButton>
+              <WorkspaceButton
+                type="button"
+                variant="primary"
                 onClick={handleSave}
                 disabled={isSaving}
                 className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
               >
                 {isSaving ? "SAVING…" : "SAVE"}
-              </FancyButton>
+              </WorkspaceButton>
             </div>
           </DialogFooter>
-        </FancyCard>
+        </div>
       </DialogContent>
     </Dialog>
   )

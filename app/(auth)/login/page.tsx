@@ -5,8 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
@@ -74,10 +73,11 @@ function LoginForm() {
           className="h-25 w-auto -translate-x-2.5"
         />
       </Link>
-      <FancyCard className="w-full p-6 bg-(--theme-bg) border-dashed border-4 border-(--theme-card)">
+      <div className="w-full overflow-hidden rounded-2xl border-4 border-dashed border-(--theme-card) bg-(--theme-bg) p-6">
         <div className="flex flex-col gap-4">
-          <FancyButton
+          <WorkspaceButton
             type="button"
+            variant="secondary"
             onClick={handleGoogleSignIn}
             className="w-full h-10 md:h-12 text-(--theme-text) bg-(--theme-card) font-semibold uppercase text-[28px]"
           >
@@ -89,7 +89,7 @@ function LoginForm() {
               className="h-6 w-auto mr-2"
             />
             Continue with Google
-          </FancyButton>
+          </WorkspaceButton>
           <div className="flex items-center gap-3">
             <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
             <span className="text-[22px] text-(--theme-card) opacity-90">or</span>
@@ -130,16 +130,17 @@ function LoginForm() {
                 placeholder="••••••••"
               />
             </div>
-            <FancyButton
+            <WorkspaceButton
               type="submit"
+              variant="primary"
               disabled={loading}
               className="w-full h-10 md:h-12 text-(--theme-text-important) bg-(--theme-sidebar) font-semibold uppercase text-[28px]"
             >
               {loading ? "Signing in…" : "Sign in"}
-            </FancyButton>
+            </WorkspaceButton>
           </form>
         </div>
-      </FancyCard>
+      </div>
       <p className="text-sm text-(--theme-text)">
         Don&apos;t have an account?{" "}
         <Link

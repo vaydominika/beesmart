@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/db";
 import { updateUserStreak } from "@/lib/streak";
 
-type ActivityRole = "LEARNER" | "STUDENT" | "TEACHER";
-
 const COURSE_ACTIVITIES = new Set([
     "COURSE_STARTED", "COURSE_CONTINUED", "COURSE_COMPLETED", "COURSE_CREATED",
     "COURSE_UPDATED", "COURSE_PUBLISHED", "LESSON_COMPLETED",
@@ -25,23 +23,20 @@ type RecordActivityInput = {
     relatedId?: string | null;
 };
 
-async function resolveRole(userId: string, classroomId?: string | null): Promise<ActivityRole> {
-    if (!classroomId) return "LEARNER";
-    const membership = await prisma.classroomMember.findUnique({
-        where: { userId_classroomId: { userId, classroomId } },
-        select: { role: true },
-    });
-    return membership?.role === "STUDENT" ? "STUDENT" : "TEACHER";
-}
-
 export async function recordMeaningfulActivity(input: RecordActivityInput) {
-    if (!(prisma as any).activityRecord?.create) {
+    if (!prisma.activityRecord?.create) {
         return { recorded: false, reason: "activity_ledger_unavailable" as const };
     }
-    const role = await resolveRole(input.userId, input.classroomId);
-    const allowed = COURSE_ACTIVITIES.has(input.activityType)
-        || (role === "STUDENT" && STUDENT_CLASSROOM_ACTIVITIES.has(input.activityType))
-        || (role === "TEACHER" && TEACHER_CLASSROOM_ACTIVITIES.has(input.activityType));
+    let allowed = COURSE_ACTIVITIES.has(input.activityType);
+    if (!allowed && input.classroomId) {
+        const membership = await prisma.classroomMember.findUnique({
+            where: { userId_classroomId: { userId: input.userId, classroomId: input.classroomId } },
+            select: { role: true },
+        });
+        allowed = membership?.role === "STUDENT"
+            ? STUDENT_CLASSROOM_ACTIVITIES.has(input.activityType)
+            : Boolean(membership && TEACHER_CLASSROOM_ACTIVITIES.has(input.activityType));
+    }
 
     if (!allowed) return { recorded: false, reason: "not_meaningful_for_role" as const };
 
@@ -49,7 +44,6 @@ export async function recordMeaningfulActivity(input: RecordActivityInput) {
         const record = await prisma.activityRecord.create({
             data: {
                 userId: input.userId,
-                role,
                 activityType: input.activityType,
                 courseId: input.courseId ?? null,
                 classroomId: input.classroomId ?? null,

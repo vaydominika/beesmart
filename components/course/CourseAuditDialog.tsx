@@ -4,18 +4,10 @@ import { useState } from "react";
 import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-
-type Audit = {
-  overallScore: number;
-  accessibilityScore: number;
-  summary: string;
-  strengths: string[];
-  qualityIssues: Array<{ lessonId?: string; severity: "LOW" | "MEDIUM" | "HIGH"; issue: string; suggestion: string }>;
-  safetyFlags: Array<{ lessonId?: string; contentSnippet: string; reason: string }>;
-};
+import type { CourseAudit } from "@/lib/course-audit";
 
 export function CourseAuditDialog({ open, onOpenChange, courseId, onSelectLesson }: { open: boolean; onOpenChange: (open: boolean) => void; courseId: string; onSelectLesson: (lessonId: string) => void }) {
-  const [audit, setAudit] = useState<Audit | null>(null);
+  const [audit, setAudit] = useState<CourseAudit | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +26,7 @@ export function CourseAuditDialog({ open, onOpenChange, courseId, onSelectLesson
     }
   };
 
-  const followIssue = (lessonId?: string) => {
+  const followIssue = (lessonId?: string | null) => {
     if (!lessonId) return;
     onSelectLesson(lessonId);
     onOpenChange(false);

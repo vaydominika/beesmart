@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
-import { FancyCard } from "@/components/ui/fancycard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -279,7 +278,7 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
     };
 
     return (
-        <FancyCard className="h-full bg-(--theme-sidebar)">
+        <div className="h-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-sidebar)">
             <div className="flex flex-col h-full p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6 w-full">
@@ -299,7 +298,7 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
                                 size="compact"
                             />
 
-                            <FancyCard className="p-2 bg-(--theme-bg)">
+                            <div className="overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-2">
                                 <div className="flex items-center gap-2">
                                     <WorkspaceButton variant="secondary" size="icon-compact" onClick={handlePrev} aria-label="Previous period">
                                         <ChevronLeft strokeWidth={2.5} />
@@ -311,7 +310,7 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
                                         <ChevronRight strokeWidth={2.5} />
                                     </WorkspaceButton>
                                 </div>
-                            </FancyCard>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -596,6 +595,6 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
                     )}
                 </div>
             </div>
-        </FancyCard>
+        </div>
     );
 }

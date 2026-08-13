@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { cn } from "@/lib/utils";
 
 interface CalendarWidgetProps {
@@ -157,24 +156,29 @@ export function CalendarWidget({
           {monthNames[month]}. {year}.
         </h3>
         <div className="flex gap-1 items-center">
-          <FancyButton
+          <button
+            type="button"
             onClick={goToPreviousMonth}
-            className="h-7 w-7 p-0 bg-(--theme-bg) text-(--theme-text) shadow-none border-0"
+            aria-label="Previous month"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={3} />
-          </FancyButton>
-          <FancyButton
+          </button>
+          <button
+            type="button"
             onClick={goToToday}
-            className="h-7 px-2 bg-(--theme-bg) hover:bg-(--theme-card)/50 text-(--theme-text) shadow-none border-0 text-xs font-bold uppercase tracking-wide"
+            className="h-7 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 text-xs font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
           >
             Today
-          </FancyButton>
-          <FancyButton
+          </button>
+          <button
+            type="button"
             onClick={goToNextMonth}
-            className="h-7 w-7 p-0 bg-(--theme-bg) text-(--theme-text) shadow-none border-0"
+            aria-label="Next month"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
           >
             <ChevronRight className="h-4 w-4" strokeWidth={3} />
-          </FancyButton>
+          </button>
         </div>
       </div>
 

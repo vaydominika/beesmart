@@ -2,30 +2,43 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { BookOpen, SearchX } from "lucide-react";
 import { LearningCard } from "./LearningCard";
 import { useDashboard } from "@/lib/DashboardContext";
 import { ReportCourseModal } from "./ReportCourseModal";
 import type { CourseCard } from "@/lib/types";
 import { Spinner } from "@/components/ui/spinner";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CourseRail } from "./CourseRail";
 import { CourseRatingModal } from "@/components/course/CourseRatingModal";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { dashboardCourseMatchesSearch } from "@/lib/dashboard";
 
 function courseTitleById(courses: CourseCard[], id: string): string {
   return courses.find((c) => c.id === id)?.title ?? "Course";
 }
 
-export function MainContent() {
+interface MainContentProps {
+  searchQuery: string;
+  onClearSearch: () => void;
+}
+
+export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
   const router = useRouter();
-  const { data, loading, refetch } = useDashboard();
+  const { data, loading, error, refetch } = useDashboard();
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportCourseId, setReportCourseId] = useState<string | null>(null);
   const [ratingCourseId, setRatingCourseId] = useState<string | null>(null);
 
-  const continueLearning = data?.continueLearning ?? [];
-  const popularCourses = data?.popularCourses ?? [];
-  const discoverCourses = data?.discoverCourses ?? [];
-  const myCourses = data?.myCourses ?? [];
+  const queryActive = Boolean(searchQuery.trim());
+  const filterCourses = (courses: CourseCard[]) =>
+    queryActive ? courses.filter((course) => dashboardCourseMatchesSearch(course, searchQuery)) : courses;
+  const continueLearning = filterCourses(data?.continueLearning ?? []);
+  const popularCourses = filterCourses(data?.popularCourses ?? []);
+  const discoverCourses = filterCourses(data?.discoverCourses ?? []);
+  const myCourses = filterCourses(data?.myCourses ?? []);
+  const finishedCourses = filterCourses(data?.finishedCourses ?? []);
+  const hasSearchResults = [continueLearning, popularCourses, discoverCourses, myCourses, finishedCourses]
+    .some((courses) => courses.length > 0);
 
   const allCourses = useMemo(
     () => [...(data?.continueLearning ?? []), ...(data?.popularCourses ?? []), ...(data?.discoverCourses ?? []), ...(data?.myCourses ?? []), ...(data?.finishedCourses ?? [])],
@@ -42,9 +55,32 @@ export function MainContent() {
 
 
 
+  if (error && !data) {
+    return (
+      <section className="mt-6 flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
+        <BookOpen className="mb-4 h-7 w-7 text-[var(--dashboard-text-faint)]" />
+        <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">Dashboard courses could not be loaded</h2>
+        <p className="mt-2 max-w-md text-sm text-[var(--dashboard-text-muted)]">{error}</p>
+        <WorkspaceButton type="button" variant="primary" onClick={() => void refetch()} className="mt-5">
+          Try again
+        </WorkspaceButton>
+      </section>
+    );
+  }
+
   return (
-    <ScrollArea className="flex-1 bg-(--theme-bg)">
-      <div className="p-6 space-y-8">
+      <div className="mt-7 space-y-7">
+        {queryActive && !loading && !hasSearchResults && (
+          <section className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
+            <SearchX className="mb-4 h-7 w-7 text-[var(--dashboard-text-faint)]" />
+            <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">No courses match “{searchQuery.trim()}”</h2>
+            <p className="mt-2 text-sm text-[var(--dashboard-text-muted)]">Try another title or description.</p>
+            <WorkspaceButton type="button" variant="secondary" onClick={onClearSearch} className="mt-5">
+              Clear search
+            </WorkspaceButton>
+          </section>
+        )}
+
         {myCourses.length > 0 && (
           <CourseRail title="Your courses">
               {myCourses.map((course) => (
@@ -57,6 +93,7 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  actionLabel="Edit"
                   onButtonClick={() => router.push(`/courses/${course.id}/builder`)}
                 />
               ))}
@@ -76,6 +113,7 @@ export function MainContent() {
                   averageRating={course.averageRating}
                   onReportClick={openReport}
                   onRateClick={(course.progress ?? 0) > 0 ? setRatingCourseId : undefined}
+                  actionLabel="Continue"
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
@@ -94,15 +132,16 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  actionLabel="Open"
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
           </CourseRail>
         )}
 
-        {(data?.finishedCourses && data.finishedCourses.length > 0) && (
+        {finishedCourses.length > 0 && (
           <CourseRail title="Finished">
-              {data.finishedCourses.map((course) => (
+              {finishedCourses.map((course) => (
                 <LearningCard
                   key={course.id}
                   id={course.id}
@@ -113,18 +152,18 @@ export function MainContent() {
                   averageRating={course.averageRating}
                   onReportClick={openReport}
                   onRateClick={setRatingCourseId}
-                  buttonText="Review"
+                  actionLabel="Review"
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
           </CourseRail>
         )}
 
-        {loading ? (
+        {loading && !data ? (
           <section id="discover">
-            <h2 className="mb-4 text-2xl font-bold uppercase tracking-tight text-(--theme-text) md:text-[40px]">Discover</h2>
-            <div className="flex items-center justify-center py-12">
-              <Spinner className="h-8 w-8 text-(--theme-text)" />
+            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">Discover</h2>
+            <div className="flex min-h-48 items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)]">
+              <Spinner className="h-7 w-7 text-[var(--dashboard-text-muted)]" />
             </div>
           </section>
         ) : discoverCourses.length > 0 ? (
@@ -138,18 +177,19 @@ export function MainContent() {
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
+                  actionLabel="Open"
                   onButtonClick={() => router.push(`/courses/${course.id}`)}
                 />
               ))}
             </CourseRail>
-        ) : (
+        ) : !queryActive ? (
           <section id="discover">
-            <h2 className="mb-4 text-2xl font-bold uppercase tracking-tight text-(--theme-text) md:text-[40px]">Discover</h2>
-            <p className="text-(--theme-text) text-lg">
+            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">Discover</h2>
+            <p className="text-sm text-[var(--dashboard-text-muted)]">
               There are no courses yet. Create your first course or check back later for new content.
             </p>
           </section>
-        )}
+        ) : null}
 
         <ReportCourseModal
           open={reportModalOpen}
@@ -159,6 +199,5 @@ export function MainContent() {
         />
         <CourseRatingModal open={Boolean(ratingCourseId)} onOpenChange={(open) => { if (!open) setRatingCourseId(null); }} courseId={ratingCourseId} courseTitle={ratingCourseId ? courseTitleById(allCourses, ratingCourseId) : ""} onSaved={refetch} />
       </div>
-    </ScrollArea>
   );
 }

@@ -54,7 +54,6 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   const isOverlay = variant === "overlay";
   const user = data?.user;
   const userName = user?.name ?? "Guest";
-  const userRole = user?.role ?? "Learner";
   const userAvatar = user?.avatar ?? null;
   const bannerImageUrl = user?.bannerImageUrl ?? null;
 
@@ -196,9 +195,6 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
             </div>
             <p className="text-[40px] md:text-2xl font-semibold text-(--theme-text) uppercase tracking-wide text-center">
               {userName}
-            </p>
-            <p className="text-[32px] md:text-xl text-(--theme-text) uppercase tracking-wide">
-              {userRole}
             </p>
           </div>
         </div>

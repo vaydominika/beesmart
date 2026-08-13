@@ -89,12 +89,6 @@ enum CourseVisibility {
   INVITATION_ONLY
 }
 
-enum ActivityRole {
-  LEARNER
-  STUDENT
-  TEACHER
-}
-
 enum FocusSessionType {
   ACTIVE
   BREAK
@@ -756,7 +750,6 @@ model CourseAccess {
 model ActivityRecord {
   id           String       @id @default(cuid())
   userId       String
-  role         ActivityRole
   activityType String
   courseId     String?
   classroomId  String?

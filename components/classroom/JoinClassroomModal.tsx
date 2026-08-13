@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
@@ -49,7 +48,7 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="classroom-dialog max-w-md overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl">
-                <FancyCard className="flex flex-col bg-white p-5 shadow-none md:p-8">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Join Classroom
@@ -90,7 +89,7 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
                             {joining ? "Joining…" : "Join"}
                         </WorkspaceButton>
                     </div>
-                </FancyCard>
+                </div>
             </DialogContent>
         </Dialog>
     );

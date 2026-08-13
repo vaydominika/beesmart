@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -383,7 +382,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return <div className="flex justify-center py-20"><Spinner /></div>;
     }
 
-    if (!test || loadError) return <FancyCard className="border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-red-500" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></FancyCard>;
+    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-red-500" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></div>;
 
     // =========================================================================
     // STUDENT VIEW
@@ -392,7 +391,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return (
             <div className="space-y-6">
                 {/* Fixed Header */}
-                <FancyCard className="sticky top-4 z-10 overflow-hidden border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                <div className="sticky top-4 z-10 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-(--theme-text) mb-1">{test.title}</h1>
@@ -428,11 +427,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             </div>
                         )}
                     </div>
-                </FancyCard>
+                </div>
 
                 {/* State: PRE_TEST */}
                 {testState === "PRE_TEST" && (
-                    <FancyCard className="mx-auto mt-10 max-w-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
+                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
                         <FileText className="h-16 w-16 mx-auto mb-6 text-(--theme-text) opacity-20" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-4">Ready to begin?</h2>
                         {test.description && (
@@ -453,14 +452,14 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             {attemptPolicy?.activeAttemptId ? `Resume attempt ${attemptPolicy.nextAttemptNumber} of ${attemptPolicy.maxAttempts}` : `Start attempt ${attemptPolicy?.nextAttemptNumber ?? 1} of ${attemptPolicy?.maxAttempts ?? test.maxAttempts}`}
                         </WorkspaceButton>
                         {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts !== 0 && <p className="mt-3 text-xs font-medium text-[var(--classroom-text-muted)]">This assessment is not currently open.</p>}
-                    </FancyCard>
+                    </div>
                 )}
 
                 {/* State: IN_PROGRESS */}
                 {testState === "IN_PROGRESS" && (
                     <div className="space-y-8 pb-32 max-w-3xl mx-auto">
                         {test.questions.map((q, index) => (
-                            <FancyCard key={q.id} className="bg-(--theme-card) p-6 md:p-8">
+                            <div key={q.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-(--theme-card) p-6 md:p-8">
                                 <div className="flex items-start gap-4 mb-6">
                                     <div className="w-8 h-8 rounded-full bg-(--theme-text) text-(--theme-card) flex items-center justify-center font-black shrink-0">
                                         {index + 1}
@@ -509,7 +508,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                         ></textarea>
                                     )}
                                 </div>
-                            </FancyCard>
+                            </div>
                         ))}
 
                         {/* Sticky Submit Bar */}
@@ -532,7 +531,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 {/* State: COMPLETED */}
                 {testState === "COMPLETED" && (
-                    <FancyCard className="mx-auto mt-10 max-w-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
+                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
                         <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-green-500" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-2">Test Submitted</h2>
 
@@ -547,7 +546,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             </WorkspaceButton>
                         )}
                         {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts === 0 && <p className="text-xs font-semibold text-[var(--classroom-text-muted)]">No attempts remaining.</p>}
-                    </FancyCard>
+                    </div>
                 )}
             </div>
         );
@@ -575,7 +574,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
     return (
         <div className="space-y-5">
-            <FancyCard className="border border-[var(--classroom-line)] bg-white p-5 shadow-none md:p-6">
+            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--classroom-text-faint)]">Assessment review</p>
@@ -593,10 +592,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         </button>
                     ))}
                 </div>
-            </FancyCard>
+            </div>
 
             <div className="grid min-h-[620px] gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-                <FancyCard className="border border-[var(--classroom-line)] bg-white p-3 shadow-none">
+                <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-3 shadow-none">
                     <div className="max-h-[680px] space-y-1 overflow-y-auto">
                         {activeItems.length === 0 ? (
                             <div className="px-4 py-12 text-center text-sm text-[var(--classroom-text-muted)]">No learners in this state.</div>
@@ -617,16 +616,16 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             );
                         })}
                     </div>
-                </FancyCard>
+                </div>
 
                 <div className="min-w-0 space-y-4">
                     {teacherTab !== "completed" ? (
-                        <FancyCard className="flex min-h-[360px] items-center justify-center border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><UserRound className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></FancyCard>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><UserRound className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
                     ) : !selectedAttempt ? (
-                        <FancyCard className="flex min-h-[360px] items-center justify-center border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><FileText className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold">Select a completed attempt</h2></div></FancyCard>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><FileText className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold">Select a completed attempt</h2></div></div>
                     ) : (
                         <>
-                            <FancyCard className="border border-[var(--classroom-line)] bg-white p-5 shadow-none">
+                            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div><h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2><p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p></div>
                                     <div className="flex flex-wrap gap-2">
@@ -634,7 +633,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                         {gradeSuggestions && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={applyAllSuggestions}>Apply all suggestions</WorkspaceButton>}
                                     </div>
                                 </div>
-                            </FancyCard>
+                            </div>
 
                             {selectedAttempt.responses.map((response, index) => {
                                 const manual = response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY";
@@ -642,7 +641,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
                                 const suggestion = gradeSuggestions?.[response.id];
                                 return (
-                                    <FancyCard key={response.id} className="border border-[var(--classroom-line)] bg-white p-5 shadow-none">
+                                    <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none">
                                         <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
                                         <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">Learner answer</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || "No answer"}</p></div>
                                         {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Expected: {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
@@ -653,13 +652,13 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                                 {suggestion && <div className="sm:col-span-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] p-3"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold"><Sparkles className="mr-1 inline h-3.5 w-3.5" />Generated draft · {suggestion.suggestedScore}/{response.question.points}</p><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{suggestion.feedback}</p></div><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => applySuggestion(response.id)}>Apply</WorkspaceButton></div></div>}
                                             </div>
                                         ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-green-600" : "text-red-600"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
-                                    </FancyCard>
+                                    </div>
                                 );
                             })}
 
-                            <FancyCard className="sticky bottom-4 border border-[var(--classroom-line-strong)] bg-white p-4 shadow-lg">
+                            <div className="sticky bottom-4 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-4 shadow-lg">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">Draft total: {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">AI suggestions remain drafts until you save grades.</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? "Saving..." : "Save grades"}</WorkspaceButton></div>
-                            </FancyCard>
+                            </div>
                         </>
                     )}
                 </div>

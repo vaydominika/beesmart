@@ -10,8 +10,6 @@ import { useDashboard } from "@/lib/DashboardContext";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
 import { useSettings } from "@/components/settings/SettingsProvider";
-import { SettingsModal } from "@/components/settings/Settings";
-import { FancyCard } from "@/components/ui/fancycard";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/dashboard" },
@@ -29,7 +27,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
   const pathname = usePathname();
   const { openModal } = useFocus();
   const { openModal: openSettingsModal } = useSettings();
-  const { data } = useDashboard();
+  const { data, loading } = useDashboard();
   const streak = data?.streak ?? 0;
   const isOverlay = variant === "overlay";
 
@@ -37,7 +35,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
     <div
       className={cn(
         "bg-(--theme-sidebar) flex flex-col rounded-tr-[30px] rounded-br-[30px] overflow-visible relative z-10 w-full",
-        isOverlay ? "h-screen max-w-[85vw]" : "h-full w-72"
+        isOverlay ? "h-screen max-w-[85vw] overflow-hidden" : "h-full w-72"
       )}
       id="sidebar-container"
     >
@@ -62,46 +60,48 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           />
         </div>
 
-        <FancyCard className="mb-4 w-60 md:w-42 m-auto bg-(--theme-bg)">
-          <div className="p-2">
-            <p className="text-[32px] md:text-[26px] font-semibold text-(--theme-text) uppercase mb-3 md:mb-2 justify-center flex">
-              BEE CONSISTENT
-            </p>
-            <div className="flex items-center gap-2 md:gap-2 justify-center">
-              <FancyCard className="flex items-center justify-center bg-(--theme-sidebar)">
-                <div className="text-[64px] md:text-[48px] font-bold text-(--theme-text) leading-none w-fit md:px-2 md:py-1 px-3 py-2">{streak}</div>
-              </FancyCard>
-              <span className="text-[64px] md:text-[45px] font-bold text-(--theme-text) uppercase">DAYS</span>
-            </div>
+        <div className="mx-auto mb-4 w-64 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-48">
+          <p className="text-center text-[32px] font-semibold uppercase leading-none text-[var(--app-text)] md:text-[26px]">Bee consistent</p>
+          <div className="mt-2 flex items-center justify-center gap-2 text-[var(--app-text)]">
+            <span className="flex min-h-14 min-w-14 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] px-3 text-[64px] font-bold leading-none md:text-[48px]">
+              {loading && !data ? "—" : streak}
+            </span>
+            <span className="text-[56px] font-bold uppercase leading-none text-[var(--app-text)] md:text-[45px]">{streak === 1 ? "day" : "days"}</span>
           </div>
-        </FancyCard>
+        </div>
       </div>
 
       <nav className="flex-1 m-auto relative overflow-visible tracking-tight w-full pl-20 md:pl-15">
         <ul className="overflow-visible relative space-y-2">
-          {navigationItems.map((item, index) => {
-            const isActive = pathname === item.href;
+          {navigationItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
-              <li key={item.href} className="relative h-14 md:h-10 overflow-visible">
-                {isActive && (
-                  <Image
-                    src="/svg/ActiveSidebarElement.svg"
-                    alt="Active sidebar element"
-                    width={348}
-                    height={145}
-                    className="absolute z-0 pointer-events-none left-0 right-0 sidebar-active-animation md:translate-y-1.5"
+              <li key={item.href} className="relative h-14 overflow-visible md:h-11">
+                {isActive && !isOverlay && (
+                  <span
+                    aria-hidden="true"
+                    data-sidebar-active-indicator
+                    className="pointer-events-none absolute left-0 top-1/2 z-0 -mt-0.5 aspect-[348/145] w-full -translate-y-1/2 bg-[var(--app-canvas)]"
                     style={{
-                      top: '50%',
-                      transform: 'translateY(-50%)',
+                      WebkitMaskImage: "url('/svg/ActiveSidebarElement.svg')",
+                      maskImage: "url('/svg/ActiveSidebarElement.svg')",
+                      WebkitMaskPosition: "left center",
+                      maskPosition: "left center",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskSize: "100% 100%",
+                      maskSize: "100% 100%",
                     }}
                   />
                 )}
                 <div className="relative h-full overflow-visible">
                   <Link
                     href={item.href}
+                    aria-current={isActive ? "page" : undefined}
                     onClick={isOverlay ? onClose : undefined}
                     className={cn(
-                      "block h-full px-6 md:px-4 mt-2 text-[40px] md:text-[36px] uppercase transition-all duration-300 relative z-10 items-center font-black",
+                      "relative z-10 flex h-full items-center px-6 text-[40px] font-black uppercase leading-none transition-colors md:px-4 md:text-[36px]",
+                      isActive && isOverlay && "rounded-l-xl bg-[var(--app-canvas)]",
                       isActive
                         ? "text-(--theme-text-important)"
                         : "text-(--theme-text) hover:text-(--theme-text-important)"

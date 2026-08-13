@@ -245,26 +245,22 @@ export async function getStreakForUser(userId: string): Promise<number> {
 export async function getCurrentUserById(
   userId: string
 ): Promise<CurrentUser | null> {
-  const user = (await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      classroomMemberships: { take: 1, orderBy: { joinedAt: "asc" } },
+    select: {
+      id: true,
+      name: true,
+      avatar: true,
+      image: true,
+      bannerImageUrl: true,
     },
-  })) as { id: string; name: string; avatar: string | null; image: string | null; bannerImageUrl: string | null; classroomMemberships: { role: string }[] } | null;
+  });
   if (!user) return null;
-  const role = user.classroomMemberships[0]?.role ?? "STUDENT";
-  const roleDisplay =
-    role === "TEACHER"
-      ? "Teacher"
-      : role === "TEACHING_ASSISTANT"
-        ? "Teaching Assistant"
-        : "Learner";
   return {
     id: user.id,
     name: user.name,
     avatar: user.avatar ?? user.image ?? null,
     bannerImageUrl: user.bannerImageUrl,
-    role: roleDisplay,
   };
 }
 

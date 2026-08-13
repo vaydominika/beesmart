@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CalendarClock, Trash2 } from "lucide-react";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
@@ -62,7 +61,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
     };
 
     return (
-        <FancyCard className="border border-[var(--classroom-line)] bg-white p-4 shadow-none">
+        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none">
             <div className="flex items-center gap-2 mb-3">
                 <CalendarClock className="h-4 w-4" />
                 <h3 className="text-sm font-bold uppercase text-(--theme-text)">Schedule & sync</h3>
@@ -77,6 +76,6 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
                     <WorkspaceButton type="button" variant="danger" size="icon" onClick={remove} aria-label="Delete test"><Trash2 className="h-4 w-4" /></WorkspaceButton>
                 </div>
             </div>
-        </FancyCard>
+        </div>
     );
 }

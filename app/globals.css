@@ -252,25 +252,6 @@ input[type="number"] {
   appearance: textfield !important;
 }
 
-.custom-shadow {
-  @apply shadow-[0_1px_2px_0_rgba(0,14,51,0.25)];
-}
-
-@keyframes slideInFromRight {
-  from {
-    opacity: 0;
-    transform: translateY(-50%) translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
-}
-
-.sidebar-active-animation {
-  animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 @keyframes slideSidebarOut {
   from {
     transform: translateX(0);
@@ -341,9 +322,31 @@ input[type="number"] {
   background: var(--classroom-surface);
 }
 
-.classroom-ui .custom-shadow,
-.classroom-dialog .custom-shadow {
-  box-shadow: none !important;
+/* Dashboard follows the same calm workspace system as Courses and Profile. */
+.dashboard-ui {
+  --dashboard-canvas: var(--app-canvas);
+  --dashboard-surface: var(--app-surface);
+  --dashboard-surface-muted: var(--app-surface-muted);
+  --dashboard-surface-hover: var(--app-surface-hover);
+  --dashboard-accent: var(--app-accent);
+  --dashboard-accent-soft: var(--app-accent-soft);
+  --dashboard-accent-text: var(--app-accent-text);
+  --dashboard-text: var(--app-text);
+  --dashboard-text-muted: var(--app-text-muted);
+  --dashboard-text-faint: var(--app-text-faint);
+  --dashboard-line: var(--app-border);
+  --dashboard-line-strong: var(--app-border-strong);
+  --dashboard-focus-ring: var(--app-focus-ring);
+  --dashboard-focus-border: var(--app-focus-border);
+  --theme-bg: var(--dashboard-canvas);
+  --theme-sidebar: var(--dashboard-surface-muted);
+  --theme-card: var(--dashboard-accent-soft);
+  --theme-text: var(--dashboard-text);
+  --theme-text-important: var(--dashboard-text);
+  color: var(--dashboard-text);
+  background: var(--dashboard-canvas);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  letter-spacing: normal;
 }
 
 .classroom-dialog h2,

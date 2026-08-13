@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -195,7 +194,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="p-0 max-w-lg border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none [&>button]:hidden">
                 <DialogTitle className="sr-only">Event Details</DialogTitle>
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:p-8">
                     {/* Top bar: pencil left, cancel right */}
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex gap-2">
@@ -401,7 +400,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                             </div>
                         </div>
                     )}
-                </FancyCard>
+                </div>
             </DialogContent>
 
 

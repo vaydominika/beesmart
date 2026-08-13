@@ -8,8 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FancyButton } from "@/components/ui/fancybutton";
-import { FancyCard } from "@/components/ui/fancycard";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Separator } from "@/components/ui/separator";
 import { useFocus } from "./FocusProvider";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -43,7 +42,7 @@ export function FocusModal() {
   return (
     <Dialog open={isModalOpen} onOpenChange={closeModal}>
       <DialogContent className="p-0 max-w-xs border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:p-8">
           <DialogHeader className="shrink-0 pb-2 md:pb-0">
             <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
               <HugeiconsIcon icon={Idea01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2} />
@@ -112,14 +111,16 @@ export function FocusModal() {
 
             <Separator className="shrink-0 my-2" />
 
-            <FancyButton
+            <WorkspaceButton
+              type="button"
+              variant="primary"
               onClick={handleStart}
               className="w-full text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
             >
               BEE-GIN
-            </FancyButton>
+            </WorkspaceButton>
           </div>
-        </FancyCard>
+        </div>
       </DialogContent>
     </Dialog>
   );

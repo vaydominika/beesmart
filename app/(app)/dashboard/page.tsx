@@ -1,35 +1,57 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { useState } from "react";
 import { MainContent } from "@/components/dashboard/MainContent";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { BasedOnYourCoursesCard } from "@/components/dashboard/BasedOnYourCoursesCard";
 import { SurpriseMeCard } from "@/components/dashboard/SurpriseMeCard";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Search01Icon } from '@hugeicons/core-free-icons';
+import { Search, X } from "lucide-react";
 
 export default function DashboardPage() {
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
-    <ScrollArea className="h-full">
-      <div className="flex flex-col">
-        <div className="px-6 pt-4 pb-6 space-y-4">
-          <div className="relative">
-            <HugeiconsIcon icon={Search01Icon} strokeWidth={2.5} className="absolute left-3 top-1.5 h-5 w-5 text-(--theme-text)" />
-            <Input
-              type="search"
-              placeholder="SEARCH"
-              className="pl-9 bg-white border-(--theme-card) text-(--theme-text) w-full rounded-xl corner-squircle"
-            />
+    <div className="dashboard-ui min-h-full bg-[var(--dashboard-canvas)] px-4 py-5 md:px-6 md:py-7">
+      <div className="mx-auto max-w-[1500px]">
+        <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--dashboard-text)] md:text-[42px]">
+              Dashboard
+            </h1>
           </div>
+          <label className="relative block w-full sm:w-80">
+            <span className="sr-only">Search dashboard courses</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--dashboard-text-faint)]" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search courses"
+              className="h-10 w-full rounded-xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] pl-9 pr-10 text-sm text-[var(--dashboard-text)] outline-none placeholder:text-[var(--dashboard-text-faint)] focus:border-[var(--dashboard-focus-border)] focus:ring-2 focus:ring-[var(--dashboard-focus-ring)]"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear course search"
+                className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--dashboard-text-muted)] transition-colors hover:bg-[var(--dashboard-surface-muted)] hover:text-[var(--dashboard-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dashboard-focus-ring)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </label>
+        </header>
+
+        <div className="space-y-4">
           <WelcomeBanner />
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <BasedOnYourCoursesCard />
             <SurpriseMeCard />
           </div>
         </div>
-        <MainContent />
+
+        <MainContent searchQuery={searchQuery} onClearSearch={() => setSearchQuery("")} />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

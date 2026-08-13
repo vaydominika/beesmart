@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { FancyCard } from "@/components/ui/fancycard";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
@@ -726,7 +725,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             ) : (
                 <div className="space-y-4">
                     {posts.map((post) => (
-                        <FancyCard id={`classroom-post-${post.id}`} key={post.id} data-testid="classroom-post-card" className="scroll-mt-6 bg-white p-4 md:p-5 border border-[var(--classroom-line)] shadow-none target:ring-2 target:ring-[var(--classroom-focus-border)] target:ring-offset-2">
+                        <article id={`classroom-post-${post.id}`} key={post.id} data-testid="classroom-post-card" className="scroll-mt-6 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none target:ring-2 target:ring-[var(--classroom-focus-border)] target:ring-offset-2 md:p-5">
                             {/* Post Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -963,7 +962,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     </div>
                                 </div>
                             )}
-                        </FancyCard>
+                        </article>
                     ))}
                     <div ref={loadMoreRef} className="flex min-h-12 items-center justify-center py-2" aria-live="polite">
                         {loadingMore ? <><Spinner className="h-5 w-5" /><span className="ml-2 text-xs text-[var(--classroom-text-muted)]">Loading more posts...</span></> : loadMoreError ? <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(page + 1, true)}>Retry loading posts</WorkspaceButton> : !hasMore && posts.length > 0 ? <span className="text-xs text-[var(--classroom-text-faint)]">You have reached the end · {total} posts</span> : null}

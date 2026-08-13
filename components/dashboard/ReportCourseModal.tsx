@@ -8,8 +8,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
-import { FancyButton } from "@/components/ui/fancybutton";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
@@ -90,7 +89,7 @@ export function ReportCourseModal({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="p-0 max-w-2xl max-h-[85vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-10 flex flex-col max-h-[85vh] md:max-h-[82vh] overflow-hidden">
+        <div className="flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:max-h-[82vh] md:p-10">
           <DialogHeader className="shrink-0 pb-2 md:pb-0">
             <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
               <Flag className="h-6 w-6 md:w-12 md:h-12" />
@@ -137,21 +136,25 @@ export function ReportCourseModal({
           <Separator className="shrink-0 my-1 md:my-0" />
 
           <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
-            <FancyButton
+            <WorkspaceButton
+              type="button"
+              variant="secondary"
               onClick={() => handleOpenChange(false)}
               className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
             >
               CANCEL
-            </FancyButton>
-            <FancyButton
+            </WorkspaceButton>
+            <WorkspaceButton
+              type="button"
+              variant="primary"
               onClick={handleSubmit}
               disabled={!reason.trim() || loading}
               className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
             >
               {loading ? "SUBMITTING…" : "SUBMIT REPORT"}
-            </FancyButton>
+            </WorkspaceButton>
           </DialogFooter>
-        </FancyCard>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,7 +1,6 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -26,7 +25,7 @@ export function DeleteConfirmationModal({
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="p-0 max-w-sm border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none [&>button]:hidden">
                 <DialogTitle className="sr-only">{title}</DialogTitle>
-                <FancyCard className="bg-(--theme-bg) p-6 flex flex-col items-center text-center">
+                <div className="flex flex-col items-center overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-6 text-center">
                     <DialogHeader className="mb-4">
                         <h2 className="text-xl font-bold text-(--theme-text) uppercase">
                             {title}
@@ -61,7 +60,7 @@ export function DeleteConfirmationModal({
                             )}
                         </WorkspaceButton>
                     </div>
-                </FancyCard>
+                </div>
             </DialogContent>
         </Dialog>
     );

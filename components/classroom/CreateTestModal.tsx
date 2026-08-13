@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -362,7 +361,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                 >
                     <X className="h-4 w-4" />
                 </DialogClose>
-                <FancyCard className="h-full min-h-0 bg-white p-4 shadow-none md:p-5">
+                <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none md:p-5">
                   <div className="h-full min-h-0 flex flex-col">
                     <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-lg font-semibold text-(--theme-text) md:text-xl">
@@ -684,7 +683,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                         </WorkspaceButton>
                     </div>
                   </div>
-                </FancyCard>
+                </div>
             </DialogContent>
         </Dialog>
     );

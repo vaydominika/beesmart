@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -249,7 +248,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="p-0 max-w-lg max-h-[95vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <FancyCard className="bg-(--theme-bg) p-4 md:p-8 flex flex-col">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             {dateStr}
@@ -404,7 +403,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
                             {saving ? "Saving…" : "Add event"}
                         </WorkspaceButton>
                     </div>
-                </FancyCard>
+                </div>
             </DialogContent>
 
             <DeleteConfirmationModal

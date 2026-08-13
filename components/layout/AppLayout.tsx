@@ -11,7 +11,6 @@ import { useLayout } from "./LayoutProvider";
 import { useIsMobile } from "./useIsMobile";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FancyButton } from "@/components/ui/fancybutton";
 import { Toaster } from "@/components/ui/sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePathname } from "next/navigation";
@@ -27,12 +26,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
+  const isDashboard = pathname === "/dashboard";
   const isSchedule = pathname.startsWith("/schedule");
   const isCoursesIndex = pathname === "/courses";
   const isCourseBuilder = /^\/courses\/[^/]+\/builder$/.test(pathname);
   const isProfile = /^\/profile\/[^/]+$/.test(pathname);
   const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isProfile;
-  const isQuietWorkspace = isClassroom || isFocusedWorkspace;
+  const isQuietWorkspace = isDashboard || isClassroom || isFocusedWorkspace;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -108,18 +108,19 @@ export function AppLayout({ children }: AppLayoutProps) {
           <RightSidebar onClose={toggleRightSidebar} variant="overlay" />
         </div>
 
-        <FancyButton
+        <button
+          type="button"
           onClick={scrollToTop}
           aria-label="Back to top"
           className={cn(
-            "fixed bottom-4 right-4 p-0 w-14 h-14 rounded-full bg-(--theme-sidebar) flex items-center justify-center transition-all duration-300 z-999 shadow-sm",
+            "fixed bottom-4 right-4 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-all duration-300 z-999 shadow-sm hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]",
             showBackToTop
               ? "opacity-100 scale-100 pointer-events-auto"
               : "opacity-0 scale-0 pointer-events-none"
           )}
         >
           <ChevronUp className="h-10 w-10 text-(--theme-text)" />
-        </FancyButton>
+        </button>
         <TimerWidget />
         <SettingsModal />
         <ProfileSettingsModal />
@@ -169,18 +170,19 @@ export function AppLayout({ children }: AppLayoutProps) {
           </button>
         </>
       )}
-      <FancyButton
+      <button
+        type="button"
         onClick={scrollToTop}
         aria-label="Back to top"
         className={cn(
-          "fixed bottom-4 right-4 p-0 w-10 h-10 rounded-full bg-(--theme-sidebar) flex items-center justify-center transition-all duration-300 z-999 shadow-lg",
+          "fixed bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-all duration-300 z-999 shadow-sm hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]",
           showBackToTop
             ? "opacity-100 scale-100 pointer-events-auto"
             : "opacity-0 scale-0 pointer-events-none"
         )}
       >
         <ChevronUp className="h-6 w-6 text-(--theme-text)" />
-      </FancyButton>
+      </button>
       <TimerWidget />
       <SettingsModal />
       <ProfileSettingsModal />

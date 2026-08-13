@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FancyCard } from "../ui/fancycard";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,7 @@ import {
 } from "../ui/dialog";
 import { ExternalLink, UserIcon, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FancyButton } from "../ui/fancybutton";
+import { WorkspaceButton } from "../ui/workspace-button";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { useSettings } from "./SettingsProvider";
@@ -40,7 +39,6 @@ export function ProfileSettingsModal() {
   const user = data?.user;
 
   const [name, setName] = useState("");
-  const [roleDisplay, setRoleDisplay] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -65,7 +63,6 @@ export function ProfileSettingsModal() {
   useEffect(() => {
     if (isProfileModalOpen && user) {
       setName(user.name);
-      setRoleDisplay(user.role);
       setAvatarUrl(user.avatar ?? "");
       setBannerImageUrl(user.bannerImageUrl ?? "");
       setCurrentPassword("");
@@ -179,7 +176,7 @@ export function ProfileSettingsModal() {
   return (
     <Dialog open={isProfileModalOpen} onOpenChange={closeProfileModal}>
       <DialogContent className="p-0 max-w-2xl max-h-[78vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <FancyCard className="bg-(--theme-bg) p-4 md:p-6 flex flex-col max-h-[78vh] md:max-h-[76vh] overflow-hidden">
+        <div className="flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:max-h-[76vh] md:p-6">
           <DialogHeader className="shrink-0 pb-1">
             <DialogTitle className="flex items-center gap-2 text-xl md:text-[32px] font-bold text-(--theme-text) uppercase">
               <UserIcon className="h-6 w-6 md:w-9 md:h-9" />
@@ -190,7 +187,7 @@ export function ProfileSettingsModal() {
           <div className="my-2 md:my-4 flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-[32vh] md:h-[36vh] pr-2">
               <div className="space-y-5 px-2 pb-3">
-                {/* Profile: name, role */}
+                {/* Profile name */}
                 <div>
                   <button
                     onClick={() => toggleSection("profile")}
@@ -223,17 +220,6 @@ export function ProfileSettingsModal() {
                           className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
                           placeholder="Your name"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                          ROLE
-                        </label>
-                        <p className="text-sm md:text-lg font-bold text-(--theme-text) bg-(--theme-sidebar) rounded-xl corner-squircle px-4 py-3">
-                          {roleDisplay}
-                        </p>
-                        <p className="text-xs text-(--theme-text)/70 mt-1">
-                          Role is set by your classroom membership.
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -272,15 +258,16 @@ export function ProfileSettingsModal() {
                         className="hidden"
                         onChange={handleAvatarFileChange}
                       />
-                      <FancyButton
+                      <WorkspaceButton
                         type="button"
+                        variant="secondary"
                         onClick={() => avatarInputRef.current?.click()}
                         disabled={uploadingAvatar}
                         className="text-(--theme-text) text-xs md:text-xl font-bold uppercase flex items-center"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         <span>{uploadingAvatar ? "UPLOADING…" : "UPLOAD IMAGE"}</span>
-                      </FancyButton>
+                      </WorkspaceButton>
                     </div>
                   </div>
                 </div>
@@ -324,15 +311,16 @@ export function ProfileSettingsModal() {
                         className="hidden"
                         onChange={handleBannerFileChange}
                       />
-                      <FancyButton
+                      <WorkspaceButton
                         type="button"
+                        variant="secondary"
                         onClick={() => bannerInputRef.current?.click()}
                         disabled={uploadingBanner}
                         className="text-(--theme-text) text-xs md:text-xl font-bold uppercase flex items-center"
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         <span>{uploadingBanner ? "UPLOADING…" : "UPLOAD IMAGE"}</span>
-                      </FancyButton>
+                      </WorkspaceButton>
                     </div>
                   </div>
                 </div>
@@ -489,22 +477,26 @@ export function ProfileSettingsModal() {
           <Separator className="shrink-0 my-1 md:my-0" />
 
           <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-4 shrink-0 pb-1 md:pb-0">
-            <FancyButton
+            <WorkspaceButton
+              type="button"
+              variant="secondary"
               onClick={closeProfileModal}
               disabled={saving || isSavingSettings}
               className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               CANCEL
-            </FancyButton>
-            <FancyButton
+            </WorkspaceButton>
+            <WorkspaceButton
+              type="button"
+              variant="primary"
               onClick={handleSave}
               disabled={saving || isSavingSettings}
               className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
             >
               {saving ? "SAVING…" : "SAVE"}
-            </FancyButton>
+            </WorkspaceButton>
           </DialogFooter>
-        </FancyCard>
+        </div>
       </DialogContent>
     </Dialog>
   );

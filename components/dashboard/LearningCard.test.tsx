@@ -16,4 +16,13 @@ describe("LearningCard ratings", () => {
     render(<LearningCard id="course-1" title="Biology" description="Cells" progress={60} averageRating={null} />);
     expect(screen.getByText("No ratings yet")).toBeInTheDocument();
   });
+
+  it("renders plain description text and keeps the explicit primary action", () => {
+    const onOpen = vi.fn();
+    render(<LearningCard id="course-1" title="Biology" description="<p>Cells &amp; systems</p>" actionLabel="Continue" onButtonClick={onOpen} />);
+
+    expect(screen.getByText("Cells & systems")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
 });

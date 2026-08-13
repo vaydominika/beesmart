@@ -42,7 +42,7 @@ export function CourseRail({ title, id, children }: CourseRailProps) {
   return (
     <section id={id} aria-label={title}>
       <div className="mb-4 flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-bold uppercase tracking-tight text-(--theme-text) md:text-[40px]">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">{title}</h2>
         {(canScrollLeft || canScrollRight) && (
           <div className="flex shrink-0 gap-2" aria-label={`${title} navigation`}>
             <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => move(-1)} disabled={!canScrollLeft} aria-label={`Previous ${title.toLowerCase()}`}><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
@@ -50,7 +50,7 @@ export function CourseRail({ title, id, children }: CourseRailProps) {
           </div>
         )}
       </div>
-      <div ref={railRef} onScroll={updateControls} className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div ref={railRef} onScroll={updateControls} className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {Children.map(children, (child) => (
           <div className="min-w-0 shrink-0 basis-full snap-start md:basis-[calc((100%_-_1rem)/2)] lg:basis-[calc((100%_-_2rem)/3)]">{child}</div>
         ))}

@@ -12,7 +12,6 @@ export type CurrentUser = {
   name: string;
   avatar: string | null;
   bannerImageUrl: string | null;
-  role: string;
 };
 
 export type DashboardData = {

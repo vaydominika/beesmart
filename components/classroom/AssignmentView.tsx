@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { FancyCard } from "@/components/ui/fancycard";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -202,12 +201,12 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
     if (!assignment) {
         return (
-            <FancyCard className="border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
+            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
                 <XCircle className="mx-auto h-8 w-8 text-red-500" />
                 <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">Assignment unavailable</h1>
                 <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? "Assignment details could not be loaded."}</p>
                 <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">Try again</WorkspaceButton>
-            </FancyCard>
+            </div>
         );
     }
 
@@ -216,7 +215,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     return (
         <div className="space-y-6">
             {/* Header: Assignment Details */}
-            <FancyCard className="relative overflow-hidden border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-(--theme-text) mb-2">{displayAssignment.title}</h1>
@@ -254,7 +253,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         )}
                     </div>
                 </div>
-            </FancyCard>
+            </div>
 
             {submissionsError && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -269,7 +268,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Submission Form */}
                     <div className="lg:col-span-2 space-y-4">
-                        <FancyCard className="border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
                             <h2 className="text-lg font-bold text-(--theme-text) mb-4">Your Work</h2>
 
                             {mySubmission && mySubmission.status !== "PENDING" ? (
@@ -354,12 +353,12 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     </div>
                                 </div>
                             )}
-                        </FancyCard>
+                        </div>
                     </div>
 
                     {/* Right Col: Grading Status */}
                     <div className="space-y-4">
-                        <FancyCard className="border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
                             <h3 className="text-xs font-bold text-(--theme-text) opacity-50 uppercase tracking-widest mb-4">Grade Status</h3>
 
                             {mySubmission?.status === "GRADED" ? (
@@ -379,7 +378,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     <span className="text-sm font-bold text-(--theme-text) opacity-50">Not graded yet</span>
                                 </div>
                             )}
-                        </FancyCard>
+                        </div>
                     </div>
                 </div>
             ) : (
@@ -387,7 +386,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Student List */}
                     <div className="lg:col-span-1 space-y-4">
-                        <FancyCard className="flex h-[600px] flex-col border border-[var(--classroom-line)] bg-white p-4 shadow-none">
+                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none">
                             <h3 className="text-sm font-bold text-(--theme-text) mb-4 uppercase tracking-wider">Submissions</h3>
 
                             <ScrollArea className="flex-1 space-y-1 -mx-2 px-2">
@@ -437,12 +436,12 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     </div>
                                 )}
                             </ScrollArea>
-                        </FancyCard>
+                        </div>
                     </div>
 
                     {/* Right Col: Grading Canvas */}
                     <div className="lg:col-span-2 space-y-4">
-                        <FancyCard className="flex h-[600px] flex-col border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
                             {!selectedStudentId ? (
                                 <div className="flex-1 flex flex-col items-center justify-center opacity-30">
                                     <FileText className="h-16 w-16 mb-4" />
@@ -550,7 +549,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                                 return null;
                             })()}
-                        </FancyCard>
+                        </div>
                     </div>
                 </div>
             )}
