@@ -382,7 +382,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return <div className="flex justify-center py-20"><Spinner /></div>;
     }
 
-    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-red-500" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></div>;
+    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></div>;
 
     // =========================================================================
     // STUDENT VIEW
@@ -391,7 +391,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return (
             <div className="space-y-6">
                 {/* Fixed Header */}
-                <div className="sticky top-4 z-10 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                <div className="sticky top-4 z-10 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-2xl font-bold text-(--theme-text) mb-1">{test.title}</h1>
@@ -409,7 +409,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         {testState === "IN_PROGRESS" && timeLeft !== null && (
                             <div className={cn(
                                 "text-2xl font-black font-mono px-4 py-2 rounded-xl corner-squircle",
-                                timeLeft < 60 ? "bg-red-500/20 text-red-500 animate-pulse" : "bg-(--theme-sidebar) text-(--theme-text)"
+                                timeLeft < 60 ? "bg-[var(--app-danger-soft)]0/20 text-[var(--app-danger)] animate-pulse" : "bg-(--theme-sidebar) text-(--theme-text)"
                             )}>
                                 {formatTime(timeLeft)}
                             </div>
@@ -420,7 +420,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 <span className="text-xs uppercase font-bold opacity-50 block mb-1">Final Score</span>
                                 <div className={cn(
                                     "text-3xl font-black",
-                                    (bestAttempt.score ?? 0) >= (test.passingScore ?? 50) ? "text-green-500" : "text-orange-500"
+                                    (bestAttempt.score ?? 0) >= (test.passingScore ?? 50) ? "text-[var(--app-success)]" : "text-[var(--app-warning)]"
                                 )}>
                                     {Math.round(bestAttempt.score ?? 0)}%
                                 </div>
@@ -431,7 +431,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 {/* State: PRE_TEST */}
                 {testState === "PRE_TEST" && (
-                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
+                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
                         <FileText className="h-16 w-16 mx-auto mb-6 text-(--theme-text) opacity-20" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-4">Ready to begin?</h2>
                         {test.description && (
@@ -439,11 +439,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         )}
                         <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle text-left mb-8 space-y-3">
                             <div className="flex items-center gap-3">
-                                <AlertCircle className="h-5 w-5 text-orange-500" />
+                                <AlertCircle className="h-5 w-5 text-[var(--app-warning)]" />
                                 <span className="text-sm font-bold text-(--theme-text)">Once you start, the timer cannot be paused.</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                                <CheckCircle2 className="h-5 w-5 text-[var(--app-info)]" />
                                 <span className="text-sm font-bold text-(--theme-text)">Make sure you have a stable connection.</span>
                             </div>
                         </div>
@@ -514,7 +514,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         {/* Sticky Submit Bar */}
                         <div className="fixed bottom-0 left-0 w-full bg-(--theme-card) border-t border-(--theme-text)/10 p-4 shadow-2xl z-20">
                             <div className="max-w-3xl mx-auto flex items-center justify-between">
-                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-red-600" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50">Retry save</button>}</div>
+                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-[var(--app-danger)]" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-[var(--app-danger-border)] px-2 py-1 text-xs font-semibold text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)]">Retry save</button>}</div>
                                 <WorkspaceButton
                                     type="button"
                                     variant="primary"
@@ -531,8 +531,8 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 {/* State: COMPLETED */}
                 {testState === "COMPLETED" && (
-                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
-                        <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-green-500" />
+                    <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
+                        <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-[var(--app-success)]" />
                         <h2 className="text-2xl font-bold text-(--theme-text) mb-2">Test Submitted</h2>
 
                         {(attempt?.score ?? bestAttempt?.score) != null ? (
@@ -574,7 +574,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
     return (
         <div className="space-y-5">
-            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none md:p-6">
+            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--classroom-text-faint)]">Assessment review</p>
@@ -587,15 +587,15 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 </div>
                 <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Attempt status">
                     {tabItems.map((item) => (
-                        <button key={item.key} type="button" role="tab" aria-selected={teacherTab === item.key} onClick={() => setTeacherTab(item.key)} className={cn("rounded-lg border px-3 py-2 text-sm font-medium transition-colors", teacherTab === item.key ? "border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] text-[var(--classroom-text)]" : "border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)]")}>
-                            {item.label}<span className="ml-2 rounded-md bg-white/70 px-1.5 py-0.5 text-xs">{item.count}</span>
+                        <button key={item.key} type="button" role="tab" aria-selected={teacherTab === item.key} onClick={() => setTeacherTab(item.key)} className={cn("rounded-lg border px-3 py-2 text-sm font-medium transition-colors", teacherTab === item.key ? "border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] text-[var(--classroom-text)]" : "border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)]")}>
+                            {item.label}<span className="ml-2 rounded-md bg-[color-mix(in_srgb,var(--app-surface)_70%,transparent)] px-1.5 py-0.5 text-xs">{item.count}</span>
                         </button>
                     ))}
                 </div>
             </div>
 
             <div className="grid min-h-[620px] gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
-                <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-3 shadow-none">
+                <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3 shadow-none">
                     <div className="max-h-[680px] space-y-1 overflow-y-auto">
                         {activeItems.length === 0 ? (
                             <div className="px-4 py-12 text-center text-sm text-[var(--classroom-text-muted)]">No learners in this state.</div>
@@ -605,13 +605,13 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             return (
                                 <button key={attemptItem ? item.id : item.user.id} type="button" disabled={!attemptItem || teacherTab !== "completed"} onClick={() => attemptItem && setSelectedAttemptId(item.id)} className={cn("w-full rounded-xl border p-3 text-left transition-colors", selected ? "border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)]" : "border-transparent hover:bg-[var(--classroom-surface-muted)]", (!attemptItem || teacherTab !== "completed") && "cursor-default")}>
                                     <div className="flex items-center gap-3">
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-[var(--classroom-text-muted)]"><UserRound className="h-4 w-4" /></span>
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--app-surface)] text-sm font-semibold text-[var(--classroom-text-muted)]"><UserRound className="h-4 w-4" /></span>
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{item.user.name}{attemptItem ? ` · Attempt ${item.attemptNumber}` : ""}</p>
                                             {attemptItem ? <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{item.isCompleted ? new Date(item.submittedAt ?? item.startedAt).toLocaleString() : `Started ${new Date(item.startedAt).toLocaleString()}`}</p> : <p className="text-xs text-[var(--classroom-text-muted)]">No attempt</p>}
                                         </div>
                                     </div>
-                                    {attemptItem && item.isCompleted && <div className="mt-2 flex items-center justify-between text-xs"><span className={item.gradingStatus === "NEEDS_REVIEW" ? "text-orange-600" : "text-green-600"}>{item.gradingStatus === "NEEDS_REVIEW" ? `${item.manualResponsesRemaining} to review` : "Graded"}</span><span className="font-semibold text-[var(--classroom-text)]">{item.score == null ? "--" : `${Math.round(item.score)}%`}</span></div>}
+                                    {attemptItem && item.isCompleted && <div className="mt-2 flex items-center justify-between text-xs"><span className={item.gradingStatus === "NEEDS_REVIEW" ? "text-[var(--app-warning)]" : "text-[var(--app-success)]"}>{item.gradingStatus === "NEEDS_REVIEW" ? `${item.manualResponsesRemaining} to review` : "Graded"}</span><span className="font-semibold text-[var(--classroom-text)]">{item.score == null ? "--" : `${Math.round(item.score)}%`}</span></div>}
                                 </button>
                             );
                         })}
@@ -620,12 +620,12 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 <div className="min-w-0 space-y-4">
                     {teacherTab !== "completed" ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><UserRound className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><UserRound className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
                     ) : !selectedAttempt ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none"><div><FileText className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold">Select a completed attempt</h2></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><FileText className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold">Select a completed attempt</h2></div></div>
                     ) : (
                         <>
-                            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none">
+                            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div><h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2><p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p></div>
                                     <div className="flex flex-wrap gap-2">
@@ -641,22 +641,22 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
                                 const suggestion = gradeSuggestions?.[response.id];
                                 return (
-                                    <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none">
+                                    <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
                                         <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
                                         <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">Learner answer</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || "No answer"}</p></div>
                                         {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Expected: {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
                                         {manual ? (
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
-                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-white px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
-                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
+                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
+                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
                                                 {suggestion && <div className="sm:col-span-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] p-3"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold"><Sparkles className="mr-1 inline h-3.5 w-3.5" />Generated draft · {suggestion.suggestedScore}/{response.question.points}</p><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{suggestion.feedback}</p></div><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => applySuggestion(response.id)}>Apply</WorkspaceButton></div></div>}
                                             </div>
-                                        ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-green-600" : "text-red-600"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
+                                        ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-[var(--app-success)]" : "text-[var(--app-danger)]"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
                                     </div>
                                 );
                             })}
 
-                            <div className="sticky bottom-4 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-4 shadow-lg">
+                            <div className="sticky bottom-4 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-4 shadow-lg">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">Draft total: {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">AI suggestions remain drafts until you save grades.</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? "Saving..." : "Save grades"}</WorkspaceButton></div>
                             </div>
                         </>

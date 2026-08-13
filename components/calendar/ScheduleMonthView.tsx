@@ -55,7 +55,7 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                     "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]",
                     outside && "text-[var(--schedule-text-faint)]",
                     !outside && "text-[var(--schedule-text)]",
-                    isToday && "bg-[var(--schedule-text)] text-white",
+                    isToday && "bg-[var(--schedule-text)] text-[var(--app-text-inverse)]",
                   )}
                 >
                   {day.getDate()}
@@ -75,8 +75,8 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                     key={event.id}
                     type="button"
                     onClick={() => onSelectEvent(event)}
-                    className="schedule-event-surface flex h-4 w-full items-center gap-1 truncate rounded-md border px-1.5 text-left text-[10px] font-semibold leading-none text-[#20231f] shadow-[0_1px_1px_rgba(32,35,31,0.05)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)] md:text-[11px]"
-                    style={{ "--event-color": event.color || "#FADA6D" } as EventSurfaceStyle}
+                    className="schedule-event-surface flex h-4 w-full items-center gap-1 truncate rounded-md border px-1.5 text-left text-[10px] font-semibold leading-none text-[var(--app-event-text)] shadow-[var(--app-shadow-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)] md:text-[11px]"
+                    style={{ "--event-color": event.color || "var(--app-event-1)" } as EventSurfaceStyle}
                   >
                     {event.canEdit === false && <LockKeyhole className="h-2.5 w-2.5 shrink-0" />}
                     <span className="truncate">{event.isAllDay ? event.title : `${event.startTime || ""} ${event.title}`}</span>

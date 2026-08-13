@@ -155,13 +155,13 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
   );
 
   return (
-    <div className="course-builder flex h-full min-h-0 w-full bg-white text-[var(--course-text)]">
-      {!previewMode && <aside className="hidden h-full w-[298px] shrink-0 border-r border-[var(--course-line)] bg-white lg:block">{syllabus}</aside>}
+    <div className="course-builder flex h-full min-h-0 w-full bg-[var(--app-surface)] text-[var(--course-text)]">
+      {!previewMode && <aside className="hidden h-full w-[298px] shrink-0 border-r border-[var(--course-line)] bg-[var(--app-surface)] lg:block">{syllabus}</aside>}
 
       {!previewMode && mobileSyllabusOpen && (
         <>
-          <button type="button" aria-label="Close syllabus" onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-black/20 lg:hidden" />
-          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-white shadow-2xl lg:hidden">
+          <button type="button" aria-label="Close syllabus" onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
+          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-[var(--app-surface)] shadow-2xl lg:hidden">
             <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => setMobileSyllabusOpen(false)} aria-label="Close syllabus" className="absolute right-3 top-3 z-10"><X className="h-4 w-4" /></WorkspaceButton>
             {syllabus}
           </aside>
@@ -169,7 +169,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
       )}
 
       <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="h-[76px] shrink-0 border-b border-[var(--course-line)] bg-white">
+        <header className="h-[76px] shrink-0 border-b border-[var(--course-line)] bg-[var(--app-surface)]">
           <div className="flex h-full items-center gap-2 px-3 md:px-5">
             {!previewMode && (
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label="Open syllabus" className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
@@ -208,7 +208,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
                 {isSaving && <span role="status" className="hidden text-[10px] font-medium text-[var(--course-text-muted)] sm:inline">Saving...</span>}
                 <span className="hidden text-[11px] text-[var(--course-text-muted)] xl:inline">Auto-publish lesson</span>
                 <button type="button" role="switch" aria-checked={autoPublish} aria-label="Publish lesson edits automatically" onClick={() => setAutoPublish((current) => !current)} className={cn("relative h-5 w-9 rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", autoPublish ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line-strong)] bg-[var(--course-surface-muted)]")}>
-                  <span data-switch-thumb className={cn("absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform", autoPublish ? "translate-x-4" : "translate-x-0")} />
+                  <span data-switch-thumb className={cn("absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-[var(--app-surface)] shadow-sm transition-transform", autoPublish ? "translate-x-4" : "translate-x-0")} />
                 </button>
                 {!autoPublish && (
                   <WorkspaceButton type="button" variant="secondary" size="compact" aria-label="Publish lesson" onClick={() => void handlePublishLesson()} disabled={isSaving || !hasUnpublishedChanges}><Send className="h-3.5 w-3.5" /><span className="hidden lg:inline">Publish lesson</span></WorkspaceButton>

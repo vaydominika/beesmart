@@ -44,7 +44,7 @@ interface ResizeState {
 type EventSurfaceStyle = CSSProperties & { "--event-color": string };
 
 function eventSurfaceStyle(color?: string | null): EventSurfaceStyle {
-  return { "--event-color": color || "#FADA6D" };
+  return { "--event-color": color || "var(--app-event-1)" };
 }
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -157,7 +157,7 @@ export function ScheduleWeekView({
                     </span>
                     <span className={cn(
                       "mt-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-[var(--schedule-text)]",
-                      today && "bg-[var(--schedule-text)] text-white",
+                      today && "bg-[var(--schedule-text)] text-[var(--app-text-inverse)]",
                     )}>
                       {day.getDate()}
                     </span>
@@ -177,7 +177,7 @@ export function ScheduleWeekView({
                         key={event.id}
                         type="button"
                         onClick={() => onSelectEvent(event)}
-                        className="schedule-event-surface flex w-full items-center gap-1 truncate rounded-md border px-2 py-1 text-left text-[11px] font-semibold text-[#20231f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"
+                        className="schedule-event-surface flex w-full items-center gap-1 truncate rounded-md border px-2 py-1 text-left text-[11px] font-semibold text-[var(--app-event-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"
                         style={eventSurfaceStyle(event.color)}
                       >
                         {event.canEdit === false && <LockKeyhole className="h-3 w-3 shrink-0" />}
@@ -233,8 +233,8 @@ export function ScheduleWeekView({
                   {HOURS.map((hour) => <div key={hour} className="border-b border-[var(--schedule-line)]" style={{ height: HOUR_HEIGHT }} />)}
 
                   {isToday && (
-                    <div className="pointer-events-none absolute left-0 right-0 z-10 border-t border-[#d2bc4a]" style={{ top: (getNowMinutes(now) / 60) * HOUR_HEIGHT }}>
-                      <span className="absolute -left-1 -top-[10px] flex h-5 min-w-[38px] items-center justify-center rounded-md border border-[#c5aa2f] bg-[#d2bc4a] px-2 font-mono text-[10px] font-bold leading-none text-white shadow-[0_1px_2px_rgba(32,35,31,0.12)]">Now</span>
+                    <div className="pointer-events-none absolute left-0 right-0 z-10 border-t border-[var(--app-focus-border)]" style={{ top: (getNowMinutes(now) / 60) * HOUR_HEIGHT }}>
+                      <span className="absolute -left-1 -top-[10px] flex h-5 min-w-[38px] items-center justify-center rounded-md border border-[var(--app-focus-border)] bg-[var(--app-accent-text)] px-2 font-mono text-[10px] font-bold leading-none text-[var(--app-text-inverse)] shadow-[var(--app-shadow-subtle)]">Now</span>
                     </div>
                   )}
 
@@ -260,7 +260,7 @@ export function ScheduleWeekView({
                         onClick={() => onSelectEvent(event)}
                         aria-label={`${event.title}, ${event.startTime} to ${event.endTime || formatTime(parseTime(event.startTime) + 60)}`}
                         className={cn(
-                          "schedule-event-card schedule-event-surface group absolute left-1 right-1 z-20 flex flex-col items-stretch justify-start overflow-hidden rounded-[10px] border text-left text-[#20231f] shadow-[0_1px_2px_rgba(32,35,31,0.08)] transition-[filter,transform,box-shadow] hover:-translate-y-px hover:brightness-[0.99] hover:shadow-[0_3px_8px_rgba(32,35,31,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]",
+                          "schedule-event-card schedule-event-surface group absolute left-1 right-1 z-20 flex flex-col items-stretch justify-start overflow-hidden rounded-[10px] border text-left text-[var(--app-event-text)] shadow-[var(--app-shadow-subtle)] transition-[filter,transform,box-shadow] hover:-translate-y-px hover:brightness-[0.99] hover:shadow-[var(--app-shadow-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]",
                           isRoomy ? "px-2.5 py-2" : "px-2 py-[3px]",
                         )}
                         style={{ ...eventPosition(event), ...eventSurfaceStyle(event.color) }}
@@ -270,8 +270,8 @@ export function ScheduleWeekView({
                           <span className="truncate">{event.title}</span>
                         </span>
                         <span className={cn(
-                          "block max-w-full truncate font-mono text-[9px] leading-[12px] text-[#5f625b]",
-                          isRoomy ? "mt-1 w-fit rounded-md bg-white/55 px-1.5 py-0.5" : "mt-px",
+                          "block max-w-full truncate font-mono text-[9px] leading-[12px] text-[var(--app-text-muted)]",
+                          isRoomy ? "mt-1 w-fit rounded-md bg-[color-mix(in_srgb,var(--app-surface)_55%,transparent)] px-1.5 py-0.5" : "mt-px",
                         )}>
                           {event.startTime}<span className="schedule-event-end-time"> – {event.endTime || formatTime(parseTime(event.startTime) + 60)}</span>
                         </span>
@@ -289,7 +289,7 @@ export function ScheduleWeekView({
                               setResize({ event, startClientY: pointerEvent.clientY, initialDuration: eventDuration(event) });
                             }}
                           >
-                            <span className="h-0.5 w-7 rounded-full bg-[#20231f]" />
+                            <span className="h-0.5 w-7 rounded-full bg-[var(--app-event-text)]" />
                           </span>
                         )}
                       </button>

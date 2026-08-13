@@ -55,8 +55,8 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl">
-                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-none md:p-8">
+            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Create Classroom

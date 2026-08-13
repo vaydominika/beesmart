@@ -11,7 +11,7 @@ export function ReminderItem({ task, date, time }: ReminderItemProps) {
   return (
     <div className="flex items-center gap-3 py-3">
       {/* Bell icon in rounded white square */}
-      <div className="shrink-0 w-12 h-12 md:w-10 md:h-10 bg-white rounded-xl flex items-center justify-center">
+      <div className="shrink-0 w-12 h-12 md:w-10 md:h-10 bg-[var(--app-surface)] rounded-xl flex items-center justify-center">
         <HugeiconsIcon icon={Notification01Icon} className="h-6 w-6 md:h-5 md:w-5 text-(--theme-text)" strokeWidth={2} />
       </div>
       {/* Title + date */}

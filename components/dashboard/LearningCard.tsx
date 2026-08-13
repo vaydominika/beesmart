@@ -70,7 +70,7 @@ export function LearningCard({
             />
             <div className="absolute right-2 top-2 z-10 flex gap-1.5">
               {onRateClick && (
-                <WorkspaceButton type="button" variant="secondary" size="icon-compact" className="border-white/80 bg-white/95" onClick={(event) => { event.stopPropagation(); onRateClick(id); }} aria-label="Rate course">
+                <WorkspaceButton type="button" variant="secondary" size="icon-compact" className="border-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] bg-[color-mix(in_srgb,var(--app-surface)_95%,transparent)]" onClick={(event) => { event.stopPropagation(); onRateClick(id); }} aria-label="Rate course">
                   <Star className="h-4 w-4" />
                 </WorkspaceButton>
               )}
@@ -79,7 +79,7 @@ export function LearningCard({
                   type="button"
                   variant="secondary"
                   size="icon-compact"
-                  className="border-white/80 bg-white/95"
+                  className="border-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] bg-[color-mix(in_srgb,var(--app-surface)_95%,transparent)]"
                   onClick={(e) => {
                     e.stopPropagation();
                     onReportClick(id);

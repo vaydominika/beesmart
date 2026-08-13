@@ -1,18 +1,21 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { TimerReset } from "lucide-react";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Separator } from "@/components/ui/separator";
+import {
+  WorkspaceDialogBody,
+  WorkspaceDialogContent,
+  WorkspaceDialogDescription,
+  WorkspaceDialogFooter,
+  WorkspaceDialogHeader,
+  WorkspaceDialogTitle,
+  workspaceFieldClass,
+  workspaceLabelClass,
+} from "@/components/ui/workspace-dialog";
 import { useFocus } from "./FocusProvider";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Idea01Icon } from "@hugeicons/core-free-icons";
 
 export function FocusModal() {
   const {
@@ -33,95 +36,65 @@ export function FocusModal() {
   const handleStart = () => {
     const active = Math.min(120, Math.max(1, activeMinutes || 45));
     const breakMins = Math.min(60, Math.max(1, breakMinutes || 15));
-    
     setActiveMinutes(active);
     setBreakMinutes(breakMins);
     startSession({ activeMinutes: active, breakMinutes: breakMins, autoBreak });
   };
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={closeModal}>
-      <DialogContent className="p-0 max-w-xs border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:p-8">
-          <DialogHeader className="shrink-0 pb-2 md:pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
-              <HugeiconsIcon icon={Idea01Icon} size={24} className="md:w-12 md:h-12" strokeWidth={2.2} />
-              FOCUS
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+      <WorkspaceDialogContent className="max-w-md">
+        <WorkspaceDialogHeader>
+          <WorkspaceDialogTitle className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]">
+              <TimerReset className="h-4 w-4" aria-hidden="true" />
+            </span>
+            Focus session
+          </WorkspaceDialogTitle>
+          <WorkspaceDialogDescription>Set a focused work block and an optional automatic break.</WorkspaceDialogDescription>
+        </WorkspaceDialogHeader>
 
-          <div className="space-y-4 my-2 md:my-4">
-            <p className="text-base md:text-[24px] font-bold text-(--theme-text)">
-              TIME TO{" "}
-              <span className="text-(--theme-secondary)">BEE</span> PRODUCTIVE!
-            </p>
-
-            <div aria-label="All-time focus statistics" className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl corner-squircle bg-(--theme-sidebar) px-3 py-2.5">
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wide text-(--theme-text)/65">Focus sessions</p>
-                <p className="mt-1 text-2xl md:text-3xl font-bold text-(--theme-text)">{isStatsLoading ? "–" : stats.focusCount}</p>
-              </div>
-              <div className="rounded-xl corner-squircle bg-(--theme-card) px-3 py-2.5">
-                <p className="text-[10px] md:text-xs font-bold uppercase tracking-wide text-(--theme-text)/65">Breaks</p>
-                <p className="mt-1 text-2xl md:text-3xl font-bold text-(--theme-text)">{isStatsLoading ? "–" : stats.breakCount}</p>
-              </div>
+        <WorkspaceDialogBody className="space-y-5">
+          <div aria-label="All-time focus statistics" className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
+              <p className="text-xs font-medium text-[var(--app-text-muted)]">Focus sessions</p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-[var(--app-text)]">{isStatsLoading ? "–" : stats.focusCount}</p>
             </div>
-            {statsError && <p role="status" className="text-xs font-semibold text-red-700">{statsError}</p>}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-2">
-                  ACTIVE MINUTES
-                </label>
-                <Input
-                  type="number"
-                  value={activeMinutes || ""}
-                  onChange={(e) => setActiveMinutes(Number(e.target.value))}
-                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-20 md:w-24 h-12 md:h-14"
-                  min="1"
-                  max="120"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-2">
-                  BREAK
-                </label>
-                <Input
-                  type="number"
-                  value={breakMinutes || ""}
-                  onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-xl md:text-[36px] font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-20 md:w-24 h-12 md:h-14"
-                  min="1"
-                  max="60"
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <label className="text-sm md:text-[22px] font-bold text-(--theme-text) uppercase">
-                  AUTO SWITCH TO BREAK
-                </label>
-                <Switch
-                  checked={autoBreak}
-                  onCheckedChange={setAutoBreak}
-                  className="data-[state=checked]:bg-(--theme-sidebar) scale-110 md:scale-125"
-                />
-              </div>
+            <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)] p-4">
+              <p className="text-xs font-medium text-[var(--app-accent-text)]">Breaks</p>
+              <p className="mt-1 text-2xl font-semibold tracking-tight text-[var(--app-text)]">{isStatsLoading ? "–" : stats.breakCount}</p>
             </div>
-
-            <Separator className="shrink-0 my-2" />
-
-            <WorkspaceButton
-              type="button"
-              variant="primary"
-              onClick={handleStart}
-              className="w-full text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
-            >
-              BEE-GIN
-            </WorkspaceButton>
           </div>
-        </div>
-      </DialogContent>
+
+          {statsError ? <p role="status" className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger)]">{statsError}</p> : null}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="focus-active-minutes" className={workspaceLabelClass}>Focus minutes</label>
+              <Input id="focus-active-minutes" type="number" value={activeMinutes || ""} onChange={(event) => setActiveMinutes(Number(event.target.value))} className={workspaceFieldClass} min="1" max="120" />
+              <p className="mt-1 text-xs text-[var(--app-text-faint)]">1–120 minutes</p>
+            </div>
+            <div>
+              <label htmlFor="focus-break-minutes" className={workspaceLabelClass}>Break minutes</label>
+              <Input id="focus-break-minutes" type="number" value={breakMinutes || ""} onChange={(event) => setBreakMinutes(Number(event.target.value))} className={workspaceFieldClass} min="1" max="60" />
+              <p className="mt-1 text-xs text-[var(--app-text-faint)]">1–60 minutes</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+            <div>
+              <label htmlFor="focus-auto-break" className="text-sm font-semibold text-[var(--app-text)]">Start break automatically</label>
+              <p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">Move straight into the break when focus time ends.</p>
+            </div>
+            <Switch id="focus-auto-break" checked={autoBreak} onCheckedChange={setAutoBreak} />
+          </div>
+        </WorkspaceDialogBody>
+
+        <WorkspaceDialogFooter>
+          <WorkspaceButton type="button" variant="secondary" onClick={closeModal}>Cancel</WorkspaceButton>
+          <WorkspaceButton type="button" variant="primary" onClick={handleStart}>Start focus</WorkspaceButton>
+        </WorkspaceDialogFooter>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

@@ -67,7 +67,7 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
         <Mail className="h-2.5 w-2.5" />Invite
       </WorkspaceButton>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-white p-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[640px] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl">
+        <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[640px] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl">
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold">Course invitations</DialogTitle>
             <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Give specific people access to this invitation-only course.</DialogDescription>

@@ -354,14 +354,14 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
+            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
                 <DialogClose
                     aria-label="Close test builder"
-                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                    className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                 >
                     <X className="h-4 w-4" />
                 </DialogClose>
-                <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none md:p-5">
+                <div className="h-full min-h-0 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-4 shadow-none md:p-5">
                   <div className="h-full min-h-0 flex flex-col">
                     <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-lg font-semibold text-(--theme-text) md:text-xl">
@@ -379,7 +379,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Questions stay local to this post until you review, add, and publish them.</p>
                                     </div>
                                 </div>
-                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="mt-3 bg-white!" />
+                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="mt-3 bg-[var(--app-surface)]!" />
                                 {sourceMode === "course" ? (
                                     <WorkspaceSelect
                                         ariaLabel="Source course"
@@ -387,23 +387,23 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         options={sourceCourses.map((course) => ({ value: course.id, label: course.title }))}
                                         onValueChange={setCourseId}
                                         placeholder="Choose source course"
-                                        className="mt-3 h-10 w-full rounded-xl border-0 bg-white!"
+                                        className="mt-3 h-10 w-full rounded-xl border-0 bg-[var(--app-surface)]!"
                                     />
                                 ) : (
                                     <label className="mt-3 block">
                                         <span className="sr-only">Source text</span>
-                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-white! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
                                         <span className="mt-1 block text-right text-[10px] text-[var(--classroom-text-muted)]">{sourceText.length}/20,000</span>
                                     </label>
                                 )}
                                 <div className="mt-3 grid items-end gap-3 sm:grid-cols-3">
                                     <label>
                                         <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Difficulty</span>
-                                        <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border-0 bg-white" />
+                                        <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border-0 bg-[var(--app-surface)]" />
                                     </label>
                                     <label>
                                         <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Question count</span>
-                                        <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border-0 bg-white! shadow-none" />
+                                        <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border-0 bg-[var(--app-surface)]! shadow-none" />
                                     </label>
                                     <WorkspaceButton type="button" variant="secondary" className="h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
                                         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
@@ -556,7 +556,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                     {questions.length > 1 && (
                                                         <button
                                                             onClick={() => removeQuestion(qIndex)}
-                                                            className="text-red-400 hover:text-red-500 p-1"
+                                                            className="text-[var(--app-danger)] hover:text-[var(--app-danger)] p-1"
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5" />
                                                         </button>
@@ -593,7 +593,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                                 className={cn(
                                                                     "shrink-0 transition-colors",
                                                                     opt.isCorrect
-                                                                        ? "text-green-500"
+                                                                        ? "text-[var(--app-success)]"
                                                                         : "text-(--theme-text) opacity-30 hover:opacity-60"
                                                                 )}
                                                                 title={opt.isCorrect ? "Correct answer" : "Mark as correct"}
@@ -612,7 +612,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                             {q.questionType === "MULTIPLE_CHOICE" && q.options.length > 2 && (
                                                                 <button
                                                                     onClick={() => removeOption(qIndex, oIndex)}
-                                                                    className="text-(--theme-text) opacity-30 hover:text-red-400 p-1"
+                                                                    className="text-(--theme-text) opacity-30 hover:text-[var(--app-danger)] p-1"
                                                                 >
                                                                     <Trash2 className="h-3.5 w-3.5" />
                                                                 </button>

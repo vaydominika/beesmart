@@ -77,7 +77,7 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="truncate text-sm font-semibold text-[var(--schedule-text)]">{event.title}</span>
-                        {isNext && <span className="rounded-full bg-[#d2bc4a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-white">Next up</span>}
+                        {isNext && <span className="rounded-full bg-[var(--app-accent-text)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--app-text-inverse)]">Next up</span>}
                         {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 text-[var(--schedule-text-faint)]" />}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--schedule-text-muted)]">

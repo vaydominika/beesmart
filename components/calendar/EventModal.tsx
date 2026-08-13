@@ -1,419 +1,186 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { useCallback, useEffect, useState } from "react";
+import { Reorder, useDragControls } from "framer-motion";
+import { CalendarPlus, Clock, GripVertical, LockKeyhole, Trash2 } from "lucide-react";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
-import { Trash2, LockKeyhole } from "lucide-react";
-import { Reorder, useDragControls } from "framer-motion";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { DragDropVerticalIcon } from "@hugeicons/core-free-icons";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import {
+  WorkspaceDialogBody,
+  WorkspaceDialogContent,
+  WorkspaceDialogDescription,
+  WorkspaceDialogFooter,
+  WorkspaceDialogHeader,
+  WorkspaceDialogTitle,
+  workspaceFieldClass,
+  workspaceLabelClass,
+} from "@/components/ui/workspace-dialog";
 import { cn } from "@/lib/utils";
-import { Clock } from "lucide-react";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
+import { DEFAULT_EVENT_COLOR, EVENT_COLOR_OPTIONS } from "./event-palette";
 
 interface EventData {
-    id: string;
-    title: string;
-    description?: string | null;
-    startDate: string;
-    startTime?: string | null;
-    endTime?: string | null;
-    isAllDay: boolean;
-    isProtected?: boolean;
-    canEdit?: boolean;
+  id: string;
+  title: string;
+  description?: string | null;
+  startDate: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  isAllDay: boolean;
+  isProtected?: boolean;
+  canEdit?: boolean;
 }
 
 interface EventModalProps {
-    open: boolean;
-    onClose: () => void;
-    selectedDate: Date;
-    onEventsChanged: () => void;
-    initialStartTime?: string;
-    initialEndTime?: string;
+  open: boolean;
+  onClose: () => void;
+  selectedDate: Date;
+  onEventsChanged: () => void;
+  initialStartTime?: string;
+  initialEndTime?: string;
 }
 
-function SortableEventItem({
-    event,
-    onDelete,
-    onDragEnd,
-}: {
-    event: EventData;
-    onDelete: (id: string) => void;
-    onDragEnd: () => void;
-}) {
-    const controls = useDragControls();
-
-    return (
-        <Reorder.Item
-            value={event}
-            dragListener={false}
-            dragControls={controls}
-            onDragEnd={onDragEnd}
-            className="flex items-center justify-between bg-(--theme-sidebar) rounded-xl corner-squircle p-3 mb-2"
-        >
-            {event.isProtected ? (
-                <div className="p-2 -ml-2 text-(--theme-text) opacity-40"><LockKeyhole className="h-4 w-4" /></div>
-            ) : (
-                <div
-                    className="cursor-move p-2 -ml-2 text-(--theme-text) opacity-50 hover:opacity-100 touch-none"
-                    onPointerDown={(e) => controls.start(e)}
-                >
-                    <HugeiconsIcon icon={DragDropVerticalIcon} size={20} strokeWidth={2.2} />
-                </div>
-            )}
-            <div className="min-w-0 flex-1 ml-1 select-none">
-                <p className="text-sm md:text-base font-bold text-(--theme-text) truncate">
-                    {event.title}
-                </p>
-                {event.isAllDay ? (
-                    <p className="text-xs text-(--theme-text) opacity-70">All day</p>
-                ) : event.startTime ? (
-                    <p className="text-xs text-(--theme-text) opacity-70">
-                        {event.startTime}
-                        {event.endTime ? ` – ${event.endTime}` : ""}
-                    </p>
-                ) : null}
-            </div>
-            {event.canEdit !== false && (
-                <button
-                    onClick={() => onDelete(event.id)}
-                    className="ml-2 p-1.5 rounded-lg hover:bg-(--theme-card)/50 text-(--theme-text) opacity-60 hover:opacity-100 transition-opacity shrink-0"
-                >
-                    <Trash2 className="h-4 w-4" />
-                </button>
-            )}
-        </Reorder.Item>
-    );
+function SortableEventItem({ event, onDelete, onDragEnd }: { event: EventData; onDelete: (id: string) => void; onDragEnd: () => void }) {
+  const controls = useDragControls();
+  return (
+    <Reorder.Item value={event} dragListener={false} dragControls={controls} onDragEnd={onDragEnd} className="mb-2 flex items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-2.5">
+      {event.isProtected ? (
+        <span className="flex h-8 w-8 items-center justify-center text-[var(--app-text-faint)]"><LockKeyhole className="h-4 w-4" /></span>
+      ) : (
+        <button type="button" aria-label={`Reorder ${event.title}`} className="flex h-8 w-8 cursor-grab touch-none items-center justify-center rounded-lg text-[var(--app-text-faint)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] active:cursor-grabbing" onPointerDown={(pointerEvent) => controls.start(pointerEvent)}><GripVertical className="h-4 w-4" /></button>
+      )}
+      <div className="min-w-0 flex-1 px-2">
+        <p className="truncate text-sm font-semibold text-[var(--app-text)]">{event.title}</p>
+        <p className="text-xs text-[var(--app-text-muted)]">{event.isAllDay ? "All day" : event.startTime ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}` : "No time set"}</p>
+      </div>
+      {event.canEdit !== false ? <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => onDelete(event.id)} aria-label={`Delete ${event.title}`}><Trash2 className="h-4 w-4" /></WorkspaceButton> : null}
+    </Reorder.Item>
+  );
 }
 
 export function EventModal({ open, onClose, selectedDate, onEventsChanged, initialStartTime, initialEndTime }: EventModalProps) {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
-    const [isAllDay, setIsAllDay] = useState(false);
-    const [color, setColor] = useState("#FEC435"); // Default yellow
-    const [saving, setSaving] = useState(false);
-    const [events, setEvents] = useState<EventData[]>([]);
-    const [loadingEvents, setLoadingEvents] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
-    const [deleting, setDeleting] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [isAllDay, setIsAllDay] = useState(false);
+  const [color, setColor] = useState<string>(DEFAULT_EVENT_COLOR);
+  const [saving, setSaving] = useState(false);
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-    const dateStr = selectedDate.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
+  const dateStr = selectedDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
 
-    const fetchEventsForDate = useCallback(async () => {
-        setLoadingEvents(true);
-        try {
-            const y = selectedDate.getFullYear();
-            const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
-            const res = await fetch(`/api/user/events?month=${y}-${m}`);
-            if (!res.ok) return;
-            const all: EventData[] = await res.json();
-            // Filter to the selected date
-            const dayStr = `${y}-${m}-${String(selectedDate.getDate()).padStart(2, "0")}`;
-            const filtered = all.filter((e) => e.startDate.slice(0, 10) === dayStr);
-            setEvents(filtered);
-        } catch {
-            // ignore
-        } finally {
-            setLoadingEvents(false);
-        }
-    }, [selectedDate]);
+  const fetchEventsForDate = useCallback(async () => {
+    setLoadingEvents(true);
+    try {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const response = await fetch(`/api/user/events?month=${year}-${month}`);
+      if (!response.ok) return;
+      const allEvents: EventData[] = await response.json();
+      const day = `${year}-${month}-${String(selectedDate.getDate()).padStart(2, "0")}`;
+      setEvents(allEvents.filter((event) => event.startDate.slice(0, 10) === day));
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, [selectedDate]);
 
-    useEffect(() => {
-        if (open) {
-            fetchEventsForDate();
-            setTitle("");
-            setDescription("");
-            setStartTime(initialStartTime || "");
-            setEndTime(initialEndTime || "");
-            setIsAllDay(false);
-            setColor("#FEC435");
-        }
-    }, [open, fetchEventsForDate, initialStartTime, initialEndTime]);
+  useEffect(() => {
+    if (!open) return;
+    void fetchEventsForDate();
+    setTitle("");
+    setDescription("");
+    setStartTime(initialStartTime || "");
+    setEndTime(initialEndTime || "");
+    setIsAllDay(false);
+    setColor(DEFAULT_EVENT_COLOR);
+  }, [fetchEventsForDate, initialEndTime, initialStartTime, open]);
 
-    const handleSave = async () => {
-        if (!title.trim()) {
-            toast.error("Please enter a title.");
-            return;
-        }
-        setSaving(true);
-        try {
-            const y = selectedDate.getFullYear();
-            const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
-            const d = String(selectedDate.getDate()).padStart(2, "0");
-            const startDate = `${y}-${m}-${d}T00:00:00.000Z`;
+  const handleSave = async () => {
+    if (!title.trim()) return toast.error("Please enter a title.");
+    if (!isAllDay && startTime && endTime && endTime <= startTime) return toast.error("End time must be later than start time.");
+    setSaving(true);
+    try {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+      const day = String(selectedDate.getDate()).padStart(2, "0");
+      const response = await fetch("/api/user/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim(), description: description.trim() || null, startDate: `${year}-${month}-${day}T00:00:00.000Z`, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color }) });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        return toast.error(result.error ?? "Failed to create event.");
+      }
+      toast.success("Event created");
+      setTitle(""); setDescription(""); setStartTime(""); setEndTime(""); setIsAllDay(false); setColor(DEFAULT_EVENT_COLOR);
+      await fetchEventsForDate();
+      window.setTimeout(onEventsChanged, 100);
+    } catch {
+      toast.error("Failed to create event.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-            const res = await fetch("/api/user/events", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim() || null,
-                    startDate,
-                    startTime: isAllDay ? null : startTime || null,
-                    endTime: isAllDay ? null : endTime || null,
-                    isAllDay,
-                    color,
-                }),
-            });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                toast.error(data.error ?? "Failed to create event.");
-                return;
-            }
-            toast.success("Event created!");
-            setTitle("");
-            setDescription("");
-            setStartTime("");
-            setEndTime("");
-            setIsAllDay(false);
-            setColor("#FEC435");
-            await fetchEventsForDate();
-            // Small delay to ensure DB propagation before parent refetch
-            setTimeout(() => {
-                onEventsChanged();
-            }, 100);
-        } catch {
-            toast.error("Failed to create event.");
-        } finally {
-            setSaving(false);
-        }
-    };
+  const handleConfirmDelete = async () => {
+    if (!eventToDeleteId) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/user/events?id=${eventToDeleteId}`, { method: "DELETE" });
+      if (!response.ok) return toast.error("Failed to delete event.");
+      toast.success("Event deleted");
+      await fetchEventsForDate();
+      window.setTimeout(onEventsChanged, 50);
+      setShowDeleteModal(false);
+      setEventToDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
-    const handleDeleteClick = (id: string) => {
-        setEventToDeleteId(id);
-        setShowDeleteModal(true);
-    };
+  const handleDragEnd = async () => {
+    try {
+      await fetch("/api/user/events", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(events.filter((event) => !event.isProtected).map((event, index) => ({ id: event.id, order: index }))) });
+      window.setTimeout(onEventsChanged, 50);
+    } catch {
+      toast.error("Failed to save order.");
+    }
+  };
 
-    const handleConfirmDelete = async () => {
-        if (!eventToDeleteId) return;
-        setDeleting(true);
-        try {
-            const res = await fetch(`/api/user/events?id=${eventToDeleteId}`, { method: "DELETE" });
-            if (!res.ok) {
-                toast.error("Failed to delete event.");
-                return;
-            }
-            toast.success("Event deleted.");
-            await fetchEventsForDate();
-            // Small delay to ensure DB propagation before parent refetch
-            setTimeout(() => {
-                onEventsChanged();
-            }, 50);
-            setShowDeleteModal(false);
-            setEventToDeleteId(null);
-        } catch {
-            toast.error("Failed to delete event.");
-        } finally {
-            setDeleting(false);
-        }
-    };
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <WorkspaceDialogContent className="h-[min(820px,92vh)] max-w-xl">
+        <WorkspaceDialogHeader>
+          <WorkspaceDialogTitle className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]"><CalendarPlus className="h-4 w-4" /></span>Add event</WorkspaceDialogTitle>
+          <WorkspaceDialogDescription>{dateStr}</WorkspaceDialogDescription>
+        </WorkspaceDialogHeader>
+        <WorkspaceDialogBody className="space-y-6">
+          <section aria-labelledby="day-events-heading">
+            <div className="mb-2 flex items-center justify-between"><h3 id="day-events-heading" className="text-sm font-semibold text-[var(--app-text)]">Events on this day</h3><span className="text-xs text-[var(--app-text-faint)]">Drag to reorder</span></div>
+            {loadingEvents ? <p className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-4 text-sm text-[var(--app-text-muted)]">Loading events…</p> : events.length ? <Reorder.Group axis="y" layoutScroll values={events} onReorder={setEvents} className="max-h-44 overflow-y-auto pr-1">{events.map((event) => <SortableEventItem key={event.id} event={event} onDelete={(id) => { setEventToDeleteId(id); setShowDeleteModal(true); }} onDragEnd={handleDragEnd} />)}</Reorder.Group> : <p className="rounded-xl border border-dashed border-[var(--app-border-strong)] px-3 py-4 text-sm text-[var(--app-text-muted)]">No events yet. Add the first one below.</p>}
+          </section>
 
-    const handleReorder = (newOrder: EventData[]) => {
-        setEvents(newOrder); // Optimistic update
-    };
+          <section aria-labelledby="new-event-heading" className="space-y-4 border-t border-[var(--app-border)] pt-5">
+            <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">New event details</h3>
+            <div><label htmlFor="event-title" className={workspaceLabelClass}>Title</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder="Event title" /></div>
+            <div><label htmlFor="event-description" className={workspaceLabelClass}>Description <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder="Add a note" /></div>
+            <div className="flex items-center justify-between rounded-xl border border-[var(--app-border)] p-3"><div><label htmlFor="event-all-day" className="text-sm font-semibold text-[var(--app-text)]">All day</label><p className="text-xs text-[var(--app-text-muted)]">Hide start and end times.</p></div><Switch id="event-all-day" checked={isAllDay} onCheckedChange={setIsAllDay} /></div>
+            {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label="Start" value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label="End" value={endTime} onChange={setEndTime} /></div> : null}
+            <div><span className={workspaceLabelClass}>Color</span><div className="flex flex-wrap gap-2">{EVENT_COLOR_OPTIONS.map((option) => <button key={option.value} type="button" onClick={() => setColor(option.value)} aria-label={`Select ${option.label}`} aria-pressed={color === option.value} className={cn("h-8 w-8 rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", color === option.value ? "scale-105 border-[var(--app-text)]" : "border-[var(--app-surface)]")} style={{ backgroundColor: option.value }} />)}</div></div>
+          </section>
+        </WorkspaceDialogBody>
+        <WorkspaceDialogFooter><WorkspaceButton variant="secondary" onClick={onClose}>Cancel</WorkspaceButton><WorkspaceButton variant="primary" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Add event"}</WorkspaceButton></WorkspaceDialogFooter>
+      </WorkspaceDialogContent>
+      <DeleteConfirmationModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} isDeleting={deleting} title="Delete event" description="Delete this event? This action cannot be undone." />
+    </Dialog>
+  );
+}
 
-    const handleDragEnd = async () => {
-        // Save new order to backend
-        try {
-            const updates = events.filter((event) => !event.isProtected).map((event, index) => ({
-                id: event.id,
-                order: index,
-            }));
-
-            await fetch("/api/user/events", {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updates),
-            });
-            // Notify parent to refresh reminders
-            setTimeout(() => {
-                onEventsChanged();
-            }, 50);
-        } catch {
-            toast.error("Failed to save order.");
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="p-0 max-w-lg max-h-[95vh] overflow-hidden border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-                <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:p-8">
-                    <DialogHeader className="shrink-0 pb-2">
-                        <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
-                            {dateStr}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    {/* Existing events for this date */}
-                    {loadingEvents ? (
-                        <p className="text-sm text-(--theme-text) py-2">Loading…</p>
-                    ) : events.length > 0 ? (
-                        <div className="mb-4 max-h-40 pr-2 overflow-y-auto [&::-webkit-scrollbar]:w-[7px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-(--theme-card) [&::-webkit-scrollbar-thumb]:rounded-full">
-                            <Reorder.Group
-                                axis="y"
-                                layoutScroll
-                                values={events}
-                                onReorder={handleReorder}
-                                className="space-y-2"
-                            >
-                                {events.map((event) => (
-                                    <SortableEventItem
-                                        key={event.id}
-                                        event={event}
-                                        onDelete={handleDeleteClick}
-                                        onDragEnd={handleDragEnd}
-                                    />
-                                ))}
-                            </Reorder.Group>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-(--theme-text) opacity-60 mb-4">No events for this day.</p>
-                    )}
-
-                    {/* Add event form */}
-                    <div className="space-y-2 flex-1">
-                        <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Title
-                            </label>
-                            <Input
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                placeholder="Event title"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Description
-                            </label>
-                            <Input
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                placeholder="Optional"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <label className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                                All Day
-                            </label>
-                            <Switch
-                                checked={isAllDay}
-                                onCheckedChange={setIsAllDay}
-                                className="data-[state=checked]:bg-(--theme-sidebar) scale-110"
-                            />
-                        </div>
-                        {!isAllDay && (
-                            <div className="flex gap-3">
-                                <div className="flex-1">
-                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                        Start
-                                    </label>
-                                    <div className="relative">
-                                        <Input
-                                            type="time"
-                                            value={startTime}
-                                            onChange={(e) => setStartTime(e.target.value)}
-                                            onClick={(e) => {
-                                                if ("showPicker" in HTMLInputElement.prototype) {
-                                                    try {
-                                                        (e.currentTarget as any).showPicker();
-                                                    } catch (err) {
-                                                        // ignore
-                                                    }
-                                                }
-                                            }}
-                                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden cursor-pointer pl-3"
-                                        />
-                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                    </div>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                        End
-                                    </label>
-                                    <div className="relative">
-                                        <Input
-                                            type="time"
-                                            value={endTime}
-                                            onChange={(e) => setEndTime(e.target.value)}
-                                            onClick={(e) => {
-                                                if ('showPicker' in HTMLInputElement.prototype) {
-                                                    try {
-                                                        e.currentTarget.showPicker();
-                                                    } catch (err) {
-                                                        // ignore
-                                                    }
-                                                }
-                                            }}
-                                            className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full appearance-none [&::-webkit-calendar-picker-indicator]:hidden cursor-pointer pl-3"
-                                        />
-                                        <Clock className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <div className="space-y-2">
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Color
-                            </label>
-                            <div className="flex gap-2">
-                                {["#FEC435", "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEEAD"].map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setColor(c)}
-                                        className={cn(
-                                            "w-8 h-8 rounded-full border-2 transition-transform hover:scale-110",
-                                            color === c ? "border-(--theme-text) scale-110" : "border-transparent"
-                                        )}
-                                        style={{ backgroundColor: c }}
-                                        type="button"
-                                        aria-label={`Select color ${c}`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 shrink-0">
-                        <WorkspaceButton
-                            variant="secondary"
-                            onClick={onClose}
-                            className="flex-1"
-                        >
-                            Cancel
-                        </WorkspaceButton>
-                        <WorkspaceButton
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex-1"
-                        >
-                            {saving ? "Saving…" : "Add event"}
-                        </WorkspaceButton>
-                    </div>
-                </div>
-            </DialogContent>
-
-            <DeleteConfirmationModal
-                open={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                onConfirm={handleConfirmDelete}
-                isDeleting={deleting}
-                title="Delete Event"
-                description="Are you sure you want to delete this event?"
-            />
-        </Dialog >
-    );
+function TimeField({ id, label, value, onChange }: { id: string; label: string; value: string; onChange: (value: string) => void }) {
+  return <div><label htmlFor={id} className={workspaceLabelClass}>{label}</label><div className="relative"><Input id={id} type="time" value={value} onChange={(event) => onChange(event.target.value)} onClick={(event) => { try { event.currentTarget.showPicker?.(); } catch { /* Browser controls the picker. */ } }} className={cn(workspaceFieldClass, "w-full appearance-none pr-9 [&::-webkit-calendar-picker-indicator]:hidden")} /><Clock className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--app-text-muted)]" /></div></div>;
 }

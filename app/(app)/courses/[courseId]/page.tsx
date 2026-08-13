@@ -128,7 +128,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
 
         <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           <main className="space-y-5">
-            <section className="rounded-2xl border border-[var(--course-line)] bg-white p-5 md:p-6">
+            <section className="rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-5 md:p-6">
               <div className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--course-accent)] text-[var(--course-text)]">
                   <BookOpen className="h-4 w-4" />
@@ -143,7 +143,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
               </p>
             </section>
 
-            <section className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-white">
+            <section className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)]">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--course-line)] px-5 py-4 md:px-6">
                 <div>
                   <h2 className="text-lg font-semibold text-[var(--course-text)]">Syllabus</h2>
@@ -207,7 +207,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
           </main>
 
           <aside className="order-first lg:order-last lg:sticky lg:top-5">
-            <div className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-white p-4">
+            <div className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-4">
               <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-[var(--course-surface-muted)]">
                 {course.coverImageUrl ? (
                   <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 340px" />
@@ -249,7 +249,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
               </div>
             </div>
 
-            <div className="mt-3 rounded-2xl border border-[var(--course-line)] bg-white px-4 py-2">
+            <div className="mt-3 rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] px-4 py-2">
               <dl className="divide-y divide-[var(--course-line)] text-sm">
                 <div className="flex items-center gap-3 py-3">
                   <UserRound className="h-4 w-4 text-[var(--course-text-faint)]" />

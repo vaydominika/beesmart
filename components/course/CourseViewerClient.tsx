@@ -163,30 +163,30 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
     if (!activeLesson) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-slate-50">
+            <div className="flex-1 flex items-center justify-center bg-[var(--app-surface-muted)]">
                 <div className="text-center">
-                    <HugeiconsIcon icon={Book02Icon} className="size-12 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 font-bold uppercase tracking-wider">No content found in this course.</p>
+                    <HugeiconsIcon icon={Book02Icon} className="size-12 text-[var(--app-text-faint)] mx-auto mb-4" />
+                    <p className="text-[var(--app-text-muted)] font-bold uppercase tracking-wider">No content found in this course.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex min-h-full bg-white relative">
+        <div className="flex-1 flex min-h-full bg-[var(--app-surface)] relative">
             <CourseRatingModal open={ratingOpen} onOpenChange={setRatingOpen} courseId={course.id} courseTitle={course.title} />
             {/* Sidebar Syllabus */}
             <aside
                 className={cn(
-                    "bg-slate-50 border-r border-slate-200 flex flex-col transition-all duration-300 sticky top-0 h-[calc(100vh-64px)] shrink-0",
+                    "bg-[var(--app-surface-muted)] border-r border-[var(--app-border)] flex flex-col transition-all duration-300 sticky top-0 h-[calc(100vh-64px)] shrink-0",
                     sidebarOpen ? "w-64" : "w-0 opacity-0 -translate-x-full overflow-hidden"
                 )}
             >
-                <div className="p-6 border-b border-slate-200 flex items-center justify-between shrink-0">
-                    <h2 className="font-black text-slate-900 uppercase tracking-tight truncate mr-2">
+                <div className="p-6 border-b border-[var(--app-border)] flex items-center justify-between shrink-0">
+                    <h2 className="font-black text-[var(--app-text)] uppercase tracking-tight truncate mr-2">
                         {course.title}
                     </h2>
-                    <Link href={`/courses/${course.id}`} className="text-slate-400 hover:text-slate-600 transition-colors">
+                    <Link href={`/courses/${course.id}`} className="text-[var(--app-text-faint)] hover:text-[var(--app-text-muted)] transition-colors">
                         <HugeiconsIcon icon={ArrowLeft01Icon} className="size-5" />
                     </Link>
                 </div>
@@ -194,7 +194,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {course.modules.map((module, mIdx) => (
                         <div key={module.id} className="space-y-1">
-                            <h3 className="px-3 py-1 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                            <h3 className="px-3 py-1 text-[10px] font-black text-[var(--app-text-faint)] uppercase tracking-[0.2em]">
                                 Module {mIdx + 1}
                             </h3>
                             <div className="space-y-0.5">
@@ -208,30 +208,30 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                             className={cn(
                                                 "w-full text-left px-3 py-3 rounded-2xl transition-all flex items-center gap-3 font-bold group",
                                                 isActive
-                                                    ? "bg-slate-900 text-white shadow-xl shadow-slate-900/10"
+                                                    ? "bg-[var(--app-text)] text-[var(--app-text-inverse)] shadow-[var(--app-shadow-soft)]"
                                                     : locked
-                                                        ? "text-slate-400 hover:bg-slate-200/50"
-                                                        : "text-slate-600 hover:bg-slate-200/50"
+                                                        ? "text-[var(--app-text-faint)] hover:bg-[var(--app-surface-hover)]"
+                                                        : "text-[var(--app-text-muted)] hover:bg-[var(--app-surface-hover)]"
                                             )}
                                         >
                                             <div className={cn(
                                                 "size-8 rounded-xl flex items-center justify-center shrink-0 border-2 transition-all",
                                                 isActive
-                                                    ? "bg-white/10 border-white/10"
+                                                    ? "bg-[var(--app-surface)]/10 border-[var(--app-surface)]/10"
                                                     : locked
-                                                        ? "bg-slate-100 border-slate-100"
+                                                        ? "bg-[var(--app-surface-muted)] border-[var(--app-border)]"
                                                         : completedLessonIds.has(lesson.id)
-                                                            ? "bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/20"
-                                                            : "bg-white border-slate-200 group-hover:border-slate-300 shadow-sm"
+                                                            ? "bg-[var(--app-success)] border-[var(--app-success)] shadow-[var(--app-shadow-subtle)]"
+                                                            : "bg-[var(--app-surface)] border-[var(--app-border)] group-hover:border-[var(--app-border-strong)] shadow-[var(--app-shadow-subtle)]"
                                             )}>
                                                 {isActive ? (
-                                                    <HugeiconsIcon icon={PlayIcon} className="size-3 fill-current text-white" />
+                                                    <HugeiconsIcon icon={PlayIcon} className="size-3 fill-current text-[var(--app-text-inverse)]" />
                                                 ) : locked ? (
-                                                    <HugeiconsIcon icon={SquareLock02Icon} className="size-3 text-slate-400" />
+                                                    <HugeiconsIcon icon={SquareLock02Icon} className="size-3 text-[var(--app-text-faint)]" />
                                                 ) : completedLessonIds.has(lesson.id) ? (
-                                                    <HugeiconsIcon icon={Tick01Icon} className="size-3.5 text-white" />
+                                                    <HugeiconsIcon icon={Tick01Icon} className="size-3.5 text-[var(--app-text-inverse)]" />
                                                 ) : (
-                                                    <div className="size-1.5 bg-slate-300 rounded-full group-hover:bg-slate-400 transition-colors" />
+                                                    <div className="size-1.5 bg-[var(--app-text-faint)] rounded-full group-hover:bg-[var(--app-text-muted)] transition-colors" />
                                                 )}
                                             </div>
                                             <span className="truncate text-sm font-black uppercase tracking-tight">
@@ -247,7 +247,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 min-w-0 bg-white min-h-screen">
+            <main className="flex-1 min-w-0 bg-[var(--app-surface)] min-h-screen">
                 <div className="max-w-4xl mx-auto py-12 px-6 lg:px-12">
                     <WorkspaceButton
                         type="button"
@@ -264,42 +264,42 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                     <div className="mb-12 flex flex-col gap-6">
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em] bg-emerald-50 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] font-black text-[var(--app-success)] uppercase tracking-[0.2em] bg-[var(--app-success-soft)] px-2 py-0.5 rounded-full">
                                     Module {course.modules.findIndex((module) => module.lessons.some((lesson) => lesson.id === activeLessonId)) + 1}
                                 </span>
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                <span className="text-[10px] font-black text-[var(--app-text-faint)] uppercase tracking-[0.2em]">
                                     Lesson {currentIndex + 1} of {allLessons.length}
                                 </span>
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tight leading-none">
+                            <h1 className="text-4xl md:text-5xl font-black text-[var(--app-text)] uppercase tracking-tight leading-none">
                                 {activeLesson.title}
                             </h1>
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                            <div className="flex-1 h-3 bg-[var(--app-surface-muted)] rounded-full overflow-hidden shadow-[var(--app-shadow-inset)]">
                                 <div
-                                    className="bg-emerald-500 h-full transition-all duration-1000 ease-in-out relative"
+                                    className="bg-[var(--app-success)] h-full transition-all duration-1000 ease-in-out relative"
                                     style={{ width: `${progressValue}%` }}
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/20 animate-pulse" />
                                 </div>
                             </div>
-                            <span className="text-xs font-black text-emerald-600 uppercase tracking-widest whitespace-nowrap">
+                            <span className="text-xs font-black text-[var(--app-success)] uppercase tracking-widest whitespace-nowrap">
                                 {Math.round(progressValue)}% Done
                             </span>
                         </div>
                     </div>
 
-                    <article className="prose prose-slate prose-xl max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-img:rounded-3xl prose-img:corner-squircle prose-a:text-black relative">
+                    <article className="prose prose-slate prose-xl max-w-none prose-headings:font-black prose-headings:uppercase prose-headings:tracking-tighter prose-img:rounded-3xl prose-img:corner-squircle prose-a:text-[var(--app-text)] relative">
                         {isLessonLocked(activeLesson) && (
-                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-3xl rounded-[40px] border-2 border-dashed border-slate-200 shadow-2xl shadow-slate-500/5 animate-in fade-in duration-500">
-                                <div className="p-8 bg-white rounded-[40px] shadow-2xl flex flex-col items-center text-center max-w-xs border border-slate-100">
-                                    <div className="size-20 bg-amber-50 rounded-[30px] flex items-center justify-center mb-6 shadow-inner">
-                                        <HugeiconsIcon icon={SquareLock02Icon} className="size-10 text-amber-500" />
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[color-mix(in_srgb,var(--app-surface)_40%,transparent)] backdrop-blur-3xl rounded-[40px] border-2 border-dashed border-[var(--app-border)] shadow-[var(--app-shadow-elevated)] animate-in fade-in duration-500">
+                                <div className="p-8 bg-[var(--app-surface)] rounded-[40px] shadow-[var(--app-shadow-elevated)] flex flex-col items-center text-center max-w-xs border border-[var(--app-border)]">
+                                    <div className="size-20 bg-[var(--app-warning-soft)] rounded-[30px] flex items-center justify-center mb-6 shadow-inner">
+                                        <HugeiconsIcon icon={SquareLock02Icon} className="size-10 text-[var(--app-warning)]" />
                                     </div>
-                                    <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Content Locked</h2>
-                                    <p className="text-slate-500 font-bold uppercase tracking-wider text-[10px] leading-relaxed">
+                                    <h2 className="text-2xl font-black text-[var(--app-text)] uppercase tracking-tight mb-2">Content Locked</h2>
+                                    <p className="text-[var(--app-text-muted)] font-bold uppercase tracking-wider text-[10px] leading-relaxed">
                                         Complete all previous prerequisites to unlock this lesson.
                                     </p>
                                 </div>
@@ -311,15 +311,15 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                             isLessonLocked(activeLesson) ? "blur-[20px] grayscale opacity-50 select-none pointer-events-none" : ""
                         )}>
                             {contentState === "LOADING" ? (
-                                <div className="py-20 text-center text-sm font-bold uppercase tracking-wider text-slate-400">Loading lesson...</div>
+                                <div className="py-20 text-center text-sm font-bold uppercase tracking-wider text-[var(--app-text-faint)]">Loading lesson...</div>
                             ) : contentState === "ERROR" ? (
-                                <div className="py-20 text-center"><p className="text-sm font-bold text-red-600">Lesson content could not be loaded.</p><button type="button" onClick={() => setContentRetry((value) => value + 1)} className="mt-3 rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Try again</button></div>
+                                <div className="py-20 text-center"><p className="text-sm font-bold text-[var(--app-danger)]">Lesson content could not be loaded.</p><button type="button" onClick={() => setContentRetry((value) => value + 1)} className="mt-3 rounded-xl border border-[var(--app-border)] px-4 py-2 text-sm font-bold text-[var(--app-text-muted)] hover:bg-[var(--app-surface-muted)]">Try again</button></div>
                             ) : activeLesson.content ? (
                                 <div dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
                             ) : (
-                                <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
-                                    <HugeiconsIcon icon={Layers01Icon} className="size-16 text-slate-200 mx-auto mb-6" />
-                                    <p className="text-slate-400 font-bold uppercase tracking-wider">Empty lesson content</p>
+                                <div className="text-center py-20 bg-[var(--app-surface-muted)] rounded-[40px] border-2 border-dashed border-[var(--app-border)]">
+                                    <HugeiconsIcon icon={Layers01Icon} className="size-16 text-[var(--app-border-strong)] mx-auto mb-6" />
+                                    <p className="text-[var(--app-text-faint)] font-bold uppercase tracking-wider">Empty lesson content</p>
                                 </div>
                             )}
                         </div>
@@ -327,8 +327,8 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
                     {/* Lesson Materials */}
                     {activeLesson.files && activeLesson.files.filter((file) => file.isVisible).length > 0 && !isLessonLocked(activeLesson) && (
-                        <div className="mt-16 p-10 bg-slate-50 rounded-[40px] border border-slate-100 shadow-sm">
-                            <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                        <div className="mt-16 p-10 bg-[var(--app-surface-muted)] rounded-[40px] border border-[var(--app-border)] shadow-[var(--app-shadow-subtle)]">
+                            <h3 className="text-sm font-black text-[var(--app-text-faint)] uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
                                 <HugeiconsIcon icon={Layers01Icon} className="size-5" />
                                 Lesson Resources
                             </h3>
@@ -340,14 +340,14 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                         download={file.fileName}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-5 p-5 bg-white border border-slate-100 rounded-3xl hover:border-slate-300 hover:shadow-xl transition-all group"
+                                        className="flex items-center gap-5 p-5 bg-[var(--app-surface)] border border-[var(--app-border)] rounded-3xl hover:border-[var(--app-border-strong)] hover:shadow-[var(--app-shadow-soft)] transition-all group"
                                     >
-                                        <div className="size-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-50 group-hover:scale-110 transition-transform shadow-sm">
-                                            <HugeiconsIcon icon={Book02Icon} className="size-6 text-slate-400 group-hover:text-black transition-colors" />
+                                        <div className="size-12 bg-[var(--app-surface-muted)] rounded-2xl flex items-center justify-center border border-[var(--app-border)] group-hover:scale-110 transition-transform shadow-[var(--app-shadow-subtle)]">
+                                            <HugeiconsIcon icon={Book02Icon} className="size-6 text-[var(--app-text-faint)] group-hover:text-[var(--app-text)] transition-colors" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-sm font-black text-slate-900 truncate uppercase tracking-tight font-black">{file.fileName}</span>
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                            <span className="text-sm font-black text-[var(--app-text)] truncate uppercase tracking-tight font-black">{file.fileName}</span>
+                                            <span className="text-[10px] font-black text-[var(--app-text-faint)] uppercase tracking-widest mt-1">
                                                 {(file.fileSize / 1024).toFixed(1)} KB FILE
                                             </span>
                                         </div>
@@ -358,7 +358,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                     )}
 
                     {/* Navigation Footer */}
-                    <footer className="mt-24 pt-10 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <footer className="mt-24 pt-10 border-t border-[var(--app-border)] flex flex-col sm:flex-row items-center justify-between gap-6">
                         <WorkspaceButton
                             type="button"
                             variant="secondary"

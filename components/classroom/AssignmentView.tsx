@@ -201,8 +201,8 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
     if (!assignment) {
         return (
-            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-8 text-center shadow-none">
-                <XCircle className="mx-auto h-8 w-8 text-red-500" />
+            <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
+                <XCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" />
                 <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">Assignment unavailable</h1>
                 <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? "Assignment details could not be loaded."}</p>
                 <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">Try again</WorkspaceButton>
@@ -215,7 +215,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     return (
         <div className="space-y-6">
             {/* Header: Assignment Details */}
-            <div className="relative overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+            <div className="relative overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-(--theme-text) mb-2">{displayAssignment.title}</h1>
@@ -256,7 +256,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
             </div>
 
             {submissionsError && (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger)]">
                     <span>{submissionsError}</span>
                     <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchAssignmentAndSubmissions()}>Retry</WorkspaceButton>
                 </div>
@@ -268,16 +268,16 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Submission Form */}
                     <div className="lg:col-span-2 space-y-4">
-                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                             <h2 className="text-lg font-bold text-(--theme-text) mb-4">Your Work</h2>
 
                             {mySubmission && mySubmission.status !== "PENDING" ? (
                                 <div className="space-y-4">
                                     <div className={cn(
                                         "px-4 py-3 rounded-xl corner-squircle text-sm font-bold flex items-center justify-between",
-                                        mySubmission.status === "GRADED" ? "bg-green-500/10 text-green-500" :
-                                            mySubmission.status === "LATE" ? "bg-orange-500/10 text-orange-500" :
-                                                "bg-blue-500/10 text-blue-500"
+                                        mySubmission.status === "GRADED" ? "bg-[var(--app-success-soft)] text-[var(--app-success)]" :
+                                            mySubmission.status === "LATE" ? "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" :
+                                                "bg-[var(--app-info-soft)] text-[var(--app-info)]"
                                     )}>
                                         <div className="flex items-center gap-2">
                                             {mySubmission.status === "GRADED" ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
@@ -358,13 +358,13 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                     {/* Right Col: Grading Status */}
                     <div className="space-y-4">
-                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                             <h3 className="text-xs font-bold text-(--theme-text) opacity-50 uppercase tracking-widest mb-4">Grade Status</h3>
 
                             {mySubmission?.status === "GRADED" ? (
                                 <div className="space-y-4">
-                                    <div className="text-center p-6 bg-(--theme-sidebar) rounded-xl corner-squircle border border-green-500/20">
-                                        <span className="block text-4xl font-black text-green-500 mb-1">
+                                    <div className="text-center p-6 bg-(--theme-sidebar) rounded-xl corner-squircle border border-[var(--app-success-border)]">
+                                        <span className="block text-4xl font-black text-[var(--app-success)] mb-1">
                                             {/* We need to fetch the actual grade here via the gradebook or attach it to the submission response */}
                                             GRADED
                                         </span>
@@ -386,7 +386,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Col: Student List */}
                     <div className="lg:col-span-1 space-y-4">
-                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none">
+                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-4 shadow-none">
                             <h3 className="text-sm font-bold text-(--theme-text) mb-4 uppercase tracking-wider">Submissions</h3>
 
                             <ScrollArea className="flex-1 space-y-1 -mx-2 px-2">
@@ -407,9 +407,9 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                 <span className="block text-sm font-bold text-(--theme-text)">{sub.user.name}</span>
                                                 <span className={cn(
                                                     "block text-[10px] font-bold uppercase",
-                                                    sub.status === "GRADED" ? "text-green-500" :
-                                                        sub.status === "LATE" ? "text-orange-500" :
-                                                            "text-blue-500"
+                                                    sub.status === "GRADED" ? "text-[var(--app-success)]" :
+                                                        sub.status === "LATE" ? "text-[var(--app-warning)]" :
+                                                            "text-[var(--app-info)]"
                                                 )}>{sub.status}</span>
                                             </div>
                                         </div>
@@ -441,7 +441,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                     {/* Right Col: Grading Canvas */}
                     <div className="lg:col-span-2 space-y-4">
-                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-none">
+                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                             {!selectedStudentId ? (
                                 <div className="flex-1 flex flex-col items-center justify-center opacity-30">
                                     <FileText className="h-16 w-16 mb-4" />
@@ -454,7 +454,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 if (selectedNs) {
                                     return (
                                         <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                                            <XCircle className="h-16 w-16 mb-4 text-orange-500" />
+                                            <XCircle className="h-16 w-16 mb-4 text-[var(--app-warning)]" />
                                             <h3 className="text-lg font-bold">No submission yet.</h3>
                                         </div>
                                     );

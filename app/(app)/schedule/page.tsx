@@ -41,7 +41,7 @@ function normalizeEvent(event: Partial<ScheduleEvent> & Pick<ScheduleEvent, "id"
     description: event.description ?? null,
     startTime: event.startTime ?? null,
     endTime: event.endTime ?? null,
-    color: event.color || "#FADA6D",
+    color: event.color || "var(--app-event-1)",
     source: event.source || (event.classroomId ? "classroom" : event.courseId ? "course" : "personal"),
     canEdit: event.canEdit ?? true,
   } as ScheduleEvent;
@@ -389,7 +389,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-white p-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label="Previous date range"><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
               <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>Today</WorkspaceButton>
@@ -404,7 +404,7 @@ export default function SchedulePage() {
               <div ref={filterMenuRef} className="relative">
                 <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-haspopup="true"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
                 {filtersOpen && (
-                  <div role="group" aria-label="Event sources" className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-[var(--schedule-line)] bg-white p-1.5 shadow-[0_10px_30px_rgba(32,35,31,0.12)]">
+                  <div role="group" aria-label="Event sources" className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
                     {ALL_SOURCES.map((source) => {
                       const checked = sources.has(source);
                       return (
@@ -424,7 +424,7 @@ export default function SchedulePage() {
         </header>
 
         {error ? (
-          <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-white px-6 text-center">
+          <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] px-6 text-center">
             <p className="font-semibold text-[var(--schedule-text)]">Your schedule could not be loaded</p>
             <p className="mt-2 text-sm text-[var(--schedule-text-muted)]">{error}</p>
             <WorkspaceButton type="button" variant="primary" onClick={() => void fetchEvents()} className="mt-5">Try again</WorkspaceButton>
@@ -433,7 +433,7 @@ export default function SchedulePage() {
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
             <main className="h-[calc(100vh-208px)] min-h-[560px] min-w-0">
               {loading && events.length === 0 ? (
-                <div className="flex h-full items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-white"><Spinner className="h-5 w-5 text-[var(--schedule-text-muted)]" /></div>
+                <div className="flex h-full items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)]"><Spinner className="h-5 w-5 text-[var(--schedule-text-muted)]" /></div>
               ) : view === "week" ? (
                 <ScheduleWeekView selectedDate={selectedDate} events={filteredEvents} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateRange={startCreate} onMoveEvent={moveEvent} onResizeEvent={resizeEvent} />
               ) : view === "month" ? (
@@ -442,7 +442,7 @@ export default function SchedulePage() {
                 <ScheduleAgendaView events={filteredEvents} selectedDate={selectedDate} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
               )}
             </main>
-            <aside className="hidden h-[calc(100vh-208px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-white lg:block">
+            <aside className="hidden h-[calc(100vh-208px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
               {panel}
             </aside>
           </div>
@@ -450,7 +450,7 @@ export default function SchedulePage() {
       </div>
 
       <Dialog open={mobilePanelOpen} onOpenChange={(open) => { setMobilePanelOpen(open); if (!open) closePanelState(); }}>
-        <DialogContent className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-white p-0 shadow-2xl md:hidden">
+        <DialogContent className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-0 shadow-2xl md:hidden">
           <DialogTitle className="sr-only">Schedule details</DialogTitle>
           <DialogDescription className="sr-only">View or edit events for the selected date.</DialogDescription>
           <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobilePanelOpen(false)} aria-label="Close schedule details" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton>
@@ -459,7 +459,7 @@ export default function SchedulePage() {
       </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
-        <DialogContent className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-white p-6 shadow-xl">
+        <DialogContent className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 shadow-xl">
           <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete event?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">“{deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">

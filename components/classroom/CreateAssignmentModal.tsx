@@ -105,7 +105,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-white p-0 shadow-2xl">
+            <DialogContent className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
                 <DialogClose
                     aria-label="Close assignment builder"
                     className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
@@ -220,7 +220,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                         ))}
                                     </div>
                                 )}
-                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-white px-3 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-border)]">
+                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-border)]">
                                     <Upload className="h-4 w-4" />
                                     {uploading ? "Uploading..." : "Add files"}
                                     <input

@@ -64,7 +64,7 @@ export default function TestPage() {
                 <button
                     type="button"
                     onClick={() => router.push(`/classroom/${classroomId}`)}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)]"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)]"
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>

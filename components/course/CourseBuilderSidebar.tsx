@@ -226,7 +226,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-[var(--app-surface)]">
       <div className="flex h-[76px] shrink-0 items-center justify-between gap-3 border-b border-[var(--course-line)] px-3 pr-12 lg:pr-3">
         <div>
           <h2 className="text-sm font-semibold text-[var(--course-text)]">Syllabus</h2>
@@ -257,7 +257,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
               onChange={(event) => setSourceText(event.target.value)}
               placeholder="Paste notes, lesson ideas, or source material..."
               rows={4}
-              className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-white/80 px-3 py-2.5 text-xs leading-5 outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]"
+              className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] px-3 py-2.5 text-xs leading-5 outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]"
             />
             <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>or add a file</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,image/*" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} className="sr-only" />
@@ -298,8 +298,8 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                             ref={moduleDragProvided.innerRef}
                             {...moduleDragProvided.draggableProps}
                             className={cn(
-                              "overflow-hidden rounded-xl border border-[var(--course-line)] bg-white transition-[box-shadow,border-color]",
-                              moduleDragSnapshot.isDragging && "border-[var(--course-focus-border)] shadow-[0_12px_28px_rgba(32,35,31,0.16)]",
+                              "overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] transition-[box-shadow,border-color]",
+                              moduleDragSnapshot.isDragging && "border-[var(--course-focus-border)] shadow-[var(--app-shadow-soft)]",
                             )}
                           >
                             <div className={cn("flex items-center gap-1 px-1.5 py-1.5", !collapsed && "border-b border-[var(--course-line)]")}>
@@ -325,12 +325,12 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                             {module.lessons.map((lesson, lessonIndex) => (
                               <Draggable key={lesson.id} draggableId={lesson.id} index={lessonIndex} isDragDisabled={isSaving}>
                                 {(dragProvided, dragSnapshot) => (
-                                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn("group flex items-center gap-1 rounded-lg pr-1 transition-colors", activeLessonId === lesson.id ? "bg-[var(--course-accent)]" : "hover:bg-[var(--course-surface-muted)]", dragSnapshot.isDragging && "bg-white shadow-lg")}>
+                                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn("group flex items-center gap-1 rounded-lg pr-1 transition-colors", activeLessonId === lesson.id ? "bg-[var(--course-accent)]" : "hover:bg-[var(--course-surface-muted)]", dragSnapshot.isDragging && "bg-[var(--app-surface)] shadow-lg")}>
                                     <span {...dragProvided.dragHandleProps} className="flex h-9 w-7 shrink-0 cursor-grab items-center justify-center text-[var(--course-text-faint)] opacity-50 group-hover:opacity-100"><GripVertical className="h-3.5 w-3.5" /></span>
                                     <button type="button" onClick={() => onSelectLesson(lesson.id)} disabled={isSaving} className="min-w-0 flex-1 py-2.5 text-left disabled:cursor-not-allowed">
                                       <span className="block truncate text-xs font-medium">{lesson.title}</span>
                                     </button>
-                                    <button type="button" onClick={() => void togglePrerequisite(lesson, module.id)} aria-label={lesson.isLocked ? `Unlock ${lesson.title}` : `Lock ${lesson.title}`} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg opacity-0 hover:bg-white group-hover:opacity-100 focus:opacity-100", lesson.isLocked && "text-[var(--course-focus-border)] opacity-100")}>
+                                    <button type="button" onClick={() => void togglePrerequisite(lesson, module.id)} aria-label={lesson.isLocked ? `Unlock ${lesson.title}` : `Lock ${lesson.title}`} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg opacity-0 hover:bg-[var(--app-surface)] group-hover:opacity-100 focus:opacity-100", lesson.isLocked && "text-[var(--course-focus-border)] opacity-100")}>
                                       {lesson.isLocked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
                                     </button>
                                   </div>

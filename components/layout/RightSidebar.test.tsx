@@ -31,9 +31,11 @@ describe("RightSidebar", () => {
   });
 
   it("shows the account name without displaying a global role", () => {
-    render(<RightSidebar />);
+    const { container } = render(<RightSidebar />);
 
     expect(screen.getByText("Ada")).toBeInTheDocument();
     expect(screen.queryByText("Legacy global role")).not.toBeInTheDocument();
+    expect(container.firstElementChild).toHaveClass("rounded-tl-[30px]");
+    expect(container.firstElementChild).not.toHaveClass("rounded-bl-[30px]");
   });
 });

@@ -38,7 +38,7 @@ interface ScheduleContextPanelProps {
   onDelete: (event: ScheduleEvent) => void;
 }
 
-const COLORS = ["#FADA6D", "#FF7A72", "#4ECDC4", "#6CB6D9", "#96CEB4", "#B9A6E8"];
+const COLORS = ["var(--app-event-1)", "var(--app-event-2)", "var(--app-event-3)", "var(--app-event-4)", "var(--app-event-5)", "var(--app-event-6)"];
 
 function SourceIcon({ source }: { source: ScheduleEvent["source"] }) {
   if (source === "classroom") return <School className="h-3.5 w-3.5" />;
@@ -194,11 +194,11 @@ function ScheduleContextPanelContent({
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <label>
                     <span className="sr-only">Reminder date</span>
-                    <Input type="date" aria-label="Reminder date" value={reminderDate} max={eventDate} onChange={(event) => setReminderDate(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-white text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+                    <Input type="date" aria-label="Reminder date" value={reminderDate} max={eventDate} onChange={(event) => setReminderDate(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
                   </label>
                   <label>
                     <span className="sr-only">Reminder time</span>
-                    <Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-white text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+                    <Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
                   </label>
                 </div>
               )}
@@ -207,7 +207,7 @@ function ScheduleContextPanelContent({
               <legend className="mb-1.5 text-xs font-semibold text-[var(--schedule-text-muted)]">Color</legend>
               <div className="flex flex-wrap gap-2">
                 {COLORS.map((eventColor) => (
-                  <button key={eventColor} type="button" onClick={() => setColor(eventColor)} aria-label={`Select color ${eventColor}`} className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]", color === eventColor ? "scale-105 border-[var(--schedule-text)]" : "border-white")} style={{ backgroundColor: eventColor }} />
+                  <button key={eventColor} type="button" onClick={() => setColor(eventColor)} aria-label={`Select color ${eventColor}`} className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]", color === eventColor ? "scale-105 border-[var(--schedule-text)]" : "border-[var(--app-surface)]")} style={{ backgroundColor: eventColor }} />
                 ))}
               </div>
             </fieldset>
@@ -238,8 +238,8 @@ function ScheduleContextPanelContent({
           <h2 className="text-xl font-semibold leading-tight text-[var(--schedule-text)]">{selectedEvent.title}</h2>
           <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate))}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-black/5 px-2.5 text-[11px] font-semibold leading-none text-[#20231f]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }} title={eventSourceLabel(selectedEvent)}><SourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
-    <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-black/5 px-2.5 text-[11px] font-semibold leading-none text-[#20231f]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }}><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? "All day" : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
+            <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }} title={eventSourceLabel(selectedEvent)}><SourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }}><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? "All day" : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
           </div>
           {selectedEvent.description && <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--schedule-text-muted)]">{selectedEvent.description}</p>}
           {selectedEvent.canEdit === false && (
@@ -270,7 +270,7 @@ function ScheduleContextPanelContent({
                 key={event.id}
                 type="button"
                 onClick={() => onSelectEvent(event)}
-                className="w-full rounded-xl border bg-white p-3 text-left shadow-[0_1px_2px_rgba(32,35,31,0.04)] transition-[background-color,box-shadow] hover:bg-[var(--schedule-surface-hover)] hover:shadow-[0_2px_6px_rgba(32,35,31,0.07)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"
+                className="w-full rounded-xl border bg-[var(--app-surface)] p-3 text-left shadow-[var(--app-shadow-subtle)] transition-[background-color,box-shadow] hover:bg-[var(--schedule-surface-hover)] hover:shadow-[var(--app-shadow-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]"
                 style={{ borderColor: event.color || "var(--schedule-accent-hover)" }}
               >
                 <div className="min-w-0 flex-1">

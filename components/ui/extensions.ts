@@ -75,7 +75,7 @@ const starterKit = StarterKit.configure({
     },
     horizontalRule: false,
     dropcursor: {
-        color: "#DBEAFE",
+        color: "var(--app-info-soft)",
         width: 4,
     },
     gapcursor: false,

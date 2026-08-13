@@ -113,7 +113,7 @@ export default function ClassroomDetailPage() {
                                     type="button"
                                     onClick={() => setSettingsOpen(true)}
                                     aria-label="Open classroom settings"
-                                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                 >
                                     <Settings className="h-4 w-4" />
                                 </button>
@@ -121,12 +121,12 @@ export default function ClassroomDetailPage() {
                             <button
                                 type="button"
                                 onClick={copyCode}
-                                className="flex items-center gap-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-white px-3.5 py-2.5 text-sm text-[var(--classroom-text)] transition-colors hover:bg-[var(--classroom-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                className="flex items-center gap-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--app-surface)] px-3.5 py-2.5 text-sm text-[var(--classroom-text)] transition-colors hover:bg-[var(--classroom-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                 aria-label={`Copy classroom code ${classroom.code}`}
                             >
                                 <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--classroom-text-muted)]">Code</span>
                                 <span className="font-semibold tracking-[0.12em]">{classroom.code}</span>
-                                {codeCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-[var(--classroom-text-muted)]" />}
+                                {codeCopied ? <Check className="h-4 w-4 text-[var(--app-success)]" /> : <Copy className="h-4 w-4 text-[var(--classroom-text-muted)]" />}
                             </button>
                             <button
                                 type="button"
@@ -173,13 +173,13 @@ export default function ClassroomDetailPage() {
 
                 {isTeacher && (
                     <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                        <DialogContent className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-2xl md:p-6">
+                        <DialogContent className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                             <DialogHeader>
                                 <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Classroom settings</DialogTitle>
                             </DialogHeader>
                             <DialogClose
                                 aria-label="Close classroom settings"
-                                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                             >
                                 <X className="h-4 w-4" />
                             </DialogClose>
@@ -193,12 +193,12 @@ export default function ClassroomDetailPage() {
                 )}
 
                 <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-                    <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-white p-6 shadow-2xl">
+                    <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-2xl">
                         <DialogHeader>
                             <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Join {classroom.name}</DialogTitle>
                         </DialogHeader>
                         <div className="mt-3 flex flex-col items-center rounded-xl bg-[var(--classroom-surface-muted)] p-5">
-                            <div className="rounded-xl bg-white p-3">
+                            <div className="rounded-xl bg-[var(--app-surface)] p-3">
                                 {joinUrl && <QRCodeSVG value={joinUrl} size={200} level="M" />}
                             </div>
                             <p className="mt-3 text-sm font-semibold tracking-[0.2em] text-[var(--classroom-text)]">{classroom.code}</p>

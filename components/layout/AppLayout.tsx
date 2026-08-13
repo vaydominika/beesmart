@@ -78,7 +78,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <button
             type="button"
             aria-label="Close overlays"
-            className="fixed inset-0 bg-black/30 z-30 md:hidden"
+            className="fixed inset-0 bg-[var(--app-scrim-strong)] z-30 md:hidden"
             onClick={() => {
               if (isLeftSidebarOpen) toggleLeftSidebar();
               if (isRightSidebarOpen) toggleRightSidebar();

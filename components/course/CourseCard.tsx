@@ -27,7 +27,7 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-[var(--course-accent)] bg-white p-5 text-left transition-colors duration-200 hover:bg-[var(--course-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]"
+      className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-[var(--course-accent)] bg-[var(--app-surface)] p-5 text-left transition-colors duration-200 hover:bg-[var(--course-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]"
       aria-label={`${course.title}, ${isOwner ? "created course" : statusLabel}`}
     >
       <div className="mb-2 flex min-h-6 items-center justify-between gap-3">

@@ -145,7 +145,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
-      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-white p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[780px] md:max-w-3xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[780px] md:max-w-3xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold text-[var(--course-text-muted)]"><span>Step {step} of 2</span><span aria-hidden="true">·</span><span>{step === 1 ? "Basics" : "Details"}</span></div>
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Create course</DialogTitle>
@@ -165,7 +165,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                 <legend className="mb-1.5 text-xs font-semibold text-[var(--course-text-muted)]">Visibility</legend>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {VISIBILITY_OPTIONS.map(({ value, label, hint, icon: Icon }) => (
-                    <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={cn("flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", visibility === value ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-white hover:bg-[var(--course-surface-muted)]")}>
+                    <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={cn("flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", visibility === value ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-[var(--app-surface)] hover:bg-[var(--course-surface-muted)]")}>
                       <Icon className="h-4 w-4 shrink-0" /><span><span className="block text-sm font-semibold text-[var(--course-text)]">{label}</span><span className="mt-0.5 block text-[11px] text-[var(--course-text-muted)]">{hint}</span></span>
                     </button>
                   ))}
@@ -174,7 +174,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
 
               <div>
                 <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Cover image <span className="font-normal">(optional)</span></span>
-                <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center" style={coverImageUrl ? { backgroundImage: `linear-gradient(rgba(32,35,31,0.12), rgba(32,35,31,0.12)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
+                <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center" style={coverImageUrl ? { backgroundImage: `linear-gradient(var(--app-scrim-soft), var(--app-scrim-soft)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
                   {!coverImageUrl && <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--course-text-muted)]"><ImageIcon className="h-4 w-4" />{uploadingCover ? "Uploading…" : "Choose an image"}</span>}
                   <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} aria-label="Upload course cover" className="absolute inset-0 cursor-pointer opacity-0" />
                   {coverImageUrl && <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => { setCoverImageUrl(""); setCoverUploadId(""); }} aria-label="Remove cover image" className="absolute right-2 top-2"><X className="h-4 w-4" /></WorkspaceButton>}
@@ -199,7 +199,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                   <div className="space-y-2">
                     {files.map((file, index) => (
                       <div key={file.uploadId} className="flex items-center gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white"><FileText className="h-4 w-4 text-[var(--course-text-muted)]" /></span>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--app-surface)]"><FileText className="h-4 w-4 text-[var(--course-text-muted)]" /></span>
                         <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium text-[var(--course-text)]">{file.fileName}</span><span className="text-[10px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)} KB</span></span>
                         <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove ${file.fileName}`}><X className="h-4 w-4" /></WorkspaceButton>
                       </div>
@@ -213,7 +213,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
           )}
         </div>
 
-        <div className="flex gap-3 border-t border-[var(--course-line)] bg-white px-5 py-4">
+        <div className="flex gap-3 border-t border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-4">
           {step === 1 ? <WorkspaceButton type="button" variant="secondary" onClick={closeAndReset} className="flex-1">Cancel</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setStep(1)} className="flex-1">Back</WorkspaceButton>}
           {step === 1 ? <WorkspaceButton type="button" variant="primary" onClick={continueToDetails} className="flex-1">Continue</WorkspaceButton> : <WorkspaceButton type="button" variant="primary" onClick={() => void handleSave()} disabled={saving || uploadingFiles} className="flex-1">{saving ? "Creating…" : "Create course"}</WorkspaceButton>}
         </div>

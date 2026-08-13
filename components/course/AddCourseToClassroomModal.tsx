@@ -103,7 +103,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-white p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Add to classroom</DialogTitle>
           <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Choose where the course should appear.</DialogDescription>
@@ -140,7 +140,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
                 const disabled = course.visibility === "PRIVATE";
                 const selected = courseId === course.id;
                 return (
-                  <button key={course.id} type="button" onClick={() => setCourseId(course.id)} disabled={disabled} aria-pressed={selected} className={cn("flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", selected ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-white hover:bg-[var(--course-surface-muted)]", disabled && "cursor-not-allowed opacity-55")}>
+                  <button key={course.id} type="button" onClick={() => setCourseId(course.id)} disabled={disabled} aria-pressed={selected} className={cn("flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", selected ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-[var(--app-surface)] hover:bg-[var(--course-surface-muted)]", disabled && "cursor-not-allowed opacity-55")}>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--course-surface-muted)]">{disabled ? <LockKeyhole className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}</span>
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[var(--course-text)]">{course.title}</span><span className="mt-0.5 block truncate text-[11px] text-[var(--course-text-muted)]">{course.creator.name || "Unknown creator"} · {course._count.modules} modules · {course.visibility === "INVITATION_ONLY" ? "Invitation only" : course.visibility.toLocaleLowerCase()}</span>{disabled && <span className="mt-1 block text-[10px] font-medium text-[var(--course-text-muted)]">Change this course to Public or Invitation only before assigning it.</span>}</span>
                   </button>
@@ -152,7 +152,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
           </div>
         </div>
 
-        <div className="flex gap-3 border-t border-[var(--course-line)] bg-white px-5 py-4">
+        <div className="flex gap-3 border-t border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-4">
           <WorkspaceButton type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" onClick={() => void addCourse()} disabled={saving || !courseId || !classroomId} className="flex-1">{saving ? "Adding…" : "Add course"}</WorkspaceButton>
         </div>

@@ -119,8 +119,8 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
             </section>
 
             {/* Danger Zone */}
-            <section className="rounded-xl border border-red-100 bg-red-50/30 p-4 md:p-5">
-                <h2 className="text-base font-semibold text-red-700">Delete classroom</h2>
+            <section className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-4 md:p-5">
+                <h2 className="text-base font-semibold text-[var(--app-danger)]">Delete classroom</h2>
                 <p className="mb-4 mt-1 text-sm leading-5 text-[var(--classroom-text-muted)]">
                     Deleting this classroom will permanently remove all posts, assignments, tests, and grades.
                 </p>

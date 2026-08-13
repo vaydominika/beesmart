@@ -35,6 +35,14 @@ describe("LeftSidebar consistency counter", () => {
     expect(screen.getByText("days")).toBeInTheDocument();
   });
 
+  it("aligns the consistency counter with the active navigation backdrop", () => {
+    const { container } = render(<LeftSidebar />);
+
+    expect(screen.getByText("Bee consistent").parentElement).toHaveClass("md:w-[168px]", "md:p-2");
+    expect(container.querySelector("#sidebar-container")).toHaveClass("rounded-tr-[30px]");
+    expect(container.querySelector("#sidebar-container")).not.toHaveClass("rounded-br-[30px]");
+  });
+
   it("centers the active label and keeps its backdrop static", () => {
     navigationMock.pathname = "/courses/course-1";
     const { container } = render(<LeftSidebar />);

@@ -3,201 +3,104 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, GraduationCap, Info, Loader2 } from "lucide-react";
-import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/sonner";
 
 type Category = "GENERAL" | "CLASSROOM";
 type NotificationItem = {
-    id: string;
-    title: string;
-    body: string;
-    category: Category;
-    readAt?: string | null;
-    classroomName?: string | null;
-    actorName?: string | null;
-    actorId?: string | null;
-    relatedId?: string | null;
-    relatedType?: string | null;
-    actionUrl?: string | null;
-    createdAt: string;
+  id: string; title: string; body: string; category: Category; readAt?: string | null; classroomName?: string | null; actorName?: string | null; actorId?: string | null; relatedId?: string | null; relatedType?: string | null; actionUrl?: string | null; createdAt: string;
 };
 
 export function NotificationCenter() {
-    const router = useRouter();
-    const [open, setOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<Category>("GENERAL");
-    const [items, setItems] = useState<NotificationItem[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
-    const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<Category>("GENERAL");
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-    const loadNotifications = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`/api/notifications?category=${activeTab}`, { cache: "no-store" });
-            if (!res.ok) return;
-            const data = await res.json();
-            setItems(data.notifications);
-            setUnreadCount(data.unreadCount);
-            for (const reminder of data.triggeredReminders ?? []) toast.info(`Reminder: ${reminder.task}`);
-        } finally {
-            setLoading(false);
-        }
-    }, [activeTab]);
+  const loadNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/notifications?category=${activeTab}`, { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json();
+      setItems(data.notifications);
+      setUnreadCount(data.unreadCount);
+      for (const reminder of data.triggeredReminders ?? []) toast.info(`Reminder: ${reminder.task}`);
+    } finally { setLoading(false); }
+  }, [activeTab]);
 
-    useEffect(() => {
-        loadNotifications();
-    }, [loadNotifications]);
+  useEffect(() => { void loadNotifications(); }, [loadNotifications]);
+  useEffect(() => {
+    const refresh = () => void loadNotifications();
+    window.addEventListener("focus", refresh);
+    const interval = window.setInterval(refresh, 60_000);
+    return () => { window.removeEventListener("focus", refresh); window.clearInterval(interval); };
+  }, [loadNotifications]);
 
-    useEffect(() => {
-        const refresh = () => loadNotifications();
-        window.addEventListener("focus", refresh);
-        const interval = window.setInterval(refresh, 60_000);
-        return () => {
-            window.removeEventListener("focus", refresh);
-            window.clearInterval(interval);
-        };
-    }, [loadNotifications]);
+  const setRead = async (notification: NotificationItem, read = true) => {
+    if (Boolean(notification.readAt) === read) return;
+    const response = await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: notification.id, read }) });
+    if (!response.ok) return;
+    setItems((current) => current.map((item) => item.id === notification.id ? { ...item, readAt: read ? new Date().toISOString() : null } : item));
+    setUnreadCount((count) => Math.max(0, count + (read ? -1 : 1)));
+  };
 
-    const setRead = async (notification: NotificationItem, read = true) => {
-        if (Boolean(notification.readAt) === read) return;
-        const res = await fetch("/api/notifications", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: notification.id, read }),
-        });
-        if (!res.ok) return;
-        setItems((current) => current.map((item) => item.id === notification.id
-            ? { ...item, readAt: read ? new Date().toISOString() : null }
-            : item));
-        setUnreadCount((count) => Math.max(0, count + (read ? -1 : 1)));
-    };
+  const markAllRead = async () => {
+    if (!unreadCount) return;
+    const response = await fetch("/api/notifications", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ all: true, read: true }) });
+    if (!response.ok) return;
+    const now = new Date().toISOString();
+    setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt ?? now })));
+    setUnreadCount(0);
+  };
 
-    const markAllRead = async () => {
-        if (!unreadCount) return;
-        const res = await fetch("/api/notifications", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ all: true, read: true }),
-        });
-        if (!res.ok) return;
-        const now = new Date().toISOString();
-        setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt ?? now })));
-        setUnreadCount(0);
-    };
+  const openNotification = async (notification: NotificationItem) => {
+    await setRead(notification, true);
+    if (!notification.actionUrl) return;
+    setOpen(false);
+    if (notification.relatedType === "event" && notification.relatedId) window.dispatchEvent(new CustomEvent("beesmart:open-event", { detail: notification.relatedId }));
+    router.push(notification.actionUrl);
+  };
 
-    const openNotification = async (notification: NotificationItem) => {
-        await setRead(notification, true);
-        if (notification.actionUrl) {
-            setOpen(false);
-            if (notification.relatedType === "event" && notification.relatedId) {
-                window.dispatchEvent(new CustomEvent("beesmart:open-event", { detail: notification.relatedId }));
-            }
-            router.push(notification.actionUrl);
-        }
-    };
+  const formatTime = (value: string) => {
+    const seconds = Math.floor((Date.now() - new Date(value).getTime()) / 1000);
+    if (seconds < 60) return "Just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    return new Date(value).toLocaleDateString();
+  };
 
-    const formatTime = (value: string) => {
-        const date = new Date(value);
-        const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-        if (seconds < 60) return "Just now";
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        return date.toLocaleDateString();
-    };
-
-    return (
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger asChild>
-                <button
-                    type="button"
-                    aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
-                    className="relative p-2 rounded-md hover:bg-black/10 text-(--theme-text) outline-none focus-visible:ring-2 focus-visible:ring-black/30"
-                >
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                        <span className="absolute -right-1 -top-1 min-w-4 h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
-                            {unreadCount > 99 ? "99+" : unreadCount}
-                        </span>
-                    )}
-                </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[min(380px,calc(100vw-24px))] p-0 bg-(--theme-bg) border-(--theme-text)/10 shadow-2xl rounded-2xl corner-squircle overflow-hidden">
-                <div className="p-4 pb-3 border-b border-(--theme-text)/10">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold uppercase text-(--theme-text)">Notifications</h3>
-                        <button onClick={markAllRead} className="flex items-center gap-1 text-[10px] font-bold uppercase text-(--theme-text) opacity-55 hover:opacity-100">
-                            <CheckCheck className="h-3.5 w-3.5" /> Mark all read
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 bg-(--theme-sidebar) p-1 rounded-xl">
-                        {(["GENERAL", "CLASSROOM"] as Category[]).map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={cn(
-                                    "rounded-lg py-2 text-[11px] font-bold uppercase transition-colors",
-                                    activeTab === tab ? "bg-(--theme-card) text-(--theme-text)" : "text-(--theme-text) opacity-45 hover:opacity-80",
-                                )}
-                            >
-                                {tab === "GENERAL" ? "General" : "Classroom"}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <ScrollArea className="h-[420px]">
-                    {loading && items.length === 0 ? (
-                        <div className="h-40 flex items-center justify-center"><Loader2 className="h-5 w-5 animate-spin opacity-50" /></div>
-                    ) : items.length === 0 ? (
-                        <div className="h-40 flex flex-col items-center justify-center text-center px-8 text-(--theme-text)">
-                            <Bell className="h-7 w-7 opacity-20 mb-2" />
-                            <p className="text-xs font-bold uppercase opacity-45">Nothing new here</p>
-                        </div>
-                    ) : (
-                        <div className="p-2">
-                            {items.map((notification) => (
-                                <button
-                                    key={notification.id}
-                                    onClick={() => openNotification(notification)}
-                                    className={cn(
-                                        "w-full text-left flex gap-3 p-3 rounded-xl transition-colors relative",
-                                        notification.readAt ? "opacity-55 hover:bg-(--theme-sidebar)" : "bg-(--theme-card)/35 hover:bg-(--theme-card)/55",
-                                    )}
-                                >
-                                    {!notification.readAt && <span className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                                    <div className="w-8 h-8 shrink-0 rounded-lg bg-(--theme-sidebar) flex items-center justify-center text-(--theme-text)">
-                                        {activeTab === "CLASSROOM" ? <GraduationCap className="h-4 w-4" /> : <Info className="h-4 w-4" />}
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex justify-between gap-2">
-                                            <p className="text-xs font-bold text-(--theme-text) line-clamp-1">{notification.title}</p>
-                                            <span className="text-[9px] text-(--theme-text) opacity-45 shrink-0">{formatTime(notification.createdAt)}</span>
-                                        </div>
-                                        {notification.category === "CLASSROOM" && (
-                                            <p className="text-[10px] font-bold uppercase text-(--theme-text) opacity-45 mt-0.5">
-                                                {notification.classroomName ?? "Classroom"} · {notification.actorId ? <span role="link" tabIndex={0} onClick={(event) => { event.stopPropagation(); router.push(`/profile/${notification.actorId}`); }} onKeyDown={(event) => { if (event.key === "Enter") { event.stopPropagation(); router.push(`/profile/${notification.actorId}`); } }} className="hover:underline">{notification.actorName ?? "BeeSmart"}</span> : notification.actorName ?? "BeeSmart"}
-                                            </p>
-                                        )}
-                                        <p className="text-[11px] text-(--theme-text) opacity-65 mt-1 line-clamp-2">{notification.body}</p>
-                                        <span
-                                            role="button"
-                                            tabIndex={0}
-                                            onClick={(event) => { event.stopPropagation(); setRead(notification, !Boolean(notification.readAt)); }}
-                                            onKeyDown={(event) => { if (event.key === "Enter") { event.stopPropagation(); setRead(notification, !Boolean(notification.readAt)); } }}
-                                            className="inline-block mt-1.5 text-[9px] font-bold uppercase text-(--theme-text) opacity-45 hover:opacity-100"
-                                        >
-                                            {notification.readAt ? "Mark unread" : "Mark read"}
-                                        </span>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </ScrollArea>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--app-danger)] px-1 text-[9px] font-semibold text-[var(--app-text-inverse)]">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={8} className="notification-center z-[80] w-[min(400px,calc(100vw-16px))] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-0 text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]">
+        <div className="border-b border-[var(--app-border)] p-4">
+          <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-0.5 text-xs text-[var(--app-text-muted)]">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p></div><WorkspaceButton type="button" variant="ghost" size="compact" onClick={markAllRead} disabled={!unreadCount}><CheckCheck className="h-3.5 w-3.5" />Mark all read</WorkspaceButton></div>
+          <div className="grid grid-cols-2 gap-1 rounded-xl bg-[var(--app-surface-muted)] p-1">{(["GENERAL", "CLASSROOM"] as Category[]).map((tab) => <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={cn("rounded-lg px-3 py-2 text-xs font-medium text-[var(--app-text-muted)] transition-colors hover:text-[var(--app-text)]", activeTab === tab && "bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-soft)]")}>{tab === "GENERAL" ? "General" : "Classroom"}</button>)}</div>
+        </div>
+        <ScrollArea className="h-[min(440px,65vh)]">
+          {loading && items.length === 0 ? <div className="flex h-44 items-center justify-center text-[var(--app-text-muted)]"><Loader2 className="h-5 w-5 animate-spin" /><span className="sr-only">Loading notifications</span></div> : items.length === 0 ? <div className="flex h-44 flex-col items-center justify-center px-8 text-center"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--app-surface-muted)] text-[var(--app-text-faint)]"><Bell className="h-5 w-5" /></span><p className="mt-3 text-sm font-semibold text-[var(--app-text)]">Nothing new here</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">New updates will appear in this panel.</p></div> : <div className="p-2">{items.map((notification) => (
+            <div key={notification.id} className={cn("group relative rounded-xl border border-transparent transition-colors hover:bg-[var(--app-surface-hover)]", !notification.readAt && "border-[var(--app-border)] bg-[var(--app-selection)]")}>
+              <button type="button" onClick={() => void openNotification(notification)} className="flex w-full gap-3 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus-ring)]">
+                {!notification.readAt ? <span className="absolute left-1 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[var(--app-accent-text)]" /> : null}
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--app-surface-muted)] text-[var(--app-text-muted)]">{activeTab === "CLASSROOM" ? <GraduationCap className="h-4 w-4" /> : <Info className="h-4 w-4" />}</span>
+                <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><span className="line-clamp-1 text-xs font-semibold text-[var(--app-text)]">{notification.title}</span><span className="shrink-0 text-[10px] text-[var(--app-text-faint)]">{formatTime(notification.createdAt)}</span></span>{notification.category === "CLASSROOM" ? <span className="mt-0.5 block text-[10px] font-medium text-[var(--app-text-faint)]">{notification.classroomName ?? "Classroom"} · {notification.actorName ?? "BeeSmart"}</span> : null}<span className="mt-1 block line-clamp-2 text-xs leading-4 text-[var(--app-text-muted)]">{notification.body}</span></span>
+              </button>
+              <button type="button" onClick={() => void setRead(notification, !Boolean(notification.readAt))} className="mb-2 ml-[60px] text-[10px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)]">{notification.readAt ? "Mark unread" : "Mark read"}</button>
+            </div>
+          ))}</div>}
+        </ScrollArea>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

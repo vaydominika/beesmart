@@ -150,6 +150,64 @@
   --app-success-soft: #F0FDF4;
   --app-warning: #B45309;
   --app-warning-soft: #FFFBEB;
+  --app-info: #2563EB;
+  --app-info-soft: #EFF6FF;
+  --app-text-inverse: #FFFFFF;
+  --app-overlay: color-mix(in srgb, #20231F 58%, transparent);
+  --app-shadow-color: color-mix(in srgb, #20231F 16%, transparent);
+  --app-shadow-soft: 0 8px 24px var(--app-shadow-color);
+  --app-shadow-elevated: 0 24px 64px var(--app-shadow-color);
+  --app-shadow-subtle: 0 1px 3px var(--app-shadow-color);
+  --app-shadow-inset: inset 0 1px 3px var(--app-shadow-color);
+  --app-selection: color-mix(in srgb, var(--app-accent-soft) 72%, var(--app-surface));
+  --app-settings-active: var(--app-surface);
+  --app-disabled: color-mix(in srgb, var(--app-surface-muted) 72%, var(--app-canvas));
+  --app-scrim-soft: color-mix(in srgb, var(--app-text) 10%, transparent);
+  --app-scrim-strong: color-mix(in srgb, var(--app-text) 30%, transparent);
+  --app-danger-border: color-mix(in srgb, var(--app-danger) 42%, var(--app-border));
+  --app-success-border: color-mix(in srgb, var(--app-success) 38%, var(--app-border));
+  --app-warning-border: color-mix(in srgb, var(--app-warning) 38%, var(--app-border));
+  --app-info-border: color-mix(in srgb, var(--app-info) 36%, var(--app-border));
+  --app-theme-bee-swatch: #FADA6D;
+  --app-theme-dark-swatch: #4A5568;
+  --app-theme-ocean-swatch: #4FD1C7;
+  --app-theme-forest-swatch: #68D391;
+  --app-event-1: #FEC435;
+  --app-event-2: #FF6B6B;
+  --app-event-3: #4ECDC4;
+  --app-event-4: #45B7D1;
+  --app-event-5: #96CEB4;
+  --app-event-6: #FFEEAD;
+  --app-event-text: #20231F;
+  --app-code-surface: #0F172A;
+  --app-code-text: #E2E8F0;
+  --app-code-muted: #94A3B8;
+  --app-editor-purple: #9333EA;
+  --app-editor-red: #E00000;
+  --app-editor-yellow: #EAB308;
+  --app-editor-blue: #2563EB;
+  --app-editor-green: #008A00;
+  --app-editor-orange: #FFA500;
+  --app-editor-pink: #BA4081;
+  --app-editor-grey: #A8A29E;
+  --background: var(--app-canvas);
+  --foreground: var(--app-text);
+  --card: var(--app-surface);
+  --card-foreground: var(--app-text);
+  --popover: var(--app-surface);
+  --popover-foreground: var(--app-text);
+  --primary: var(--app-text);
+  --primary-foreground: var(--app-text-inverse);
+  --secondary: var(--app-surface-muted);
+  --secondary-foreground: var(--app-text);
+  --muted: var(--app-surface-muted);
+  --muted-foreground: var(--app-text-muted);
+  --accent: var(--app-accent-soft);
+  --accent-foreground: var(--app-accent-text);
+  --destructive: var(--app-danger);
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --ring: var(--app-focus-border);
   --app-accent-text: #705900;
   --app-pin: #B5A044;
   --app-role-teacher-bg: #FFF3BF;
@@ -185,6 +243,20 @@
   --app-border-strong: #5C6B80;
   --app-focus-ring: #4A5568;
   --app-focus-border: #A0AEC0;
+  --app-accent-text: #FADA6D;
+  --app-pin: #FADA6D;
+  --app-danger: #FC8181;
+  --app-danger-soft: #3B2028;
+  --app-success: #68D391;
+  --app-success-soft: #18392A;
+  --app-warning: #F6AD55;
+  --app-warning-soft: #3D2D18;
+  --app-info: #63B3ED;
+  --app-info-soft: #17344A;
+  --app-text-inverse: #1A202C;
+  --app-overlay: color-mix(in srgb, #090D13 72%, transparent);
+  --app-shadow-color: color-mix(in srgb, #090D13 48%, transparent);
+  --app-settings-active: var(--app-canvas);
   --theme-card: var(--app-accent);
   --theme-sidebar: var(--app-accent-soft);
   --theme-text: var(--app-text);
@@ -209,6 +281,16 @@
   --app-border-strong: #A7DCD7;
   --app-focus-ring: #CCFBF1;
   --app-focus-border: #2AAFA5;
+  --app-accent-text: #155E75;
+  --app-pin: #2AAFA5;
+  --app-danger: #C53030;
+  --app-danger-soft: #FFF5F5;
+  --app-success: #237A57;
+  --app-success-soft: #E6FFFA;
+  --app-warning: #B7791F;
+  --app-warning-soft: #FFFAF0;
+  --app-info: #2C7A7B;
+  --app-info-soft: #E6FFFA;
   --theme-card: var(--app-accent);
   --theme-sidebar: var(--app-accent-soft);
   --theme-text: var(--app-text);
@@ -233,6 +315,16 @@
   --app-border-strong: #A8D5B7;
   --app-focus-ring: #DCFCE7;
   --app-focus-border: #38A169;
+  --app-accent-text: #166534;
+  --app-pin: #38A169;
+  --app-danger: #C53030;
+  --app-danger-soft: #FFF5F5;
+  --app-success: #276749;
+  --app-success-soft: #F0FFF4;
+  --app-warning: #B7791F;
+  --app-warning-soft: #FFFFF0;
+  --app-info: #2B6CB0;
+  --app-info-soft: #EBF8FF;
   --theme-card: var(--app-accent);
   --theme-sidebar: var(--app-accent-soft);
   --theme-text: var(--app-text);
@@ -320,6 +412,55 @@ input[type="number"] {
 
 .classroom-ui.classroom-surface {
   background: var(--classroom-surface);
+}
+
+/* Tailwind elevation utilities inherit their color from the shared theme contract. */
+:where(.shadow-sm, .shadow-md) {
+  box-shadow: var(--app-shadow-subtle) !important;
+}
+
+:where(.shadow-lg, .shadow-xl) {
+  box-shadow: var(--app-shadow-soft) !important;
+}
+
+:where(.shadow-2xl) {
+  box-shadow: var(--app-shadow-elevated) !important;
+}
+
+:where(.shadow-inner) {
+  box-shadow: var(--app-shadow-inset) !important;
+}
+
+.workspace-dialog,
+.workspace-dialog *,
+.workspace-button {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.notification-center,
+.notification-center * {
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.workspace-dialog * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--app-border-strong) transparent;
+}
+
+.workspace-dialog *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.workspace-dialog *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workspace-dialog *::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--app-border-strong);
+  background-clip: padding-box;
 }
 
 /* Dashboard follows the same calm workspace system as Courses and Profile. */
@@ -463,8 +604,8 @@ input[type="number"] {
 .schedule-event-surface {
   border-color: var(--schedule-line-strong);
   background-color: var(--schedule-accent);
-  background-color: color-mix(in srgb, var(--event-color, #fada6d) 34%, var(--schedule-canvas));
-  border-color: color-mix(in srgb, var(--event-color, #fada6d) 55%, var(--schedule-line));
+  background-color: color-mix(in srgb, var(--event-color, var(--app-event-1)) 34%, var(--schedule-canvas));
+  border-color: color-mix(in srgb, var(--event-color, var(--app-event-1)) 55%, var(--schedule-line));
 }
 
 .schedule-event-card {
@@ -561,7 +702,7 @@ input[type="number"] {
 }
 
 .course-builder .prose a {
-  color: var(--course-accent-text, #705900);
+  color: var(--course-accent-text);
   text-decoration-color: var(--course-focus-border);
 }
 

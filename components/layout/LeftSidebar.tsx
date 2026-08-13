@@ -34,7 +34,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
   return (
     <div
       className={cn(
-        "bg-(--theme-sidebar) flex flex-col rounded-tr-[30px] rounded-br-[30px] overflow-visible relative z-10 w-full",
+        "bg-(--theme-sidebar) flex flex-col rounded-tr-[30px] overflow-visible relative z-10 w-full",
         isOverlay ? "h-screen max-w-[85vw] overflow-hidden" : "h-full w-72"
       )}
       id="sidebar-container"
@@ -60,7 +60,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           />
         </div>
 
-        <div className="mx-auto mb-4 w-64 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-48">
+        <div className="mx-auto mb-4 w-64 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">
           <p className="text-center text-[32px] font-semibold uppercase leading-none text-[var(--app-text)] md:text-[26px]">Bee consistent</p>
           <div className="mt-2 flex items-center justify-center gap-2 text-[var(--app-text)]">
             <span className="flex min-h-14 min-w-14 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] px-3 text-[64px] font-bold leading-none md:text-[48px]">

@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "audit:colors": "node scripts/audit-colors.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "coverage": "vitest run --coverage",

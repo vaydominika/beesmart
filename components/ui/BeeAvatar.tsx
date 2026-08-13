@@ -13,7 +13,7 @@ export function BeeAvatar({ avatarUrl, className, borderClassName = "border-(--t
   return (
     <div className={className ?? "relative"}>
       {/* White outer circle */}
-      <div className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 bg-white ${borderClassName}`}>
+      <div className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 bg-[var(--app-surface)] ${borderClassName}`}>
         <Image
           src={src}
           alt="Profile"

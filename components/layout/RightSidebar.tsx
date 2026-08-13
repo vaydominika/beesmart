@@ -149,14 +149,14 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     <>
       <div
         className={cn(
-          "bg-(--theme-sidebar) flex flex-col rounded-tl-[30px] rounded-bl-[30px] relative overflow-hidden transition-transform duration-300 ease-in-out w-full",
+          "bg-(--theme-sidebar) flex flex-col rounded-tl-[30px] relative overflow-hidden transition-transform duration-300 ease-in-out w-full",
           isOverlay ? "h-screen" : "h-full w-72",
           !isOverlay && !isRightSidebarOpen && "translate-x-full"
         )}
       >
         {/* Banner */}
         <div
-          className="relative rounded-tl-[30px] shrink-0 bg-[#fef9c3]"
+          className="relative rounded-tl-[30px] shrink-0 bg-[var(--app-accent-soft)]"
           style={{
             minHeight: BANNER_HEIGHT,
             backgroundImage: `url(${bannerImageUrl ?? DEFAULT_BANNER_URL})`,
@@ -171,7 +171,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                 type="button"
                 onClick={onClose}
                 aria-label="Close sidebar"
-                className="p-2 rounded-md hover:bg-black/10 text-(--theme-text)"
+                className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -180,7 +180,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
               type="button"
               onClick={openProfileModal}
               aria-label="Profile settings"
-              className="p-2 rounded-md hover:bg-black/10 text-(--theme-text)"
+              className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
             >
               <Settings className="h-5 w-5" />
             </button>

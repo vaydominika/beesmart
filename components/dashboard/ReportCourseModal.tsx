@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/components/ui/sonner";
 import { Flag } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceSelect, type WorkspaceSelectOption } from "@/components/ui/workspace-select";
+import {
+  WorkspaceDialogBody,
+  WorkspaceDialogContent,
+  WorkspaceDialogDescription,
+  WorkspaceDialogFooter,
+  WorkspaceDialogHeader,
+  WorkspaceDialogTitle,
+  workspaceFieldClass,
+  workspaceLabelClass,
+} from "@/components/ui/workspace-dialog";
 
 interface ReportCourseModalProps {
   open: boolean;
@@ -23,139 +25,84 @@ interface ReportCourseModalProps {
   onSuccess?: () => void;
 }
 
-const REPORT_REASONS = [
-  "Inappropriate content",
-  "Incorrect or misleading information",
-  "Copyright violation",
-  "Spam or advertising",
-  "Other",
+type ReportReason = "" | "Inappropriate content" | "Incorrect or misleading information" | "Copyright violation" | "Spam or advertising" | "Other";
+const REPORT_REASONS: readonly WorkspaceSelectOption<ReportReason>[] = [
+  { value: "", label: "Select a reason", disabled: true },
+  { value: "Inappropriate content", label: "Inappropriate content" },
+  { value: "Incorrect or misleading information", label: "Incorrect or misleading information" },
+  { value: "Copyright violation", label: "Copyright violation" },
+  { value: "Spam or advertising", label: "Spam or advertising" },
+  { value: "Other", label: "Other" },
 ];
 
-export function ReportCourseModal({
-  open,
-  onOpenChange,
-  courseId,
-  courseTitle,
-  onSuccess,
-}: ReportCourseModalProps) {
-  const [reason, setReason] = useState("");
+export function ReportCourseModal({ open, onOpenChange, courseId, courseTitle, onSuccess }: ReportCourseModalProps) {
+  const [reason, setReason] = useState<ReportReason>("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const reset = () => {
+    setReason("");
+    setDescription("");
+    setError(null);
+  };
+
   const handleSubmit = async () => {
-    if (!courseId || !reason.trim()) return;
+    if (!courseId || !reason) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/courses/${courseId}/report`, {
+      const response = await fetch(`/api/courses/${courseId}/report`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reason: reason.trim(),
-          description: description.trim() || undefined,
-        }),
+        body: JSON.stringify({ reason, description: description.trim() || undefined }),
       });
-      const result = await res.json();
+      const result = await response.json();
+      if (!result.ok) throw new Error(result.error ?? "Failed to submit report");
+      reset();
+      toast.success("Report submitted");
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (submitFailure) {
+      const message = submitFailure instanceof Error ? submitFailure.message : "Failed to submit report";
+      setError(message);
+      toast.error(message);
+    } finally {
       setLoading(false);
-      if (result.ok) {
-        setReason("");
-        setDescription("");
-        toast.success("Report submitted");
-        onOpenChange(false);
-        onSuccess?.();
-      } else {
-        const msg = result.error ?? "Failed to submit report";
-        setError(msg);
-        toast.error(msg);
-      }
-    } catch (e) {
-      setLoading(false);
-      const msg = e instanceof Error ? e.message : "Failed to submit report";
-      setError(msg);
-      toast.error(msg);
     }
   };
 
-  const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setReason("");
-      setDescription("");
-      setError(null);
-    }
-    onOpenChange(next);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) reset();
+    onOpenChange(nextOpen);
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 max-w-2xl max-h-[85vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <div className="flex max-h-[85vh] flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:max-h-[82vh] md:p-10">
-          <DialogHeader className="shrink-0 pb-2 md:pb-0">
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-[40px] font-bold text-(--theme-text) uppercase">
-              <Flag className="h-6 w-6 md:w-12 md:h-12" />
-              REPORT: {courseTitle ? courseTitle.toUpperCase() : "COURSE"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <ScrollArea className="my-2 md:my-6 flex-1 min-h-0">
-            <div className="space-y-4 px-2 pb-4">
-              <div>
-                <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                  REASON (REQUIRED)
-                </label>
-                <select
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full rounded-xl corner-squircle border-0 bg-(--theme-sidebar) text-base md:text-[22px] font-bold text-(--theme-text) px-4 py-3 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card)"
-                >
-                  <option value="">Select a reason</option>
-                  {REPORT_REASONS.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3">
-                  ADDITIONAL DETAILS (OPTIONAL)
-                </label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the issue..."
-                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[22px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-14 w-full"
-                />
-              </div>
-              {error && (
-                <p className="text-sm text-red-600 font-medium">{error}</p>
-              )}
-            </div>
-          </ScrollArea>
-
-          <Separator className="shrink-0 my-1 md:my-0" />
-
-          <DialogFooter className="gap-2 md:gap-6 pt-2 md:pt-6 shrink-0 pb-1 md:pb-0">
-            <WorkspaceButton
-              type="button"
-              variant="secondary"
-              onClick={() => handleOpenChange(false)}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
-            >
-              CANCEL
-            </WorkspaceButton>
-            <WorkspaceButton
-              type="button"
-              variant="primary"
-              onClick={handleSubmit}
-              disabled={!reason.trim() || loading}
-              className="flex-1 text-(--theme-text) text-xs md:text-[34px] font-bold uppercase"
-            >
-              {loading ? "SUBMITTING…" : "SUBMIT REPORT"}
-            </WorkspaceButton>
-          </DialogFooter>
-        </div>
-      </DialogContent>
+      <WorkspaceDialogContent className="max-w-lg">
+        <WorkspaceDialogHeader>
+          <WorkspaceDialogTitle className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-danger-soft)] text-[var(--app-danger)]"><Flag className="h-4 w-4" /></span>
+            Report course
+          </WorkspaceDialogTitle>
+          <WorkspaceDialogDescription>Tell us what needs review in “{courseTitle || "this course"}”.</WorkspaceDialogDescription>
+        </WorkspaceDialogHeader>
+        <WorkspaceDialogBody className="space-y-5">
+          <div>
+            <label id="report-reason-label" className={workspaceLabelClass}>Reason</label>
+            <WorkspaceSelect value={reason} options={REPORT_REASONS} onValueChange={setReason} ariaLabel="Report reason" className="w-full" />
+          </div>
+          <div>
+            <label htmlFor="report-details" className={workspaceLabelClass}>Additional details <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label>
+            <textarea id="report-details" value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Describe the issue and where it appears…" className={`${workspaceFieldClass} h-auto min-h-28 w-full resize-y py-3`} />
+          </div>
+          {error ? <p role="alert" className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger)]">{error}</p> : null}
+        </WorkspaceDialogBody>
+        <WorkspaceDialogFooter>
+          <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={loading}>Cancel</WorkspaceButton>
+          <WorkspaceButton type="button" variant="danger" onClick={handleSubmit} disabled={!reason || loading}>{loading ? "Submitting…" : "Submit report"}</WorkspaceButton>
+        </WorkspaceDialogFooter>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

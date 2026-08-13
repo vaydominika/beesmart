@@ -66,7 +66,7 @@ export default function ClassroomPage() {
                 {loading ? (
                     <div className="flex items-center justify-center py-20"><Spinner /></div>
                 ) : classrooms.length === 0 ? (
-                    <section className="flex flex-col items-center justify-center rounded-2xl border border-[var(--classroom-line)] bg-white px-6 py-16 text-center">
+                    <section className="flex flex-col items-center justify-center rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] px-6 py-16 text-center">
                         <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--classroom-role-teacher-bg)] text-[var(--classroom-role-teacher-text)]">
                             <School className="h-6 w-6" />
                         </div>

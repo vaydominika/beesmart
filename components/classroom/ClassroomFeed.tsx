@@ -486,11 +486,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         const now = new Date();
         const diff = due.getTime() - now.getTime();
         const hours = Math.floor(diff / 3600000);
-        if (hours < 0) return { text: "Past due", color: "bg-red-500/20 text-red-500" };
-        if (hours < 24) return { text: `${hours}h left`, color: "bg-orange-500/20 text-orange-500" };
+        if (hours < 0) return { text: "Past due", color: "bg-[var(--app-danger-soft)]0/20 text-[var(--app-danger)]" };
+        if (hours < 24) return { text: `${hours}h left`, color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
         const days = Math.floor(hours / 24);
-        if (days <= 3) return { text: `${days}d left`, color: "bg-amber-500/20 text-amber-500" };
-        return { text: `Due ${formatDateYmd(due)}`, color: "bg-blue-500/20 text-blue-500" };
+        if (days <= 3) return { text: `${days}d left`, color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
+        return { text: `Due ${formatDateYmd(due)}`, color: "bg-[var(--app-info-soft)] text-[var(--app-info)]" };
     };
 
     return (
@@ -506,7 +506,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         onChange={setNewPostContent}
                         onReady={(editor) => { postEditorRef.current = editor; }}
                         placeholder="Write an update..."
-                        className="min-h-[72px] rounded-xl border border-[var(--classroom-line)] bg-white/70 p-3 pr-14 text-sm font-normal text-[var(--classroom-text)] outline-none focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]/15 prose prose-sm max-w-none"
+                        className="min-h-[72px] rounded-xl border border-[var(--classroom-line)] bg-[color-mix(in_srgb,var(--app-surface)_70%,transparent)] p-3 pr-14 text-sm font-normal text-[var(--classroom-text)] outline-none focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]/15 prose prose-sm max-w-none"
                         id="classroom-post"
                     />
                     <WorkspaceButton
@@ -541,7 +541,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )}
 
                 {postAssignment && (
-                    <div data-testid="draft-assignment" className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-white p-3">
+                    <div data-testid="draft-assignment" className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
                             <ClipboardList className="h-4 w-4 text-[var(--classroom-text-muted)]" />
                         </div>
@@ -564,7 +564,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )}
 
                 {postTest && (
-                    <div data-testid="draft-test" className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-white p-3">
+                    <div data-testid="draft-test" className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
                             <GraduationCap className="h-4 w-4 text-[var(--classroom-text-muted)]" />
                         </div>
@@ -586,8 +586,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )}
 
                 {postCourse && (
-                    <div className="mt-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-white p-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white">
+                    <div className="mt-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--app-surface)]">
                             <BookOpen className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
@@ -664,7 +664,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search posts..."
-                        className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-white pl-10 pr-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
+                        className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] pl-10 pr-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
                     />
                 </div>
                 <WorkspaceButton type="button" variant={showFilters ? "primary" : "secondary"} size="icon" onClick={() => setShowFilters(!showFilters)} aria-label="Toggle post filters" aria-pressed={showFilters}>
@@ -678,7 +678,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         onClick={() => setTypeFilter("")}
                         className={cn(
                             "text-xs font-bold px-3 py-1.5 rounded-lg transition-all",
-                            !typeFilter ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)]" : "border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)]"
+                            !typeFilter ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)]" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]"
                         )}
                     >
                         All
@@ -689,7 +689,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             onClick={() => setTypeFilter(key)}
                             className={cn(
                                 "text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5",
-                                typeFilter === key ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)]" : "border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)]"
+                                typeFilter === key ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)]" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]"
                             )}
                         >
                             {POST_TYPE_ICONS[key]}
@@ -699,13 +699,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <div className="ml-auto flex gap-2">
                         <button
                             onClick={() => setSort("newest")}
-                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "newest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)]")}
+                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "newest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]")}
                         >
                             Newest
                         </button>
                         <button
                             onClick={() => setSort("oldest")}
-                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "oldest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-white text-[var(--classroom-text-muted)]")}
+                            className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "oldest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]")}
                         >
                             Oldest
                         </button>
@@ -725,7 +725,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             ) : (
                 <div className="space-y-4">
                     {posts.map((post) => (
-                        <article id={`classroom-post-${post.id}`} key={post.id} data-testid="classroom-post-card" className="scroll-mt-6 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none target:ring-2 target:ring-[var(--classroom-focus-border)] target:ring-offset-2 md:p-5">
+                        <article id={`classroom-post-${post.id}`} key={post.id} data-testid="classroom-post-card" className="scroll-mt-6 overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-4 shadow-none target:ring-2 target:ring-[var(--classroom-focus-border)] target:ring-offset-2 md:p-5">
                             {/* Post Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -780,7 +780,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent
                                                 align="end"
-                                                className="classroom-dialog min-w-36 rounded-xl border border-[var(--classroom-line)] bg-white p-1 shadow-lg"
+                                                className="classroom-dialog min-w-36 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-1 shadow-lg"
                                             >
                                                 <DropdownMenuItem
                                                     onSelect={() => openPostEditor(post)}
@@ -792,7 +792,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 <DropdownMenuItem
                                                     variant="destructive"
                                                     onSelect={() => setPostToDelete(post)}
-                                                    className="rounded-lg px-2.5 py-2 text-sm focus:bg-red-50"
+                                                    className="rounded-lg px-2.5 py-2 text-sm focus:bg-[var(--app-danger-soft)]"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                     Delete
@@ -819,7 +819,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Assignment Badge */}
                             {post.assignment && (
                                 <Link href={`/classroom/${classroomId}/assignments/${post.assignment.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
+                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
                                         <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
@@ -842,7 +842,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Test Badge */}
                             {post.test && (
                                 <Link href={`/classroom/${classroomId}/tests/${post.test.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
+                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
                                         <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
@@ -861,7 +861,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Course Badge */}
                             {post.course && (
                                 <Link href={`/courses/${post.course.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-white p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
+                                    <div className="group mb-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
                                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
                                             <BookOpen className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         </div>
@@ -972,7 +972,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
             {/* Modals */}
             <Dialog open={Boolean(editingPost)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
-                <DialogContent className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-2xl md:p-6">
+                <DialogContent className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Edit post</DialogTitle>
                         <DialogDescription className="sr-only">Update the text in your post.</DialogDescription>
@@ -1011,7 +1011,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             </Dialog>
 
             <Dialog open={Boolean(postToDelete)} onOpenChange={(open) => { if (!open && !deletingPost) setPostToDelete(null); }}>
-                <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-white p-5 shadow-2xl md:p-6">
+                <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Delete post?</DialogTitle>
                         <DialogDescription className="mt-2 text-sm leading-6 text-[var(--classroom-text-muted)]">

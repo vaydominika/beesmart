@@ -93,7 +93,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
           editable={editable}
           editorProps={{
             attributes: {
-              class: "prose dark:prose-invert prose-sm sm:prose-base focus:outline-none max-w-full [&_.is-editor-empty:first-child]:before:pointer-events-none [&_.is-editor-empty:first-child]:before:float-left [&_.is-editor-empty:first-child]:before:h-0 [&_.is-editor-empty:first-child]:before:text-[#9a9d97] [&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
+              class: "prose dark:prose-invert prose-sm sm:prose-base focus:outline-none max-w-full [&_.is-editor-empty:first-child]:before:pointer-events-none [&_.is-editor-empty:first-child]:before:float-left [&_.is-editor-empty:first-child]:before:h-0 [&_.is-editor-empty:first-child]:before:text-[var(--app-text-faint)] [&_.is-editor-empty:first-child]:before:content-[attr(data-placeholder)]",
             },
           }}
         >

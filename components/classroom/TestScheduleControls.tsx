@@ -61,7 +61,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
     };
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-white p-4 shadow-none">
+        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-4 shadow-none">
             <div className="flex items-center gap-2 mb-3">
                 <CalendarClock className="h-4 w-4" />
                 <h3 className="text-sm font-bold uppercase text-(--theme-text)">Schedule & sync</h3>

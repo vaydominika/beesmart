@@ -67,7 +67,7 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="course-ui max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-white p-6 shadow-2xl">
+      <DialogContent className="course-ui max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-6 shadow-2xl">
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" className="absolute right-4 top-4" aria-label="Close rating"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <DialogHeader className="pr-8 text-left">
           <DialogTitle className="text-xl font-semibold text-[var(--course-text)]">{existing ? "Update your rating" : "How was the course?"}</DialogTitle>
@@ -78,7 +78,7 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
             <div role="radiogroup" aria-label="Course rating" className="flex justify-center gap-2">
               {[1, 2, 3, 4, 5].map((value) => (
                 <button key={value} type="button" role="radio" aria-checked={rating === value} aria-label={`${value} star${value === 1 ? "" : "s"}`} onClick={() => setRating(value)} className="rounded-lg p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
-                  <Star className={cn("h-8 w-8 transition-colors", value <= rating ? "fill-amber-400 text-amber-500" : "text-[var(--course-line-strong)]")} />
+                  <Star className={cn("h-8 w-8 transition-colors", value <= rating ? "fill-[var(--app-warning)] text-[var(--app-warning)]" : "text-[var(--course-line-strong)]")} />
                 </button>
               ))}
             </div>

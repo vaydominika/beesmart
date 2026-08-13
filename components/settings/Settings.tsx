@@ -1,18 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog'
-import { Settings01Icon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
-import { WorkspaceButton } from '../ui/workspace-button'
-import { Input } from '../ui/input'
-import { Switch } from '../ui/switch'
-import { useSettings } from './SettingsProvider'
-import { ScrollArea } from '../ui/scroll-area'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Separator } from "@/components/ui/separator"
-import { toast } from "@/components/ui/sonner"
+import { Bell, Palette, Settings2, TimerReset, type LucideIcon } from "lucide-react";
+import { Dialog } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/components/ui/sonner";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
+import {
+  WorkspaceDialogBody,
+  WorkspaceDialogContent,
+  WorkspaceDialogDescription,
+  WorkspaceDialogFooter,
+  WorkspaceDialogHeader,
+  WorkspaceDialogTitle,
+  workspaceFieldClass,
+  workspaceLabelClass,
+} from "@/components/ui/workspace-dialog";
+import { cn } from "@/lib/utils";
+import { useSettings } from "./SettingsProvider";
+
+type SettingsSection = "appearance" | "focus" | "notifications";
+
+const sections: Array<{ value: SettingsSection; label: string; icon: LucideIcon }> = [
+  { value: "appearance", label: "Appearance", icon: Palette },
+  { value: "focus", label: "Focus timer", icon: TimerReset },
+  { value: "notifications", label: "Notifications", icon: Bell },
+];
 
 export function SettingsModal() {
   const {
@@ -33,240 +47,99 @@ export function SettingsModal() {
     saveSettingsToServer,
     isSaving,
   } = useSettings();
-
-  const [localActiveMinutes, setLocalActiveMinutes] = useState(defaultActiveMinutes.toString());
-  const [localBreakMinutes, setLocalBreakMinutes] = useState(defaultBreakMinutes.toString());
-
-  // Section open/close state - all closed by default
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    theme: false,
-    focusTimer: false,
-    notifications: false,
-  });
-
-  const toggleSection = (section: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
+  const [activeSection, setActiveSection] = useState<SettingsSection>("appearance");
+  const [localActiveMinutes, setLocalActiveMinutes] = useState(String(defaultActiveMinutes));
+  const [localBreakMinutes, setLocalBreakMinutes] = useState(String(defaultBreakMinutes));
 
   const handleSave = async () => {
-    const active = parseInt(localActiveMinutes) || 45;
-    const breakMins = parseInt(localBreakMinutes) || 15;
+    const active = Math.min(120, Math.max(1, Number.parseInt(localActiveMinutes, 10) || 45));
+    const breakMins = Math.min(60, Math.max(1, Number.parseInt(localBreakMinutes, 10) || 15));
     setDefaultActiveMinutes(active);
     setDefaultBreakMinutes(breakMins);
-
-    const ok = await saveSettingsToServer({
-      defaultActiveMinutes: active,
-      defaultBreakMinutes: breakMins,
-    });
-    if (ok) {
-      toast.success("Settings saved");
-    } else {
-      toast.error("Failed to save settings. Changes saved locally.");
-    }
+    const ok = await saveSettingsToServer({ defaultActiveMinutes: active, defaultBreakMinutes: breakMins });
+    if (ok) toast.success("Settings saved");
+    else toast.error("Failed to save settings. Changes saved locally.");
     closeModal();
   };
 
-  const themes: { value: typeof theme; label: string; color: string }[] = [
-    { value: "bee", label: "BEE", color: "#FADA6D" },
-    { value: "dark", label: "DARK", color: "#4A5568" },
-    { value: "ocean", label: "OCEAN", color: "#4FD1C7" },
-    { value: "forest", label: "FOREST", color: "#68D391" },
+  const themes: Array<{ value: typeof theme; label: string; token: string }> = [
+    { value: "bee", label: "Bee", token: "--app-theme-bee-swatch" },
+    { value: "dark", label: "Dark", token: "--app-theme-dark-swatch" },
+    { value: "ocean", label: "Ocean", token: "--app-theme-ocean-swatch" },
+    { value: "forest", label: "Forest", token: "--app-theme-forest-swatch" },
   ];
 
   return (
-    <Dialog open={isModalOpen} onOpenChange={closeModal}>
-      <DialogContent className="p-0 max-w-2xl max-h-[78vh] border-dashed border-4 border-(--theme-text-important) corner-squircle rounded-2xl bg-transparent shadow-none">
-        <div className="flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-[var(--app-border)] bg-(--theme-bg) p-4 md:max-h-[76vh] md:p-6">
-          <DialogHeader className="shrink-0 pb-1">
-            <DialogTitle className="flex items-center gap-2 text-xl md:text-[32px] font-bold text-(--theme-text) uppercase">
-              <HugeiconsIcon icon={Settings01Icon} size={24} className="md:w-9 md:h-9" strokeWidth={2.2} />
-              GENERAL SETTINGS
-            </DialogTitle>
-          </DialogHeader>
+    <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
+      <WorkspaceDialogContent className="h-[min(720px,88vh)] max-w-3xl">
+        <WorkspaceDialogHeader>
+          <WorkspaceDialogTitle className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]"><Settings2 className="h-4 w-4" /></span>
+            General settings
+          </WorkspaceDialogTitle>
+          <WorkspaceDialogDescription>Choose how BeeSmart looks, focuses, and keeps you updated.</WorkspaceDialogDescription>
+        </WorkspaceDialogHeader>
 
-          <div className="my-2 md:my-4 flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-[32vh] md:h-[36vh] pr-2">
-              <div className="space-y-5 px-2 pb-3">
-                {/* Theme Section */}
-                <div>
-                  <button
-                    onClick={() => toggleSection('theme')}
-                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
-                  >
-                    <span>THEME</span>
-                    {openSections.theme ? (
-                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                      openSections.theme ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                  >
-                    <div className="grid grid-cols-2 gap-4 pt-4">
-                      {themes.map((t) => (
-                        <button
-                          key={t.value}
-                          onClick={() => setTheme(t.value)}
-                          className={`p-2 rounded-xl corner-squircle border-2 transition-all ${theme === t.value
-                            ? "border-(--theme-text-important) bg-(--theme-sidebar)"
-                            : "border-transparent bg-(--theme-sidebar)/50 hover:bg-(--theme-sidebar)/70"
-                            }`}
-                        >
-                          <div className="flex items-center gap-2 justify-center h-full">
-                            <div
-                              className="w-5 h-5 md:w-6 md:h-6 rounded-full shrink-0"
-                              style={{ backgroundColor: t.color }}
-                            />
-                            <span className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                              {t.label}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+        <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+          <nav aria-label="Settings sections" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] p-2 sm:w-48 sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-r sm:p-3">
+            {sections.map(({ value, label, icon: Icon }) => (
+              <button key={value} type="button" onClick={() => setActiveSection(value)} aria-current={activeSection === value ? "page" : undefined} className={cn("flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]", activeSection === value && "bg-[var(--app-settings-active)] text-[var(--app-text)]")}>
+                <Icon className="h-4 w-4" aria-hidden="true" />{label}
+              </button>
+            ))}
+          </nav>
+
+          <WorkspaceDialogBody className="w-full">
+            {activeSection === "appearance" ? (
+              <section aria-labelledby="appearance-heading">
+                <h3 id="appearance-heading" className="text-base font-semibold text-[var(--app-text)]">Appearance</h3>
+                <p className="mt-1 text-sm text-[var(--app-text-muted)]">Pick a theme. Every workspace and dialog updates together.</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  {themes.map((option) => (
+                    <button key={option.value} type="button" onClick={() => setTheme(option.value)} className={cn("flex items-center gap-3 rounded-2xl border bg-[var(--app-surface)] p-3 text-left transition-colors hover:bg-[var(--app-surface-hover)]", theme === option.value ? "border-[var(--app-focus-border)] ring-2 ring-[var(--app-focus-ring)]" : "border-[var(--app-border)]")}>
+                      <span className="h-8 w-8 rounded-xl border border-[var(--app-scrim-soft)]" style={{ backgroundColor: `var(${option.token})` }} />
+                      <span><span className="block text-sm font-semibold text-[var(--app-text)]">{option.label}</span><span className="block text-xs text-[var(--app-text-muted)]">{theme === option.value ? "Current theme" : "Use theme"}</span></span>
+                    </button>
+                  ))}
                 </div>
+              </section>
+            ) : null}
 
-                {/* Focus Timer Defaults */}
-                <div>
-                  <button
-                    onClick={() => toggleSection('focusTimer')}
-                    className="w-full flex items-center justify-between text-sm md:text-xl font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
-                  >
-                    <span>FOCUS TIMER</span>
-                    {openSections.focusTimer ? (
-                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                      openSections.focusTimer ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                  >
-                    <div className="space-y-3 pt-2">
-                      <div>
-                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                          ACTIVE MINUTES
-                        </label>
-                        <Input
-                          type="number"
-                          value={localActiveMinutes}
-                          onChange={(e) => setLocalActiveMinutes(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-24 md:w-32 h-10 md:h-12"
-                          min="1"
-                          max="120"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                          BREAK MINUTES
-                        </label>
-                        <Input
-                          type="number"
-                          value={localBreakMinutes}
-                          onChange={(e) => setLocalBreakMinutes(e.target.value)}
-                          className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold text-center border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) w-24 md:w-32 h-10 md:h-12"
-                          min="1"
-                          max="60"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between pt-1">
-                        <label className="text-xs md:text-base font-bold text-(--theme-text) uppercase">
-                          AUTO BREAK
-                        </label>
-                        <Switch
-                          checked={defaultAutoBreak}
-                          onCheckedChange={setDefaultAutoBreak}
-                          className="data-[state=checked]:bg-(--theme-sidebar) scale-90 md:scale-100"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            {activeSection === "focus" ? (
+              <section aria-labelledby="focus-settings-heading" className="space-y-5">
+                <div><h3 id="focus-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Focus timer</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Set the defaults used when you open a new focus session.</p></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label htmlFor="default-focus-minutes" className={workspaceLabelClass}>Focus minutes</label><Input id="default-focus-minutes" type="number" min="1" max="120" value={localActiveMinutes} onChange={(event) => setLocalActiveMinutes(event.target.value)} className={workspaceFieldClass} /></div>
+                  <div><label htmlFor="default-break-minutes" className={workspaceLabelClass}>Break minutes</label><Input id="default-break-minutes" type="number" min="1" max="60" value={localBreakMinutes} onChange={(event) => setLocalBreakMinutes(event.target.value)} className={workspaceFieldClass} /></div>
                 </div>
+                <SettingSwitch id="default-auto-break" label="Start breaks automatically" description="Begin the break as soon as a focus block ends." checked={defaultAutoBreak} onCheckedChange={setDefaultAutoBreak} />
+              </section>
+            ) : null}
 
-                {/* Notifications */}
-                <div>
-                  <button
-                    onClick={() => toggleSection('notifications')}
-                    className="w-full flex items-center justify-between text-xs md:text-lg font-bold text-(--theme-text) uppercase mb-2 hover:text-(--theme-text-important) transition-colors"
-                  >
-                    <span>NOTIFICATIONS</span>
-                    {openSections.notifications ? (
-                      <ChevronUp className="h-4 w-4 md:h-6 md:w-6" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 md:h-6 md:w-6" />
-                    )}
-                  </button>
-                  <div
-                    className={cn(
-                      "overflow-hidden pb-2 transition-all duration-300 ease-in-out px-2",
-                      openSections.notifications ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
-                    )}
-                  >
-                    <div className="space-y-2 pt-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] md:text-sm font-bold text-(--theme-text) uppercase">
-                          REMINDERS
-                        </label>
-                        <Switch
-                          checked={reminderNotifications}
-                          onCheckedChange={setReminderNotifications}
-                          className="data-[state=checked]:bg-(--theme-sidebar) scale-75 md:scale-90"
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] md:text-sm font-bold text-(--theme-text) uppercase">
-                          CLASSROOM ALERTS
-                        </label>
-                        <Switch
-                          checked={classroomNotifications}
-                          onCheckedChange={setClassroomNotifications}
-                          className="data-[state=checked]:bg-(--theme-sidebar) scale-75 md:scale-90"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </ScrollArea>
-          </div>
-
-          <Separator className="shrink-0 my-1 md:my-0" />
-
-          <DialogFooter className="flex flex-col gap-2 md:gap-4 pt-2 md:pt-4 shrink-0 pb-1 md:pb-0">
-            <div className="flex w-full gap-2 md:gap-6">
-              <WorkspaceButton
-                type="button"
-                variant="secondary"
-                onClick={closeModal}
-                className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
-              >
-                CANCEL
-              </WorkspaceButton>
-              <WorkspaceButton
-                type="button"
-                variant="primary"
-                onClick={handleSave}
-                disabled={isSaving}
-                className="flex-1 text-(--theme-text) text-xs md:text-xl font-bold uppercase"
-              >
-                {isSaving ? "SAVING…" : "SAVE"}
-              </WorkspaceButton>
-            </div>
-          </DialogFooter>
+            {activeSection === "notifications" ? (
+              <section aria-labelledby="notification-settings-heading" className="space-y-3">
+                <div className="mb-5"><h3 id="notification-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Control which updates appear in your notification center.</p></div>
+                <SettingSwitch id="reminder-notifications" label="Reminders" description="Receive alerts for scheduled reminders and events." checked={reminderNotifications} onCheckedChange={setReminderNotifications} />
+                <SettingSwitch id="classroom-notifications" label="Classroom updates" description="Receive activity and assignment updates from classrooms." checked={classroomNotifications} onCheckedChange={setClassroomNotifications} />
+              </section>
+            ) : null}
+          </WorkspaceDialogBody>
         </div>
-      </DialogContent>
+
+        <WorkspaceDialogFooter>
+          <WorkspaceButton type="button" variant="secondary" onClick={closeModal} disabled={isSaving}>Cancel</WorkspaceButton>
+          <WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={isSaving}>{isSaving ? "Saving…" : "Save changes"}</WorkspaceButton>
+        </WorkspaceDialogFooter>
+      </WorkspaceDialogContent>
     </Dialog>
-  )
+  );
+}
+
+function SettingSwitch({ id, label, description, checked, onCheckedChange }: { id: string; label: string; description: string; checked: boolean; onCheckedChange: (checked: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+      <div><label htmlFor={id} className="text-sm font-semibold text-[var(--app-text)]">{label}</label><p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">{description}</p></div>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+    </div>
+  );
 }

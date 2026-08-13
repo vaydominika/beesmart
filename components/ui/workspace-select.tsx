@@ -72,7 +72,7 @@ function WorkspaceSelect<T extends string>({
         sideOffset={6}
         aria-label={`${ariaLabel} options`}
         className={cn(
-          "z-[80] w-[var(--radix-dropdown-menu-trigger-width)] min-w-40 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 text-[var(--app-text)] shadow-[0_12px_32px_rgba(32,35,31,0.14)] motion-reduce:animate-none",
+          "z-[80] w-[var(--radix-dropdown-menu-trigger-width)] min-w-40 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-1.5 text-[var(--app-text)] shadow-[var(--app-shadow-soft)] motion-reduce:animate-none",
           contentClassName,
         )}
       >
