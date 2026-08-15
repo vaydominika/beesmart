@@ -15,3 +15,10 @@ test('login page has login title', async ({ page }) => {
   // Note: Adjust this to match your actual login page
   await expect(page.getByText(/Sign In/i)).toBeVisible();
 });
+
+test('signed-out visitors are redirected away from protected pages', async ({ page }) => {
+  await page.goto('/dashboard');
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByText(/Sign In/i)).toBeVisible();
+});

@@ -17,6 +17,17 @@ describe("AppGroupLayout", () => {
     expect(redirect).toHaveBeenCalledWith("/login");
   });
 
+  it("rejects a stale session without a user id", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "", name: "Guest", email: "guest@example.com" },
+      expires: "2099-01-01",
+    });
+
+    await AppGroupLayout({ children: <div>Protected app</div> });
+
+    expect(redirect).toHaveBeenCalledWith("/login");
+  });
+
   it("does not redirect an authenticated page render", async () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", name: "Ada", email: "ada@example.com" },

@@ -9,6 +9,9 @@ vi.mock("@/components/ui/editor", () => ({
 describe("CreateCourseModal", () => {
   it("validates the title before opening details", () => {
     render(<CreateCourseModal open onClose={vi.fn()} onCreated={vi.fn()} />);
+    expect(screen.getByPlaceholderText("Introduction to biology")).toHaveAttribute("maxlength", "150");
+    expect(screen.getByText("Visibility", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText("(you can change this later)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a course title");
     expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();

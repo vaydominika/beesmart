@@ -6,12 +6,14 @@ import { recordMeaningfulActivity } from "@/lib/activity";
 import { CourseSummary, dedupeClassrooms } from "@/lib/course-summary";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
+import { COURSE_TITLE_MAX_LENGTH, normalizeCourseTitle } from "@/lib/course-title";
 
 type CourseQueryRecord = {
     id: string;
     title: string;
     description: string | null;
     coverImageUrl: string | null;
+    coverStoredFileId: string | null;
     createdById: string;
     classroomId: string | null;
     isPublic: boolean;
@@ -97,7 +99,7 @@ export async function GET(req: NextRequest) {
                 id: course.id,
                 title: course.title,
                 description: course.description,
-                coverImageUrl: storedFileUrl((course as any).coverStoredFileId, course.coverImageUrl),
+                coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl),
                 createdById: course.createdById,
                 classroomId: course.classroomId,
                 isPublic: course.isPublic,
@@ -129,13 +131,28 @@ export async function POST(req: NextRequest) {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+        const settings = await prisma.userSettings.findUnique({
+            where: { userId },
+            select: { courseCreationTutorialCompleted: true },
+        });
+        if (!settings?.courseCreationTutorialCompleted) {
+            return NextResponse.json({
+                error: "Complete the course creation tutorial before creating a course.",
+                code: "COURSE_TUTORIAL_REQUIRED",
+            }, { status: 403 });
+        }
+
         const data = await req.json();
         const { title, description, classroomId, isPublic, published } = data;
         const visibility = ["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)
             ? data.visibility
             : (isPublic ? "PUBLIC" : "PRIVATE");
 
-        if (!title?.trim()) {
+        const normalizedTitle = normalizeCourseTitle(title);
+        if (!normalizedTitle) {
+            if (typeof title === "string" && title.trim().length > COURSE_TITLE_MAX_LENGTH) {
+                return NextResponse.json({ error: `Course title must be ${COURSE_TITLE_MAX_LENGTH} characters or fewer.` }, { status: 400 });
+            }
             return NextResponse.json({ error: "Title is required" }, { status: 400 });
         }
 
@@ -145,7 +162,7 @@ export async function POST(req: NextRequest) {
             const attachments = await claimUploads(tx, uploadIds, userId, "COURSE_ATTACHMENT");
             const covers = await claimUploads(tx, coverUploadIds, userId, "COURSE_COVER");
             return tx.course.create({ data: {
-                title: title.trim(),
+                title: normalizedTitle,
                 description: description?.trim() || null,
                 classroomId: classroomId || null,
                 isPublic: visibility === "PUBLIC",

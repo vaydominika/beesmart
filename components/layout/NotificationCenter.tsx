@@ -78,7 +78,7 @@ export function NotificationCenter() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative rounded-md p-2 text-(--theme-text) hover:bg-[var(--app-scrim-soft)]">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--app-danger)] px-1 text-[9px] font-semibold text-[var(--app-text-inverse)]">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
         </button>

@@ -955,18 +955,19 @@ model Report {
 }
 
 model UserSettings {
-  id                     String            @id @default(cuid())
-  userId                 String            @unique
-  theme                  String            @default("bee")
-  defaultActiveMinutes   Int               @default(45)
-  defaultBreakMinutes    Int               @default(15)
-  defaultAutoBreak       Boolean           @default(true)
-  reminderNotifications  Boolean           @default(true)
-  classroomNotifications Boolean           @default(true)
-  profileVisibility      ProfileVisibility @default(PRIVATE)
-  activitySharing        Boolean           @default(true)
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
+  id                              String            @id @default(cuid())
+  userId                          String            @unique
+  theme                           String            @default("bee")
+  courseCreationTutorialCompleted Boolean           @default(false)
+  defaultActiveMinutes            Int               @default(45)
+  defaultBreakMinutes             Int               @default(15)
+  defaultAutoBreak                Boolean           @default(true)
+  reminderNotifications           Boolean           @default(true)
+  classroomNotifications          Boolean           @default(true)
+  profileVisibility               ProfileVisibility @default(PRIVATE)
+  activitySharing                 Boolean           @default(true)
+  createdAt                       DateTime          @default(now())
+  updatedAt                       DateTime          @updatedAt
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

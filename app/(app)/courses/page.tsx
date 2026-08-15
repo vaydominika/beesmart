@@ -2,11 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, BookPlus, Plus, Search } from "lucide-react";
+import { BookOpen, BookPlus, Lightbulb, Plus, Search } from "lucide-react";
 import { AddCourseToClassroomModal } from "@/components/course/AddCourseToClassroomModal";
 import { CourseCard } from "@/components/course/CourseCard";
+import { CourseCreationTutorial } from "@/components/course/CourseCreationTutorial";
 import { CourseStatusFilter } from "@/components/course/CourseStatusFilter";
 import { CreateCourseModal } from "@/components/course/CreateCourseModal";
+import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import {
@@ -49,6 +51,9 @@ export default function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [addToClassroomOpen, setAddToClassroomOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [tutorialIntent, setTutorialIntent] = useState<"create" | "review">("review");
+  const [tutorialCompleted, setTutorialCompleted] = useState(false);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -70,6 +75,56 @@ export default function CoursesPage() {
   useEffect(() => {
     void fetchCourses();
   }, [fetchCourses]);
+
+  useEffect(() => {
+    const fetchTutorialStatus = async () => {
+      try {
+        const response = await fetch("/api/user/settings", { cache: "no-store" });
+        if (!response.ok) return;
+        const settings = await response.json() as { courseCreationTutorialCompleted?: boolean };
+        setTutorialCompleted(settings.courseCreationTutorialCompleted === true);
+      } catch {
+        // Keep creation locked until completion can be confirmed by the server.
+      }
+    };
+    void fetchTutorialStatus();
+  }, []);
+
+  const openCourseCreation = () => {
+    if (tutorialCompleted) {
+      setCreateOpen(true);
+      return;
+    }
+    setTutorialIntent("create");
+    setTutorialOpen(true);
+  };
+
+  const reviewTutorial = () => {
+    setTutorialIntent("review");
+    setTutorialOpen(true);
+  };
+
+  const finishTutorial = async () => {
+    if (tutorialIntent === "review") {
+      setTutorialOpen(false);
+      return true;
+    }
+    try {
+      const response = await fetch("/api/user/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courseCreationTutorialCompleted: true }),
+      });
+      if (!response.ok) return false;
+      setTutorialCompleted(true);
+      setTutorialOpen(false);
+      setCreateOpen(true);
+      return true;
+    } catch {
+      toast.error("The tutorial could not be saved.");
+      return false;
+    }
+  };
 
   const changeTab = (tab: CourseTab) => {
     setActiveTab(tab);
@@ -95,9 +150,14 @@ export default function CoursesPage() {
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--course-text)] md:text-[42px]">Courses</h1>
-          <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />New course
-          </WorkspaceButton>
+          <div className="flex items-center gap-2">
+            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label="Review course creation tutorial" title="Course creation tutorial">
+              <Lightbulb className="h-4 w-4" />
+            </WorkspaceButton>
+            <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>
+              <Plus className="h-4 w-4" />New course
+            </WorkspaceButton>
+          </div>
         </header>
 
         <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
@@ -147,12 +207,13 @@ export default function CoursesPage() {
             {hasActiveFilters ? (
               <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setLearningFilter("all"); setCreatedFilter("all"); }} className="mt-5">Clear filters</WorkspaceButton>
             ) : activeTab === "created" && (
-              <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)} className="mt-5">New course</WorkspaceButton>
+              <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation} className="mt-5">New course</WorkspaceButton>
             )}
           </section>
         )}
       </div>
 
+      <CourseCreationTutorial open={tutorialOpen} intent={tutorialIntent} onClose={() => setTutorialOpen(false)} onFinish={finishTutorial} />
       <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(course) => router.push(`/courses/${course.id}/builder`)} />
       <AddCourseToClassroomModal open={addToClassroomOpen} onClose={() => setAddToClassroomOpen(false)} onAdded={() => void fetchCourses()} />
     </div>

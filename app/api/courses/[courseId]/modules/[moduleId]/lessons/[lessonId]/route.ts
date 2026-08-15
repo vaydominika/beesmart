@@ -7,6 +7,8 @@ import { storedFileUrl } from "@/lib/files/types";
 import type { Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string; lessonId: string }> };
+type StoredLessonFile = { storedFileId: string | null; fileUrl: string | null };
+type StoredFileReference = { storedFileId: string | null };
 
 // GET /api/courses/[courseId]/modules/[moduleId]/lessons/[lessonId]
 export async function GET(_req: NextRequest, ctx: RouteContext) {
@@ -44,7 +46,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
         if (!lesson) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        return NextResponse.json({ ...lesson, files: lesson.files?.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
+        return NextResponse.json({ ...lesson, files: lesson.files?.map((file: StoredLessonFile) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
     } catch (e) {
         console.error("GET /api/courses/.../lessons/[lessonId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -65,7 +67,6 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
         const data = await req.json();
-        const { autoPublish, publishNow } = data;
         const sanitizedContent = data.content !== undefined ? sanitizeRichTextHtml(data.content) : undefined;
         const updateData: {
             title?: string;
@@ -79,25 +80,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
         if (data.isLocked !== undefined) updateData.isLocked = data.isLocked;
 
-        // PUBLISHING LOGIC (Phase 9):
         if (data.content !== undefined) {
-            updateData.contentDraft = sanitizedContent; // Changes always go to Draft first
-            if (autoPublish) {
-                updateData.content = sanitizedContent; // If auto-publishing, also hit the Live content
-            }
-        }
-
-        if (publishNow) {
-            // Manual publish: copy draft to live
-            if (data.content !== undefined) {
-                updateData.content = sanitizedContent;
-            } else {
-                const current = await prisma.courseLesson.findUnique({
-                    where: { id: lessonId },
-                    select: { contentDraft: true }
-                });
-                updateData.content = sanitizeRichTextHtml(current?.contentDraft || "");
-            }
+            updateData.contentDraft = sanitizedContent;
         }
 
         const updated = await prisma.courseLesson.update({
@@ -130,10 +114,10 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true } });
+        const scopedLesson = await prisma.courseLesson.findFirst({ where: { id: lessonId, moduleId, module: { courseId } }, select: { id: true, files: { select: { storedFileId: true } } } });
         if (!scopedLesson) return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
 
-        const storedFileIds = scopedLesson.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []);
+        const storedFileIds = scopedLesson.files.flatMap((file: StoredFileReference) => file.storedFileId ? [file.storedFileId] : []);
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await markFilesForDeletion(tx, storedFileIds);
             await tx.courseLesson.delete({ where: { id: lessonId } });

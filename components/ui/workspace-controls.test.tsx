@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WorkspaceCheckbox } from "./workspace-checkbox";
 import { WorkspaceSelect } from "./workspace-select";
 import { WorkspaceTabs } from "./workspace-tabs";
+import { Dialog, DialogContent, DialogTitle } from "./dialog";
 
 describe("workspace controls", () => {
   it("changes a checkbox through its label", () => {
@@ -29,5 +30,21 @@ describe("workspace controls", () => {
     fireEvent.pointerDown(screen.getByRole("button", { name: "Visibility: Private" }), { button: 0, ctrlKey: false });
     fireEvent.click(screen.getByRole("menuitem", { name: "Public" }));
     expect(onValueChange).toHaveBeenCalledWith("public");
+  });
+
+  it("changes a select nested inside a modal dialog", () => {
+    const onValueChange = vi.fn();
+    render(
+      <Dialog open>
+        <DialogContent>
+          <DialogTitle>Report course</DialogTitle>
+          <WorkspaceSelect ariaLabel="Report reason" value="" onValueChange={onValueChange} options={[{ value: "", label: "Select a reason", disabled: true }, { value: "spam", label: "Spam or advertising" }]} />
+        </DialogContent>
+      </Dialog>,
+    );
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Report reason: Select a reason" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Spam or advertising" }));
+    expect(onValueChange).toHaveBeenCalledWith("spam");
   });
 });

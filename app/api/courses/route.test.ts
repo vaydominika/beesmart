@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { GET } from "./route";
+import { GET, POST } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
 
 vi.mock("@/lib/db", () => ({
@@ -9,6 +9,7 @@ vi.mock("@/lib/db", () => ({
     course: { findMany: vi.fn(), create: vi.fn() },
     courseProgress: { findMany: vi.fn() },
     notification: { create: vi.fn() },
+    userSettings: { findUnique: vi.fn() },
   },
 }));
 
@@ -19,6 +20,7 @@ const record = {
   title: "Biology",
   description: "Cells",
   coverImageUrl: null,
+  coverStoredFileId: null,
   createdById: "teacher-1",
   classroomId: "classroom-1",
   isPublic: true,
@@ -73,5 +75,43 @@ describe("GET /api/courses", () => {
         ]),
       }),
     }));
+  });
+});
+
+describe("POST /api/courses tutorial prerequisite", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getCurrentUserId).mockResolvedValue("user-1");
+  });
+
+  it("rejects course creation until the tutorial is completed", async () => {
+    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue(null);
+
+    const response = await POST(new NextRequest("http://localhost/api/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Blocked course" }),
+    }));
+    const data = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(data).toMatchObject({ code: "COURSE_TUTORIAL_REQUIRED" });
+    expect(prisma.userSettings.findUnique).toHaveBeenCalledWith({
+      where: { userId: "user-1" },
+      select: { courseCreationTutorialCompleted: true },
+    });
+  });
+
+  it("rejects course titles longer than 150 characters", async () => {
+    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ courseCreationTutorialCompleted: true } as never);
+
+    const response = await POST(new NextRequest("http://localhost/api/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "A".repeat(151) }),
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Course title must be 150 characters or fewer." });
   });
 });

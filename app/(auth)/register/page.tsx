@@ -3,12 +3,10 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
+import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -73,129 +71,35 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="w-full max-w-md h-[95vh] flex flex-col items-center gap-4">
-      <Link href="/" className="flex items-center">
-        <Image
-          src="/svg/BeeSmartLogo.svg"
-          alt="BeeSmart"
-          width={480}
-          height={192}
-          className="h-25 w-auto -translate-x-2.5"
-        />
-      </Link>
-      <div className="w-full overflow-hidden rounded-2xl border-4 border-dashed border-(--theme-card) bg-(--theme-bg) p-6">
-        <div className="flex flex-col gap-4">
-          <WorkspaceButton
-            type="button"
-            variant="secondary"
-            onClick={handleGoogleSignIn}
-            className="w-full h-10 md:h-12 text-(--theme-text) bg-(--theme-card) font-semibold uppercase text-[28px]"
-          >
-            <Image
-              src="/svg/google-icon-logo-svgrepo-com.svg"
-              alt="Google"
-              width={24}
-              height={24}
-              className="h-6 w-auto mr-2"
-            />
-            Continue with Google
-          </WorkspaceButton>
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
-            <span className="text-[22px] text-(--theme-card) opacity-90">or</span>
-            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
+    <AuthShell
+      title="Create your account"
+      description="Set up your BeeSmart space and start organizing how you learn."
+      footer={<p>Already have an account? <Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline decoration-[var(--app-focus-border)] underline-offset-4 hover:no-underline">Sign in</Link></p>}
+    >
+      <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
+      <AuthDivider />
+      <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="register-name" className={authLabelClass}>Name</label>
+            <Input id="register-name" type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={authFieldClass} placeholder="Your name" />
           </div>
-          <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-row gap-4">
-              <div>
-                <label
-                  htmlFor="register-name"
-                  className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
-                >
-                  Name
-                </label>
-                <Input
-                  id="register-name"
-                  type="text"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                  placeholder="Your name"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="register-email"
-                  className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
-                >
-                  Email
-                </label>
-                <Input
-                  id="register-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="register-password"
-                className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Password
-              </label>
-              <Input
-                id="register-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="At least 6 characters"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="register-confirm"
-                className="block text-sm md:text-[18px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Confirm password
-              </label>
-              <Input
-                id="register-confirm"
-                type="password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="••••••••"
-              />
-            </div>
-            <WorkspaceButton
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="w-full h-10 md:h-12 text-(--theme-text-important) bg-(--theme-sidebar) font-semibold uppercase text-[28px]"
-            >
-              {loading ? "Creating account…" : "Create account"}
-            </WorkspaceButton>
-          </form>
+          <div>
+            <label htmlFor="register-email" className={authLabelClass}>Email address</label>
+            <Input id="register-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" />
+          </div>
         </div>
-      </div>
-      <p className="text-sm text-(--theme-text)">
-        Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-semibold text-(--theme-secondary) underline hover:no-underline"
-        >
-          Sign in
-        </Link>
-      </p>
-    </div>
+        <div>
+          <label htmlFor="register-password" className={authLabelClass}>Password</label>
+          <Input id="register-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="At least 6 characters" />
+          <p className="mt-1.5 text-xs text-[var(--app-text-faint)]">Use at least 6 characters.</p>
+        </div>
+        <div>
+          <label htmlFor="register-confirm" className={authLabelClass}>Confirm password</label>
+          <Input id="register-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={authFieldClass} placeholder="Enter the password again" />
+        </div>
+        <AuthSubmitButton loading={loading} idleLabel="Create account" loadingLabel="Creating account…" />
+      </form>
+    </AuthShell>
   );
 }

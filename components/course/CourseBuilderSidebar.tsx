@@ -12,13 +12,16 @@ import {
   Loader2,
   Lock,
   LockOpen,
+  Pencil,
   Plus,
   Sparkles,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } from "@/lib/course-builder";
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
@@ -27,13 +30,17 @@ interface CourseBuilderSidebarProps {
   course: CourseBuilderCourse;
   onCourseChange: (course: Partial<CourseBuilderCourse>) => void;
   activeLessonId: string | null;
-  onSelectLesson: (id: string) => void;
+  onSelectLesson: (id: string | null) => void;
   isSaving?: boolean;
 }
 
 type GeneratedOutline = {
   modules: Array<{ title: string; description?: string; lessons: Array<{ title: string; description?: string }> }>;
 };
+
+type DeleteTarget =
+  | { type: "module"; id: string; title: string }
+  | { type: "lesson"; id: string; moduleId: string; title: string };
 
 export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson, isSaving = false }: CourseBuilderSidebarProps) {
   const [isAIExpanded, setIsAIExpanded] = useState(false);
@@ -44,6 +51,12 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
   const [newModuleTitle, setNewModuleTitle] = useState("");
   const [lessonModuleId, setLessonModuleId] = useState<string | null>(null);
   const [newLessonTitle, setNewLessonTitle] = useState("");
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+  const [editingModuleTitle, setEditingModuleTitle] = useState("");
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [editingLessonTitle, setEditingLessonTitle] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [isMutating, setIsMutating] = useState(false);
   const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -147,6 +160,92 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
     }
   };
 
+  const renameModule = async (module: CourseBuilderModule) => {
+    const title = editingModuleTitle.trim();
+    if (!title) return;
+    if (title === module.title) {
+      setEditingModuleId(null);
+      return;
+    }
+
+    setIsMutating(true);
+    try {
+      const response = await fetch(`/api/courses/${course.id}/modules/${module.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!response.ok) throw new Error();
+      onCourseChange({ modules: course.modules.map((item) => item.id === module.id ? { ...item, title } : item) });
+      setEditingModuleId(null);
+      toast.success("Module renamed.");
+    } catch {
+      toast.error("The module name could not be saved.");
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const renameLesson = async (lesson: CourseBuilderLesson, moduleId: string) => {
+    const title = editingLessonTitle.trim();
+    if (!title) return;
+    if (title === lesson.title) {
+      setEditingLessonId(null);
+      return;
+    }
+
+    setIsMutating(true);
+    try {
+      const response = await fetch(`/api/courses/${course.id}/modules/${moduleId}/lessons/${lesson.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      });
+      if (!response.ok) throw new Error();
+      onCourseChange({
+        modules: course.modules.map((module) => module.id === moduleId
+          ? { ...module, lessons: module.lessons.map((item) => item.id === lesson.id ? { ...item, title } : item) }
+          : module),
+      });
+      setEditingLessonId(null);
+      toast.success("Lesson renamed.");
+    } catch {
+      toast.error("The lesson name could not be saved.");
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const deleteSyllabusItem = async () => {
+    if (!deleteTarget) return;
+    setIsMutating(true);
+    try {
+      const endpoint = deleteTarget.type === "module"
+        ? `/api/courses/${course.id}/modules/${deleteTarget.id}`
+        : `/api/courses/${course.id}/modules/${deleteTarget.moduleId}/lessons/${deleteTarget.id}`;
+      const response = await fetch(endpoint, { method: "DELETE" });
+      if (!response.ok) throw new Error();
+
+      const nextModules = deleteTarget.type === "module"
+        ? course.modules.filter((module) => module.id !== deleteTarget.id)
+        : course.modules.map((module) => module.id === deleteTarget.moduleId
+          ? { ...module, lessons: module.lessons.filter((lesson) => lesson.id !== deleteTarget.id) }
+          : module);
+      const removedActiveLesson = deleteTarget.type === "lesson"
+        ? activeLessonId === deleteTarget.id
+        : course.modules.find((module) => module.id === deleteTarget.id)?.lessons.some((lesson) => lesson.id === activeLessonId);
+
+      onCourseChange({ modules: nextModules });
+      if (removedActiveLesson) onSelectLesson(nextModules.flatMap((module) => module.lessons)[0]?.id ?? null);
+      toast.success(deleteTarget.type === "module" ? "Module deleted." : "Lesson deleted.");
+      setDeleteTarget(null);
+    } catch {
+      toast.error(deleteTarget.type === "module" ? "The module could not be deleted." : "The lesson could not be deleted.");
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
   const handleBulkGenerate = async () => {
     const text = sourceText.trim();
     if (!selectedFile && !text) return;
@@ -233,7 +332,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length} modules / {lessonCount(course)} lessons</p>
         </div>
         <div className="flex gap-2">
-          <WorkspaceButton type="button" variant={isAIExpanded ? "primary" : "secondary"} size="icon" onClick={() => setIsAIExpanded((current) => !current)} disabled={isSaving} aria-label="Generate syllabus with AI" aria-expanded={isAIExpanded}>
+          <WorkspaceButton type="button" variant={isAIExpanded ? "primary" : "secondary"} size="icon-compact" onClick={() => setIsAIExpanded((current) => !current)} disabled={isSaving} aria-label="Generate syllabus with AI" aria-expanded={isAIExpanded}>
             <Sparkles className="h-4 w-4" />
           </WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} disabled={isSaving}>
@@ -314,8 +413,20 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                 {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </button>
                               <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-[var(--course-surface-muted)] px-1.5 font-mono text-[10px] font-semibold text-[var(--course-text-muted)]">{String(moduleIndex + 1).padStart(2, "0")}</span>
-                              <h3 className="min-w-0 flex-1 truncate text-xs font-semibold" title={module.title}>{module.title}</h3>
-                              <button type="button" onClick={() => { setLessonModuleId(module.id); setNewLessonTitle(""); setCollapsedModules((current) => { const next = new Set(current); next.delete(module.id); return next; }); }} disabled={isSaving} aria-label={`Add lesson to ${module.title}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
+                              {editingModuleId === module.id ? (
+                                <>
+                                  <input autoFocus value={editingModuleTitle} onChange={(event) => setEditingModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameModule(module); if (event.key === "Escape") setEditingModuleId(null); }} aria-label={`Module name for ${module.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--course-surface-muted)] px-2 text-xs font-semibold outline-none ring-2 ring-[var(--course-focus-ring)]" />
+                                  <button type="button" onClick={() => void renameModule(module)} disabled={!editingModuleTitle.trim() || isMutating} aria-label="Save module name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button>
+                                  <button type="button" onClick={() => setEditingModuleId(null)} disabled={isMutating} aria-label="Cancel module rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><X className="h-3.5 w-3.5" /></button>
+                                </>
+                              ) : (
+                                <>
+                                  <h3 className="min-w-0 flex-1 truncate text-xs font-semibold" title={module.title}>{module.title}</h3>
+                                  <button type="button" onClick={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} disabled={isSaving || isMutating} aria-label={`Rename module ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Pencil className="h-3.5 w-3.5" /></button>
+                                  <button type="button" onClick={() => setDeleteTarget({ type: "module", id: module.id, title: module.title })} disabled={isSaving || isMutating} aria-label={`Delete module ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] disabled:opacity-40"><Trash2 className="h-3.5 w-3.5" /></button>
+                                  <button type="button" onClick={() => { setLessonModuleId(module.id); setNewLessonTitle(""); setCollapsedModules((current) => { const next = new Set(current); next.delete(module.id); return next; }); }} disabled={isSaving || isMutating} aria-label={`Add lesson to ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
+                                </>
+                              )}
                             </div>
 
                             {!collapsed && (
@@ -327,12 +438,24 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                 {(dragProvided, dragSnapshot) => (
                                   <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn("group flex items-center gap-1 rounded-lg pr-1 transition-colors", activeLessonId === lesson.id ? "bg-[var(--course-accent)]" : "hover:bg-[var(--course-surface-muted)]", dragSnapshot.isDragging && "bg-[var(--app-surface)] shadow-lg")}>
                                     <span {...dragProvided.dragHandleProps} className="flex h-9 w-7 shrink-0 cursor-grab items-center justify-center text-[var(--course-text-faint)] opacity-50 group-hover:opacity-100"><GripVertical className="h-3.5 w-3.5" /></span>
-                                    <button type="button" onClick={() => onSelectLesson(lesson.id)} disabled={isSaving} className="min-w-0 flex-1 py-2.5 text-left disabled:cursor-not-allowed">
-                                      <span className="block truncate text-xs font-medium">{lesson.title}</span>
-                                    </button>
-                                    <button type="button" onClick={() => void togglePrerequisite(lesson, module.id)} aria-label={lesson.isLocked ? `Unlock ${lesson.title}` : `Lock ${lesson.title}`} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg opacity-0 hover:bg-[var(--app-surface)] group-hover:opacity-100 focus:opacity-100", lesson.isLocked && "text-[var(--course-focus-border)] opacity-100")}>
-                                      {lesson.isLocked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
-                                    </button>
+                                    {editingLessonId === lesson.id ? (
+                                      <>
+                                        <input autoFocus value={editingLessonTitle} onChange={(event) => setEditingLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameLesson(lesson, module.id); if (event.key === "Escape") setEditingLessonId(null); }} aria-label={`Lesson name for ${lesson.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--app-surface)] px-2 text-xs font-medium outline-none ring-2 ring-[var(--course-focus-ring)]" />
+                                        <button type="button" onClick={() => void renameLesson(lesson, module.id)} disabled={!editingLessonTitle.trim() || isMutating} aria-label="Save lesson name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button>
+                                        <button type="button" onClick={() => setEditingLessonId(null)} disabled={isMutating} aria-label="Cancel lesson rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><X className="h-3.5 w-3.5" /></button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button type="button" onClick={() => onSelectLesson(lesson.id)} disabled={isSaving || isMutating} className="min-w-0 flex-1 py-2.5 text-left disabled:cursor-not-allowed">
+                                          <span className="block truncate text-xs font-medium">{lesson.title}</span>
+                                        </button>
+                                        <button type="button" onClick={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} disabled={isSaving || isMutating} aria-label={`Rename lesson ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Pencil className="h-3.5 w-3.5" /></button>
+                                        <button type="button" onClick={() => setDeleteTarget({ type: "lesson", id: lesson.id, moduleId: module.id, title: lesson.title })} disabled={isSaving || isMutating} aria-label={`Delete lesson ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] disabled:opacity-40"><Trash2 className="h-3.5 w-3.5" /></button>
+                                        <button type="button" onClick={() => void togglePrerequisite(lesson, module.id)} disabled={isSaving || isMutating} aria-label={lesson.isLocked ? `Unlock ${lesson.title}` : `Lock ${lesson.title}`} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40", lesson.isLocked && "text-[var(--course-focus-border)]")}>
+                                          {lesson.isLocked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+                                        </button>
+                                      </>
+                                    )}
                                   </div>
                                 )}
                               </Draggable>
@@ -366,6 +489,25 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           </DragDropContext>
         )}
       </div>
+
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !isMutating) setDeleteTarget(null); }}>
+        <DialogContent className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+          <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
+            <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Delete {deleteTarget?.type}?</DialogTitle>
+            <DialogDescription className="mt-1 text-sm leading-6 text-[var(--course-text-muted)]">
+              {deleteTarget?.type === "module"
+                ? `This will permanently delete “${deleteTarget.title}” and every lesson inside it.`
+                : `This will permanently delete “${deleteTarget?.title}”.`} This cannot be undone.
+            </DialogDescription>
+          </div>
+          <div className="flex justify-end gap-2 px-5 py-4">
+            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isMutating}>Cancel</WorkspaceButton>
+            <WorkspaceButton type="button" variant="danger" onClick={() => void deleteSyllabusItem()} disabled={isMutating}>
+              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? "Deleting..." : `Delete ${deleteTarget?.type ?? "item"}`}
+            </WorkspaceButton>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

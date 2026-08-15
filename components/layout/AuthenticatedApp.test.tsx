@@ -32,4 +32,26 @@ describe("AuthenticatedApp", () => {
     expect(screen.getByText("Protected app")).toBeInTheDocument();
     expect(routerMock.replace).not.toHaveBeenCalled();
   });
+
+  it("hides protected UI while the session is loading", () => {
+    vi.mocked(useSession).mockReturnValue({ status: "loading", data: null, update: vi.fn() });
+
+    render(<AuthenticatedApp><div>Protected app</div></AuthenticatedApp>);
+
+    expect(screen.queryByText("Protected app")).not.toBeInTheDocument();
+    expect(routerMock.replace).not.toHaveBeenCalled();
+  });
+
+  it("redirects an authenticated-looking session without a user id", async () => {
+    vi.mocked(useSession).mockReturnValue({
+      status: "authenticated",
+      data: { user: { id: "", name: "Guest", email: "guest@example.com" }, expires: "2099-01-01" },
+      update: vi.fn(),
+    });
+
+    render(<AuthenticatedApp><div>Protected app</div></AuthenticatedApp>);
+
+    expect(screen.queryByText("Protected app")).not.toBeInTheDocument();
+    await waitFor(() => expect(routerMock.replace).toHaveBeenCalledWith("/login"));
+  });
 });

@@ -3,12 +3,10 @@
 import { useState, Suspense, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/sonner";
+import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
 
 function LoginForm() {
   const router = useRouter();
@@ -63,100 +61,31 @@ function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md flex flex-col items-center gap-4">
-      <Link href="/" className="flex items-center">
-        <Image
-          src="/svg/BeeSmartLogo.svg"
-          alt="BeeSmart"
-          width={480}
-          height={192}
-          className="h-25 w-auto -translate-x-2.5"
-        />
-      </Link>
-      <div className="w-full overflow-hidden rounded-2xl border-4 border-dashed border-(--theme-card) bg-(--theme-bg) p-6">
-        <div className="flex flex-col gap-4">
-          <WorkspaceButton
-            type="button"
-            variant="secondary"
-            onClick={handleGoogleSignIn}
-            className="w-full h-10 md:h-12 text-(--theme-text) bg-(--theme-card) font-semibold uppercase text-[28px]"
-          >
-            <Image
-              src="/svg/google-icon-logo-svgrepo-com.svg"
-              alt="Google"
-              width={24}
-              height={24}
-              className="h-6 w-auto mr-2"
-            />
-            Continue with Google
-          </WorkspaceButton>
-          <div className="flex items-center gap-3">
-            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
-            <span className="text-[22px] text-(--theme-card) opacity-90">or</span>
-            <Separator className="flex-1 bg-(--theme-card) border-1 border-(--theme-card)" />
-          </div>
-          <form onSubmit={handleCredentialsSubmit} className="flex flex-col gap-4">
-            <div>
-              <label
-                htmlFor="login-email"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Email
-              </label>
-              <Input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="login-password"
-                className="block text-sm md:text-[22px] font-bold text-(--theme-text) uppercase mb-3"
-              >
-                Password
-              </label>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-(--theme-sidebar) rounded-xl corner-squircle text-base md:text-[18px] font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                placeholder="••••••••"
-              />
-            </div>
-            <WorkspaceButton
-              type="submit"
-              variant="primary"
-              disabled={loading}
-              className="w-full h-10 md:h-12 text-(--theme-text-important) bg-(--theme-sidebar) font-semibold uppercase text-[28px]"
-            >
-              {loading ? "Signing in…" : "Sign in"}
-            </WorkspaceButton>
-          </form>
+    <AuthShell
+      title="Welcome back"
+      description="Sign in to continue learning, building courses, and keeping your study rhythm going."
+      footer={<p>New to BeeSmart? <Link href="/register" className="font-semibold text-[var(--app-accent-text)] underline decoration-[var(--app-focus-border)] underline-offset-4 hover:no-underline">Create an account</Link></p>}
+    >
+      <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
+      <AuthDivider />
+      <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="login-email" className={authLabelClass}>Email address</label>
+          <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" />
         </div>
-      </div>
-      <p className="text-sm text-(--theme-text)">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="font-semibold text-(--theme-secondary) underline hover:no-underline"
-        >
-          Sign up
-        </Link>
-      </p>
-    </div>
+        <div>
+          <label htmlFor="login-password" className={authLabelClass}>Password</label>
+          <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" />
+        </div>
+        <AuthSubmitButton loading={loading} idleLabel="Sign in" loadingLabel="Signing in…" />
+      </form>
+    </AuthShell>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="text-(--theme-text)">Loading…</div>}>
+    <Suspense fallback={<div className="font-[var(--font-geist-sans)] text-sm text-[var(--app-text-muted)]">Loading…</div>}>
       <LoginForm />
     </Suspense>
   );

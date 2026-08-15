@@ -7,6 +7,7 @@ import { Editor } from "@/components/ui/editor";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
 import { CourseVisibility } from "@/lib/course-summary";
+import { COURSE_TITLE_MAX_LENGTH } from "@/lib/course-title";
 import { cn } from "@/lib/utils";
 
 interface CreateCourseModalProps {
@@ -145,24 +146,24 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
-      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[780px] md:max-w-3xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
-        <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
+      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[96dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:h-[min(96dvh,820px)] md:w-[calc(100vw-40px)] md:max-w-4xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+        <div className="border-b border-[var(--course-line)] px-5 py-3.5 pr-12 md:px-6">
           <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold text-[var(--course-text-muted)]"><span>Step {step} of 2</span><span aria-hidden="true">·</span><span>{step === 1 ? "Basics" : "Details"}</span></div>
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Create course</DialogTitle>
           <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">{step === 1 ? "Set the course identity and who can access it." : "Add context and optional learning materials."}</DialogDescription>
         </div>
 
-        <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-3.5 md:px-6">
           {step === 1 ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Course title</span>
-                <input autoFocus value={title} onChange={(event) => { setTitle(event.target.value); if (validation) setValidation(null); }} placeholder="Introduction to biology" className="h-11 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm font-medium text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+                <input autoFocus value={title} maxLength={COURSE_TITLE_MAX_LENGTH} onChange={(event) => { setTitle(event.target.value); if (validation) setValidation(null); }} placeholder="Introduction to biology" className="h-11 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm font-medium text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
               </label>
               {validation && <p role="alert" className="rounded-xl bg-[var(--course-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--course-danger)]">{validation}</p>}
 
               <fieldset>
-                <legend className="mb-1.5 text-xs font-semibold text-[var(--course-text-muted)]">Visibility</legend>
+                <legend className="mb-1.5 text-xs font-semibold text-[var(--course-text-muted)]">Visibility <span className="font-normal text-[var(--course-text-faint)]">(you can change this later)</span></legend>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {VISIBILITY_OPTIONS.map(({ value, label, hint, icon: Icon }) => (
                     <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={cn("flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", visibility === value ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-[var(--app-surface)] hover:bg-[var(--course-surface-muted)]")}>
@@ -174,7 +175,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
 
               <div>
                 <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Cover image <span className="font-normal">(optional)</span></span>
-                <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center" style={coverImageUrl ? { backgroundImage: `linear-gradient(var(--app-scrim-soft), var(--app-scrim-soft)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
+                <div className="relative flex h-24 items-center justify-center overflow-hidden rounded-xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] bg-cover bg-center lg:h-28" style={coverImageUrl ? { backgroundImage: `linear-gradient(var(--app-scrim-soft), var(--app-scrim-soft)), url(${JSON.stringify(coverImageUrl)})` } : undefined}>
                   {!coverImageUrl && <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--course-text-muted)]"><ImageIcon className="h-4 w-4" />{uploadingCover ? "Uploading…" : "Choose an image"}</span>}
                   <input type="file" accept="image/*" onChange={handleCoverUpload} disabled={uploadingCover} aria-label="Upload course cover" className="absolute inset-0 cursor-pointer opacity-0" />
                   {coverImageUrl && <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => { setCoverImageUrl(""); setCoverUploadId(""); }} aria-label="Remove cover image" className="absolute right-2 top-2"><X className="h-4 w-4" /></WorkspaceButton>}
@@ -182,11 +183,11 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
               </div>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <label htmlFor="course-description" className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Description <span className="font-normal">(optional)</span></label>
-                <div className="min-h-48 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 focus-within:border-[var(--course-focus-border)] focus-within:ring-2 focus-within:ring-[var(--course-focus-ring)]">
-                  <Editor id="course-description" initialValue={description} onChange={setDescription} placeholder="Describe what learners will study…" className="min-h-36" />
+                <div className="min-h-36 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 focus-within:border-[var(--course-focus-border)] focus-within:ring-2 focus-within:ring-[var(--course-focus-ring)] lg:min-h-48">
+                  <Editor id="course-description" initialValue={description} onChange={setDescription} placeholder="Describe what learners will study…" className="min-h-24 lg:min-h-36" />
                 </div>
               </div>
 
@@ -206,14 +207,14 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                     ))}
                   </div>
                 ) : (
-                  <div className="flex min-h-24 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] text-center"><Paperclip className="mb-2 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-xs font-medium text-[var(--course-text-muted)]">No materials attached</p></div>
+                  <div className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] text-center lg:min-h-24"><Paperclip className="mb-2 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-xs font-medium text-[var(--course-text-muted)]">No materials attached</p></div>
                 )}
               </div>
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 border-t border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-4">
+        <div className="flex gap-3 border-t border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-3.5 md:px-6">
           {step === 1 ? <WorkspaceButton type="button" variant="secondary" onClick={closeAndReset} className="flex-1">Cancel</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setStep(1)} className="flex-1">Back</WorkspaceButton>}
           {step === 1 ? <WorkspaceButton type="button" variant="primary" onClick={continueToDetails} className="flex-1">Continue</WorkspaceButton> : <WorkspaceButton type="button" variant="primary" onClick={() => void handleSave()} disabled={saving || uploadingFiles} className="flex-1">{saving ? "Creating…" : "Create course"}</WorkspaceButton>}
         </div>

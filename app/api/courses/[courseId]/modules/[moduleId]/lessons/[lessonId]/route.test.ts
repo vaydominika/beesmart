@@ -35,7 +35,7 @@ describe("lesson update hardening", () => {
     let finished = false;
     const responsePromise = PATCH(new NextRequest("http://localhost/lesson", {
       method: "PATCH",
-      body: JSON.stringify({ content: '<p onclick="bad()">Safe<script>bad()</script></p>', autoPublish: true }),
+      body: JSON.stringify({ content: '<p onclick="bad()">Safe<script>bad()</script></p>' }),
     }), context).then((response) => { finished = true; return response; });
 
     await Promise.resolve();
@@ -45,7 +45,7 @@ describe("lesson update hardening", () => {
 
     expect(response.status).toBe(200);
     expect(prisma.courseLesson.update).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ content: "<p>Safe</p>", contentDraft: "<p>Safe</p>" }),
+      data: { contentDraft: "<p>Safe</p>" },
     }));
     expect(flagContent).toHaveBeenCalledWith("teacher-1", "course-1", "MANUAL_CONTENT_UNSAFE", "review");
   });

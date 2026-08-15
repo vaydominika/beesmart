@@ -160,6 +160,11 @@
   --app-shadow-subtle: 0 1px 3px var(--app-shadow-color);
   --app-shadow-inset: inset 0 1px 3px var(--app-shadow-color);
   --app-selection: color-mix(in srgb, var(--app-accent-soft) 72%, var(--app-surface));
+  --app-scrollbar-color: color-mix(in srgb, var(--app-accent) 90%, var(--app-text));
+  --app-scrollbar-color-hover: color-mix(in srgb, var(--app-accent) 78%, var(--app-text));
+  --app-scrollbar-thumb: var(--app-scrollbar-color);
+  --app-scrollbar-thumb-hover: var(--app-scrollbar-color-hover);
+  --app-scrollbar-track: transparent;
   --app-settings-active: var(--app-surface);
   --app-disabled: color-mix(in srgb, var(--app-surface-muted) 72%, var(--app-canvas));
   --app-scrim-soft: color-mix(in srgb, var(--app-text) 10%, transparent);
@@ -332,6 +337,51 @@
   --theme-secondary: #2F855A;
 }
 
+* {
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+  scrollbar-width: auto;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+  background: var(--app-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--app-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-button:single-button,
+*::-webkit-scrollbar-button:vertical:decrement,
+*::-webkit-scrollbar-button:vertical:increment,
+*::-webkit-scrollbar-button:horizontal:decrement,
+*::-webkit-scrollbar-button:horizontal:increment,
+*::-webkit-scrollbar-button:vertical:start:decrement,
+*::-webkit-scrollbar-button:vertical:end:increment,
+*::-webkit-scrollbar-button:horizontal:start:decrement,
+*::-webkit-scrollbar-button:horizontal:end:increment {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
@@ -342,6 +392,21 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield !important;
   appearance: textfield !important;
+}
+
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="search"]::-ms-clear,
+input[type="search"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @keyframes slideSidebarOut {
@@ -440,27 +505,6 @@ input[type="number"] {
 .notification-center,
 .notification-center * {
   font-family: var(--font-geist-sans), Arial, sans-serif;
-}
-
-.workspace-dialog * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--app-border-strong) transparent;
-}
-
-.workspace-dialog *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.workspace-dialog *::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.workspace-dialog *::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: var(--app-border-strong);
-  background-clip: padding-box;
 }
 
 /* Dashboard follows the same calm workspace system as Courses and Profile. */
@@ -570,37 +614,6 @@ input[type="number"] {
   letter-spacing: normal;
 }
 
-.schedule-scroll {
-  scrollbar-width: auto;
-  scrollbar-color: var(--theme-card) transparent;
-}
-
-.schedule-scroll::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.schedule-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.schedule-scroll::-webkit-scrollbar-thumb {
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--theme-card);
-  background-clip: padding-box;
-}
-
-.schedule-scroll::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-.schedule-scroll::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
 .schedule-event-surface {
   border-color: var(--schedule-line-strong);
   background-color: var(--schedule-accent);
@@ -704,34 +717,6 @@ input[type="number"] {
 .course-builder .prose a {
   color: var(--course-accent-text);
   text-decoration-color: var(--course-focus-border);
-}
-
-.course-scroll {
-  scrollbar-width: auto;
-  scrollbar-color: var(--course-accent) transparent;
-}
-
-.course-scroll::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.course-scroll::-webkit-scrollbar-track,
-.course-scroll::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-.course-scroll::-webkit-scrollbar-thumb {
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--course-accent);
-  background-clip: padding-box;
-}
-
-.course-scroll::-webkit-scrollbar-button {
-  display: none;
-  width: 0;
-  height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,6 +15,7 @@ export async function GET() {
         // Return defaults matching the Prisma schema
         return NextResponse.json({
             theme: "bee",
+            courseCreationTutorialCompleted: false,
             defaultActiveMinutes: 45,
             defaultBreakMinutes: 15,
             defaultAutoBreak: true,
@@ -27,6 +28,7 @@ export async function GET() {
 
     return NextResponse.json({
         theme: settings.theme,
+        courseCreationTutorialCompleted: settings.courseCreationTutorialCompleted,
         defaultActiveMinutes: settings.defaultActiveMinutes,
         defaultBreakMinutes: settings.defaultBreakMinutes,
         defaultAutoBreak: settings.defaultAutoBreak,
@@ -62,6 +64,9 @@ export async function PATCH(req: Request) {
     const data: Record<string, unknown> = {};
 
     if (body.theme !== undefined) data.theme = body.theme;
+    // Completion is intentionally one-way: reviewing the tutorial never relocks course creation.
+    if (body.courseCreationTutorialCompleted === true)
+        data.courseCreationTutorialCompleted = true;
     if (body.defaultActiveMinutes !== undefined)
         data.defaultActiveMinutes = Number(body.defaultActiveMinutes);
     if (body.defaultBreakMinutes !== undefined)
@@ -86,6 +91,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({
         theme: settings.theme,
+        courseCreationTutorialCompleted: settings.courseCreationTutorialCompleted,
         defaultActiveMinutes: settings.defaultActiveMinutes,
         defaultBreakMinutes: settings.defaultBreakMinutes,
         defaultAutoBreak: settings.defaultAutoBreak,

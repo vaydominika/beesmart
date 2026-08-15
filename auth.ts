@@ -46,7 +46,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     authorized({ auth, request }) {
-      const isLoggedIn = !!auth?.user;
+      const userId = auth?.user?.id;
+      const isLoggedIn = typeof userId === "string" && userId.length > 0;
       const isAuthPage =
         request.nextUrl.pathname === "/login" ||
         request.nextUrl.pathname === "/register";

@@ -37,7 +37,14 @@ const course: CourseBuilderCourse = {
   visibility: "PRIVATE",
   published: false,
   modules: [
-    { id: "module-1", courseId: "course-1", title: "Cells", description: null, order: 0, lessons: [] },
+    {
+      id: "module-1",
+      courseId: "course-1",
+      title: "Cells",
+      description: null,
+      order: 0,
+      lessons: [{ id: "lesson-1", moduleId: "module-1", title: "Cell structure", description: null, content: "", contentDraft: null, order: 0, isLocked: false }],
+    },
     { id: "module-2", courseId: "course-1", title: "Genetics", description: null, order: 1, lessons: [] },
   ],
 };
@@ -48,6 +55,81 @@ afterEach(() => {
 });
 
 describe("CourseBuilderSidebar module ordering", () => {
+  it("renames a module inline", async () => {
+    const onCourseChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename module Cells" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Module name for Cells" }), { target: { value: "Cell biology" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save module name" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/course-1/modules/module-1",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ title: "Cell biology" }) }),
+    ));
+    expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
+      modules: expect.arrayContaining([expect.objectContaining({ id: "module-1", title: "Cell biology" })]),
+    }));
+  });
+
+  it("renames a lesson inline", async () => {
+    const onCourseChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename lesson Cell structure" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Lesson name for Cell structure" }), { target: { value: "Inside the cell" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save lesson name" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/course-1/modules/module-1/lessons/lesson-1",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ title: "Inside the cell" }) }),
+    ));
+    expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
+      modules: expect.arrayContaining([expect.objectContaining({
+        id: "module-1",
+        lessons: [expect.objectContaining({ id: "lesson-1", title: "Inside the cell" })],
+      })]),
+    }));
+  });
+
+  it("warns before deleting a module and selects a safe fallback lesson", async () => {
+    const onCourseChange = vi.fn();
+    const onSelectLesson = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={onSelectLesson} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete module Cells" }));
+    expect(screen.getByRole("heading", { name: "Delete module?" })).toBeInTheDocument();
+    expect(screen.getByText(/permanently delete “Cells” and every lesson inside it/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete module" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/courses/course-1/modules/module-1", { method: "DELETE" }));
+    expect(onCourseChange).toHaveBeenCalledWith({ modules: [expect.objectContaining({ id: "module-2" })] });
+    expect(onSelectLesson).toHaveBeenCalledWith(null);
+  });
+
+  it("warns before deleting a lesson", async () => {
+    const onCourseChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId={null} onSelectLesson={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete lesson Cell structure" }));
+    expect(screen.getByRole("heading", { name: "Delete lesson?" })).toBeInTheDocument();
+    expect(screen.getByText(/permanently delete “Cell structure”/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete lesson" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/courses/course-1/modules/module-1/lessons/lesson-1", { method: "DELETE" }));
+    expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
+      modules: expect.arrayContaining([expect.objectContaining({ id: "module-1", lessons: [] })]),
+    }));
+  });
+
   it("updates the module order optimistically and persists the normalized list", async () => {
     const onCourseChange = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
@@ -82,7 +164,9 @@ describe("CourseBuilderSidebar module ordering", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CourseBuilderSidebar course={course} onCourseChange={vi.fn()} activeLessonId={null} onSelectLesson={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Generate syllabus with AI" }));
+    const aiButton = screen.getByRole("button", { name: "Generate syllabus with AI" });
+    expect(aiButton).toHaveAttribute("data-size", "icon-compact");
+    fireEvent.click(aiButton);
     fireEvent.change(screen.getByRole("textbox", { name: "Outline source text" }), {
       target: { value: "Photosynthesis converts light energy into chemical energy." },
     });

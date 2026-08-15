@@ -34,9 +34,9 @@ export function WelcomeBanner() {
             </WorkspaceButton>
           </div>
         </div>
-        <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-[var(--dashboard-accent-soft)] sm:h-36 sm:w-36 md:h-40 md:w-40">
+        <div className="flex h-28 w-28 shrink-0 items-center justify-center sm:h-36 sm:w-36 md:h-40 md:w-40">
           <Image
-            src="/images/WelcomeBackBee.png"
+            src="/images/DashboardWelcomeBee.png"
             alt="BeeSmart welcome bee"
             width={200}
             height={200}
