@@ -27,7 +27,9 @@ describe("workspace controls", () => {
   it("opens a select and changes its value", () => {
     const onValueChange = vi.fn();
     render(<WorkspaceSelect ariaLabel="Visibility" value="private" onValueChange={onValueChange} options={[{ value: "private", label: "Private" }, { value: "public", label: "Public" }]} />);
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Visibility: Private" }), { button: 0, ctrlKey: false });
+    const trigger = screen.getByRole("button", { name: "Visibility: Private" });
+    expect(trigger).toHaveAttribute("data-slot", "workspace-select-trigger");
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
     fireEvent.click(screen.getByRole("menuitem", { name: "Public" }));
     expect(onValueChange).toHaveBeenCalledWith("public");
   });
@@ -42,6 +44,8 @@ describe("workspace controls", () => {
         </DialogContent>
       </Dialog>,
     );
+
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-slot", "dialog-content");
 
     fireEvent.pointerDown(screen.getByRole("button", { name: "Report reason: Select a reason" }), { button: 0, ctrlKey: false });
     fireEvent.click(screen.getByRole("menuitem", { name: "Spam or advertising" }));

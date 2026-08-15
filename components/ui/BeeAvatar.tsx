@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const DEFAULT_AVATAR_URL = "/images/ProfilePicture.png";
+const DEFAULT_AVATAR_URL = "/images/default_pfp.jpg";
 
 interface BeeAvatarProps {
   avatarUrl?: string | null;
@@ -9,7 +9,7 @@ interface BeeAvatarProps {
 }
 
 export function BeeAvatar({ avatarUrl, className, borderClassName = "border-(--theme-sidebar)" }: BeeAvatarProps) {
-  const src = avatarUrl ?? DEFAULT_AVATAR_URL;
+  const src = avatarUrl?.trim() || DEFAULT_AVATAR_URL;
   return (
     <div className={className ?? "relative"}>
       {/* White outer circle */}

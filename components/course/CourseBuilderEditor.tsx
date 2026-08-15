@@ -19,6 +19,8 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
 import type { CourseBuilderFile, CourseBuilderLesson } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
+import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
+import { AI_LESSON_PROMPT_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 
 interface CourseBuilderEditorProps {
   lesson: CourseBuilderLesson;
@@ -50,6 +52,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
   const saveInFlightRef = useRef(false);
   const latestLessonRef = useRef(lesson);
   const activeLessonIdRef = useRef(lesson.id);
+  const { usage: aiUsage, exhausted: aiExhausted, refresh: refreshAiUsage, syncFromResponse: syncAiUsage } = useAiUsage("LESSON_CONTENT", isAIExpanded);
 
   const saveChanges = useCallback(async (targetLessonId: string, targetModuleId: string) => {
     const changesToSave = { ...pendingChanges.current };
@@ -144,6 +147,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       formData.append("existingContent", content);
 
       const response = await fetch(`/api/courses/${courseId}/lessons/${lesson.id}/generate`, { method: "POST", body: formData });
+      syncAiUsage(response);
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
         throw new Error(error.error || "Generation failed");
@@ -167,6 +171,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       setSelectedFile(null);
       toast.success("Lesson content created.", { id: toastId });
     } catch (error) {
+      void refreshAiUsage();
       toast.error(error instanceof Error ? error.message : "Lesson content could not be generated.", { id: toastId });
     } finally {
       setIsGenerating(false);
@@ -254,13 +259,14 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       {isAIExpanded && (
         <section className="rounded-xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-4" aria-label="AI lesson assistant">
           <div className="flex items-start justify-between gap-4">
-            <div><h2 className="text-sm font-semibold">Build from a prompt or source</h2><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Describe the lesson you need, optionally attach a source, then review the result before learners see it.</p></div>
+            <div><h2 className="text-sm font-semibold">Build from a prompt or source</h2><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Describe the lesson you need, optionally attach a source, then review the result before learners see it.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
             <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setIsAIExpanded(false)} aria-label="Close AI assistant"><X className="h-4 w-4" /></WorkspaceButton>
           </div>
 
           <label className="mt-4 block">
             <span className="sr-only">Lesson generation prompt</span>
-            <textarea value={generationPrompt} onChange={(event) => setGenerationPrompt(event.target.value)} placeholder="For example: Explain photosynthesis with a simple classroom experiment..." className="min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-6 outline-none transition-colors placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+            <textarea aria-label="Lesson generation prompt" value={generationPrompt} maxLength={AI_LESSON_PROMPT_CHARACTER_LIMIT} onChange={(event) => setGenerationPrompt(event.target.value)} placeholder="For example: Explain photosynthesis with a simple classroom experiment..." className="min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-6 outline-none transition-colors placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+            <span className="mt-1 block text-right text-[10px] text-[var(--course-text-faint)]">{generationPrompt.length.toLocaleString()}/{AI_LESSON_PROMPT_CHARACTER_LIMIT.toLocaleString()}</span>
           </label>
 
           <div className="mt-3 grid gap-2.5 sm:grid-cols-[auto_auto_1fr] sm:items-center">
@@ -273,11 +279,13 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
               checked={showFileInLesson}
               onCheckedChange={setShowFileInLesson}
               containerClassName="shrink-0 px-1 text-xs"
+              indicatorClassName="peer-checked:border-[var(--app-border-strong)] peer-checked:bg-[var(--app-surface)]"
             />
-            <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleGenerate()} disabled={isGenerating || (!generationPrompt.trim() && !selectedFile)} className="enabled:text-[var(--course-text)] sm:justify-self-end">
+            <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleGenerate()} disabled={isGenerating || aiExhausted || (!generationPrompt.trim() && !selectedFile)} className="enabled:text-[var(--course-text)] sm:justify-self-end">
               {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create content"}
             </WorkspaceButton>
           </div>
+          <p className="mt-2 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] leading-4 text-[var(--app-text-muted)]">Source files can contain up to 12,000 extracted characters.</p>
         </section>
       )}
 

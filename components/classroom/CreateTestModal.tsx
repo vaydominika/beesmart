@@ -12,6 +12,8 @@ import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import type { TestDraft } from "@/lib/classroom-post-drafts";
+import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
+import { AI_SOURCE_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -84,6 +86,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             ],
         },
     ]);
+    const { usage: aiUsage, exhausted: aiExhausted, refresh: refreshAiUsage, syncFromResponse: syncAiUsage } = useAiUsage("TEST_EXAM", open);
 
     useEffect(() => {
         if (!open) return;
@@ -127,6 +130,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     sourceText: sourceMode === "text" ? sourceText.trim() : undefined,
                 }),
             });
+            syncAiUsage(response);
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Test generation failed");
             setTitle(result.test.title);
@@ -146,6 +150,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             })));
             toast.success("Generated draft loaded. Review every question before adding it.");
         } catch (error) {
+            void refreshAiUsage();
             toast.error(error instanceof Error ? error.message : "Test generation failed");
         } finally {
             setGenerating(false);
@@ -377,6 +382,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     <div className="min-w-0 flex-1">
                                         <p className="font-semibold text-[var(--classroom-text)]">Generate an editable draft</p>
                                         <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Questions stay local to this post until you review, add, and publish them.</p>
+                                        <AiUsageStatus usage={aiUsage} className="mt-1.5 text-[var(--classroom-text-muted)]" />
                                     </div>
                                 </div>
                                 <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="mt-3 bg-[var(--app-surface)]!" />
@@ -392,10 +398,11 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                 ) : (
                                     <label className="mt-3 block">
                                         <span className="sr-only">Source text</span>
-                                        <textarea value={sourceText} maxLength={20000} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
-                                        <span className="mt-1 block text-right text-[10px] text-[var(--classroom-text-muted)]">{sourceText.length}/20,000</span>
+                                        <textarea aria-label="Source text" value={sourceText} maxLength={AI_SOURCE_CHARACTER_LIMIT} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                        <span className="mt-1 block text-right text-[10px] text-[var(--classroom-text-muted)]">{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
                                     </label>
                                 )}
+                                {sourceMode === "course" && <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] text-[var(--classroom-text-muted)]">AI uses up to the first 12,000 characters of course content.</p>}
                                 <div className="mt-3 grid items-end gap-3 sm:grid-cols-3">
                                     <label>
                                         <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Difficulty</span>
@@ -405,7 +412,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Question count</span>
                                         <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border-0 bg-[var(--app-surface)]! shadow-none" />
                                     </label>
-                                    <WorkspaceButton type="button" variant="secondary" className="h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
+                                    <WorkspaceButton type="button" variant="secondary" className="h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || aiExhausted || (sourceMode === "course" ? !courseId : sourceText.trim().length < 50)}>
                                         {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
                                     </WorkspaceButton>
                                 </div>

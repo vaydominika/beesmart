@@ -55,6 +55,7 @@ function WorkspaceSelect<T extends string>({
         <button
           id={id}
           type="button"
+          data-slot="workspace-select-trigger"
           aria-label={`${ariaLabel}: ${selected?.label ?? placeholder}`}
           className={cn(
             "inline-flex items-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] font-medium text-[var(--app-text)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:border-[var(--app-focus-border)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] disabled:cursor-not-allowed disabled:bg-[var(--app-surface-muted)] disabled:text-[var(--app-text-faint)]",

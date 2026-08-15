@@ -5,6 +5,7 @@ import { getCurrentUserId, prisma } from "@/lib/db";
 import { checkContentSafety } from "@/lib/ai/moderation";
 import { POST } from "./route";
 import { canManageCourse } from "@/lib/course-access";
+import { reserveAiAttempt } from "@/lib/ai/usage";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -15,6 +16,12 @@ vi.mock("ai", () => ({ generateObject: vi.fn() }));
 vi.mock("@ai-sdk/deepseek", () => ({ deepseek: vi.fn(() => "model") }));
 vi.mock("@/lib/ai/moderation", () => ({ checkContentSafety: vi.fn(), flagContent: vi.fn() }));
 vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn() }));
+vi.mock("@/lib/ai/usage", () => ({
+  AiDailyLimitError: class AiDailyLimitError extends Error {},
+  reserveAiAttempt: vi.fn().mockResolvedValue({ category: "SYLLABUS", used: 1, remaining: 2, limit: 3, resetsAt: "2026-08-16T00:00:00.000Z" }),
+  withAiUsage: vi.fn((response) => response),
+  aiLimitResponse: vi.fn(),
+}));
 
 const context = { params: Promise.resolve({ courseId: "course-1" }) };
 
@@ -49,6 +56,18 @@ describe("POST /api/courses/[courseId]/generate-from-file", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Add source text or a file" });
+    expect(generateObject).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized source text without consuming an attempt", async () => {
+    const formData = new FormData();
+    formData.set("text", "x".repeat(12_001));
+    const request = new NextRequest("http://localhost/api/courses/course-1/generate-from-file", { method: "POST", body: formData });
+
+    const response = await POST(request, context);
+
+    expect(response.status).toBe(400);
+    expect(reserveAiAttempt).not.toHaveBeenCalled();
     expect(generateObject).not.toHaveBeenCalled();
   });
 });

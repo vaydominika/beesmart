@@ -34,14 +34,14 @@ export function WelcomeBanner() {
             </WorkspaceButton>
           </div>
         </div>
-        <div className="flex h-28 w-28 shrink-0 items-center justify-center sm:h-36 sm:w-36 md:h-40 md:w-40">
+        <div className="hidden h-48 w-48 shrink-0 items-center justify-center lg:flex">
           <Image
             src="/images/DashboardWelcomeBee.png"
             alt="BeeSmart welcome bee"
-            width={200}
-            height={200}
+            width={350}
+            height={350}
             priority
-            className="h-auto w-24 sm:w-32 md:w-36"
+            className="h-full w-full object-contain"
           />
         </div>
       </div>

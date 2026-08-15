@@ -126,7 +126,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
         <section className="relative shrink-0 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
           <div className="relative h-14 overflow-hidden border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] md:h-16">
             <Image
-              src={profile.bannerImageUrl || "/images/BannerBackground.avif"}
+              src={profile.bannerImageUrl || "/images/default_banner.jpg"}
               alt=""
               fill
               priority

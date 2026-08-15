@@ -200,7 +200,7 @@ export function ProfileSettingsModal() {
                 </div>
                 <div>
                   <p className={workspaceLabelClass}>Banner</p>
-                  <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)]"><Image src={bannerImageUrl || "/images/BannerBackground.avif"} alt="Banner preview" fill sizes="(max-width: 768px) 100vw, 512px" className="object-cover" unoptimized /></div>
+                  <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)]"><Image src={bannerImageUrl || "/images/default_banner.jpg"} alt="Banner preview" fill sizes="(max-width: 768px) 100vw, 512px" className={bannerImageUrl ? "object-cover object-center" : "object-cover object-top"} unoptimized /></div>
                   <Input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleBannerFileChange} />
                   <WorkspaceButton type="button" variant="secondary" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner} className="mt-3"><Upload className="h-4 w-4" />{uploadingBanner ? "Uploading…" : "Upload banner"}</WorkspaceButton>
                 </div>

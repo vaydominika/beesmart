@@ -114,6 +114,7 @@ describe('POST /api/classrooms/join', () => {
 
     expect(response.status).toBe(200);
     expect(data.id).toBe(classroomId);
+    expect(data.isOwner).toBe(false);
     expect(prisma.classroomMember.create).toHaveBeenCalledWith({
       data: {
         userId,

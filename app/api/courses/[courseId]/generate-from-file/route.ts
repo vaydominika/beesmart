@@ -6,10 +6,13 @@ import { z } from "zod";
 import { canManageCourse } from "@/lib/course-access";
 import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
 import { UploadValidationError, validateUpload } from "@/lib/files/validation";
+import { AI_SOURCE_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
+import { AiDailyLimitError, aiLimitResponse, reserveAiAttempt, withAiUsage } from "@/lib/ai/usage";
 
 type RouteContext = { params: Promise<{ courseId: string }> };
 
 export async function POST(req: NextRequest, ctx: RouteContext) {
+    let usage: AiUsageState | null = null;
     try {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,6 +32,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (!file && !suppliedText) {
             return NextResponse.json({ error: "Add source text or a file" }, { status: 400 });
         }
+        if (suppliedText.length > AI_SOURCE_CHARACTER_LIMIT) {
+            return NextResponse.json({ error: `Source text must be ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters or fewer` }, { status: 400 });
+        }
 
         let extractedText = "";
         if (file) {
@@ -37,9 +43,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             const validated = await validateUpload(file, "COURSE_ATTACHMENT");
             await scanForMalware(validated.buffer);
             extractedText = await extractTextFromFile(new File([new Uint8Array(validated.buffer)], validated.originalName, { type: validated.detectedMime }));
+            if (extractedText.trim().length > AI_SOURCE_CHARACTER_LIMIT) {
+                return NextResponse.json({ error: `The source file contains more than ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters. Shorten or split the file and try again.` }, { status: 400 });
+            }
         }
         const sourceParts = [suppliedText, extractedText].filter(Boolean);
-        const source = sourceParts.join("\n\n--- SOURCE FILE ---\n\n").substring(0, 30000);
+        const sourceCharacterCount = sourceParts.reduce((total, part) => total + part.trim().length, 0);
+        if (sourceCharacterCount > AI_SOURCE_CHARACTER_LIMIT) {
+            return NextResponse.json({ error: `Combined source material must be ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters or fewer` }, { status: 400 });
+        }
+        const source = sourceParts.join("\n\n--- SOURCE FILE ---\n\n");
+
+        usage = await reserveAiAttempt(userId, "SYLLABUS");
 
         const prompt = `You are an expert curriculum designer. Extract the key subjects, knowledge, and structure from the provided text and create a comprehensive course outline.
 The outline should be broken down into logically sequenced modules, and each module should contain lessons. Return a strict JSON structure.
@@ -49,6 +64,7 @@ ${source}`; // Limit to avoid token overflow
 
         const { object } = await generateObject({
             model: deepseek("deepseek-chat"),
+            maxOutputTokens: 3000,
             schema: z.object({
                 modules: z.array(z.object({
                     title: z.string().describe("The name of the module/chapter"),
@@ -56,8 +72,8 @@ ${source}`; // Limit to avoid token overflow
                     lessons: z.array(z.object({
                         title: z.string().describe("The name of the specific lesson"),
                         description: z.string().describe("What the lesson specifically teaches based on the document"),
-                    })).min(1),
-                })).min(1),
+                    })).min(1).max(6),
+                })).min(1).max(6),
             }),
             prompt,
         });
@@ -69,15 +85,16 @@ ${source}`; // Limit to avoid token overflow
 
         if (!safetyResult.safe) {
             await flagContent(userId, courseId, "AI_GENERATED_UNSAFE_FILE", safetyResult.reason);
-            return NextResponse.json({ error: "Generated content was flagged as inappropriate. Please check your source material." }, { status: 400 });
+            return withAiUsage(NextResponse.json({ error: "Generated content was flagged as inappropriate. Please check your source material." }, { status: 400 }), usage);
         }
 
-        return NextResponse.json({ outline: object });
+        return withAiUsage(NextResponse.json({ outline: object }), usage);
 
     } catch (e) {
+        if (e instanceof AiDailyLimitError) return aiLimitResponse(e);
         if (e instanceof UploadValidationError) return NextResponse.json({ error: e.message }, { status: e.status });
         if (e instanceof MalwareScanError) return NextResponse.json({ error: e.message }, { status: e.infected ? 400 : 503 });
         console.error("POST /api/courses/[courseId]/generate-from-file", e);
-        return NextResponse.json({ error: "Server error or unsupported source material" }, { status: 500 });
+        return withAiUsage(NextResponse.json({ error: "Server error or unsupported source material" }, { status: 500 }), usage);
     }
 }

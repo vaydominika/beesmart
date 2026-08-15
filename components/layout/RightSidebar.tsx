@@ -35,7 +35,7 @@ interface EventData {
 }
 
 const BANNER_HEIGHT = 80;
-const DEFAULT_BANNER_URL = "/images/BannerBackground.avif";
+const DEFAULT_BANNER_URL = "/images/default_banner.jpg";
 
 export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -160,12 +160,20 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           style={{
             minHeight: BANNER_HEIGHT,
             backgroundImage: `url(${bannerImageUrl ?? DEFAULT_BANNER_URL})`,
-            backgroundSize: "contain",
-            backgroundPosition: "center",
+            backgroundSize: "cover",
+            backgroundPosition: bannerImageUrl ? "center" : "top center",
           }}
         >
           <div className="absolute top-0 right-0 flex items-center gap-2 p-2 md:p-1.5">
             <NotificationCenter />
+            <button
+              type="button"
+              onClick={openProfileModal}
+              aria-label="Profile settings"
+              className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
+            >
+              <Settings className="h-5 w-5" />
+            </button>
             {isOverlay && onClose && (
               <button
                 type="button"
@@ -176,14 +184,6 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                 <X className="h-5 w-5" />
               </button>
             )}
-            <button
-              type="button"
-              onClick={openProfileModal}
-              aria-label="Profile settings"
-              className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
           </div>
         </div>
 

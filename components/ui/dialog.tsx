@@ -39,6 +39,7 @@ const DialogContent = React.forwardRef<
     <DialogOverlay className={overlayClassName} />
     <DialogPrimitive.Content
       ref={ref}
+      data-slot="dialog-content"
       className={cn(
         "fixed left-[50%] top-[50%] z-[1001] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-[var(--app-border)] bg-[var(--app-surface)] p-6 text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]",
         className

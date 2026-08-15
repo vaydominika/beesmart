@@ -6,12 +6,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CloudUpload,
-  Eye,
   Lightbulb,
-  Lock,
-  Save,
-  ShieldCheck,
   X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -46,22 +41,21 @@ const STEPS: Array<{
   {
     eyebrow: "Build and edit",
     title: "Add modules, lessons, and content",
-    description: "The Syllabus controls the course structure. Select a lesson to edit it in the main workspace, then save the course before publishing.",
+    description: "Build the syllabus, open a lesson, and add its content. Each AI creation tool has 3 attempts per day.",
     actions: [
-      "Select + Module, name the module, then use + inside it to add a lesson.",
-      "Select a lesson to change its title and content, attach files, or create content from a prompt or source.",
-      "Drag modules or lessons to reorder them. Select Save to store the syllabus and lesson drafts.",
+      "Add modules and lessons in the Syllabus.",
+      "Open a lesson to write it yourself or create content with AI.",
+      "Select Save when the syllabus and lesson content are ready.",
     ],
   },
   {
     eyebrow: "Preview and publish",
-    title: "Save, check the learner view, then publish",
-    description: "Save the latest course changes, use Preview to review them as a learner, then Publish runs the required safety check before anything goes live.",
+    title: "Save, then publish",
+    description: "After saving, you can publish the course. A short audit checks it before it officially goes live.",
     actions: [
-      "Select Save to store the current syllabus and lesson drafts.",
-      "Choose the visibility, then select Preview. Use Exit preview when you need to make more changes.",
-      "Select Publish—or Publish changes after later edits. The safety check runs automatically every time.",
-      "If the check finds a blocker, the course stays unpublished. Fix the listed structure or content issue, then publish again.",
+      "Select Save to store the latest changes.",
+      "Preview the course if you want to check the learner view.",
+      "Select Publish. The audit runs automatically before the course goes live.",
     ],
   },
 ];
@@ -208,42 +202,30 @@ function CourseSetupScreenshots() {
 
 function CourseBuilderScreenshots() {
   return (
-    <div className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Course syllabus and lesson editor screens">
-      <figure className="relative flex h-52 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-2 shadow-sm">
+    <div className="mt-4 grid gap-3" aria-label="Course syllabus and lesson editor screens">
+      <figure className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm md:h-[460px]">
         <Image
-          src="/images/tutorial/course-builder-outline.png"
-          alt="Syllabus builder with the outline generator and new module controls"
-          width={307}
-          height={748}
+          src="/images/tutorial/course-builder-syllabus.png"
+          alt="Syllabus builder with outline generation, modules, and lessons"
+          width={287}
+          height={728}
           loading="eager"
-          sizes="(min-width: 640px) 360px, calc(100vw - 40px)"
-          className="h-full w-auto rounded-md border border-[var(--course-line)] bg-[var(--app-surface)]"
+          sizes="220px"
+          className="h-full w-auto max-w-full rounded-md border border-[var(--course-line)] bg-[var(--app-surface)]"
         />
-        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">1 · Create the syllabus</figcaption>
+        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">1 · Build the syllabus</figcaption>
       </figure>
-      <figure className="relative flex h-52 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-2 shadow-sm">
-        <Image
-          src="/images/tutorial/course-builder-module.png"
-          alt="Syllabus builder with a module and lesson ready to edit"
-          width={285}
-          height={267}
-          loading="eager"
-          sizes="(min-width: 640px) 360px, calc(100vw - 40px)"
-          className="max-h-full w-auto max-w-full rounded-md border border-[var(--course-line)] bg-[var(--app-surface)]"
-        />
-        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">2 · Add lessons</figcaption>
-      </figure>
-      <figure className="relative overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-sm sm:col-span-2">
+      <figure className="relative overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-sm">
         <Image
           src="/images/tutorial/course-builder-lesson-content.png"
           alt="Lesson editor with options to create content from a prompt or source, or write the lesson manually"
-          width={1554}
-          height={629}
+          width={1569}
+          height={773}
           loading="eager"
           sizes="(min-width: 768px) 760px, calc(100vw - 40px)"
           className="h-auto w-full"
         />
-        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">3 · Create lesson content</figcaption>
+        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">2 · Create lesson content</figcaption>
       </figure>
     </div>
   );
@@ -251,17 +233,31 @@ function CourseBuilderScreenshots() {
 
 function PublishingPath() {
   return (
-    <div className="mt-4 overflow-hidden rounded-xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)]" aria-label="Publishing workflow">
-      <div className="flex items-center gap-2 border-b border-[var(--course-accent-hover)] px-4 py-2.5">
-        <span className="mr-auto inline-flex items-center gap-1.5 rounded-lg bg-[var(--app-surface)] px-2.5 py-1.5 text-[10px] font-semibold"><Lock className="h-3 w-3" />Private</span>
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--course-line)] bg-[var(--app-surface)] px-2.5 py-1.5 text-[10px] font-semibold"><Save className="h-3 w-3" />Save</span>
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--course-line)] bg-[var(--app-surface)] px-2.5 py-1.5 text-[10px] font-semibold"><Eye className="h-3 w-3" />Preview</span>
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--course-focus-border)] bg-[var(--app-accent)] px-2.5 py-1.5 text-[10px] font-semibold"><CloudUpload className="h-3 w-3" />Publish</span>
-      </div>
-      <div className="flex items-center gap-3 px-4 py-2.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--app-surface)]"><ShieldCheck className="h-4 w-4" /></span>
-        <div className="min-w-0"><p className="text-xs font-semibold text-[var(--course-text)]">Publication safety check</p><p className="mt-0.5 text-[10px] leading-4 text-[var(--course-text-muted)]">Runs on every publish · Structure · Topic · Content safety</p></div>
-      </div>
+    <div className="mt-4 grid gap-3 sm:grid-cols-2" aria-label="Publishing workflow">
+      <figure className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm">
+        <Image
+          src="/images/tutorial/course-publish-saving.png"
+          alt="Course builder saving changes before publishing"
+          width={229}
+          height={68}
+          loading="eager"
+          sizes="(min-width: 640px) 340px, calc(100vw - 40px)"
+          className="h-auto w-full max-w-[360px] rounded-md border border-[var(--course-line)] bg-[var(--app-surface)]"
+        />
+        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">1 · Save changes</figcaption>
+      </figure>
+      <figure className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm">
+        <Image
+          src="/images/tutorial/course-publish-audit.png"
+          alt="Publication safety check running before the course is published"
+          width={483}
+          height={357}
+          loading="eager"
+          sizes="(min-width: 640px) 340px, calc(100vw - 40px)"
+          className="h-auto max-h-[260px] w-auto max-w-full rounded-md border border-[var(--course-line)] bg-[var(--app-surface)]"
+        />
+        <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">2 · Publication safety check</figcaption>
+      </figure>
     </div>
   );
 }

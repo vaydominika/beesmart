@@ -44,7 +44,6 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
       id: true,
       name: true,
       avatar: true,
-      image: true,
       bannerImageUrl: true,
       createdAt: true,
       settings: { select: { profileVisibility: true, activitySharing: true } },
@@ -145,7 +144,7 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
     profile: {
       id: user.id,
       name: user.name,
-      avatar: user.avatar ?? user.image ?? null,
+      avatar: user.avatar ?? null,
       bannerImageUrl: user.bannerImageUrl,
       joinedAt: user.createdAt.toISOString(),
       isOwner,

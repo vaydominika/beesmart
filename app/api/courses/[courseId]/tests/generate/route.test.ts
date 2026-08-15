@@ -30,6 +30,13 @@ vi.mock('@/lib/ai/moderation', () => ({
   flagContent: vi.fn(),
 }));
 
+vi.mock('@/lib/ai/usage', () => ({
+  AiDailyLimitError: class AiDailyLimitError extends Error {},
+  reserveAiAttempt: vi.fn().mockResolvedValue({ category: 'TEST_EXAM', used: 1, remaining: 2, limit: 3, resetsAt: '2026-08-16T00:00:00.000Z' }),
+  withAiUsage: vi.fn((response) => response),
+  aiLimitResponse: vi.fn(),
+}));
+
 describe('POST /api/courses/[courseId]/tests/generate', () => {
   const courseId = 'course-1';
   const userId = 'user-1';

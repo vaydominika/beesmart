@@ -89,19 +89,19 @@ async function getProgressForCourses(userId: string, courseIds: string[]): Promi
 
   const completedLessonIds = new Set(
     userProgress
-      .filter((p: any) => p.completedAt != null)
-      .map((p: any) => p.lessonId)
+      .filter((progress) => progress.completedAt != null)
+      .map((progress) => progress.lessonId)
   );
 
   for (const course of courses) {
-    const totalLessons = course.modules.reduce((acc: number, m: any) => acc + m.lessons.length, 0);
+    const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
     if (totalLessons === 0) {
       progressMap.set(course.id, 0);
       continue;
     }
 
     const completed = course.modules.reduce(
-      (acc: number, m: any) => acc + m.lessons.filter((l: any) => completedLessonIds.has(l.id)).length,
+      (total, module) => total + module.lessons.filter((lesson) => completedLessonIds.has(lesson.id)).length,
       0
     );
     progressMap.set(course.id, Math.round((completed / totalLessons) * 100));
@@ -126,7 +126,7 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
     where: { userId },
     select: { courseId: true },
   })) : [];
-  const enrolledIds = new Set(enrolledData.map((e: any) => e.courseId));
+  const enrolledIds = new Set(enrolledData.map((enrollment) => enrollment.courseId));
 
   const courses = (await prisma.course.findMany({
     where: {
@@ -221,7 +221,7 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
   return courses.map((c) => {
     const avg =
       c.ratings.length > 0
-        ? c.ratings.reduce((s: number, r: any) => s + r.rating, 0) / c.ratings.length
+        ? c.ratings.reduce((sum, rating) => sum + rating.rating, 0) / c.ratings.length
         : null;
     return {
       id: c.id,
@@ -251,7 +251,6 @@ export async function getCurrentUserById(
       id: true,
       name: true,
       avatar: true,
-      image: true,
       bannerImageUrl: true,
     },
   });
@@ -259,7 +258,7 @@ export async function getCurrentUserById(
   return {
     id: user.id,
     name: user.name,
-    avatar: user.avatar ?? user.image ?? null,
+    avatar: user.avatar ?? null,
     bannerImageUrl: user.bannerImageUrl,
   };
 }

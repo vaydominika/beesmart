@@ -36,9 +36,11 @@ describe("LeftSidebar consistency counter", () => {
   });
 
   it("aligns the consistency counter with the active navigation backdrop", () => {
-    const { container } = render(<LeftSidebar />);
+    const { container } = render(<LeftSidebar variant="overlay" onClose={vi.fn()} />);
 
-    expect(screen.getByText("Bee consistent").parentElement).toHaveClass("md:w-[168px]", "md:p-2");
+    expect(screen.getByText("Bee consistent").parentElement).toHaveClass("w-full", "md:w-[168px]", "md:p-2");
+    expect(screen.getByRole("link", { name: "DASHBOARD" })).toHaveClass("mx-6", "w-[calc(100%-3rem)]", "justify-center", "text-center", "md:justify-start", "rounded-xl", "bg-[var(--app-canvas)]");
+    expect(container.querySelector("[data-sidebar-active-indicator]")).not.toBeInTheDocument();
     expect(container.querySelector("#sidebar-container")).toHaveClass("rounded-tr-[30px]");
     expect(container.querySelector("#sidebar-container")).not.toHaveClass("rounded-br-[30px]");
   });

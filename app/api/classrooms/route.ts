@@ -29,7 +29,7 @@ export async function GET() {
             orderBy: { joinedAt: "desc" },
         });
 
-        const classrooms = memberships.map((m: any) => ({
+        const classrooms = memberships.map((m) => ({
             id: m.classroom.id,
             name: m.classroom.name,
             description: m.classroom.description,
@@ -39,6 +39,7 @@ export async function GET() {
             memberCount: m.classroom._count.members,
             creatorName: m.classroom.creator.name,
             createdAt: m.classroom.createdAt,
+            isOwner: m.classroom.createdById === userId,
         }));
 
         return NextResponse.json(classrooms);
@@ -89,6 +90,8 @@ export async function POST(req: NextRequest) {
             subject: classroom.subject,
             role: "TEACHER",
             memberCount: classroom._count.members,
+            createdAt: classroom.createdAt,
+            isOwner: true,
         }, { status: 201 });
     } catch (e) {
         console.error("POST /api/classrooms", e);

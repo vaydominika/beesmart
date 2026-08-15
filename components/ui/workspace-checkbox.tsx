@@ -7,6 +7,7 @@ interface WorkspaceCheckboxProps extends Omit<React.ComponentProps<"input">, "ty
   description?: React.ReactNode;
   onCheckedChange?: (checked: boolean) => void;
   containerClassName?: string;
+  indicatorClassName?: string;
 }
 
 function WorkspaceCheckbox({
@@ -18,6 +19,7 @@ function WorkspaceCheckbox({
   onCheckedChange,
   className,
   containerClassName,
+  indicatorClassName,
   ...props
 }: WorkspaceCheckboxProps) {
   return (
@@ -41,7 +43,7 @@ function WorkspaceCheckbox({
         />
         <span
           aria-hidden="true"
-          className="flex h-4 w-4 items-center justify-center rounded-[5px] border border-[var(--app-border-strong)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors group-hover:border-[var(--app-focus-border)] peer-checked:border-[var(--app-focus-border)] peer-checked:bg-[var(--app-accent-soft)] peer-checked:[&_svg]:block peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--app-focus-ring)] peer-focus-visible:ring-offset-1 peer-disabled:bg-[var(--app-surface-muted)]"
+          className={cn("flex h-4 w-4 items-center justify-center rounded-[5px] border border-[var(--app-border-strong)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors group-hover:border-[var(--app-focus-border)] peer-checked:border-[var(--app-focus-border)] peer-checked:bg-[var(--app-accent-soft)] peer-checked:[&_svg]:block peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--app-focus-ring)] peer-focus-visible:ring-offset-1 peer-disabled:bg-[var(--app-surface-muted)]", indicatorClassName)}
         >
           <Check className="hidden h-3 w-3 stroke-[2.5]" />
         </span>

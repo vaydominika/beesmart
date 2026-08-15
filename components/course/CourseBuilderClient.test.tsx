@@ -61,6 +61,17 @@ describe("CourseBuilderClient", () => {
     expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument();
   });
 
+  it("opens the course creation tutorial from the editor", () => {
+    render(<CourseBuilderClient initialCourse={course} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Review course creation tutorial" }));
+    expect(screen.getByRole("heading", { name: "Course creation tutorial" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close tutorial" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Close tutorial" }));
+    expect(screen.queryByRole("heading", { name: "Course creation tutorial" })).not.toBeInTheDocument();
+  });
+
   it("limits the course title and sizes its editor from the text", () => {
     render(<CourseBuilderClient initialCourse={course} />);
     fireEvent.click(screen.getByRole("button", { name: "Biology" }));

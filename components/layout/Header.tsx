@@ -22,7 +22,7 @@ export function Header() {
     : isCourseWorkspace
       ? "hover:bg-(--course-surface-muted)"
       : "hover:bg-(--theme-card)/80";
-  const { toggleLeftSidebar, toggleRightSidebar } = useLayout();
+  const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const { isSessionActive, timeRemaining, currentMode } = useFocus();
 
   const formatTime = (seconds: number) => {
@@ -33,30 +33,30 @@ export function Header() {
 
   if (isMobile) {
     return (
-      <div className={cn(
-        "px-4 py-3 border-b shrink-0",
-        quietHeaderClass,
+      <header className={cn(
+        "h-16 shrink-0 border-b border-[var(--app-border)] bg-(--theme-sidebar) px-3",
       )}>
-        <div className="flex items-center justify-between">
+        <nav aria-label="Mobile application navigation" className="grid h-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3">
           <button
             type="button"
             onClick={toggleLeftSidebar}
             aria-label="Open menu"
-            className={cn("p-2 rounded-md text-(--theme-text)", quietHoverClass)}
+            aria-expanded={isLeftSidebarOpen}
+            className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", quietHoverClass)}
           >
-            <PanelLeft className="h-6 w-6" />
+            <PanelLeft className="h-5 w-5" />
           </button>
           {isSessionActive ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-(--theme-text) uppercase">
+            <div className="flex min-w-0 items-center justify-center gap-2">
+              <span className="text-sm font-bold uppercase text-[var(--app-text)]">
                 {currentMode === "active" ? "FOCUS" : "BREAK"}
               </span>
-              <span className="text-lg font-bold text-(--theme-text)">
+              <span className="text-lg font-bold tabular-nums text-[var(--app-text)]">
                 {formatTime(timeRemaining)}
               </span>
             </div>
           ) : (
-            <span className="text-(--theme-text) font-semibold" aria-hidden="true">
+            <span className="justify-self-center font-[var(--font-koulen)] text-base uppercase leading-none tracking-[0.04em] text-[var(--app-text)]">
               BeeSmart
             </span>
           )}
@@ -64,12 +64,13 @@ export function Header() {
             type="button"
             onClick={toggleRightSidebar}
             aria-label="Open calendar and profile"
-            className={cn("p-2 rounded-md text-(--theme-text)", quietHoverClass)}
+            aria-expanded={isRightSidebarOpen}
+            className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", quietHoverClass)}
           >
-            <PanelRight className="h-6 w-6" />
+            <PanelRight className="h-5 w-5" />
           </button>
-        </div>
-      </div>
+        </nav>
+      </header>
     );
   }
 

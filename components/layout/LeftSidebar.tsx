@@ -60,7 +60,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           />
         </div>
 
-        <div className="mx-auto mb-4 w-64 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">
+        <div className="mx-auto mb-4 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">
           <p className="text-center text-[32px] font-semibold uppercase leading-none text-[var(--app-text)] md:text-[26px]">Bee consistent</p>
           <div className="mt-2 flex items-center justify-center gap-2 text-[var(--app-text)]">
             <span className="flex min-h-14 min-w-14 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] px-3 text-[64px] font-bold leading-none md:text-[48px]">
@@ -71,7 +71,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
         </div>
       </div>
 
-      <nav className="flex-1 m-auto relative overflow-visible tracking-tight w-full pl-20 md:pl-15">
+      <nav className="m-auto w-full flex-1 overflow-visible pl-0 tracking-tight md:pl-15">
         <ul className="overflow-visible relative space-y-2">
           {navigationItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -100,8 +100,8 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
                     aria-current={isActive ? "page" : undefined}
                     onClick={isOverlay ? onClose : undefined}
                     className={cn(
-                      "relative z-10 flex h-full items-center px-6 text-[40px] font-black uppercase leading-none transition-colors md:px-4 md:text-[36px]",
-                      isActive && isOverlay && "rounded-l-xl bg-[var(--app-canvas)]",
+                      "relative z-10 mx-6 flex h-full w-[calc(100%-3rem)] items-center justify-center px-0 text-center text-[40px] font-black uppercase leading-none transition-colors md:mx-0 md:w-full md:justify-start md:px-4 md:text-left md:text-[36px]",
+                      isActive && isOverlay && "rounded-xl bg-[var(--app-canvas)]",
                       isActive
                         ? "text-(--theme-text-important)"
                         : "text-(--theme-text) hover:text-(--theme-text-important)"

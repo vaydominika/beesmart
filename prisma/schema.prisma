@@ -89,6 +89,12 @@ enum CourseVisibility {
   INVITATION_ONLY
 }
 
+enum AiUsageCategory {
+  LESSON_CONTENT
+  SYLLABUS
+  TEST_EXAM
+}
+
 enum FocusSessionType {
   ACTIVE
   BREAK
@@ -169,6 +175,7 @@ model User {
   submissions            Submission[]
   courseAccessGrants     CourseAccess[]
   activityRecords        ActivityRecord[]
+  aiUsageQuotas          AiUsageQuota[]
 
   @@index([email])
 }
@@ -973,6 +980,21 @@ model UserSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model AiUsageQuota {
+  id          String          @id @default(cuid())
+  userId      String
+  category    AiUsageCategory
+  periodStart DateTime
+  attempts    Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([periodStart])
 }
 
 // ==========================================

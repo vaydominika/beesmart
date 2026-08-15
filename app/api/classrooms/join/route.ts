@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
                 data: { acceptedAt: new Date() },
             });
         }
-        if (classroom.courseLinks?.length && (prisma as any).courseAccess?.createMany) {
+        if (classroom.courseLinks?.length) {
             await prisma.courseAccess.createMany({
                 data: classroom.courseLinks.map((link: { courseId: string; addedById: string }) => ({
                     courseId: link.courseId, userId, invitedById: link.addedById,
@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
             subject: classroom.subject,
             role,
             memberCount: classroom._count.members + 1,
+            createdAt: classroom.createdAt,
+            isOwner: false,
         });
     } catch (e) {
         console.error("POST /api/classrooms/join", e);

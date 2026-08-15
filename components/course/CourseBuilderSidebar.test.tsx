@@ -172,8 +172,11 @@ describe("CourseBuilderSidebar module ordering", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Create syllabus" }));
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const request = fetchMock.mock.calls[0];
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/course-1/generate-from-file",
+      expect.objectContaining({ method: "POST" }),
+    ));
+    const request = fetchMock.mock.calls.find(([url]) => url === "/api/courses/course-1/generate-from-file")!;
     expect(request[0]).toBe("/api/courses/course-1/generate-from-file");
     expect(request[1]).toEqual(expect.objectContaining({ method: "POST", body: expect.any(FormData) }));
     expect((request[1].body as FormData).get("text")).toBe("Photosynthesis converts light energy into chemical energy.");

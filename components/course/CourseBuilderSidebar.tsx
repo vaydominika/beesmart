@@ -25,6 +25,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } from "@/lib/course-builder";
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
+import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
+import { AI_SOURCE_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 
 interface CourseBuilderSidebarProps {
   course: CourseBuilderCourse;
@@ -59,6 +61,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
   const [isMutating, setIsMutating] = useState(false);
   const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { usage: aiUsage, exhausted: aiExhausted, refresh: refreshAiUsage, syncFromResponse: syncAiUsage } = useAiUsage("SYLLABUS", isAIExpanded);
 
   const handleDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
@@ -256,6 +259,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       if (selectedFile) formData.append("file", selectedFile);
       if (text) formData.append("text", text);
       const generateResponse = await fetch(`/api/courses/${course.id}/generate-from-file`, { method: "POST", body: formData });
+      syncAiUsage(generateResponse);
       if (!generateResponse.ok) {
         const error = await generateResponse.json().catch(() => ({}));
         throw new Error(error.error || "Outline generation failed");
@@ -290,6 +294,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       setSourceText("");
       toast.success("Syllabus created from your source.", { id: toastId });
     } catch (error) {
+      void refreshAiUsage();
       toast.error(error instanceof Error ? error.message : "The syllabus could not be generated.", { id: toastId });
     } finally {
       setIsGenerating(false);
@@ -345,7 +350,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         {isAIExpanded && (
           <div className="mb-2.5 rounded-xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-3">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="text-xs font-semibold">Create an outline</p><p className="mt-1 text-[11px] leading-4 text-[var(--course-text-muted)]">Paste notes or add a file to build a syllabus.</p></div>
+              <div><p className="text-xs font-semibold">Create an outline</p><p className="mt-1 text-[11px] leading-4 text-[var(--course-text-muted)]">Paste notes or add a file to build a syllabus.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
               <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => { setIsAIExpanded(false); setSelectedFile(null); setSourceText(""); }} aria-label="Close outline generator"><X className="h-3.5 w-3.5" /></WorkspaceButton>
             </div>
             <label htmlFor="outline-source-text" className="mt-3 block text-[10px] font-semibold text-[var(--course-text-muted)]">Source text</label>
@@ -353,17 +358,20 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
               id="outline-source-text"
               aria-label="Outline source text"
               value={sourceText}
+              maxLength={AI_SOURCE_CHARACTER_LIMIT}
               onChange={(event) => setSourceText(event.target.value)}
               placeholder="Paste notes, lesson ideas, or source material..."
               rows={4}
               className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] px-3 py-2.5 text-xs leading-5 outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]"
             />
+            <span className="mt-1 block text-right text-[9px] text-[var(--course-text-faint)]">{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
             <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>or add a file</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,image/*" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} className="sr-only" />
             <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => fileInputRef.current?.click()} className="w-full justify-start border-dashed">
               {selectedFile ? <FileText className="h-4 w-4" /> : <Upload className="h-4 w-4" />}<span className="min-w-0 flex-1 truncate">{selectedFile?.name ?? "Choose a source file"}</span>
             </WorkspaceButton>
-            <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating} className="mt-2 w-full">
+            <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[9px] leading-4 text-[var(--app-text-muted)]">Text and extracted file content share the 12,000-character source limit.</p>
+            <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating || aiExhausted} className="mt-2 w-full">
               {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create syllabus"}
             </WorkspaceButton>
           </div>

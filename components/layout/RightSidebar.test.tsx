@@ -38,4 +38,13 @@ describe("RightSidebar", () => {
     expect(container.firstElementChild).toHaveClass("rounded-tl-[30px]");
     expect(container.firstElementChild).not.toHaveClass("rounded-bl-[30px]");
   });
+
+  it("places the mobile close control in the top-right corner after the other actions", () => {
+    render(<RightSidebar variant="overlay" onClose={vi.fn()} />);
+
+    const settingsButton = screen.getByRole("button", { name: "Profile settings" });
+    const closeButton = screen.getByRole("button", { name: "Close sidebar" });
+
+    expect(settingsButton.compareDocumentPosition(closeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

@@ -2,10 +2,11 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, BookOpen, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Loader2, Lock, Mail, Menu, Pencil, Save, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, BookOpen, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lightbulb, Loader2, Lock, Mail, Menu, Pencil, Save, ShieldCheck, X } from "lucide-react";
 import CourseBuilderSidebar from "./CourseBuilderSidebar";
 import CourseBuilderEditor from "./CourseBuilderEditor";
 import type { CourseBuilderEditorHandle } from "./CourseBuilderEditor";
+import { CourseCreationTutorial } from "./CourseCreationTutorial";
 import { CourseInviteButton } from "./CourseInviteButton";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -87,6 +88,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [courseTitle, setCourseTitle] = useState(initialCourse.title);
   const [mobileSyllabusOpen, setMobileSyllabusOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const [publishCheckOpen, setPublishCheckOpen] = useState(false);
   const [publishIssues, setPublishIssues] = useState<CoursePublishIssue[]>([]);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -312,6 +314,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
             {!previewMode && !isSaving && !isSavingCourse && hasUnsavedChanges && <span role="status" className="hidden shrink-0 text-[10px] font-medium text-[var(--course-text-muted)] sm:inline">Unsaved changes</span>}
 
+            <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setTutorialOpen(true)} aria-label="Review course creation tutorial" title="Course creation tutorial">
+              <Lightbulb className="h-3.5 w-3.5" />
+            </WorkspaceButton>
             <WorkspaceButton type="button" variant={previewMode ? "primary" : "secondary"} size="compact" onClick={() => setPreviewMode((current) => !current)}>
               {previewMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}<span className="hidden sm:inline">{previewMode ? "Exit preview" : "Preview"}</span>
             </WorkspaceButton>
@@ -340,6 +345,15 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
           )}
         </main>
       </section>
+      <CourseCreationTutorial
+        open={tutorialOpen}
+        intent="review"
+        onClose={() => setTutorialOpen(false)}
+        onFinish={() => {
+          setTutorialOpen(false);
+          return true;
+        }}
+      />
       <PublishCheckDialog open={publishCheckOpen} checking={isPublishing} issues={publishIssues} error={publishError} onClose={() => setPublishCheckOpen(false)} />
     </div>
   );

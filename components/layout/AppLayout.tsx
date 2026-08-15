@@ -8,7 +8,7 @@ import { TimerWidget } from "@/components/focus/TimerWidget";
 import { SettingsModal } from "@/components/settings/Settings";
 import { ProfileSettingsModal } from "@/components/settings/ProfileSettingsModal";
 import { useLayout } from "./LayoutProvider";
-import { useIsMobile } from "./useIsMobile";
+import { useHasRoomForRightSidebar, useIsMobile } from "./useIsMobile";
 import { ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,6 +24,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
+  const hasRoomForRightSidebar = useHasRoomForRightSidebar();
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
   const isDashboard = pathname === "/dashboard";
@@ -148,18 +149,29 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       {!isFocusedWorkspace && (
         <>
+          {!hasRoomForRightSidebar && isRightSidebarOpen && (
+            <button
+              type="button"
+              aria-label="Close right sidebar overlay"
+              className="fixed inset-0 z-30 hidden bg-[var(--app-scrim-strong)] md:block"
+              onClick={toggleRightSidebar}
+            />
+          )}
           <div
+            data-right-sidebar-shell
             className={cn(
-              "relative transition-all duration-300 overflow-hidden shrink-0 h-screen hidden md:block",
-              isRightSidebarOpen ? "w-72" : "w-0"
+              "h-screen overflow-hidden transition-all duration-300",
+              hasRoomForRightSidebar
+                ? cn("relative hidden shrink-0 md:block", isRightSidebarOpen ? "w-72" : "w-0")
+                : cn("fixed right-0 top-0 z-40 hidden w-72 md:block", isRightSidebarOpen ? "translate-x-0" : "translate-x-full")
             )}
           >
-            <RightSidebar variant="inline" />
+            <RightSidebar variant={hasRoomForRightSidebar ? "inline" : "overlay"} onClose={hasRoomForRightSidebar ? undefined : toggleRightSidebar} />
           </div>
           <button
             onClick={toggleRightSidebar}
             className="fixed bottom-36 w-8 h-10 md:w-5 md:h-9 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] md:rounded-tl-[10px] md:rounded-bl-[10px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
-            style={{ right: isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
+            style={{ right: hasRoomForRightSidebar && isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
             aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
           >
             {isRightSidebarOpen ? (

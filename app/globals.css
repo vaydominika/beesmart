@@ -502,9 +502,22 @@ input[type="search"]::-ms-reveal {
   font-family: var(--font-geist-sans), Arial, sans-serif;
 }
 
+/* Modal controls share one compact rhythm: single-line fields and primary actions are 40px tall. */
+[data-slot="dialog-content"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+[data-slot="dialog-content"] select,
+[data-slot="dialog-content"] [data-slot="workspace-select-trigger"],
+[data-slot="dialog-content"] .workspace-button[data-size="default"] {
+  height: 2.5rem !important;
+  min-height: 2.5rem;
+}
+
 .notification-center,
 .notification-center * {
   font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.notification-center [data-unread="true"] {
+  border-color: var(--app-accent);
 }
 
 /* Dashboard follows the same calm workspace system as Courses and Profile. */

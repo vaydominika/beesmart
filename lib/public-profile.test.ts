@@ -18,11 +18,14 @@ describe("getPublicProfile", () => {
   });
 
   it("omits activity when sharing is disabled", async () => {
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "user-2", name: "Learner", avatar: null, image: null, bannerImageUrl: null, createdAt: new Date("2026-01-01"), settings: { profileVisibility: "PUBLIC", activitySharing: false } } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "user-2", name: "Learner", avatar: null, image: "/provider-placeholder.png", bannerImageUrl: null, createdAt: new Date("2026-01-01"), settings: { profileVisibility: "PUBLIC", activitySharing: false } } as never);
     vi.mocked(prisma.course.findMany).mockResolvedValue([] as never);
     const result = await getPublicProfile("user-2", "user-1");
     expect(result.status).toBe("ok");
-    if (result.status === "ok") expect(result.profile.activity).toEqual([]);
+    if (result.status === "ok") {
+      expect(result.profile.avatar).toBeNull();
+      expect(result.profile.activity).toEqual([]);
+    }
     expect(prisma.activityRecord.findMany).not.toHaveBeenCalled();
   });
 

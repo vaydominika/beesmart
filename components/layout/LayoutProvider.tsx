@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useHasRoomForRightSidebar, useIsMobile } from "./useIsMobile";
 
 interface LayoutContextType {
   headerContent: ReactNode | null;
@@ -22,20 +23,19 @@ export function useLayout() {
 }
 
 export function LayoutProvider({ children }: { children: ReactNode }) {
+  const isMobile = useIsMobile();
+  const hasRoomForRightSidebar = useHasRoomForRightSidebar();
   const [headerContent, setHeaderContent] = useState<ReactNode | null>(null);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    setIsRightSidebarOpen(mq.matches);
-    const handler = () => {
-      setIsRightSidebarOpen(mq.matches);
-      if (!mq.matches) setIsLeftSidebarOpen(false);
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
+    const timeout = window.setTimeout(() => {
+      setIsRightSidebarOpen(hasRoomForRightSidebar);
+      if (isMobile) setIsLeftSidebarOpen(false);
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [hasRoomForRightSidebar, isMobile]);
 
   const toggleLeftSidebar = () => {
     setIsLeftSidebarOpen((prev) => !prev);
