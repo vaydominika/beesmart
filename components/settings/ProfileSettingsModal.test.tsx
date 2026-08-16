@@ -41,7 +41,6 @@ vi.mock("@/lib/DashboardContext", () => ({
   useDashboard: () => dashboardMock,
 }));
 vi.mock("../ui/scroll-area", () => ({ ScrollArea: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
-vi.mock("../ui/BeeAvatar", () => ({ BeeAvatar: () => <div>Avatar</div> }));
 vi.mock("../ui/switch", () => ({ Switch: () => <button type="button">Switch</button> }));
 vi.mock("next/image", () => ({ default: () => <div>Banner preview</div> }));
 

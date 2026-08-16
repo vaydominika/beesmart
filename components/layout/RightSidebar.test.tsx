@@ -19,7 +19,6 @@ vi.mock("@/lib/DashboardContext", () => ({
 }));
 vi.mock("./CalendarWidget", () => ({ CalendarWidget: () => <div>Calendar</div> }));
 vi.mock("@/components/dashboard/ReminderItem", () => ({ ReminderItem: () => <div>Reminder</div> }));
-vi.mock("@/components/ui/BeeAvatar", () => ({ BeeAvatar: () => <div>Avatar</div> }));
 vi.mock("@/components/calendar/EventModal", () => ({ EventModal: () => null }));
 vi.mock("@/components/calendar/EventDetailModal", () => ({ EventDetailModal: () => null }));
 vi.mock("@/hooks/use-event-sync", () => ({ useEventSync: () => ({ triggerUpdate: vi.fn() }) }));
@@ -42,7 +41,7 @@ describe("RightSidebar", () => {
   it("keeps notifications in the banner and places settings on the profile avatar", () => {
     render(<RightSidebar variant="overlay" onClose={vi.fn()} />);
 
-    const avatar = screen.getByText("Avatar");
+    const avatar = screen.getByAltText("Ada");
     const notificationButton = screen.getByRole("button", { name: "Notifications" });
     const settingsButton = screen.getByRole("button", { name: "Profile settings" });
     const closeButton = screen.getByRole("button", { name: "Close sidebar" });

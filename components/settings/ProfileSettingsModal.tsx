@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Eye, ImageIcon, KeyRound, Upload, UserRound, type LucideIcon } from "lucide-react";
 import { Dialog } from "../ui/dialog";
-import { BeeAvatar } from "../ui/BeeAvatar";
 import { Input } from "../ui/input";
 import { Switch } from "../ui/switch";
 import { WorkspaceButton } from "../ui/workspace-button";
@@ -196,7 +195,24 @@ export function ProfileSettingsModal() {
                 <div><h3 id="images-heading" className="text-base font-semibold text-[var(--app-text)]">Images</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Choose a recognizable avatar and a profile banner.</p></div>
                 <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
                   <p className={workspaceLabelClass}>Profile picture</p>
-                  <div className="flex items-center gap-4"><BeeAvatar avatarUrl={avatarUrl || undefined} className="shrink-0" /><div><Input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleAvatarFileChange} /><WorkspaceButton type="button" variant="secondary" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}><Upload className="h-4 w-4" />{uploadingAvatar ? "Uploading…" : "Upload avatar"}</WorkspaceButton></div></div>
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
+                      <Image
+                        src={avatarUrl?.trim() || "/images/default_pfp.jpg"}
+                        alt="Profile avatar"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover object-center"
+                        unoptimized
+                      />
+                    </div>
+                    <div>
+                      <Input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleAvatarFileChange} />
+                      <WorkspaceButton type="button" variant="secondary" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}>
+                        <Upload className="h-4 w-4" />{uploadingAvatar ? "Uploading…" : "Upload avatar"}
+                      </WorkspaceButton>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <p className={workspaceLabelClass}>Banner</p>

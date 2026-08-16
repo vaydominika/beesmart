@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
-export type Theme = "bee" | "dark" | "ocean" | "forest";
+export type Theme = "bee" | "dark" | "pink" | "blue";
 
 interface SettingsContextType {
   isModalOpen: boolean;
@@ -72,6 +72,13 @@ function saveLocalSettings(settings: Record<string, unknown>) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }
 
+function normalizeTheme(theme: unknown): Theme {
+  if (theme === "dark" || theme === "pink" || theme === "blue") return theme;
+  if (theme === "ocean") return "blue";
+  if (theme === "forest") return "pink";
+  return "bee";
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -81,7 +88,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // Load from localStorage as instant fallback
   const saved = loadLocalSettings();
 
-  const [theme, setTheme] = useState<Theme>(saved?.theme || "bee");
+  const [theme, setThemeState] = useState<Theme>(normalizeTheme(saved?.theme));
   const [defaultActiveMinutes, setDefaultActiveMinutes] = useState(saved?.defaultActiveMinutes || 45);
   const [defaultBreakMinutes, setDefaultBreakMinutes] = useState(saved?.defaultBreakMinutes || 15);
   const [defaultAutoBreak, setDefaultAutoBreak] = useState(saved?.defaultAutoBreak ?? true);
@@ -90,6 +97,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [profileVisibility, setProfileVisibility] = useState<"public" | "private">(saved?.profileVisibility || "private");
   const [activitySharing, setActivitySharing] = useState(saved?.activitySharing ?? true);
 
+  const setTheme = useCallback((newTheme: Theme) => {
+    const normalized = normalizeTheme(newTheme);
+    setThemeState(normalized);
+    if (typeof window !== "undefined") {
+      const root = document.documentElement;
+      root.removeAttribute("data-theme");
+      if (normalized !== "bee") {
+        root.setAttribute("data-theme", normalized);
+      }
+      const existing = loadLocalSettings() || {};
+      saveLocalSettings({ ...existing, theme: normalized });
+      fetch("/api/user/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ theme: normalized }),
+      }).catch(() => {});
+    }
+  }, []);
+
   // Load settings from the server on mount
   useEffect(() => {
     async function fetchSettings() {
@@ -97,7 +123,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/user/settings");
         if (!res.ok) return; // Not logged in or server error — keep localStorage values
         const data = await res.json();
-        setTheme(data.theme || "bee");
+        if (data.theme) {
+          const serverTheme = normalizeTheme(data.theme);
+          setThemeState(serverTheme);
+          const root = document.documentElement;
+          root.removeAttribute("data-theme");
+          if (serverTheme !== "bee") {
+            root.setAttribute("data-theme", serverTheme);
+          }
+        }
         setDefaultActiveMinutes(data.defaultActiveMinutes ?? 45);
         setDefaultBreakMinutes(data.defaultBreakMinutes ?? 15);
         setDefaultAutoBreak(data.defaultAutoBreak ?? true);

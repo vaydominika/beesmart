@@ -15,7 +15,9 @@ type ClassroomSummary = {
     code: string;
     role: string;
     memberCount: number;
-    teacherName: string;
+    creatorName?: string | null;
+    createdAt: string;
+    isOwner: boolean;
 };
 
 interface JoinClassroomModalProps {

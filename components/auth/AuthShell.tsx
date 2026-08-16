@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { BeeSmartLogo } from "@/components/ui/BeeSmartLogo";
 
 interface AuthShellProps {
   title: string;
@@ -22,7 +23,7 @@ export function AuthShell({ title, description, footer, children }: AuthShellPro
     <main className="relative z-10 mx-auto grid w-full max-w-[980px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-subtle)] lg:min-h-[640px] lg:grid-cols-[0.72fr_1.28fr]">
       <aside className="hidden border-r border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] p-10 lg:flex lg:flex-col">
         <Link href="/" className="w-fit rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-border)]">
-          <Image src="/svg/BeeSmartLogo.svg" alt="BeeSmart" width={220} height={88} className="h-[72px] w-auto" priority />
+          <BeeSmartLogo className="h-[72px] w-auto" priority />
         </Link>
 
         <div className="mt-auto max-w-[250px] pb-1">
@@ -35,7 +36,7 @@ export function AuthShell({ title, description, footer, children }: AuthShellPro
 
       <section className="flex min-w-0 flex-col justify-center px-5 py-6 sm:px-10 sm:py-9 lg:px-14">
         <Link href="/" className="mb-7 w-fit rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-border)] lg:hidden">
-          <Image src="/svg/BeeSmartLogo.svg" alt="BeeSmart" width={190} height={76} className="h-16 w-auto" priority />
+          <BeeSmartLogo className="h-16 w-auto" priority />
         </Link>
 
         <div className="w-full max-w-[430px] self-center">

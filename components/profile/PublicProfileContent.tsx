@@ -12,7 +12,6 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { BeeAvatar } from "@/components/ui/BeeAvatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const COURSE_PREVIEW_LIMIT = 12;
@@ -139,7 +138,16 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
           <div className="relative flex min-h-18 flex-col justify-between gap-3 px-4 pb-3 sm:flex-row sm:items-end md:px-5">
             <div className="flex min-w-0 items-end gap-3">
               <div className="-mt-6 shrink-0">
-                <BeeAvatar avatarUrl={profile.avatar} className="h-16 w-16" borderClassName="border-[var(--app-surface)]" />
+                <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--app-surface)] bg-[var(--app-surface)]">
+                  <Image
+                    src={profile.avatar?.trim() || "/images/default_pfp.jpg"}
+                    alt={profile.name || "Profile"}
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover object-center"
+                    unoptimized
+                  />
+                </div>
               </div>
               <div className="min-w-0 pb-0.5">
                 <h1 className="truncate font-[var(--font-koulen)] text-2xl leading-none tracking-[0.01em] text-[var(--app-text)] md:text-[32px]">

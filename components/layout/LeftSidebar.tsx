@@ -10,6 +10,7 @@ import { useDashboard } from "@/lib/DashboardContext";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
 import { useSettings } from "@/components/settings/SettingsProvider";
+import { BeeSmartLogo } from "@/components/ui/BeeSmartLogo";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/dashboard" },
@@ -51,13 +52,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           </button>
         )}
         <div className="flex justify-center mb-6 md:mb-4 -translate-x-1/18">
-          <Image
-            src="/svg/BeeSmartLogo.svg"
-            alt="BeeSmart Logo"
-            width={240}
-            height={134}
-            className="h-auto w-60 md:w-40"
-          />
+          <BeeSmartLogo className="h-auto w-60 md:w-40" />
         </div>
 
         <div className="mx-auto mb-4 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">

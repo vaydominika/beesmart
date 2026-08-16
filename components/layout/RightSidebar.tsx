@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { Settings, X } from "lucide-react";
 import { CalendarWidget } from "./CalendarWidget";
 import { ReminderItem } from "@/components/dashboard/ReminderItem";
-import { BeeAvatar } from "@/components/ui/BeeAvatar";
 import { useLayout } from "./LayoutProvider";
 import { useSettings } from "@/components/settings/SettingsProvider";
 import { useDashboard } from "@/lib/DashboardContext";
@@ -183,7 +183,15 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         <div className="px-6 pb-4 md:px-4 -mt-10 relative z-10">
           <div className="flex flex-col items-center mb-4 md:mb-3">
             <div className="relative mb-3 md:mb-2">
-              <BeeAvatar avatarUrl={userAvatar} />
+              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
+                <Image
+                  src={userAvatar?.trim() || "/images/default_pfp.jpg"}
+                  alt={userName || "Profile"}
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover object-center"
+                />
+              </div>
               <button
                 type="button"
                 onClick={openProfileModal}

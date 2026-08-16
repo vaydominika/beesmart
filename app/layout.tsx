@@ -26,7 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("beesmart-settings");if(s){var t=JSON.parse(s).theme;if(t==="ocean")t="blue";if(t==="forest")t="pink";if(t&&t!=="bee"){document.documentElement.setAttribute("data-theme",t);}}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ fontFamily: "'Koulen', sans-serif" }}
