@@ -9,6 +9,8 @@ describe("authentication pages", () => {
 
     expect(screen.getByRole("heading", { name: "Welcome back" })).toBeInTheDocument();
     expect(screen.getByLabelText("Email address")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveAttribute("data-slot", "workspace-button");
+    expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveClass("h-11", "rounded-xl");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(container.querySelector(".uppercase")).not.toBeInTheDocument();
   });

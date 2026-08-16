@@ -194,9 +194,15 @@ export default function ClassroomDetailPage() {
 
                 <Dialog open={qrOpen} onOpenChange={setQrOpen}>
                     <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-2xl">
-                        <DialogHeader>
+                        <DialogHeader className="pr-10">
                             <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Join {classroom.name}</DialogTitle>
                         </DialogHeader>
+                        <DialogClose
+                            aria-label="Close classroom join code"
+                            className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                        >
+                            <X className="h-4 w-4" />
+                        </DialogClose>
                         <div className="mt-3 flex flex-col items-center rounded-xl bg-[var(--classroom-surface-muted)] p-5">
                             <div className="rounded-xl bg-[var(--app-surface)] p-3">
                                 {joinUrl && <QRCodeSVG value={joinUrl} size={200} level="M" />}

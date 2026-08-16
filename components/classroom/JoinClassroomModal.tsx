@@ -1,15 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 
+type ClassroomSummary = {
+    id: string;
+    name: string;
+    description?: string | null;
+    subject?: string | null;
+    code: string;
+    role: string;
+    memberCount: number;
+    teacherName: string;
+};
+
 interface JoinClassroomModalProps {
     open: boolean;
     onClose: () => void;
-    onJoined: (classroom: any) => void;
+    onJoined: (classroom: ClassroomSummary) => void;
 }
 
 export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomModalProps) {
@@ -48,8 +60,9 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="classroom-dialog max-w-md overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+                <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom join form" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                 <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-8">
-                    <DialogHeader className="shrink-0 pb-2">
+                    <DialogHeader className="shrink-0 pb-2 pr-10">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
                             Join Classroom
                         </DialogTitle>

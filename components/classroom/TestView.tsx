@@ -620,9 +620,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 <div className="min-w-0 space-y-4">
                     {teacherTab !== "completed" ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><UserRound className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
                     ) : !selectedAttempt ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><FileText className="mx-auto h-8 w-8 text-[var(--classroom-text-faint)]" /><h2 className="mt-3 font-semibold">Select a completed attempt</h2></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold">Select a completed attempt</h2></div></div>
                     ) : (
                         <>
                             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">

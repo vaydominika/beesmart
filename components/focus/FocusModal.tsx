@@ -46,9 +46,7 @@ export function FocusModal() {
       <WorkspaceDialogContent className="max-w-md">
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]">
-              <TimerReset className="h-4 w-4" aria-hidden="true" />
-            </span>
+            <TimerReset className="h-5 w-5" aria-hidden="true" />
             Focus session
           </WorkspaceDialogTitle>
           <WorkspaceDialogDescription>Set a focused work block and an optional automatic break.</WorkspaceDialogDescription>

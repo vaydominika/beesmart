@@ -93,7 +93,7 @@ function SectionHeading({
 }) {
   return (
     <header className="mb-3 grid shrink-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-x-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]">
+      <span className="flex h-9 w-9 items-center justify-center text-[var(--app-text)]">
         {icon}
       </span>
       <div className="flex min-h-9 min-w-0 flex-col justify-center">
@@ -163,7 +163,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
         <div className="grid gap-4 md:min-h-0 md:flex-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
           <section className="flex min-h-0 flex-col rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 md:p-5">
             <SectionHeading
-              icon={<BookOpen className="h-4 w-4" />}
+              icon={<BookOpen className="h-6 w-6" />}
               title="Published courses"
               subtitle="Newest first · showing up to 12"
               count={profile.courses.length}
@@ -206,7 +206,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                 />
               </>
             ) : (
-              <div className="flex min-h-52 flex-1 items-center justify-center rounded-xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface-muted)] px-6 text-center text-sm text-[var(--app-text-muted)]">
+              <div className="flex min-h-52 flex-1 items-center justify-center px-6 text-center text-sm text-[var(--app-text-muted)]">
                 No public courses yet.
               </div>
             )}
@@ -215,7 +215,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
           {profile.activitySharing && (
             <section className="flex min-h-0 flex-col rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 md:p-5">
               <SectionHeading
-                icon={<Sparkles className="h-4 w-4" />}
+                icon={<Sparkles className="h-6 w-6" />}
                 title="Recent learning"
                 subtitle="Latest 9 activities"
                 count={profile.activity.length}
@@ -268,7 +268,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                   />
                 </>
               ) : (
-                <div className="flex min-h-52 flex-1 items-center justify-center rounded-xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface-muted)] px-6 text-center text-sm text-[var(--app-text-muted)]">
+                <div className="flex min-h-52 flex-1 items-center justify-center px-6 text-center text-sm text-[var(--app-text-muted)]">
                   No shared activity yet.
                 </div>
               )}

@@ -9,7 +9,7 @@ import {
   Lightbulb,
   X,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +90,7 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) resetAndClose(); }}>
       <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[96dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:h-[min(96dvh,820px)] md:w-[calc(100vw-64px)] md:max-w-[1120px] md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" disabled={finishing} aria-label="Close tutorial" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="grid min-h-0 flex-1 md:grid-cols-[292px_minmax(0,1fr)]">
           <aside className="hidden border-r border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-8 md:flex md:flex-col">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--course-accent-hover)] bg-[var(--app-surface)]">
@@ -113,12 +114,11 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
           </aside>
 
           <section className="flex min-h-0 flex-col">
-            <header className="flex items-start gap-5 border-b border-[var(--course-line)] px-5 py-4 md:px-9 md:py-5">
+            <header className="flex items-start gap-5 border-b border-[var(--course-line)] px-5 py-4 pr-14 md:px-9 md:py-5 md:pr-14">
               <div className="min-w-0 flex-1">
                 <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-[var(--course-text)]">Course creation tutorial</DialogTitle>
                 <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">Follow the controls you will use from the first draft to publication.</DialogDescription>
               </div>
-              <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={resetAndClose} disabled={finishing} aria-label="Close tutorial"><X className="h-4 w-4" /></WorkspaceButton>
             </header>
 
             <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-9">

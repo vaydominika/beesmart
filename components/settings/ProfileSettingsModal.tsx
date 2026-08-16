@@ -164,7 +164,7 @@ export function ProfileSettingsModal() {
       <WorkspaceDialogContent className="h-[min(760px,90vh)] max-w-3xl">
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]"><UserRound className="h-4 w-4" /></span>
+            <UserRound className="h-5 w-5" />
             Profile settings
           </WorkspaceDialogTitle>
           <WorkspaceDialogDescription>Update your identity, images, privacy, and password.</WorkspaceDialogDescription>

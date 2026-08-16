@@ -120,6 +120,9 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                     <div className="relative my-3 shrink-0">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--classroom-text-muted)" />
                         <Input
+                            type="search"
+                            name="classroom-course-query"
+                            autoComplete="off"
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search courses"
@@ -135,7 +138,6 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                             </div>
                         ) : courses.length === 0 ? (
                             <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-(--classroom-line-strong) text-center">
-                                <BookOpen className="mb-2 h-5 w-5 text-(--classroom-text-faint)" />
                                 <p className="text-sm font-medium text-(--classroom-text-muted)">No matching courses</p>
                             </div>
                         ) : (

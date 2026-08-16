@@ -82,7 +82,7 @@ export function ReportCourseModal({ open, onOpenChange, courseId, courseTitle, o
       <WorkspaceDialogContent className="max-w-lg">
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-danger-soft)] text-[var(--app-danger)]"><Flag className="h-4 w-4" /></span>
+            <Flag className="h-5 w-5" />
             Report course
           </WorkspaceDialogTitle>
           <WorkspaceDialogDescription>Tell us what needs review in “{courseTitle || "this course"}”.</WorkspaceDialogDescription>

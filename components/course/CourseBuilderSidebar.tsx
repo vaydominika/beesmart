@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import {
-  BookOpen,
   Check,
   ChevronDown,
   ChevronRight,
@@ -21,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } from "@/lib/course-builder";
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
@@ -386,7 +385,6 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         )}
         {course.modules.length === 0 ? (
           <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--course-line-strong)] px-5 text-center">
-            <BookOpen className="mb-3 h-5 w-5 text-[var(--course-text-faint)]" />
             <p className="text-sm font-semibold">No modules yet</p>
             <p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Add one yourself or generate a syllabus from a file.</p>
             <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} className="mt-4">Add module</WorkspaceButton>
@@ -500,6 +498,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !isMutating) setDeleteTarget(null); }}>
         <DialogContent className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={isMutating}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Delete {deleteTarget?.type}?</DialogTitle>
             <DialogDescription className="mt-1 text-sm leading-6 text-[var(--course-text-muted)]">

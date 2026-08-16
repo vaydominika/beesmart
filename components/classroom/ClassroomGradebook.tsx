@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
-import { ChevronDown, ClipboardCheck, ClipboardList, GraduationCap } from "lucide-react";
+import { ChevronDown, ClipboardList, GraduationCap } from "lucide-react";
 
 interface Props {
     classroomId: string;
@@ -133,8 +133,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
     if (data.assignments.length === 0 && data.tests.length === 0) {
         return (
             <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-5 py-12 text-center">
-                <ClipboardCheck className="mx-auto h-6 w-6 text-(--classroom-text-faint)" />
-                <p className="mt-3 text-sm font-semibold text-(--classroom-text)">No graded work yet</p>
+                <p className="text-sm font-semibold text-(--classroom-text)">No graded work yet</p>
                 <p className="mt-1 text-xs text-(--classroom-text-muted)">
                     {data.role === "STUDENT" ? "Your assignments, tests, and exams will appear here." : "Assignments, tests, and exams will appear here after you create them."}
                 </p>
@@ -237,8 +236,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                     >
                         {rows.length === 0 ? (
                             <div className="px-5 py-9 text-center">
-                                <ClipboardCheck className="mx-auto h-5 w-5 text-(--classroom-text-faint)" />
-                                <p className="mt-2 text-sm font-medium text-(--classroom-text)">No one has handed in this assignment yet</p>
+                                <p className="text-sm font-medium text-(--classroom-text)">No one has handed in this assignment yet</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
@@ -291,8 +289,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                     >
                         {rows.length === 0 ? (
                             <div className="px-5 py-9 text-center">
-                                <ClipboardCheck className="mx-auto h-5 w-5 text-(--classroom-text-faint)" />
-                                <p className="mt-2 text-sm font-medium text-(--classroom-text)">No one has completed this {test.type === "EXAM" ? "exam" : "test"} yet</p>
+                                <p className="text-sm font-medium text-(--classroom-text)">No one has completed this {test.type === "EXAM" ? "exam" : "test"} yet</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">

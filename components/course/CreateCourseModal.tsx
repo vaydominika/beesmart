@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Paperclip, Upload, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Upload, X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Editor } from "@/components/ui/editor";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/workspace-button";
@@ -147,6 +147,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
       <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[96dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:h-[min(96dvh,820px)] md:w-[calc(100vw-40px)] md:max-w-4xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close course creator" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-3.5 pr-12 md:px-6">
           <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold text-[var(--course-text-muted)]"><span>Step {step} of 2</span><span aria-hidden="true">·</span><span>{step === 1 ? "Basics" : "Details"}</span></div>
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Create course</DialogTitle>
@@ -207,7 +208,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                     ))}
                   </div>
                 ) : (
-                  <div className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] text-center lg:min-h-24"><Paperclip className="mb-2 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-xs font-medium text-[var(--course-text-muted)]">No materials attached</p></div>
+                  <div className="flex min-h-20 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] text-center lg:min-h-24"><p className="text-xs font-medium text-[var(--course-text-muted)]">No materials attached</p></div>
                 )}
               </div>
             </div>

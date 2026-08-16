@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, LockKeyhole, Search, School } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { BookOpen, LockKeyhole, Search, X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { ClassroomDestinationSelect } from "@/components/course/ClassroomDestinationSelect";
@@ -104,6 +104,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
       <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom course picker" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Add to classroom</DialogTitle>
           <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Choose where the course should appear.</DialogDescription>
@@ -128,7 +129,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
 
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--course-text-faint)]" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, description, or creator" aria-label="Search available courses" className="h-10 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+              <input type="search" name="available-course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, description, or creator" aria-label="Search available courses" className="h-10 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
             </label>
 
             <div className="min-h-56 space-y-2">
@@ -146,7 +147,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
                   </button>
                 );
               }) : (
-                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><School className="mb-3 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-sm font-semibold text-[var(--course-text)]">No matching courses</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">Try another search or source.</p></div>
+                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><p className="text-sm font-semibold text-[var(--course-text)]">No matching courses</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">Try another search or source.</p></div>
               )}
             </div>
           </div>

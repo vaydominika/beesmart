@@ -48,6 +48,12 @@ function eventSurfaceStyle(color?: string | null): EventSurfaceStyle {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+const LAPTOP_HOUR_HEIGHT = 52;
+
+function shouldUseCompactWeekGrid() {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth >= 1024 && window.innerHeight <= 820;
+}
 
 export function ScheduleWeekView({
   selectedDate,
@@ -67,10 +73,19 @@ export function ScheduleWeekView({
   const [resize, setResize] = useState<ResizeState | null>(null);
   const [resizePreview, setResizePreview] = useState<number | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const [hourHeight, setHourHeight] = useState(HOUR_HEIGHT);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const updateGridDensity = () => setHourHeight(shouldUseCompactWeekGrid() ? LAPTOP_HOUR_HEIGHT : HOUR_HEIGHT);
+
+    updateGridDensity();
+    window.addEventListener("resize", updateGridDensity);
+    return () => window.removeEventListener("resize", updateGridDensity);
   }, []);
 
   useEffect(() => {
@@ -83,15 +98,15 @@ export function ScheduleWeekView({
     const target = isSameDay(now, selectedDate)
       ? Math.min(getNowMinutes(now), firstEventMinutes)
       : Math.min(7 * 60, firstEventMinutes);
-    viewport.scrollTop = Math.max(0, (Math.max(0, target - 60) / 60) * HOUR_HEIGHT);
+    viewport.scrollTop = Math.max(0, (Math.max(0, target - 60) / 60) * hourHeight);
     lastScrolledWeek.current = weekStartKey;
-  }, [events, now, selectedDate, weekStartKey]);
+  }, [events, hourHeight, now, selectedDate, weekStartKey]);
 
   useEffect(() => {
     if (!resize) return;
 
     const handleMove = (event: PointerEvent) => {
-      const deltaMinutes = snapMinutes(((event.clientY - resize.startClientY) / HOUR_HEIGHT) * 60);
+      const deltaMinutes = snapMinutes(((event.clientY - resize.startClientY) / hourHeight) * 60);
       setResizePreview(Math.max(MINUTES_PER_STEP, resize.initialDuration + deltaMinutes));
     };
     const handleUp = () => {
@@ -108,9 +123,9 @@ export function ScheduleWeekView({
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
-  }, [resize, resizePreview, onResizeEvent]);
+  }, [hourHeight, resize, resizePreview, onResizeEvent]);
 
-  const minutesFromY = (y: number) => Math.max(0, Math.min(23 * 60 + 45, snapMinutes((y / HOUR_HEIGHT) * 60)));
+  const minutesFromY = (y: number) => Math.max(0, Math.min(23 * 60 + 45, snapMinutes((y / hourHeight) * 60)));
 
   const finishSelection = () => {
     if (!selection) return;
@@ -127,13 +142,13 @@ export function ScheduleWeekView({
       ? resizePreview
       : eventDuration(event);
     return {
-      top: `${(start / 60) * HOUR_HEIGHT}px`,
-      height: `${Math.max(32, (duration / 60) * HOUR_HEIGHT)}px`,
+      top: `${(start / 60) * hourHeight}px`,
+      height: `${Math.max(32, (duration / 60) * hourHeight)}px`,
     };
   };
 
   return (
-    <div className="h-full min-h-[520px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--schedule-surface)]">
+    <div className="schedule-week-view h-full min-h-[520px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--schedule-surface)]">
       <div ref={scrollRef} className="schedule-scroll h-full overflow-auto" onPointerUp={finishSelection}>
         <div className="min-w-[980px] md:min-w-[680px]">
           <div className="sticky top-0 z-30 bg-[var(--schedule-surface)] shadow-[0_1px_0_var(--schedule-line)]">
@@ -193,7 +208,7 @@ export function ScheduleWeekView({
           <div className="grid" style={{ gridTemplateColumns: "64px repeat(7, minmax(88px, 1fr))" }}>
             <div className="sticky left-0 z-20 border-r border-[var(--schedule-line)] bg-[var(--schedule-surface)]">
               {HOURS.map((hour) => (
-                <div key={hour} className="border-b border-[var(--schedule-line)] pr-2 pt-1 text-right font-mono text-[10px] text-[var(--schedule-text-faint)]" style={{ height: HOUR_HEIGHT }}>
+                <div key={hour} className="border-b border-[var(--schedule-line)] pr-2 pt-1 text-right font-mono text-[10px] text-[var(--schedule-text-faint)]" style={{ height: hourHeight }}>
                   {String(hour).padStart(2, "0")}:00
                 </div>
               ))}
@@ -206,7 +221,7 @@ export function ScheduleWeekView({
                 <div
                   key={dateKey(day)}
                   className={cn("relative border-r border-[var(--schedule-line)] last:border-r-0", isToday && "bg-[var(--schedule-today)]")}
-                  style={{ height: HOURS.length * HOUR_HEIGHT }}
+                  style={{ height: HOURS.length * hourHeight }}
                   onPointerDown={(event) => {
                     if (event.button !== 0 || (event.target as HTMLElement).closest("[data-event-card]")) return;
                     const rect = event.currentTarget.getBoundingClientRect();
@@ -230,10 +245,10 @@ export function ScheduleWeekView({
                     onMoveEvent(moved, day, formatTime(start), formatTime(Math.min(23 * 60 + 59, start + eventDuration(moved))));
                   }}
                 >
-                  {HOURS.map((hour) => <div key={hour} className="border-b border-[var(--schedule-line)]" style={{ height: HOUR_HEIGHT }} />)}
+                  {HOURS.map((hour) => <div key={hour} className="border-b border-[var(--schedule-line)]" style={{ height: hourHeight }} />)}
 
                   {isToday && (
-                    <div className="pointer-events-none absolute left-0 right-0 z-10 border-t border-[var(--app-focus-border)]" style={{ top: (getNowMinutes(now) / 60) * HOUR_HEIGHT }}>
+                    <div className="pointer-events-none absolute left-0 right-0 z-10 border-t border-[var(--app-focus-border)]" style={{ top: (getNowMinutes(now) / 60) * hourHeight }}>
                       <span className="absolute -left-1 -top-[10px] flex h-5 min-w-[38px] items-center justify-center rounded-md border border-[var(--app-focus-border)] bg-[var(--app-accent-text)] px-2 font-mono text-[10px] font-bold leading-none text-[var(--app-text-inverse)] shadow-[var(--app-shadow-subtle)]">Now</span>
                     </div>
                   )}

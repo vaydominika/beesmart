@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
-import { ListFilter, Plus, LogIn, School, Search } from "lucide-react";
+import { ListFilter, Plus, LogIn, Search } from "lucide-react";
 
 type ClassroomTab = "joined" | "created";
 type ClassroomRoleFilter = "all" | "TEACHER" | "TEACHING_ASSISTANT" | "STUDENT";
@@ -127,9 +127,6 @@ export default function ClassroomPage() {
                     <div className="flex items-center justify-center py-20"><Spinner /></div>
                 ) : visibleClassrooms.length === 0 ? (
                     <section className="flex flex-col items-center justify-center rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] px-6 py-16 text-center">
-                        <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--classroom-role-teacher-bg)] text-[var(--classroom-role-teacher-text)]">
-                            <School className="h-6 w-6" />
-                        </div>
                         <h2 className="mb-2 text-xl font-semibold text-[var(--classroom-text)] md:text-2xl">{hasActiveFilters ? "No classrooms match these filters" : activeTab === "created" ? "No classrooms created yet" : "No joined classrooms yet"}</h2>
                         <p className="mb-6 max-w-md text-sm text-[var(--classroom-text-muted)]">
                             {hasActiveFilters ? "Try a different search or role." : activeTab === "created" ? "Create a classroom to start teaching." : "Join a classroom with a code from your teacher."}

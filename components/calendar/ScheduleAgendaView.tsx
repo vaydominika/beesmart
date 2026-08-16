@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, CalendarDays, CalendarPlus, Clock3, LockKeyhole, School, UserRound } from "lucide-react";
+import { BookOpen, CalendarPlus, Clock3, LockKeyhole, School, UserRound } from "lucide-react";
 import { ScheduleEvent, dateKey, eventSourceLabel, parseDateKey } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -37,9 +37,6 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
   if (groups.size === 0) {
     return (
       <div className="flex h-full min-h-0 flex-col items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--schedule-surface)] px-6 text-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--schedule-accent)] text-[var(--schedule-accent-text)]">
-          <CalendarDays className="h-5 w-5" />
-        </div>
         <h2 className="text-lg font-semibold text-[var(--schedule-text)]">Your next 30 days are clear</h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--schedule-text-muted)]">No upcoming lessons, deadlines, or study sessions.</p>
       </div>

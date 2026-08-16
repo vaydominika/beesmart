@@ -54,7 +54,7 @@ export function AuthShell({ title, description, footer, children }: AuthShellPro
 
 export function GoogleAuthButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <WorkspaceButton type="button" variant="secondary" onClick={onClick} disabled={disabled} className="h-11 w-full rounded-xl border-[var(--app-border-strong)] bg-[var(--app-surface)] text-sm font-semibold text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] hover:bg-[var(--app-surface-hover)]">
+    <WorkspaceButton type="button" variant="secondary" onClick={onClick} disabled={disabled} className="h-11 w-full">
       <Image src="/svg/google-icon-logo-svgrepo-com.svg" alt="" width={18} height={18} className="h-[18px] w-[18px]" />
       Continue with Google
     </WorkspaceButton>

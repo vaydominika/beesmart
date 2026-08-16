@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, BookPlus, Lightbulb, Plus, Search } from "lucide-react";
+import { BookPlus, Lightbulb, Plus, Search } from "lucide-react";
 import { AddCourseToClassroomModal } from "@/components/course/AddCourseToClassroomModal";
 import { CourseCard } from "@/components/course/CourseCard";
 import { CourseCreationTutorial } from "@/components/course/CourseCreationTutorial";
@@ -173,7 +173,7 @@ export default function CoursesPage() {
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
             <label className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--course-text-faint)]" />
-              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+              <input type="search" name="course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search courses" aria-label="Search courses" className="h-9 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
             </label>
             <CourseStatusFilter activeTab={activeTab ?? "created"} learningFilter={learningFilter} createdFilter={createdFilter} onLearningChange={setLearningFilter} onCreatedChange={setCreatedFilter} />
             {activeTab === "created" && (
@@ -190,7 +190,6 @@ export default function CoursesPage() {
           </div>
         ) : error ? (
           <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] px-6 text-center">
-            <BookOpen className="mb-4 h-7 w-7 text-[var(--course-text-faint)]" />
             <h2 className="text-lg font-semibold text-[var(--course-text)]">Your courses could not be loaded</h2>
             <p className="mt-2 text-sm text-[var(--course-text-muted)]">{error}</p>
             <WorkspaceButton type="button" variant="primary" onClick={() => void fetchCourses()} className="mt-5">Try again</WorkspaceButton>
@@ -201,7 +200,6 @@ export default function CoursesPage() {
           </section>
         ) : (
           <section className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] px-6 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--course-accent)]"><BookOpen className="h-5 w-5" /></div>
             <h2 className="text-lg font-semibold text-[var(--course-text)]">{hasActiveFilters ? "No courses match these filters" : activeTab === "learning" ? "No courses to learn yet" : "Create your first course"}</h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--course-text-muted)]">{hasActiveFilters ? "Try a different search or status." : activeTab === "learning" ? "Courses you join or receive through a Classroom will appear here." : "Build lessons, add materials, and share the course when it is ready."}</p>
             {hasActiveFilters ? (

@@ -23,7 +23,7 @@ vi.mock("@/components/ui/BeeAvatar", () => ({ BeeAvatar: () => <div>Avatar</div>
 vi.mock("@/components/calendar/EventModal", () => ({ EventModal: () => null }));
 vi.mock("@/components/calendar/EventDetailModal", () => ({ EventDetailModal: () => null }));
 vi.mock("@/hooks/use-event-sync", () => ({ useEventSync: () => ({ triggerUpdate: vi.fn() }) }));
-vi.mock("./NotificationCenter", () => ({ NotificationCenter: () => null }));
+vi.mock("./NotificationCenter", () => ({ NotificationCenter: () => <button type="button">Notifications</button> }));
 
 describe("RightSidebar", () => {
   beforeEach(() => {
@@ -39,12 +39,15 @@ describe("RightSidebar", () => {
     expect(container.firstElementChild).not.toHaveClass("rounded-bl-[30px]");
   });
 
-  it("places the mobile close control in the top-right corner after the other actions", () => {
+  it("keeps notifications in the banner and places settings on the profile avatar", () => {
     render(<RightSidebar variant="overlay" onClose={vi.fn()} />);
 
+    const avatar = screen.getByText("Avatar");
+    const notificationButton = screen.getByRole("button", { name: "Notifications" });
     const settingsButton = screen.getByRole("button", { name: "Profile settings" });
     const closeButton = screen.getByRole("button", { name: "Close sidebar" });
 
-    expect(settingsButton.compareDocumentPosition(closeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(notificationButton.compareDocumentPosition(closeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(avatar.compareDocumentPosition(settingsButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

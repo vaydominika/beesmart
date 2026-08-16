@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, ArrowLeft, BookOpen, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lightbulb, Loader2, Lock, Mail, Menu, Pencil, Save, ShieldCheck, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lightbulb, Loader2, Lock, Mail, Menu, Pencil, Save, ShieldCheck, X } from "lucide-react";
 import CourseBuilderSidebar from "./CourseBuilderSidebar";
 import CourseBuilderEditor from "./CourseBuilderEditor";
 import type { CourseBuilderEditorHandle } from "./CourseBuilderEditor";
@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import type { CourseVisibility } from "@/lib/course-summary";
 import type { CoursePublishIssue } from "@/lib/course-audit";
 import { COURSE_TITLE_MAX_LENGTH, displayCourseTitle } from "@/lib/course-title";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 interface CourseBuilderClientProps {
   initialCourse: CourseBuilderCourse;
@@ -337,7 +337,6 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
             </div>
           ) : (
             <div className="flex h-full min-h-96 flex-col items-center justify-center px-6 text-center">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--course-accent)]"><BookOpen className="h-5 w-5" /></div>
               <h2 className="text-lg font-semibold">Your first lesson starts in the syllabus</h2>
               <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--course-text-muted)]">Add a module, then create a lesson to begin writing course material.</p>
               <WorkspaceButton type="button" variant="secondary" onClick={() => setMobileSyllabusOpen(true)} className="mt-5 lg:hidden">Open syllabus</WorkspaceButton>
@@ -364,6 +363,7 @@ function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !checking) onClose(); }}>
       <DialogContent className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close publication safety check" className="absolute right-4 top-4 z-20" disabled={checking}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--course-text)]"><ShieldCheck className="h-5 w-5" />Publication safety check</DialogTitle>
           <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">Every publish checks the course structure, topic, and content safety.</DialogDescription>

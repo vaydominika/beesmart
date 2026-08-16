@@ -84,8 +84,8 @@ export function NotificationCenter() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative rounded-md p-2 text-(--theme-text) hover:bg-[var(--app-scrim-soft)]">
-          <Bell className="h-5 w-5" />
+        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+          <Bell className="h-4 w-4" />
           {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--app-danger)] px-1 text-[9px] font-semibold text-[var(--app-text-inverse)]">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
         </button>
       </DropdownMenuTrigger>
@@ -102,7 +102,7 @@ export function NotificationCenter() {
           />
         </div>
         <ScrollArea className="h-[min(440px,65vh)]">
-          {loading && items.length === 0 ? <div className="flex h-44 items-center justify-center text-[var(--app-text-muted)]"><Loader2 className="h-5 w-5 animate-spin" /><span className="sr-only">Loading notifications</span></div> : items.length === 0 ? <div className="flex h-44 flex-col items-center justify-center px-8 text-center"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--app-surface-muted)] text-[var(--app-text-faint)]"><Bell className="h-5 w-5" /></span><p className="mt-3 text-sm font-semibold text-[var(--app-text)]">Nothing new here</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">New updates will appear in this panel.</p></div> : <div className="p-2">{items.map((notification) => (
+          {loading && items.length === 0 ? <div className="flex h-44 items-center justify-center text-[var(--app-text-muted)]"><Loader2 className="h-5 w-5 animate-spin" /><span className="sr-only">Loading notifications</span></div> : items.length === 0 ? <div className="flex h-44 flex-col items-center justify-center px-8 text-center"><p className="text-sm font-semibold text-[var(--app-text)]">Nothing new here</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">New updates will appear in this panel.</p></div> : <div className="p-2">{items.map((notification) => (
             <div key={notification.id} data-unread={!notification.readAt ? "true" : undefined} className={cn("rounded-xl border border-transparent transition-colors hover:bg-[var(--app-surface-hover)]", !notification.readAt && "bg-[var(--app-surface)]")}>
               <button type="button" onClick={() => void openNotification(notification)} className="flex w-full gap-3 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus-ring)]">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--app-surface-muted)] text-[var(--app-text-muted)]">{activeTab === "CLASSROOM" ? <GraduationCap className="h-4 w-4" /> : <Info className="h-4 w-4" />}</span>

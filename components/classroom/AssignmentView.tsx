@@ -444,7 +444,6 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
                             {!selectedStudentId ? (
                                 <div className="flex-1 flex flex-col items-center justify-center opacity-30">
-                                    <FileText className="h-16 w-16 mb-4" />
                                     <h3 className="text-lg font-bold">Select a student to grade</h3>
                                 </div>
                             ) : (() => {
@@ -454,7 +453,6 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 if (selectedNs) {
                                     return (
                                         <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                                            <XCircle className="h-16 w-16 mb-4 text-[var(--app-warning)]" />
                                             <h3 className="text-lg font-bold">No submission yet.</h3>
                                         </div>
                                     );

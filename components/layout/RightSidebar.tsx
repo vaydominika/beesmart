@@ -164,24 +164,16 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
             backgroundPosition: bannerImageUrl ? "center" : "top center",
           }}
         >
-          <div className="absolute top-0 right-0 flex items-center gap-2 p-2 md:p-1.5">
+          <div className="absolute top-0 right-0 flex items-center gap-1.5 p-2 md:p-1.5">
             <NotificationCenter />
-            <button
-              type="button"
-              onClick={openProfileModal}
-              aria-label="Profile settings"
-              className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
             {isOverlay && onClose && (
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close sidebar"
-                className="p-2 rounded-md hover:bg-[var(--app-scrim-soft)] text-(--theme-text)"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             )}
           </div>
@@ -190,8 +182,16 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         {/* Profile */}
         <div className="px-6 pb-4 md:px-4 -mt-10 relative z-10">
           <div className="flex flex-col items-center mb-4 md:mb-3">
-            <div className="mb-3 md:mb-2">
+            <div className="relative mb-3 md:mb-2">
               <BeeAvatar avatarUrl={userAvatar} />
+              <button
+                type="button"
+                onClick={openProfileModal}
+                aria-label="Profile settings"
+                className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-(--theme-sidebar) bg-[var(--app-surface)] text-[var(--app-text)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+              >
+                <Settings className="h-3 w-3" />
+              </button>
             </div>
             <p className="text-[40px] md:text-2xl font-semibold text-(--theme-text) uppercase tracking-wide text-center">
               {userName}

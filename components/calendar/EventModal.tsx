@@ -156,7 +156,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <WorkspaceDialogContent className="h-[min(820px,92vh)] max-w-xl">
         <WorkspaceDialogHeader>
-          <WorkspaceDialogTitle className="flex items-center gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]"><CalendarPlus className="h-4 w-4" /></span>Add event</WorkspaceDialogTitle>
+          <WorkspaceDialogTitle className="flex items-center gap-2"><CalendarPlus className="h-5 w-5" />Add event</WorkspaceDialogTitle>
           <WorkspaceDialogDescription>{dateStr}</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-6">

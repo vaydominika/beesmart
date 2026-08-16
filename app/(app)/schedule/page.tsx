@@ -6,7 +6,7 @@ import { ScheduleAgendaView } from "@/components/calendar/ScheduleAgendaView";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
 import { ScheduleMonthView } from "@/components/calendar/ScheduleMonthView";
 import { ScheduleWeekView } from "@/components/calendar/ScheduleWeekView";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
@@ -376,7 +376,7 @@ export default function SchedulePage() {
   return (
     <div className="schedule-ui min-h-full bg-[var(--schedule-canvas)] px-4 py-5 md:px-6 md:py-7">
       <div className="mx-auto max-w-[1500px]">
-        <header className="mb-5">
+        <header className="schedule-page-header mb-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--schedule-text)] md:text-[42px]">Schedule</h1>
@@ -389,7 +389,7 @@ export default function SchedulePage() {
             </div>
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="schedule-toolbar mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-2">
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label="Previous date range"><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
               <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>Today</WorkspaceButton>
@@ -431,7 +431,7 @@ export default function SchedulePage() {
           </div>
         ) : (
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-            <main className="h-[calc(100vh-208px)] min-h-[560px] min-w-0">
+            <main className="schedule-workspace-frame h-[calc(100vh-208px)] min-h-[560px] min-w-0">
               {loading && events.length === 0 ? (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)]"><Spinner className="h-5 w-5 text-[var(--schedule-text-muted)]" /></div>
               ) : view === "week" ? (
@@ -442,7 +442,7 @@ export default function SchedulePage() {
                 <ScheduleAgendaView events={filteredEvents} selectedDate={selectedDate} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
               )}
             </main>
-            <aside className="hidden h-[calc(100vh-208px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
+            <aside className="schedule-workspace-frame hidden h-[calc(100vh-208px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
               {panel}
             </aside>
           </div>
@@ -459,7 +459,8 @@ export default function SchedulePage() {
       </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
-        <DialogContent className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 shadow-xl">
+        <DialogContent className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
+          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete event?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">“{deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">

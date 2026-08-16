@@ -52,4 +52,17 @@ describe("PublicProfileContent", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close activity" }));
     expect(screen.queryByText("Activity 10")).not.toBeInTheDocument();
   });
+
+  it("keeps headers and shows simple centered empty text when there are no courses or activities", () => {
+    const profile = buildProfile();
+    profile.courses = [];
+    profile.activity = [];
+
+    render(<PublicProfileContent profile={profile} />);
+
+    expect(screen.getByText("No public courses yet.")).toBeInTheDocument();
+    expect(screen.getByText("No shared activity yet.")).toBeInTheDocument();
+    expect(screen.getByText("Published courses")).toBeInTheDocument();
+    expect(screen.getByText("Recent learning")).toBeInTheDocument();
+  });
 });

@@ -74,7 +74,7 @@ export function SettingsModal() {
       <WorkspaceDialogContent className="h-[min(720px,88vh)] max-w-3xl">
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-accent-text)]"><Settings2 className="h-4 w-4" /></span>
+            <Settings2 className="h-5 w-5" />
             General settings
           </WorkspaceDialogTitle>
           <WorkspaceDialogDescription>Choose how BeeSmart looks, focuses, and keeps you updated.</WorkspaceDialogDescription>

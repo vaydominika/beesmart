@@ -106,11 +106,11 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             setContentState("IDLE");
             return;
         }
-        const module = course.modules.find((item) => item.lessons.some((candidate) => candidate.id === activeLessonId));
-        if (!module) return;
+        const courseModule = course.modules.find((item) => item.lessons.some((candidate) => candidate.id === activeLessonId));
+        if (!courseModule) return;
         const controller = new AbortController();
         setContentState("LOADING");
-        fetch(`/api/courses/${course.id}/modules/${module.id}/lessons/${activeLessonId}`, { signal: controller.signal })
+        fetch(`/api/courses/${course.id}/modules/${courseModule.id}/lessons/${activeLessonId}`, { signal: controller.signal })
             .then(async (response) => {
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(data.error || "Lesson content could not be loaded");
@@ -165,7 +165,6 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
         return (
             <div className="flex-1 flex items-center justify-center bg-[var(--app-surface-muted)]">
                 <div className="text-center">
-                    <HugeiconsIcon icon={Book02Icon} className="size-12 text-[var(--app-text-faint)] mx-auto mb-4" />
                     <p className="text-[var(--app-text-muted)] font-bold uppercase tracking-wider">No content found in this course.</p>
                 </div>
             </div>
@@ -318,7 +317,6 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                 <div dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
                             ) : (
                                 <div className="text-center py-20 bg-[var(--app-surface-muted)] rounded-[40px] border-2 border-dashed border-[var(--app-border)]">
-                                    <HugeiconsIcon icon={Layers01Icon} className="size-16 text-[var(--app-border-strong)] mx-auto mb-6" />
                                     <p className="text-[var(--app-text-faint)] font-bold uppercase tracking-wider">Empty lesson content</p>
                                 </div>
                             )}

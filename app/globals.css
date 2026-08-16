@@ -648,6 +648,30 @@ input[type="search"]::-ms-reveal {
   }
 }
 
+@media (min-width: 1024px) and (max-height: 820px) {
+  .schedule-ui {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .schedule-page-header {
+    margin-bottom: 1rem;
+  }
+
+  .schedule-toolbar {
+    margin-top: 1rem;
+  }
+
+  .schedule-workspace-frame {
+    height: calc(100vh - 188px);
+    min-height: 430px;
+  }
+
+  .schedule-week-view {
+    min-height: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .schedule-ui *,
   .schedule-dialog * {

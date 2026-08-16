@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Mail, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Mail, Trash2, X } from "lucide-react";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 
@@ -68,6 +68,7 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
       </WorkspaceButton>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[640px] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl">
+          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close course invitations" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold">Course invitations</DialogTitle>
             <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Give specific people access to this invitation-only course.</DialogDescription>
@@ -79,7 +80,7 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
             </div>
             <div className="mt-4 space-y-2">
               {grants.length === 0 ? (
-                <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] text-center"><Mail className="mb-2 h-5 w-5 text-[var(--course-text-faint)]" /><p className="text-sm font-medium text-[var(--course-text-muted)]">No invitations yet</p></div>
+                <div className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--course-line)] text-center"><p className="text-sm font-medium text-[var(--course-text-muted)]">No invitations yet</p></div>
               ) : grants.map((grant) => (
                 <div key={grant.id} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3">
                   <div className="min-w-0"><p className="truncate text-sm font-semibold">{grant.user.name}</p><p className="mt-0.5 truncate text-xs text-[var(--course-text-muted)]">{grant.user.email}</p></div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, BellRing, BookOpen, CalendarDays, CalendarPlus, Clock3, LockKeyhole, Pencil, School, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, BellRing, BookOpen, CalendarPlus, Clock3, LockKeyhole, Pencil, School, Trash2, UserRound } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -286,7 +286,6 @@ function ScheduleContextPanelContent({
           </div>
         ) : (
           <div className="flex h-full min-h-52 flex-col items-center justify-center px-3 text-center">
-            <CalendarDays className="mb-3 h-6 w-6 text-[var(--schedule-text-faint)]" />
             <p className="text-sm font-medium text-[var(--schedule-text)]">Nothing planned for this day</p>
           </div>
         )}
