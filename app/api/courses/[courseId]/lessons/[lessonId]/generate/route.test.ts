@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { streamText } from "ai";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -26,7 +27,7 @@ vi.mock("@/lib/ai/usage", () => ({
   aiLimitResponse: vi.fn(),
 }));
 
-const context = { params: Promise.resolve({ courseId: "course-1", lessonId: "lesson-1" }) };
+const context = routeContext({ courseId: "course-1", lessonId: "lesson-1" });
 
 describe("POST lesson generation", () => {
   beforeEach(() => {

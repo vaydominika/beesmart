@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { GET } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
 
@@ -10,7 +11,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-const context = { params: Promise.resolve({ id: "class-1", assignmentId: "assignment-1" }) };
+const context = routeContext({ id: "class-1", assignmentId: "assignment-1" });
 
 describe("GET assignment details", () => {
   beforeEach(() => {

@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CalendarDays, Clock, LockKeyhole, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Clock, LockKeyhole, Pencil, Trash2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
@@ -21,7 +20,12 @@ import {
 import { useSettings } from "@/components/settings/SettingsProvider";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
-import { DEFAULT_EVENT_COLOR, EVENT_COLOR_OPTIONS } from "./event-palette";
+import { DEFAULT_EVENT_COLOR } from "./event-palette";
+import { EventColorPicker } from "./EventColorPicker";
+import { EventReminderFields } from "./EventReminderFields";
+import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
+import { readJsonSafely } from "@/lib/http";
+import { formatLongDate } from "@/lib/schedule";
 
 interface EventData {
   id: string;
@@ -70,7 +74,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     setReminderTime(reminder ? `${pad(reminder.getHours())}:${pad(reminder.getMinutes())}` : "");
   }, [event, open]);
 
-  const dateStr = new Date(displayEvent.startDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const dateStr = formatLongDate(new Date(displayEvent.startDate));
 
   const beginEdit = () => {
     setTitle(displayEvent.title); setDescription(displayEvent.description ?? ""); setStartTime(displayEvent.startTime ?? ""); setEndTime(displayEvent.endTime ?? ""); setIsAllDay(displayEvent.isAllDay); setColor(displayEvent.color || DEFAULT_EVENT_COLOR); setEventDate(displayEvent.startDate.slice(0, 10)); setEditing(true);
@@ -122,7 +126,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
       if (notifyAt.getTime() <= Date.now()) throw new Error("Reminder time must be in the future");
       if (notifyAt > eventBoundary) throw new Error("Reminder time cannot be after the event starts");
       const response = await fetch(`/api/user/events/${displayEvent.id}/reminder`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notifyAt: notifyAt.toISOString(), eventStartsAt: eventBoundary.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }) });
-      const data = await response.json().catch(() => ({}));
+      const data = await readJsonSafely<{ error?: string; reminder?: EventData["reminder"] }>(response, {});
       if (!response.ok) throw new Error(data.error || "Could not save event reminder");
       setDisplayEvent((current) => ({ ...current, reminder: data.reminder }));
       toast.success("Event reminder saved");
@@ -144,9 +148,9 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
               <Field id="event-edit-date" label="Date" type="date" value={eventDate} onChange={setEventDate} />
               <Field id="event-edit-title" label="Title" value={title} onChange={setTitle} />
               <div><label htmlFor="event-edit-description" className={workspaceLabelClass}>Description</label><textarea id="event-edit-description" value={description} onChange={(changeEvent) => setDescription(changeEvent.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} /></div>
-              <div className="flex items-center justify-between rounded-xl border border-[var(--app-border)] p-3"><label htmlFor="event-edit-all-day" className="text-sm font-semibold text-[var(--app-text)]">All day</label><Switch id="event-edit-all-day" checked={isAllDay} onCheckedChange={setIsAllDay} /></div>
+              <WorkspaceSwitchRow id="event-edit-all-day" label="All day" checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
               {!isAllDay ? <div className="grid grid-cols-2 gap-3"><Field id="event-edit-start" label="Start" type="time" value={startTime} onChange={setStartTime} /><Field id="event-edit-end" label="End" type="time" value={endTime} onChange={setEndTime} /></div> : null}
-              <div><span className={workspaceLabelClass}>Color</span><div className="flex flex-wrap gap-2">{EVENT_COLOR_OPTIONS.map((option) => <button key={option.value} type="button" aria-label={`Select ${option.label}`} aria-pressed={color === option.value} onClick={() => setColor(option.value)} className={cn("h-8 w-8 rounded-full border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", color === option.value ? "border-[var(--app-text)]" : "border-[var(--app-surface)]")} style={{ backgroundColor: option.value }} />)}</div></div>
+              <EventColorPicker value={color} onValueChange={setColor} />
             </div>
           ) : (
             <>
@@ -155,11 +159,9 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
                 {displayEvent.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-text-muted)]">{displayEvent.description}</p> : null}
                 {displayEvent.isProtected ? <p className="mt-3 flex items-center gap-2 text-xs text-[var(--app-text-faint)]"><LockKeyhole className="h-3.5 w-3.5" />{displayEvent.canEdit === false ? "Managed by your teacher" : "Synchronized with Classroom"}</p> : null}
               </div>
-              <section aria-labelledby="event-reminder-heading" className="rounded-2xl border border-[var(--app-border)] p-4">
-                <div className="flex items-center justify-between gap-4"><div className="flex gap-3"><BellRing className="mt-0.5 h-5 w-5 shrink-0" /><div><h3 id="event-reminder-heading" className="text-sm font-semibold text-[var(--app-text)]">Event reminder</h3><p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">{reminderNotifications ? "Get an in-app notification before this event." : "Reminder notifications are off in Settings."}</p></div></div><Switch checked={reminderEnabled} disabled={!reminderNotifications && !reminderEnabled} onCheckedChange={setReminderEnabled} aria-label="Event reminder" /></div>
-                {reminderEnabled ? <div className="mt-4 grid grid-cols-2 gap-2"><Input type="date" aria-label="Reminder date" value={reminderDate} onChange={(changeEvent) => setReminderDate(changeEvent.target.value)} className={workspaceFieldClass} /><Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(changeEvent) => setReminderTime(changeEvent.target.value)} className={workspaceFieldClass} /></div> : null}
+              <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} inputClassName={workspaceFieldClass}>
                 <WorkspaceButton type="button" variant={reminderEnabled ? "primary" : "secondary"} onClick={handleSaveReminder} disabled={savingReminder || (reminderEnabled && !reminderNotifications) || (!reminderEnabled && !displayEvent.reminder)} className="mt-3 w-full">{savingReminder ? "Saving…" : reminderEnabled ? displayEvent.reminder ? "Update reminder" : "Set reminder" : displayEvent.reminder ? "Remove reminder" : "No reminder"}</WorkspaceButton>
-              </section>
+              </EventReminderFields>
             </>
           )}
         </WorkspaceDialogBody>

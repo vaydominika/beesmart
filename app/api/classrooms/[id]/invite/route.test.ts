@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -24,7 +25,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 describe("classroom teacher invitations", () => {
-    const context = { params: Promise.resolve({ id: "class-1" }) };
+    const context = routeContext({ id: "class-1" });
 
     beforeEach(() => {
         vi.clearAllMocks();

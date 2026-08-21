@@ -1,21 +1,18 @@
 "use client";
 
 import { CalendarPlus, LockKeyhole } from "lucide-react";
-import type { CSSProperties } from "react";
-import { ScheduleEvent, addDays, dateKey, eventsForDate, isSameDay, monthGridRange } from "@/lib/schedule";
+import { ScheduleEvent, type ScheduleSelectionProps, addDays, dateKey, eventsForDate, isSameDay, monthGridRange } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
+import { eventSurfaceStyle } from "./event-palette";
 
-interface ScheduleMonthViewProps {
+interface ScheduleMonthViewProps extends ScheduleSelectionProps {
   selectedDate: Date;
   events: ScheduleEvent[];
   onSelectDate: (date: Date) => void;
-  onSelectEvent: (event: ScheduleEvent) => void;
   onCreateDate: (date: Date) => void;
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
-type EventSurfaceStyle = CSSProperties & { "--event-color": string };
 
 export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelectEvent, onCreateDate }: ScheduleMonthViewProps) {
   const range = monthGridRange(selectedDate);
@@ -76,7 +73,7 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                     type="button"
                     onClick={() => onSelectEvent(event)}
                     className="schedule-event-surface flex h-4 w-full items-center gap-1 truncate rounded-md border px-1.5 text-left text-[10px] font-semibold leading-none text-[var(--app-event-text)] shadow-[var(--app-shadow-subtle)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)] md:text-[11px]"
-                    style={{ "--event-color": event.color || "var(--app-event-1)" } as EventSurfaceStyle}
+                    style={eventSurfaceStyle(event.color)}
                   >
                     {event.canEdit === false && <LockKeyhole className="h-2.5 w-2.5 shrink-0" />}
                     <span className="truncate">{event.isAllDay ? event.title : `${event.startTime || ""} ${event.title}`}</span>

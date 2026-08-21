@@ -16,6 +16,7 @@ import {
   workspaceFieldClass,
   workspaceLabelClass,
 } from "@/components/ui/workspace-dialog";
+import { WorkspaceFormMessage } from "@/components/ui/workspace-form-message";
 
 type UploadedImage = {
   uploadId: string;
@@ -168,7 +169,7 @@ export function FeedbackModal({
             ) : null}
           </div>
 
-          {error ? <p role="alert" className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger)]">{error}</p> : null}
+          {error ? <WorkspaceFormMessage>{error}</WorkspaceFormMessage> : null}
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter>
           <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={submitting}>Cancel</WorkspaceButton>

@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { readJsonSafely } from "@/lib/http";
 
 type ClassroomSummary = {
     id: string;
@@ -49,7 +51,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                 }),
             });
             if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
+                const data = await readJsonSafely<{ error?: string }>(res, {});
                 toast.error(data.error ?? "Failed to create classroom.");
                 return;
             }
@@ -69,7 +71,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog max-w-lg overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+            <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-lg border-[var(--classroom-line-strong)]">
                 <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom creator" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                 <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2 pr-10">
@@ -134,7 +136,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                         </WorkspaceButton>
                     </div>
                 </div>
-            </DialogContent>
+            </WorkspaceDialogContent>
         </Dialog>
     );
 }

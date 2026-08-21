@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight, Users } from "lucide-react";
+import { EntityCardButton } from "@/components/ui/entity-card-button";
 
 interface ClassroomCardProps {
     id: string;
@@ -23,10 +24,9 @@ export function ClassroomCard({ name, description, subject, role, memberCount, o
             : "bg-[var(--classroom-role-student-bg)] text-[var(--classroom-role-student-text)]";
 
     return (
-        <button
-            type="button"
+        <EntityCardButton
             onClick={onClick}
-            className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-(--classroom-accent) bg-[var(--app-surface)] p-5 text-left transition-colors duration-200 hover:bg-[var(--classroom-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+            className="border-(--classroom-accent) hover:bg-[var(--classroom-surface-hover)] focus-visible:ring-[var(--classroom-focus-border)]"
         >
             {subject && (
                 <span className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--classroom-text-muted)]">{subject}</span>
@@ -49,6 +49,6 @@ export function ClassroomCard({ name, description, subject, role, memberCount, o
                     <ArrowUpRight className="h-4 w-4" />
                 </span>
             </div>
-        </button>
+        </EntityCardButton>
     );
 }

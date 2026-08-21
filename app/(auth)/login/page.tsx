@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
+import { WorkspaceField } from "@/components/ui/workspace-field";
 
 function LoginForm() {
   const router = useRouter();
@@ -69,14 +70,8 @@ function LoginForm() {
       <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />
       <AuthDivider />
       <form onSubmit={handleCredentialsSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="login-email" className={authLabelClass}>Email address</label>
-          <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" />
-        </div>
-        <div>
-          <label htmlFor="login-password" className={authLabelClass}>Password</label>
-          <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" />
-        </div>
+        <WorkspaceField id="login-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
+        <WorkspaceField id="login-password" label="Password" labelClassName={authLabelClass}><Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" /></WorkspaceField>
         <AuthSubmitButton loading={loading} idleLabel="Sign in" loadingLabel="Signing in…" />
       </form>
     </AuthShell>

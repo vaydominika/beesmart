@@ -3,6 +3,7 @@ import { POST } from './route';
 import { prisma, getCurrentUserId } from '@/lib/db';
 import { generateObject } from 'ai';
 import { NextRequest } from 'next/server';
+import { routeContext } from '@/test-utils/route-context';
 
 // Mock the dependencies
 vi.mock('@/lib/db', () => ({
@@ -40,7 +41,7 @@ vi.mock('@/lib/ai/usage', () => ({
 describe('POST /api/courses/[courseId]/tests/generate', () => {
   const courseId = 'course-1';
   const userId = 'user-1';
-  const mockContext = { params: Promise.resolve({ courseId }) };
+  const mockContext = routeContext({ courseId });
 
   beforeEach(() => {
     vi.clearAllMocks();

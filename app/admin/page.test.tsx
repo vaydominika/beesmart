@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/auth";
 import { getAdminTickets } from "@/lib/tickets";
 import AdminPage from "./page";
+import type { MockSession } from "@/test-utils/session";
 
 const notFoundMock = vi.hoisted(() => vi.fn(() => {
   throw new Error("NEXT_NOT_FOUND");
@@ -10,11 +11,6 @@ const notFoundMock = vi.hoisted(() => vi.fn(() => {
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/tickets", () => ({ getAdminTickets: vi.fn() }));
 vi.mock("next/navigation", () => ({ notFound: notFoundMock }));
-
-type MockSession = {
-  user: { id: string; name: string; email: string };
-  expires: string;
-} | null;
 
 const mockedAuth = vi.mocked(auth as unknown as () => Promise<MockSession>);
 

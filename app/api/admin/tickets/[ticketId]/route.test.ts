@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PATCH } from "./route";
 import { isAdminUser } from "@/lib/admin";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { routeContext } from "@/test-utils/route-context";
 
 const tx = { report: { update: vi.fn() }, notification: { create: vi.fn() } };
 
@@ -11,7 +12,7 @@ vi.mock("@/lib/db", () => ({
   prisma: { report: { findUnique: vi.fn() }, $transaction: vi.fn() },
 }));
 
-const context = { params: Promise.resolve({ ticketId: "ticket-1" }) };
+const context = routeContext({ ticketId: "ticket-1" });
 const request = (status: string) => new Request("http://localhost/api/admin/tickets/ticket-1", {
   method: "PATCH",
   headers: { "Content-Type": "application/json" },

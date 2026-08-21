@@ -8,3 +8,10 @@ export const EVENT_COLOR_OPTIONS = [
 ] as const;
 
 export const DEFAULT_EVENT_COLOR = EVENT_COLOR_OPTIONS[0].value;
+
+export type EventSurfaceStyle = CSSProperties & { "--event-color": string };
+
+export function eventSurfaceStyle(color?: string | null): EventSurfaceStyle {
+  return { "--event-color": color || DEFAULT_EVENT_COLOR };
+}
+import type { CSSProperties } from "react";

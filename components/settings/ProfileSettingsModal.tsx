@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Eye, ImageIcon, KeyRound, Upload, UserRound, type LucideIcon } from "lucide-react";
+import { ExternalLink, Eye, ImageIcon, KeyRound, Upload, UserRound } from "lucide-react";
 import { Dialog } from "../ui/dialog";
 import { Input } from "../ui/input";
-import { Switch } from "../ui/switch";
 import { WorkspaceButton } from "../ui/workspace-button";
 import { WorkspaceTabs } from "../ui/workspace-tabs";
 import {
@@ -23,9 +22,12 @@ import { toast } from "@/components/ui/sonner";
 import { useDashboard } from "@/lib/DashboardContext";
 import { cn } from "@/lib/utils";
 import { useSettings } from "./SettingsProvider";
+import { SettingsSectionNav, type SettingsSectionItem } from "./SettingsSectionNav";
+import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
+import { WorkspaceFormMessage } from "@/components/ui/workspace-form-message";
 
 type ProfileSection = "profile" | "images" | "privacy" | "password";
-const sections: Array<{ value: ProfileSection; label: string; icon: LucideIcon }> = [
+const sections: Array<SettingsSectionItem<ProfileSection>> = [
   { value: "profile", label: "Profile", icon: UserRound },
   { value: "images", label: "Images", icon: ImageIcon },
   { value: "privacy", label: "Privacy", icon: Eye },
@@ -170,16 +172,7 @@ export function ProfileSettingsModal() {
         </WorkspaceDialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-          <nav aria-label="Profile settings sections" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] p-2 sm:w-48 sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-r sm:p-3">
-            {sections.map(({ value, label, icon: Icon }) => (
-              <button key={value} type="button" onClick={() => setActiveSection(value)} aria-current={activeSection === value ? "page" : undefined} className={cn("flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]", activeSection === value && "bg-[var(--app-settings-active)] text-[var(--app-text)]")}>
-                <Icon className="h-4 w-4" aria-hidden="true" />{label}
-              </button>
-            ))}
-            {user?.id ? (
-              <button type="button" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="mt-auto hidden items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] sm:flex"><ExternalLink className="h-3.5 w-3.5" />View profile</button>
-            ) : null}
-          </nav>
+          <SettingsSectionNav ariaLabel="Profile settings sections" items={sections} value={activeSection} onValueChange={setActiveSection} footer={user?.id ? <button type="button" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="mt-auto hidden items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] sm:flex"><ExternalLink className="h-3.5 w-3.5" />View profile</button> : null} />
 
           <WorkspaceDialogBody className="w-full">
             {activeSection === "profile" ? (
@@ -227,7 +220,7 @@ export function ProfileSettingsModal() {
               <section aria-labelledby="privacy-heading" className="space-y-5">
                 <div><h3 id="privacy-heading" className="text-base font-semibold text-[var(--app-text)]">Privacy</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Choose who can see your profile and learning activity.</p></div>
                 <div><p className={workspaceLabelClass}>Profile visibility</p><WorkspaceTabs ariaLabel="Profile visibility" items={[{ value: "public", label: "Public" }, { value: "private", label: "Private" }]} value={profileVisibility} onValueChange={setProfileVisibility} fill /></div>
-                <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--app-border)] p-4"><div><label htmlFor="activity-sharing" className="text-sm font-semibold text-[var(--app-text)]">Share learning activity</label><p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">Show recent learning activity on your profile.</p></div><Switch id="activity-sharing" checked={activitySharing} onCheckedChange={setActivitySharing} /></div>
+                <WorkspaceSwitchRow id="activity-sharing" label="Share learning activity" description="Show recent learning activity on your profile." checked={activitySharing} onCheckedChange={setActivitySharing} />
               </section>
             ) : null}
 
@@ -240,7 +233,7 @@ export function ProfileSettingsModal() {
               </section>
             ) : null}
 
-            {error || uploadError ? <p role="alert" className="mt-5 rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger)]">{error ?? uploadError}</p> : null}
+            {error || uploadError ? <WorkspaceFormMessage className="mt-5">{error ?? uploadError}</WorkspaceFormMessage> : null}
           </WorkspaceDialogBody>
         </div>
 

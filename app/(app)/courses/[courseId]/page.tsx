@@ -14,6 +14,7 @@ import {
 import { EnrollButton } from "@/components/course/EnrollButton";
 import { CourseRatingButton } from "@/components/course/CourseRatingButton";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceProgress } from "@/components/ui/workspace-progress";
 import { canAccessCourse } from "@/lib/course-access";
 import { plainTextExcerpt } from "@/lib/course-summary";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -227,14 +228,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                 </p>
 
                 {isEnrolled && !isCreator ? (
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-xs font-medium text-[var(--course-text-muted)]">
-                      <span>Progress</span><span>{progress}%</span>
-                    </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--course-surface-muted)]">
-                      <div className="h-full rounded-full bg-[var(--app-accent)]" style={{ width: `${progress}%` }} />
-                    </div>
-                  </div>
+                  <WorkspaceProgress value={progress} className="mt-4" trackClassName="mt-2 h-2" indicatorClassName="bg-[var(--app-accent)]" />
                 ) : null}
 
                 <div className="mt-4">

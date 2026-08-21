@@ -1,20 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, BellRing, BookOpen, CalendarPlus, Clock3, LockKeyhole, Pencil, School, Trash2, UserRound } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Clock3, LockKeyhole, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
   ScheduleEvent,
   ScheduleEventInput,
+  type ScheduleSelectionProps,
   dateKey,
   eventSourceLabel,
   eventsForDate,
   formatLongDate,
 } from "@/lib/schedule";
-import { cn } from "@/lib/utils";
 import { useSettings } from "@/components/settings/SettingsProvider";
+import { EventSourceIcon } from "./EventSourceIcon";
+import { EventColorPicker } from "./EventColorPicker";
+import { EventReminderFields } from "./EventReminderFields";
+import { DEFAULT_EVENT_COLOR } from "./event-palette";
 
 export interface ScheduleEditorState {
   mode: "create" | "edit";
@@ -23,27 +27,18 @@ export interface ScheduleEditorState {
   endTime?: string;
 }
 
-interface ScheduleContextPanelProps {
+interface ScheduleContextPanelProps extends ScheduleSelectionProps {
   selectedDate: Date;
   events: ScheduleEvent[];
   selectedEvent: ScheduleEvent | null;
   editor: ScheduleEditorState | null;
   saving: boolean;
   deleting: boolean;
-  onSelectEvent: (event: ScheduleEvent) => void;
   onStartCreate: (date: Date) => void;
   onStartEdit: (event: ScheduleEvent) => void;
   onBack: () => void;
   onSave: (input: ScheduleEventInput) => void;
   onDelete: (event: ScheduleEvent) => void;
-}
-
-const COLORS = ["var(--app-event-1)", "var(--app-event-2)", "var(--app-event-3)", "var(--app-event-4)", "var(--app-event-5)", "var(--app-event-6)"];
-
-function SourceIcon({ source }: { source: ScheduleEvent["source"] }) {
-  if (source === "classroom") return <School className="h-3.5 w-3.5" />;
-  if (source === "course") return <BookOpen className="h-3.5 w-3.5" />;
-  return <UserRound className="h-3.5 w-3.5" />;
 }
 
 export function ScheduleContextPanel(props: ScheduleContextPanelProps) {
@@ -78,7 +73,7 @@ function ScheduleContextPanelContent({
   const [startTime, setStartTime] = useState(editingEvent?.startTime || editor?.startTime || "");
   const [endTime, setEndTime] = useState(editingEvent?.endTime || editor?.endTime || "");
   const [isAllDay, setIsAllDay] = useState(editingEvent?.isAllDay || false);
-  const [color, setColor] = useState(editingEvent?.color || COLORS[0]);
+  const [color, setColor] = useState(editingEvent?.color || DEFAULT_EVENT_COLOR);
   const [reminderEnabled, setReminderEnabled] = useState(Boolean(initialReminder));
   const [reminderDate, setReminderDate] = useState(initialReminder ? `${initialReminder.getFullYear()}-${pad(initialReminder.getMonth() + 1)}-${pad(initialReminder.getDate())}` : "");
   const [reminderTime, setReminderTime] = useState(initialReminder ? `${pad(initialReminder.getHours())}:${pad(initialReminder.getMinutes())}` : "");
@@ -179,38 +174,8 @@ function ScheduleContextPanelContent({
                 </label>
               </div>
             )}
-            <div className="rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-2.5">
-                  <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-[var(--schedule-text-muted)]" />
-                  <div>
-                    <span className="block text-sm font-medium text-[var(--schedule-text)]">Event reminder</span>
-                    <span className="text-[11px] leading-4 text-[var(--schedule-text-muted)]">{reminderNotifications ? "Get an in-app notification before this event." : "Reminder notifications are off in Settings."}</span>
-                  </div>
-                </div>
-                <Switch checked={reminderEnabled} disabled={!reminderNotifications && !reminderEnabled} onCheckedChange={setReminderEnabled} aria-label="Event reminder" className="data-[state=checked]:bg-[var(--schedule-focus-border)] data-[state=unchecked]:bg-[var(--schedule-line-strong)]" />
-              </div>
-              {reminderEnabled && (
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <label>
-                    <span className="sr-only">Reminder date</span>
-                    <Input type="date" aria-label="Reminder date" value={reminderDate} max={eventDate} onChange={(event) => setReminderDate(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
-                  </label>
-                  <label>
-                    <span className="sr-only">Reminder time</span>
-                    <Input type="time" aria-label="Reminder time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} className="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
-                  </label>
-                </div>
-              )}
-            </div>
-            <fieldset>
-              <legend className="mb-1.5 text-xs font-semibold text-[var(--schedule-text-muted)]">Color</legend>
-              <div className="flex flex-wrap gap-2">
-                {COLORS.map((eventColor) => (
-                  <button key={eventColor} type="button" onClick={() => setColor(eventColor)} aria-label={`Select color ${eventColor}`} className={cn("h-7 w-7 rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]", color === eventColor ? "scale-105 border-[var(--schedule-text)]" : "border-[var(--app-surface)]")} style={{ backgroundColor: eventColor }} />
-                ))}
-              </div>
-            </fieldset>
+            <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} maxDate={eventDate} className="rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5" inputClassName="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+            <EventColorPicker value={color} onValueChange={setColor} compact />
             {validation && <p role="alert" className="rounded-xl bg-[var(--schedule-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--schedule-danger)]">{validation}</p>}
             <div className="flex gap-2">
               <WorkspaceButton type="button" variant="secondary" onClick={onBack} className="flex-1">Cancel</WorkspaceButton>
@@ -238,7 +203,7 @@ function ScheduleContextPanelContent({
           <h2 className="text-xl font-semibold leading-tight text-[var(--schedule-text)]">{selectedEvent.title}</h2>
           <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate))}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }} title={eventSourceLabel(selectedEvent)}><SourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
+          <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }} title={eventSourceLabel(selectedEvent)}><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
     <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }}><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? "All day" : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
           </div>
           {selectedEvent.description && <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--schedule-text-muted)]">{selectedEvent.description}</p>}
@@ -279,7 +244,7 @@ function ScheduleContextPanelContent({
                     {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 shrink-0 text-[var(--schedule-text-faint)]" />}
                   </div>
                   <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? "All day" : `${event.startTime || "—"}${event.endTime ? `–${event.endTime}` : ""}`}</p>
-                  <span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]" title={eventSourceLabel(event)}><SourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span>
+                  <span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]" title={eventSourceLabel(event)}><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span>
                 </div>
               </button>
             ))}

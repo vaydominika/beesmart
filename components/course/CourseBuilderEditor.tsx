@@ -5,12 +5,10 @@ import type { EditorInstance } from "novel";
 import {
   Eye,
   EyeOff,
-  FileText,
   Loader2,
   Paperclip,
   Pencil,
   Sparkles,
-  Upload,
   X,
 } from "lucide-react";
 import { Editor } from "@/components/ui/editor";
@@ -20,6 +18,7 @@ import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
 import type { CourseBuilderFile, CourseBuilderLesson } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
 import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
+import { CourseSourceFilePicker } from "./CourseSourceFilePicker";
 import { AI_LESSON_PROMPT_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 
 interface CourseBuilderEditorProps {
@@ -47,7 +46,6 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
   const [showFileInLesson, setShowFileInLesson] = useState(true);
   const [savingFileIds, setSavingFileIds] = useState<Set<string>>(() => new Set());
   const editorRef = useRef<EditorInstance | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingChanges = useRef<{ title?: string; content?: string }>({});
   const saveInFlightRef = useRef(false);
   const latestLessonRef = useRef(lesson);
@@ -270,10 +268,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
           </label>
 
           <div className="mt-3 grid gap-2.5 sm:grid-cols-[auto_auto_1fr] sm:items-center">
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,image/*" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} className="sr-only" />
-            <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => fileInputRef.current?.click()} className="w-fit max-w-full justify-start border-dashed">
-              {selectedFile ? <FileText className="h-4 w-4" /> : <Upload className="h-4 w-4" />}<span className="min-w-0 flex-1 truncate">{selectedFile?.name ?? "Choose a source file"}</span>
-            </WorkspaceButton>
+            <CourseSourceFilePicker file={selectedFile} onFileChange={setSelectedFile} className="w-fit" />
             <WorkspaceCheckbox
               label="Show source to learners"
               checked={showFileInLesson}

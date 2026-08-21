@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -13,7 +14,7 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn() }));
 
-const context = { params: Promise.resolve({ courseId: "course-1", fileId: "file-1" }) };
+const context = routeContext({ courseId: "course-1", fileId: "file-1" });
 
 function request(isVisible: unknown) {
   return new NextRequest("http://localhost/api/courses/course-1/files/file-1", {

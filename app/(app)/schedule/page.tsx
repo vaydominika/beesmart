@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarPlus, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { ScheduleAgendaView } from "@/components/calendar/ScheduleAgendaView";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
 import { ScheduleMonthView } from "@/components/calendar/ScheduleMonthView";
@@ -11,6 +11,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
+import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
+import { LibraryToolbar, WorkspacePageHeader } from "@/components/ui/workspace-page";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { useIsMobile } from "@/components/layout/useIsMobile";
 import {
@@ -377,19 +379,14 @@ export default function SchedulePage() {
     <div className="schedule-ui min-h-full bg-[var(--schedule-canvas)] px-4 py-5 md:px-6 md:py-7">
       <div className="mx-auto max-w-[1500px]">
         <header className="schedule-page-header mb-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--schedule-text)] md:text-[42px]">Schedule</h1>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
+          <WorkspacePageHeader className="mb-0 sm:flex-col sm:items-stretch xl:flex-row xl:items-end" title="Schedule" titleClassName="text-[var(--schedule-text)]" actions={<div className="flex flex-wrap items-center gap-2">
               <WorkspaceTabs ariaLabel="Schedule view" items={VIEWS} value={view} onValueChange={changeView} />
               <WorkspaceButton type="button" variant="primary" onClick={() => startCreate(selectedDate)}>
                 <CalendarPlus className="h-4 w-4" />New event
               </WorkspaceButton>
-            </div>
-          </div>
+            </div>} />
 
-          <div className="schedule-toolbar mt-5 flex flex-col gap-3 rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
+          <LibraryToolbar className="schedule-toolbar mt-5 border-[var(--schedule-line)]">
             <div className="flex items-center gap-2">
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label="Previous date range"><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
               <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>Today</WorkspaceButton>
@@ -397,10 +394,7 @@ export default function SchedulePage() {
               <h2 className="ml-1 text-sm font-semibold text-[var(--schedule-text)] md:text-base">{viewTitle(view, selectedDate)}</h2>
             </div>
             <div className="flex min-w-0 items-center gap-2">
-              <label className="relative min-w-0 flex-1 lg:w-64 lg:flex-none">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--schedule-text-faint)]" />
-                <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" className="h-9 w-full rounded-xl border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] pl-9 pr-3 text-sm text-[var(--schedule-text)] outline-none placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-2 focus:ring-[var(--schedule-focus-ring)]" />
-              </label>
+              <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" aria-label="Search events" wrapperClassName="min-w-0 flex-1 lg:w-64 lg:flex-none" className="border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-[var(--schedule-text)] placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-[var(--schedule-focus-ring)]" />
               <div ref={filterMenuRef} className="relative">
                 <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-haspopup="true"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
                 {filtersOpen && (
@@ -420,7 +414,7 @@ export default function SchedulePage() {
                 )}
               </div>
             </div>
-          </div>
+          </LibraryToolbar>
         </header>
 
         {error ? (

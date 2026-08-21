@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 import { generateObject } from "ai";
@@ -20,7 +21,7 @@ vi.mock("@/lib/ai/usage", () => ({
   aiLimitResponse: vi.fn(),
 }));
 
-const context = { params: Promise.resolve({ id: "class-1" }) };
+const context = routeContext({ id: "class-1" });
 const sourceText = "Photosynthesis converts light energy into chemical energy in plant cells.";
 const request = (body: Record<string, unknown>) => new NextRequest("http://localhost/api/classrooms/class-1/tests/generate-from-text", {
   method: "POST",

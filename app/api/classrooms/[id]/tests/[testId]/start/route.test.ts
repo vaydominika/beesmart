@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { POST } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
 
@@ -12,7 +13,7 @@ vi.mock("@/lib/db", () => ({
     },
 }));
 
-const context = { params: Promise.resolve({ id: "class-1", testId: "test-1" }) };
+const context = routeContext({ id: "class-1", testId: "test-1" });
 const test = {
     id: "test-1", classroomId: "class-1", title: "Bees", description: null, type: "TEST",
     timeLimit: null, passingScore: 50, opensAt: null, closesAt: null, maxAttempts: 1,

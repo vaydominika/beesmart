@@ -3,7 +3,6 @@
 import { TimerReset } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
   WorkspaceDialogBody,
@@ -16,6 +15,8 @@ import {
   workspaceLabelClass,
 } from "@/components/ui/workspace-dialog";
 import { useFocus } from "./FocusProvider";
+import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
+import { WorkspaceFormMessage } from "@/components/ui/workspace-form-message";
 
 export function FocusModal() {
   const {
@@ -64,7 +65,7 @@ export function FocusModal() {
             </div>
           </div>
 
-          {statsError ? <p role="status" className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-3 py-2 text-sm text-[var(--app-danger)]">{statsError}</p> : null}
+          {statsError ? <WorkspaceFormMessage tone="status" className="border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] text-[var(--app-danger)]">{statsError}</WorkspaceFormMessage> : null}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -79,13 +80,7 @@ export function FocusModal() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-            <div>
-              <label htmlFor="focus-auto-break" className="text-sm font-semibold text-[var(--app-text)]">Start break automatically</label>
-              <p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">Move straight into the break when focus time ends.</p>
-            </div>
-            <Switch id="focus-auto-break" checked={autoBreak} onCheckedChange={setAutoBreak} />
-          </div>
+          <WorkspaceSwitchRow id="focus-auto-break" label="Start break automatically" description="Move straight into the break when focus time ends." checked={autoBreak} onCheckedChange={setAutoBreak} />
         </WorkspaceDialogBody>
 
         <WorkspaceDialogFooter>

@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { plainTextExcerpt } from "@/lib/course-summary";
+import { WorkspaceProgress } from "@/components/ui/workspace-progress";
 
 const PLACEHOLDER_IMAGE = "/images/LearningCardImage.jpg";
 
@@ -103,16 +104,7 @@ export function LearningCard({
                 ? <StarRating value={Math.round(averageRating * 10) / 10} />
                 : <span className="text-xs font-medium leading-none text-[var(--dashboard-text-faint)]">No ratings yet</span>}
             </div>
-            {progress !== undefined && (
-              <div className="mt-3 shrink-0">
-                <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold text-[var(--dashboard-text-muted)]">
-                  <span>Progress</span><span>{normalizedProgress}%</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-[var(--dashboard-surface-muted)]">
-                  <div className="h-full rounded-full bg-[var(--dashboard-focus-border)] transition-[width]" style={{ width: `${normalizedProgress}%` }} />
-                </div>
-              </div>
-            )}
+            {progress !== undefined && <WorkspaceProgress value={normalizedProgress} className="mt-3 shrink-0" />}
             <div className="mt-3 flex justify-end border-t border-[var(--dashboard-line)] pt-3">
               <WorkspaceButton type="button" variant="primary" size="compact" onClick={onButtonClick}>
                 {actionLabel}

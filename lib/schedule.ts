@@ -22,6 +22,10 @@ export interface ScheduleEvent {
   reminder?: ScheduleEventReminder | null;
 }
 
+export interface ScheduleSelectionProps {
+  onSelectEvent: (event: ScheduleEvent) => void;
+}
+
 export interface ScheduleEventReminder {
   notifyAt: string;
   notificationProcessedAt: string | null;
@@ -159,12 +163,12 @@ export function eventSourceLabel(event: Pick<ScheduleEvent, "source" | "classroo
   return sourceLabel(event.source);
 }
 
-export function formatLongDate(date: Date): string {
+export function formatLongDate(date: Date, options: { includeYear?: boolean } = {}): string {
   return date.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-    year: "numeric",
+    year: options.includeYear === false ? undefined : "numeric",
   });
 }
 

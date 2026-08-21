@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from './route';
 import { prisma, getCurrentUserId } from '@/lib/db';
 import { NextRequest } from 'next/server';
+import { routeContext } from '@/test-utils/route-context';
 
 // Mock the dependencies
 vi.mock('@/lib/db', () => ({
@@ -32,7 +33,7 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
   const assignmentId = 'assign-1';
   const userId = 'teacher-1';
   const studentId = 'student-1';
-  const mockContext = { params: Promise.resolve({ id: classroomId, assignmentId }) };
+  const mockContext = routeContext({ id: classroomId, assignmentId });
 
   beforeEach(() => {
     vi.clearAllMocks();

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -14,7 +15,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn().mockResolvedValue(true), getLessonAccess: vi.fn() }));
 vi.mock("@/lib/ai/moderation", () => ({ checkContentSafety: vi.fn(), flagContent: vi.fn() }));
 
-const context = { params: Promise.resolve({ courseId: "course-1", moduleId: "module-1", lessonId: "lesson-1" }) };
+const context = routeContext({ courseId: "course-1", moduleId: "module-1", lessonId: "lesson-1" });
 
 describe("lesson update hardening", () => {
   beforeEach(() => {

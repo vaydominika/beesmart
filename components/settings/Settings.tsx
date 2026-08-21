@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Palette, Settings2, TimerReset, type LucideIcon } from "lucide-react";
+import { Bell, Palette, Settings2, TimerReset } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
@@ -19,10 +18,12 @@ import {
 } from "@/components/ui/workspace-dialog";
 import { cn } from "@/lib/utils";
 import { useSettings } from "./SettingsProvider";
+import { SettingsSectionNav, type SettingsSectionItem } from "./SettingsSectionNav";
+import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
 
 type SettingsSection = "appearance" | "focus" | "notifications";
 
-const sections: Array<{ value: SettingsSection; label: string; icon: LucideIcon }> = [
+const sections: Array<SettingsSectionItem<SettingsSection>> = [
   { value: "appearance", label: "Appearance", icon: Palette },
   { value: "focus", label: "Focus timer", icon: TimerReset },
   { value: "notifications", label: "Notifications", icon: Bell },
@@ -81,13 +82,7 @@ export function SettingsModal() {
         </WorkspaceDialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-          <nav aria-label="Settings sections" className="flex shrink-0 gap-1 overflow-x-auto border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] p-2 sm:w-48 sm:flex-col sm:overflow-visible sm:border-b-0 sm:border-r sm:p-3">
-            {sections.map(({ value, label, icon: Icon }) => (
-              <button key={value} type="button" onClick={() => setActiveSection(value)} aria-current={activeSection === value ? "page" : undefined} className={cn("flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface)] hover:text-[var(--app-text)]", activeSection === value && "bg-[var(--app-settings-active)] text-[var(--app-text)]")}>
-                <Icon className="h-4 w-4" aria-hidden="true" />{label}
-              </button>
-            ))}
-          </nav>
+          <SettingsSectionNav ariaLabel="Settings sections" items={sections} value={activeSection} onValueChange={setActiveSection} />
 
           <WorkspaceDialogBody className="w-full">
             {activeSection === "appearance" ? (
@@ -112,15 +107,15 @@ export function SettingsModal() {
                   <div><label htmlFor="default-focus-minutes" className={workspaceLabelClass}>Focus minutes</label><Input id="default-focus-minutes" type="number" min="1" max="120" value={localActiveMinutes} onChange={(event) => setLocalActiveMinutes(event.target.value)} className={workspaceFieldClass} /></div>
                   <div><label htmlFor="default-break-minutes" className={workspaceLabelClass}>Break minutes</label><Input id="default-break-minutes" type="number" min="1" max="60" value={localBreakMinutes} onChange={(event) => setLocalBreakMinutes(event.target.value)} className={workspaceFieldClass} /></div>
                 </div>
-                <SettingSwitch id="default-auto-break" label="Start breaks automatically" description="Begin the break as soon as a focus block ends." checked={defaultAutoBreak} onCheckedChange={setDefaultAutoBreak} />
+                <WorkspaceSwitchRow id="default-auto-break" label="Start breaks automatically" description="Begin the break as soon as a focus block ends." checked={defaultAutoBreak} onCheckedChange={setDefaultAutoBreak} />
               </section>
             ) : null}
 
             {activeSection === "notifications" ? (
               <section aria-labelledby="notification-settings-heading" className="space-y-3">
                 <div className="mb-5"><h3 id="notification-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Control which updates appear in your notification center.</p></div>
-                <SettingSwitch id="reminder-notifications" label="Reminders" description="Receive alerts for scheduled reminders and events." checked={reminderNotifications} onCheckedChange={setReminderNotifications} />
-                <SettingSwitch id="classroom-notifications" label="Classroom updates" description="Receive activity and assignment updates from classrooms." checked={classroomNotifications} onCheckedChange={setClassroomNotifications} />
+                <WorkspaceSwitchRow id="reminder-notifications" label="Reminders" description="Receive alerts for scheduled reminders and events." checked={reminderNotifications} onCheckedChange={setReminderNotifications} />
+                <WorkspaceSwitchRow id="classroom-notifications" label="Classroom updates" description="Receive activity and assignment updates from classrooms." checked={classroomNotifications} onCheckedChange={setClassroomNotifications} />
               </section>
             ) : null}
           </WorkspaceDialogBody>
@@ -132,14 +127,5 @@ export function SettingsModal() {
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
     </Dialog>
-  );
-}
-
-function SettingSwitch({ id, label, description, checked, onCheckedChange }: { id: string; label: string; description: string; checked: boolean; onCheckedChange: (checked: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
-      <div><label htmlFor={id} className="text-sm font-semibold text-[var(--app-text)]">{label}</label><p className="mt-0.5 text-xs leading-4 text-[var(--app-text-muted)]">{description}</p></div>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-    </div>
   );
 }

@@ -1,14 +1,12 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import Image from "next/image";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Bot,
-  ImageIcon,
   LogOut,
   Moon,
   Sun,
@@ -16,9 +14,12 @@ import {
 import type { ReportStatus, ReportType } from "@/lib/generated/prisma";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { toast } from "@/components/ui/sonner";
 import { ACTIVE_REPORT_STATUSES, REPORT_STATUS_OPTIONS, reportTypeLabel } from "@/lib/ticket-types";
 import { cn } from "@/lib/utils";
+import { TicketAttachmentGallery } from "./TicketAttachmentGallery";
+import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 
 export type AdminTicketItem = {
   id: string;
@@ -95,6 +96,10 @@ function belongsToQueue(ticket: AdminTicketItem, queue: Queue) {
   return queue === "feedback"
     ? ticket.type === "EARLY_ACCESS_FEEDBACK"
     : ticket.type !== "EARLY_ACCESS_FEEDBACK";
+}
+
+function AdminTicketMetaItem({ label, children, truncate = false }: { label: string; children: ReactNode; truncate?: boolean }) {
+  return <div><dt className="text-[10px] text-[var(--app-text-faint)]">{label}</dt><dd className={cn("mt-0.5 text-[var(--app-text-muted)]", truncate && "truncate")}>{children}</dd></div>;
 }
 
 export function AdminTicketsClient({
@@ -201,20 +206,20 @@ export function AdminTicketsClient({
           />
 
           <div className="ml-auto flex items-center gap-1">
-            <button
+            <WorkspaceButton
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-[background-color,color,transform] duration-200 hover:scale-105 hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] motion-reduce:hover:scale-100"
+              className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"
               aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
-            <Link href="/dashboard" aria-label="Back to learning app" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-[background-color,color,transform] duration-200 hover:scale-105 hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] motion-reduce:hover:scale-100">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <button type="button" onClick={() => signOut({ callbackUrl: "/login" })} className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-[background-color,color,transform] duration-200 hover:scale-105 hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] motion-reduce:hover:scale-100" aria-label="Sign out">
+            </WorkspaceButton>
+            <WorkspaceButton asChild variant="ghost" size="icon" className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"><Link href="/dashboard" aria-label="Back to learning app"><ArrowLeft className="h-4 w-4" /></Link></WorkspaceButton>
+            <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100" aria-label="Sign out">
               <LogOut className="h-4 w-4" />
-            </button>
+            </WorkspaceButton>
           </div>
         </div>
       </header>
@@ -264,32 +269,19 @@ export function AdminTicketsClient({
                     </div>
 
                     <dl className="mt-4 grid gap-x-8 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
-                      <div><dt className="text-[10px] text-[var(--app-text-faint)]">{ticket.type === "AUTOMATED_COURSE_FLAG" ? "User" : "Reporter"}</dt><dd className="mt-0.5 truncate text-[var(--app-text-muted)]">{ticket.reporter.name} · {ticket.reporter.email}</dd></div>
-                      <div><dt className="text-[10px] text-[var(--app-text-faint)]">Course</dt><dd className="mt-0.5 truncate text-[var(--app-text-muted)]">{ticket.course ? <Link href={`/courses/${ticket.course.id}`} className="underline decoration-[var(--app-border-strong)] underline-offset-4 hover:decoration-[var(--app-text)]">{ticket.course.title}</Link> : "—"}</dd></div>
-                      <div><dt className="text-[10px] text-[var(--app-text-faint)]">Created</dt><dd className="mt-0.5 text-[var(--app-text-muted)]">{formatDate(ticket.createdAt)}</dd></div>
-                      <div><dt className="text-[10px] text-[var(--app-text-faint)]">Reviewed</dt><dd className="mt-0.5 text-[var(--app-text-muted)]">{ticket.reviewedAt ? formatDate(ticket.reviewedAt) : "—"}{ticket.reviewer ? <span className="ml-1">· {ticket.reviewer.name}</span> : null}</dd></div>
+                      <AdminTicketMetaItem label={ticket.type === "AUTOMATED_COURSE_FLAG" ? "User" : "Reporter"} truncate>{ticket.reporter.name} · {ticket.reporter.email}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label="Course" truncate>{ticket.course ? <Link href={`/courses/${ticket.course.id}`} className="underline decoration-[var(--app-border-strong)] underline-offset-4 hover:decoration-[var(--app-text)]">{ticket.course.title}</Link> : "—"}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label="Created">{formatDate(ticket.createdAt)}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label="Reviewed">{ticket.reviewedAt ? formatDate(ticket.reviewedAt) : "—"}{ticket.reviewer ? <span className="ml-1">· {ticket.reviewer.name}</span> : null}</AdminTicketMetaItem>
                     </dl>
 
-                    {ticket.attachments.length ? (
-                      <div className="mt-4">
-                        <p className="mb-2 flex items-center gap-1.5 text-[10px] text-[var(--app-text-faint)]"><ImageIcon className="h-3.5 w-3.5" /> Attachments</p>
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-                          {ticket.attachments.map(({ storedFile }) => (
-                            <a key={storedFile.id} href={`/api/files/${storedFile.id}`} target="_blank" rel="noreferrer" className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
-                              <Image src={`/api/files/${storedFile.id}`} alt={storedFile.originalName} fill unoptimized className="object-cover transition-transform duration-200 hover:scale-[1.02] motion-reduce:transition-none" />
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
+                    <TicketAttachmentGallery attachments={ticket.attachments} gridClassName="sm:grid-cols-4 lg:grid-cols-6" />
                   </div>
                 </article>
               ))}
             </div>
           ) : (
-            <div key={`${queue}-${view}`} className="mt-5 flex min-h-56 items-center justify-center rounded-2xl border border-dashed border-[var(--app-border)] bg-[var(--app-surface)] text-center animate-in fade-in-0 duration-200 motion-reduce:animate-none">
-              <p className="text-sm text-[var(--app-text-faint)]">{view === "active" ? `No active ${queue === "reports" ? "reports" : "feedback"}.` : `No ${queue === "reports" ? "reports" : "feedback"}.`}</p>
-            </div>
+            <WorkspaceEmptyState key={`${queue}-${view}`} className="mt-5 min-h-56 animate-in fade-in-0 duration-200 motion-reduce:animate-none" dashed title={view === "active" ? `No active ${queue === "reports" ? "reports" : "feedback"}.` : `No ${queue === "reports" ? "reports" : "feedback"}.`} />
           )}
         </section>
       </main>

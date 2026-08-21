@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
+import { WorkspaceField } from "@/components/ui/workspace-field";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -80,24 +81,11 @@ export default function RegisterPage() {
       <AuthDivider />
       <form onSubmit={handleCredentialsSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="register-name" className={authLabelClass}>Name</label>
-            <Input id="register-name" type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={authFieldClass} placeholder="Your name" />
-          </div>
-          <div>
-            <label htmlFor="register-email" className={authLabelClass}>Email address</label>
-            <Input id="register-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" />
-          </div>
+          <WorkspaceField id="register-name" label="Name" labelClassName={authLabelClass}><Input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={authFieldClass} placeholder="Your name" /></WorkspaceField>
+          <WorkspaceField id="register-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
         </div>
-        <div>
-          <label htmlFor="register-password" className={authLabelClass}>Password</label>
-          <Input id="register-password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="At least 6 characters" />
-          <p className="mt-1.5 text-xs text-[var(--app-text-faint)]">Use at least 6 characters.</p>
-        </div>
-        <div>
-          <label htmlFor="register-confirm" className={authLabelClass}>Confirm password</label>
-          <Input id="register-confirm" type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={authFieldClass} placeholder="Enter the password again" />
-        </div>
+        <WorkspaceField id="register-password" label="Password" labelClassName={authLabelClass} hint="Use at least 6 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="At least 6 characters" /></WorkspaceField>
+        <WorkspaceField id="register-confirm" label="Confirm password" labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={authFieldClass} placeholder="Enter the password again" /></WorkspaceField>
         <AuthSubmitButton loading={loading} idleLabel="Create account" loadingLabel="Creating account…" />
       </form>
     </AuthShell>

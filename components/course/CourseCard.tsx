@@ -3,6 +3,8 @@
 import { ArrowUpRight, BookOpen, Layers3, School, UserRound, UsersRound } from "lucide-react";
 import { CourseSummary, learningStatus, plainTextExcerpt } from "@/lib/course-summary";
 import { cn } from "@/lib/utils";
+import { WorkspaceProgress } from "@/components/ui/workspace-progress";
+import { EntityCardButton } from "@/components/ui/entity-card-button";
 
 interface CourseCardProps {
   course: CourseSummary;
@@ -24,10 +26,9 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
   const cardStatus = isOwner ? (course.published ? "Published" : "Draft") : statusLabel;
 
   return (
-    <button
-      type="button"
+    <EntityCardButton
       onClick={onClick}
-      className="group relative flex min-h-[210px] w-full flex-col overflow-hidden rounded-2xl border border-[var(--course-accent)] bg-[var(--app-surface)] p-5 text-left transition-colors duration-200 hover:bg-[var(--course-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]"
+      className="border-[var(--course-accent)] hover:bg-[var(--course-surface-hover)] focus-visible:ring-[var(--course-focus-border)]"
       aria-label={`${course.title}, ${isOwner ? "created course" : statusLabel}`}
     >
       <div className="mb-2 flex min-h-6 items-center justify-between gap-3">
@@ -66,15 +67,7 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
         )}
 
         {!isOwner && (
-          <div className="mb-4">
-            <div className="mb-1.5 flex items-center justify-between text-[10px] font-semibold text-[var(--course-text-muted)]">
-              <span>{course.isEnrolled ? "Progress" : "Available to join"}</span>
-              {course.isEnrolled && <span>{course.progress}%</span>}
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--course-surface-muted)]">
-              <div className="h-full rounded-full bg-[var(--course-focus-border)] transition-[width]" style={{ width: `${course.isEnrolled ? course.progress : 0}%` }} />
-            </div>
-          </div>
+          <WorkspaceProgress value={course.isEnrolled ? course.progress : 0} label={course.isEnrolled ? "Progress" : "Available to join"} showValue={course.isEnrolled} className="mb-4" />
         )}
 
         <div className="flex items-center justify-between border-t border-[var(--course-line)] pt-4">
@@ -88,6 +81,6 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
           </span>
         </div>
       </div>
-    </button>
+    </EntityCardButton>
   );
 }

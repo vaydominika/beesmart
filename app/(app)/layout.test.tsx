@@ -2,14 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import AppGroupLayout from "./layout";
+import type { MockSession } from "@/test-utils/session";
 
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
-
-type MockSession = {
-  user: { id: string; name: string; email: string };
-  expires: string;
-} | null;
 
 const mockedAuth = vi.mocked(auth as unknown as () => Promise<MockSession>);
 

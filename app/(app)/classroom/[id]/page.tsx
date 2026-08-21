@@ -13,6 +13,7 @@ import { Check, ChevronLeft, Copy, FileText, QrCode, Settings, Users, X } from "
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
+import { isClassroomStaffRole } from "@/lib/classroom-role";
 
 const TABS = ["Feed", "People", "Grades"] as const;
 type Tab = (typeof TABS)[number];
@@ -71,7 +72,7 @@ export default function ClassroomDetailPage() {
     if (loading) return <div className="classroom-ui flex min-h-full items-center justify-center bg-[var(--classroom-canvas)]"><Spinner /></div>;
     if (!classroom) return null;
 
-    const isTeacher = classroom.role === "TEACHER" || classroom.role === "TEACHING_ASSISTANT";
+    const isTeacher = isClassroomStaffRole(classroom.role);
     const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? "Teaching assistant" : classroom.role.toLowerCase();
     const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroom.code}` : "";
 

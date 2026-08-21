@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { ClassroomCard } from "@/components/classroom/ClassroomCard";
 import { CreateClassroomModal } from "@/components/classroom/CreateClassroomModal";
 import { JoinClassroomModal } from "@/components/classroom/JoinClassroomModal";
-import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
-import { ListFilter, Plus, LogIn, Search } from "lucide-react";
+import { ListFilter, Plus, LogIn } from "lucide-react";
+import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
+import { WorkspaceEmptyState, WorkspaceLoadingState } from "@/components/ui/workspace-state";
+import { LibraryToolbar, WorkspacePageHeader } from "@/components/ui/workspace-page";
 
 type ClassroomTab = "joined" | "created";
 type ClassroomRoleFilter = "all" | "TEACHER" | "TEACHING_ASSISTANT" | "STUDENT";
@@ -90,18 +92,9 @@ export default function ClassroomPage() {
     return (
         <div className="classroom-ui min-h-full bg-[var(--classroom-canvas)]">
             <div className="mx-auto max-w-[1500px] px-4 py-5 md:px-11 md:py-7">
-                <header className="mb-5 flex items-end justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-semibold leading-none tracking-[-0.04em] text-[var(--classroom-text)] md:text-[42px]">
-                            Classrooms
-                        </h1>
-                    </div>
-                    <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>
-                        <Plus className="h-4 w-4" /> New classroom
-                    </WorkspaceButton>
-                </header>
+                <WorkspacePageHeader className="items-end" title="Classrooms" titleClassName="leading-none text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New classroom</WorkspaceButton>} />
 
-                <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between">
+                <LibraryToolbar className="border-[var(--classroom-line)]">
                     <WorkspaceTabs
                         ariaLabel="Classroom library"
                         value={activeTab ?? "joined"}
@@ -112,33 +105,18 @@ export default function ClassroomPage() {
                     />
 
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <label className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
-                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--classroom-text-faint)]" />
-                            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search classrooms" aria-label="Search classrooms" className="h-9 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] pl-9 pr-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]" />
-                        </label>
+                        <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search classrooms" aria-label="Search classrooms" wrapperClassName="flex-1 sm:w-64 sm:flex-none" className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text)] placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-[var(--classroom-focus-ring)]" />
                         <WorkspaceSelect ariaLabel="Classroom role" value={roleFilter} options={CLASSROOM_ROLE_OPTIONS} onValueChange={setRoleFilter} />
                         <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>
                             <LogIn className="h-4 w-4" /> Join classroom
                         </WorkspaceButton>
                     </div>
-                </div>
+                </LibraryToolbar>
 
                 {loading ? (
-                    <div className="flex items-center justify-center py-20"><Spinner /></div>
+                    <WorkspaceLoadingState className="py-20" label="Loading classrooms" />
                 ) : visibleClassrooms.length === 0 ? (
-                    <section className="flex flex-col items-center justify-center rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] px-6 py-16 text-center">
-                        <h2 className="mb-2 text-xl font-semibold text-[var(--classroom-text)] md:text-2xl">{hasActiveFilters ? "No classrooms match these filters" : activeTab === "created" ? "No classrooms created yet" : "No joined classrooms yet"}</h2>
-                        <p className="mb-6 max-w-md text-sm text-[var(--classroom-text-muted)]">
-                            {hasActiveFilters ? "Try a different search or role." : activeTab === "created" ? "Create a classroom to start teaching." : "Join a classroom with a code from your teacher."}
-                        </p>
-                        {hasActiveFilters ? (
-                            <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setRoleFilter("all"); }}>Clear filters</WorkspaceButton>
-                        ) : activeTab === "created" ? (
-                            <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>Create a classroom</WorkspaceButton>
-                        ) : (
-                            <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>Join a classroom</WorkspaceButton>
-                        )}
-                    </section>
+                    <WorkspaceEmptyState title={hasActiveFilters ? "No classrooms match these filters" : activeTab === "created" ? "No classrooms created yet" : "No joined classrooms yet"} description={hasActiveFilters ? "Try a different search or role." : activeTab === "created" ? "Create a classroom to start teaching." : "Join a classroom with a code from your teacher."} className="min-h-64 border-[var(--classroom-line)] py-16" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setRoleFilter("all"); }}>Clear filters</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>Create a classroom</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>Join a classroom</WorkspaceButton>} />
                 ) : (
                     <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "created" ? "Classrooms you created" : "Classrooms you joined"}>
                         {visibleClassrooms.map((classroom) => (

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -12,7 +13,7 @@ vi.mock("@/lib/course-access", () => ({ canAccessCourse: vi.fn() }));
 vi.mock("@/lib/activity", () => ({ recordMeaningfulActivity: vi.fn() }));
 
 const request = new NextRequest("http://localhost/api/courses/course-1/enroll", { method: "POST" });
-const context = { params: Promise.resolve({ courseId: "course-1" }) };
+const context = routeContext({ courseId: "course-1" });
 
 describe("POST /api/courses/[courseId]/enroll", () => {
   beforeEach(() => {

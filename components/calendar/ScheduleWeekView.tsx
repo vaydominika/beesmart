@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LockKeyhole } from "lucide-react";
 import {
   HOUR_HEIGHT,
   MINUTES_PER_STEP,
   ScheduleEvent,
+  type ScheduleSelectionProps,
   addDays,
   dateKey,
   eventDuration,
@@ -18,12 +19,12 @@ import {
   startOfWeek,
 } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
+import { eventSurfaceStyle } from "./event-palette";
 
-interface ScheduleWeekViewProps {
+interface ScheduleWeekViewProps extends ScheduleSelectionProps {
   selectedDate: Date;
   events: ScheduleEvent[];
   onSelectDate: (date: Date) => void;
-  onSelectEvent: (event: ScheduleEvent) => void;
   onCreateRange: (date: Date, startTime: string, endTime: string) => void;
   onMoveEvent: (event: ScheduleEvent, date: Date, startTime: string, endTime: string) => void;
   onResizeEvent: (event: ScheduleEvent, endTime: string) => void;
@@ -39,12 +40,6 @@ interface ResizeState {
   event: ScheduleEvent;
   startClientY: number;
   initialDuration: number;
-}
-
-type EventSurfaceStyle = CSSProperties & { "--event-color": string };
-
-function eventSurfaceStyle(color?: string | null): EventSurfaceStyle {
-  return { "--event-color": color || "var(--app-event-1)" };
 }
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { POST } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
@@ -16,7 +17,7 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/notifications", () => ({ notifyClassroomUser: vi.fn() }));
 vi.mock("@/lib/activity", () => ({ recordMeaningfulActivity: vi.fn() }));
 
-const context = { params: Promise.resolve({ id: "class-1", testId: "test-1" }) };
+const context = routeContext({ id: "class-1", testId: "test-1" });
 const request = (pointsAwarded: number) => new NextRequest("http://localhost", {
   method: "POST",
   body: JSON.stringify({ attemptId: "attempt-1", grades: [{ responseId: "response-1", pointsAwarded, teacherComment: "Reviewed" }] }),

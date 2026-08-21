@@ -4,6 +4,7 @@ import { PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { canManageCourse } from "@/lib/course-access";
 import { auditCourseForPublishing } from "@/lib/course-audit";
+import { routeContext } from "@/test-utils/route-context";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -26,7 +27,7 @@ vi.mock("@/lib/files/lifecycle", () => ({
   UploadClaimError: class UploadClaimError extends Error {},
 }));
 
-const context = { params: Promise.resolve({ courseId: "course-1" }) };
+const context = routeContext({ courseId: "course-1" });
 const course = {
   id: "course-1",
   title: "Biology",

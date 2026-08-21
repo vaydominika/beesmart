@@ -1,22 +1,16 @@
 "use client";
 
-import { BookOpen, CalendarPlus, Clock3, LockKeyhole, School, UserRound } from "lucide-react";
-import { ScheduleEvent, dateKey, eventSourceLabel, parseDateKey } from "@/lib/schedule";
+import { CalendarPlus, Clock3, LockKeyhole } from "lucide-react";
+import { ScheduleEvent, type ScheduleSelectionProps, dateKey, eventSourceLabel, formatLongDate, parseDateKey } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { EventSourceIcon } from "./EventSourceIcon";
 
-interface ScheduleAgendaViewProps {
+interface ScheduleAgendaViewProps extends ScheduleSelectionProps {
   events: ScheduleEvent[];
   selectedDate: Date;
   onSelectDate: (date: Date) => void;
-  onSelectEvent: (event: ScheduleEvent) => void;
   onCreateDate: (date: Date) => void;
-}
-
-function SourceIcon({ event }: { event: ScheduleEvent }) {
-  if (event.source === "classroom") return <School className="h-3.5 w-3.5" />;
-  if (event.source === "course") return <BookOpen className="h-3.5 w-3.5" />;
-  return <UserRound className="h-3.5 w-3.5" />;
 }
 
 export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCreateDate }: ScheduleAgendaViewProps) {
@@ -51,7 +45,7 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
           <section key={key} className="overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--schedule-surface)]">
             <header className="flex items-center justify-between border-b border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-4 py-3">
               <button type="button" onClick={() => onSelectDate(date)} className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]">
-                <span className="block text-sm font-semibold text-[var(--schedule-text)]">{date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+                <span className="block text-sm font-semibold text-[var(--schedule-text)]">{formatLongDate(date, { includeYear: false })}</span>
                 <span className="text-xs text-[var(--schedule-text-muted)]">{dayEvents.length} {dayEvents.length === 1 ? "event" : "events"}</span>
               </button>
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onCreateDate(date)} aria-label={`New event on ${key}`}>
@@ -78,7 +72,7 @@ export function ScheduleAgendaView({ events, onSelectDate, onSelectEvent, onCrea
                         {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 text-[var(--schedule-text-faint)]" />}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-[var(--schedule-text-muted)]">
-                        <span className="flex items-center gap-1"><SourceIcon event={event} />{eventSourceLabel(event)}</span>
+                        <span className="flex items-center gap-1"><EventSourceIcon source={event.source} />{eventSourceLabel(event)}</span>
                         {!event.isAllDay && event.endTime && <span className="flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />Until {event.endTime}</span>}
                       </div>
                       {event.description && <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--schedule-text-muted)]">{event.description}</p>}

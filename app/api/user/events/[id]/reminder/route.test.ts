@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { routeContext } from "@/test-utils/route-context";
 import { DELETE, PUT } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
 
@@ -11,7 +12,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-const context = { params: Promise.resolve({ id: "event-1" }) };
+const context = routeContext({ id: "event-1" });
 const event = { id: "event-1", title: "Biology test", startDate: new Date("2099-08-09T00:00:00.000Z"), startTime: "12:00", isAllDay: false };
 
 describe("event reminder API", () => {

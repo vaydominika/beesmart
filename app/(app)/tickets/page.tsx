@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ClipboardList, ImageIcon, MessageSquareText } from "lucide-react";
+import { ClipboardList, MessageSquareText } from "lucide-react";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
+import { TicketAttachmentGallery } from "@/components/tickets/TicketAttachmentGallery";
+import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 import { getCurrentUserId } from "@/lib/db";
 import { getUserTickets, reportTypeLabel } from "@/lib/tickets";
 
@@ -57,18 +58,7 @@ export default async function TicketsPage() {
 
                 {ticket.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">{ticket.description}</p> : null}
 
-                {ticket.attachments.length ? (
-                  <div className="mt-4">
-                    <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-[var(--app-text-muted)]"><ImageIcon className="h-3.5 w-3.5" /> Screenshots</p>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                      {ticket.attachments.map(({ storedFile }) => (
-                        <a key={storedFile.id} href={`/api/files/${storedFile.id}`} target="_blank" rel="noreferrer" className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
-                          <Image src={`/api/files/${storedFile.id}`} alt={storedFile.originalName} fill unoptimized className="object-cover transition-transform group-hover:scale-[1.02] motion-reduce:transition-none" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+                <TicketAttachmentGallery attachments={ticket.attachments} label="Screenshots" />
 
                 <footer className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--app-border)] pt-3 text-xs text-[var(--app-text-faint)]">
                   <span>Created {formatDate(ticket.createdAt)}</span>
@@ -78,11 +68,7 @@ export default async function TicketsPage() {
             ))}
           </div>
         ) : (
-          <section className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface)] p-8 text-center">
-            <MessageSquareText className="h-8 w-8 text-[var(--app-text-faint)]" />
-            <h2 className="mt-3 text-lg font-semibold text-[var(--app-text)]">No reports yet</h2>
-            <p className="mt-1 max-w-sm text-sm text-[var(--app-text-muted)]">Course reports and feedback you send will appear here with their latest status.</p>
-          </section>
+          <WorkspaceEmptyState dashed className="min-h-72 p-8" icon={<MessageSquareText className="mb-3 h-8 w-8 text-[var(--app-text-faint)]" aria-hidden="true" />} title="No reports yet" description="Course reports and feedback you send will appear here with their latest status." />
         )}
       </div>
     </div>

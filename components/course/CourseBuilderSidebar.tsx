@@ -1,12 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import {
   Check,
   ChevronDown,
   ChevronRight,
-  FileText,
   GripVertical,
   Loader2,
   Lock,
@@ -15,7 +14,6 @@ import {
   Plus,
   Sparkles,
   Trash2,
-  Upload,
   X,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
@@ -25,6 +23,7 @@ import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } fr
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
 import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
+import { CourseSourceFilePicker } from "./CourseSourceFilePicker";
 import { AI_SOURCE_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 
 interface CourseBuilderSidebarProps {
@@ -59,7 +58,6 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { usage: aiUsage, exhausted: aiExhausted, refresh: refreshAiUsage, syncFromResponse: syncAiUsage } = useAiUsage("SYLLABUS", isAIExpanded);
 
   const handleDragEnd = async (result: DropResult) => {
@@ -365,10 +363,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
             />
             <span className="mt-1 block text-right text-[9px] text-[var(--course-text-faint)]">{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
             <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>or add a file</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
-            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx,image/*" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} className="sr-only" />
-            <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => fileInputRef.current?.click()} className="w-full justify-start border-dashed">
-              {selectedFile ? <FileText className="h-4 w-4" /> : <Upload className="h-4 w-4" />}<span className="min-w-0 flex-1 truncate">{selectedFile?.name ?? "Choose a source file"}</span>
-            </WorkspaceButton>
+            <CourseSourceFilePicker file={selectedFile} onFileChange={setSelectedFile} className="w-full" />
             <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[9px] leading-4 text-[var(--app-text-muted)]">Text and extracted file content share the 12,000-character source limit.</p>
             <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating || aiExhausted} className="mt-2 w-full">
               {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create syllabus"}

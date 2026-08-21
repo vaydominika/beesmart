@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Spinner } from "@/components/ui/spinner";
+import { WorkspaceLoadingState } from "@/components/ui/workspace-state";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -379,7 +379,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     };
 
     if (loading) {
-        return <div className="flex justify-center py-20"><Spinner /></div>;
+        return <WorkspaceLoadingState className="py-20" label="Loading assessment" />;
     }
 
     if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></div>;

@@ -5,7 +5,6 @@ import { Reorder, useDragControls } from "framer-motion";
 import { CalendarPlus, Clock, GripVertical, LockKeyhole, Trash2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
@@ -20,7 +19,11 @@ import {
 } from "@/components/ui/workspace-dialog";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
-import { DEFAULT_EVENT_COLOR, EVENT_COLOR_OPTIONS } from "./event-palette";
+import { DEFAULT_EVENT_COLOR } from "./event-palette";
+import { EventColorPicker } from "./EventColorPicker";
+import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
+import { readJsonSafely } from "@/lib/http";
+import { formatLongDate } from "@/lib/schedule";
 
 interface EventData {
   id: string;
@@ -75,7 +78,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const dateStr = selectedDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  const dateStr = formatLongDate(selectedDate);
 
   const fetchEventsForDate = useCallback(async () => {
     setLoadingEvents(true);
@@ -113,7 +116,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
       const day = String(selectedDate.getDate()).padStart(2, "0");
       const response = await fetch("/api/user/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim(), description: description.trim() || null, startDate: `${year}-${month}-${day}T00:00:00.000Z`, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color }) });
       if (!response.ok) {
-        const result = await response.json().catch(() => ({}));
+        const result = await readJsonSafely<{ error?: string }>(response, {});
         return toast.error(result.error ?? "Failed to create event.");
       }
       toast.success("Event created");
@@ -169,9 +172,9 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">New event details</h3>
             <div><label htmlFor="event-title" className={workspaceLabelClass}>Title</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder="Event title" /></div>
             <div><label htmlFor="event-description" className={workspaceLabelClass}>Description <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder="Add a note" /></div>
-            <div className="flex items-center justify-between rounded-xl border border-[var(--app-border)] p-3"><div><label htmlFor="event-all-day" className="text-sm font-semibold text-[var(--app-text)]">All day</label><p className="text-xs text-[var(--app-text-muted)]">Hide start and end times.</p></div><Switch id="event-all-day" checked={isAllDay} onCheckedChange={setIsAllDay} /></div>
+            <WorkspaceSwitchRow id="event-all-day" label="All day" description="Hide start and end times." checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
             {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label="Start" value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label="End" value={endTime} onChange={setEndTime} /></div> : null}
-            <div><span className={workspaceLabelClass}>Color</span><div className="flex flex-wrap gap-2">{EVENT_COLOR_OPTIONS.map((option) => <button key={option.value} type="button" onClick={() => setColor(option.value)} aria-label={`Select ${option.label}`} aria-pressed={color === option.value} className={cn("h-8 w-8 rounded-full border-2 transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", color === option.value ? "scale-105 border-[var(--app-text)]" : "border-[var(--app-surface)]")} style={{ backgroundColor: option.value }} />)}</div></div>
+            <EventColorPicker value={color} onValueChange={setColor} />
           </section>
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter><WorkspaceButton variant="secondary" onClick={onClose}>Cancel</WorkspaceButton><WorkspaceButton variant="primary" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Add event"}</WorkspaceButton></WorkspaceDialogFooter>

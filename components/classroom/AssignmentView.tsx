@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Spinner } from "@/components/ui/spinner";
+import { WorkspaceLoadingState } from "@/components/ui/workspace-state";
+import { FileAttachmentChip } from "@/components/ui/file-attachment-chip";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
@@ -196,7 +197,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     };
 
     if (loading) {
-        return <div className="flex justify-center py-20"><Spinner /></div>;
+        return <WorkspaceLoadingState className="py-20" label="Loading assignment" />;
     }
 
     if (!assignment) {
@@ -244,11 +245,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         </div>
                         {displayAssignment.files.length > 0 && (
                             <div className="mt-4 flex flex-wrap gap-2" aria-label="Assignment attachments">
-                                {displayAssignment.files.map((file) => (
-                                    <a key={file.id} href={file.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 py-2 text-xs font-medium text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)]">
-                                        <Paperclip className="h-3.5 w-3.5" />{file.fileName}
-                                    </a>
-                                ))}
+                                {displayAssignment.files.map((file) => <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]" />)}
                             </div>
                         )}
                     </div>
@@ -296,18 +293,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                                     {mySubmission.files.length > 0 && (
                                         <div className="flex flex-wrap gap-2">
-                                            {mySubmission.files.map(f => (
-                                                <a
-                                                    key={f.id}
-                                                    href={f.fileUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="flex items-center gap-2 bg-(--theme-sidebar) px-3 py-2 rounded-lg text-sm font-bold text-(--theme-text) hover:opacity-80 transition-opacity"
-                                                >
-                                                    <Paperclip className="h-4 w-4 opacity-50" />
-                                                    {f.fileName}
-                                                </a>
-                                            ))}
+                                            {mySubmission.files.map((file) => <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} className="border-transparent bg-(--theme-sidebar) text-sm font-bold text-(--theme-text)" />)}
                                         </div>
                                     )}
                                 </div>
