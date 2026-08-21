@@ -50,6 +50,7 @@ export async function validateUpload(file: File, purpose: UploadPurpose): Promis
   const expected = EXTENSIONS[extension];
   if (!expected) throw new UploadValidationError("Unsupported file extension");
   if (purpose === "COURSE_COVER" && expected.type !== "IMAGE") throw new UploadValidationError("Course covers must be JPEG, PNG, GIF, or WebP");
+  if (purpose === "TICKET_ATTACHMENT" && expected.type !== "IMAGE") throw new UploadValidationError("Ticket attachments must be JPEG, PNG, GIF, or WebP images");
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const detected = extension === "txt" || extension === "csv"

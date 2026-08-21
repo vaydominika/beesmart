@@ -64,9 +64,9 @@ export function SettingsModal() {
 
   const themes: Array<{ value: typeof theme; label: string; token: string }> = [
     { value: "bee", label: "Bee", token: "--app-theme-bee-swatch" },
-    { value: "dark", label: "Dark", token: "--app-theme-dark-swatch" },
-    { value: "pink", label: "Baby pink", token: "--app-theme-pink-swatch" },
-    { value: "blue", label: "Light blue", token: "--app-theme-blue-swatch" },
+    { value: "dark", label: "Moon", token: "--app-theme-dark-swatch" },
+    { value: "pink", label: "Flower", token: "--app-theme-pink-swatch" },
+    { value: "blue", label: "Lake", token: "--app-theme-blue-swatch" },
   ];
 
   return (

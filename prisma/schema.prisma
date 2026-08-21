@@ -31,6 +31,7 @@ enum UploadPurpose {
   POST_ATTACHMENT
   SUBMISSION_ATTACHMENT
   COURSE_COVER
+  TICKET_ATTACHMENT
 }
 
 enum StoredFileState {
@@ -100,11 +101,17 @@ enum FocusSessionType {
   BREAK
 }
 
+enum ReportType {
+  COURSE_REPORT
+  EARLY_ACCESS_FEEDBACK
+  AUTOMATED_COURSE_FLAG
+}
+
 enum ReportStatus {
-  PENDING
-  REVIEWED
+  OPEN
+  IN_PROGRESS
   RESOLVED
-  DISMISSED
+  CLOSED
 }
 
 enum PostType {
@@ -755,14 +762,14 @@ model CourseAccess {
 }
 
 model ActivityRecord {
-  id           String       @id @default(cuid())
+  id           String   @id @default(cuid())
   userId       String
   activityType String
   courseId     String?
   classroomId  String?
   relatedId    String?
-  dedupeKey    String       @unique
-  createdAt    DateTime     @default(now())
+  dedupeKey    String   @unique
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -940,25 +947,38 @@ model CourseRating {
 
 model Report {
   id           String       @id @default(cuid())
-  userId       String // User who made the report
-  courseId     String // Course being reported
+  userId       String // User who made the report or whose content was flagged
+  courseId     String? // Course being reported, when applicable
+  type         ReportType   @default(COURSE_REPORT)
   reason       String       @db.Text
   description  String?      @db.Text
-  status       ReportStatus @default(PENDING)
+  status       ReportStatus @default(OPEN)
   reviewedAt   DateTime?
   reviewedById String? // Admin who reviewed
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   // Relationships
-  reporter User   @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
-  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  reviewer User?  @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reporter    User               @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
+  course      Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  reviewer    User?              @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  attachments ReportAttachment[]
 
   @@index([userId])
   @@index([courseId])
   @@index([status])
   @@index([createdAt])
+}
+
+model ReportAttachment {
+  id           String @id @default(cuid())
+  reportId     String
+  storedFileId String @unique
+
+  report     Report     @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  storedFile StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
 }
 
 model UserSettings {
@@ -1125,11 +1145,12 @@ model StoredFile {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  courseFile     CourseFile?
-  postFile       PostFile?
-  submissionFile SubmissionFile?
-  courseCover    Course?         @relation("CourseCover")
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  courseFile       CourseFile?
+  postFile         PostFile?
+  submissionFile   SubmissionFile?
+  reportAttachment ReportAttachment?
+  courseCover      Course?           @relation("CourseCover")
 
   @@index([ownerId])
   @@index([state, expiresAt])

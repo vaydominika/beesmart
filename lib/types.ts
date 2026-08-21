@@ -21,5 +21,6 @@ export type DashboardData = {
   myCourses: CourseCard[];
   finishedCourses: CourseCard[];
   streak: number;
+  activeTicketCount: number;
   user: CurrentUser | null;
 };

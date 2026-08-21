@@ -28,9 +28,9 @@ describe('Moderation Logic', () => {
 
   describe('checkContentSafety', () => {
     it('should return safe: true for clean content', async () => {
-      (generateObject as any).mockResolvedValue({
+      vi.mocked(generateObject).mockResolvedValue({
         object: { safe: true, flaggedCategories: [] },
-      });
+      } as never);
 
       const result = await checkContentSafety('This is a great lesson about bees!');
 
@@ -39,13 +39,13 @@ describe('Moderation Logic', () => {
     });
 
     it('should return safe: false for inappropriate content', async () => {
-      (generateObject as any).mockResolvedValue({
+      vi.mocked(generateObject).mockResolvedValue({
         object: { 
           safe: false, 
           reason: 'Profanity detected', 
           flaggedCategories: ['Profanity'] 
         },
-      });
+      } as never);
 
       const result = await checkContentSafety('Some bad words here');
 
@@ -54,7 +54,7 @@ describe('Moderation Logic', () => {
     });
 
     it('should default to safe: true if the AI check fails', async () => {
-      (generateObject as any).mockRejectedValue(new Error('API Down'));
+      vi.mocked(generateObject).mockRejectedValue(new Error('API Down'));
 
       const result = await checkContentSafety('Any content');
 
@@ -65,7 +65,7 @@ describe('Moderation Logic', () => {
   describe('flagContent', () => {
     it('should create a report in the database', async () => {
       const mockReport = { id: 'report-1' };
-      (prisma.report.create as any).mockResolvedValue(mockReport);
+      vi.mocked(prisma.report.create).mockResolvedValue(mockReport as never);
 
       await flagContent('user-1', 'course-1', 'Test Reason', 'Some details');
 
@@ -74,7 +74,8 @@ describe('Moderation Logic', () => {
           userId: 'user-1',
           courseId: 'course-1',
           reason: 'AI_FLAG: Test Reason',
-          status: 'PENDING',
+          type: 'AUTOMATED_COURSE_FLAG',
+          status: 'OPEN',
         }),
       });
     });

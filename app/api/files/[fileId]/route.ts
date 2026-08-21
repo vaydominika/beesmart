@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { canAccessCourse, canManageCourse, getLessonAccess } from "@/lib/course-access";
 import { readPrivateFile } from "@/lib/files/storage";
+import { isAdminUser } from "@/lib/admin";
 
 type RouteContext = { params: Promise<{ fileId: string }> };
 
@@ -31,6 +32,7 @@ export async function GET(_request: Request, ctx: RouteContext) {
       submissionFile: {
         include: { submission: { select: { userId: true, assignedWork: { select: { classroomId: true } } } } },
       },
+      reportAttachment: { include: { report: { select: { userId: true } } } },
     },
   });
   if (!file || file.state === "DELETE_PENDING" || !["CLEAN", "NOT_REQUIRED"].includes(file.scanStatus)) {
@@ -65,6 +67,9 @@ export async function GET(_request: Request, ctx: RouteContext) {
       });
       allowed = Boolean(membership && membership.role !== "STUDENT");
     }
+  }
+  if (!allowed && file.reportAttachment) {
+    allowed = file.reportAttachment.report.userId === userId || await isAdminUser(userId);
   }
 
   if (!allowed) {

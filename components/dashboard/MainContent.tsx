@@ -86,7 +86,6 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
                   id={course.id}
                   title={course.title}
                   description={course.description ?? ""}
-                  progress={course.progress}
                   coverImageUrl={course.coverImageUrl}
                   averageRating={course.averageRating}
                   onReportClick={openReport}
@@ -193,6 +192,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
           onOpenChange={setReportModalOpen}
           courseId={reportCourseId}
           courseTitle={reportCourseTitle}
+          onSuccess={() => void refetch()}
         />
         <CourseRatingModal open={Boolean(ratingCourseId)} onOpenChange={(open) => { if (!open) setRatingCourseId(null); }} courseId={ratingCourseId} courseTitle={ratingCourseId ? courseTitleById(allCourses, ratingCourseId) : ""} onSaved={refetch} />
       </div>

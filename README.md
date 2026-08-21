@@ -19,3 +19,15 @@ BeeSmart is a feature-rich, interactive learning platform built for people creat
 - **Database**: [Prisma](https://www.prisma.io/) with MariaDB
 - **Authentication**: [Auth.js (NextAuth v5)](https://authjs.dev/)
 - **UI Components**: Radix UI, Lucide/Hugeicons, Framer Motion
+
+## Report and admin configuration
+
+Add these values to the deployment environment when needed:
+
+```env
+# Comma-separated, case-insensitive list. Empty or missing means no admin access.
+ADMIN_EMAILS=admin@example.com,owner@example.com
+
+# Shows the Early Access feedback button and enables feedback submission.
+NEXT_PUBLIC_EARLY_ACCESS_FEEDBACK_ENABLED=true
+```

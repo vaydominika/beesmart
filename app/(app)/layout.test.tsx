@@ -6,11 +6,18 @@ import AppGroupLayout from "./layout";
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
+type MockSession = {
+  user: { id: string; name: string; email: string };
+  expires: string;
+} | null;
+
+const mockedAuth = vi.mocked(auth as unknown as () => Promise<MockSession>);
+
 describe("AppGroupLayout", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("redirects unauthenticated page renders to login", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    mockedAuth.mockResolvedValue(null);
 
     await AppGroupLayout({ children: <div>Protected app</div> });
 
@@ -18,7 +25,7 @@ describe("AppGroupLayout", () => {
   });
 
   it("rejects a stale session without a user id", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    mockedAuth.mockResolvedValue({
       user: { id: "", name: "Guest", email: "guest@example.com" },
       expires: "2099-01-01",
     });
@@ -29,7 +36,7 @@ describe("AppGroupLayout", () => {
   });
 
   it("does not redirect an authenticated page render", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    mockedAuth.mockResolvedValue({
       user: { id: "user-1", name: "Ada", email: "ada@example.com" },
       expires: "2099-01-01",
     });

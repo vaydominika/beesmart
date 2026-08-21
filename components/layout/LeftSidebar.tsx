@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Lightbulb, Settings, LogOut, X } from "lucide-react";
+import { Lightbulb, LogOut, MessageSquareText, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/lib/DashboardContext";
 import { useFocus } from "@/components/focus/FocusProvider";
 import { FocusModal } from "@/components/focus/FocusModal";
 import { useSettings } from "@/components/settings/SettingsProvider";
 import { BeeSmartLogo } from "@/components/ui/BeeSmartLogo";
+import { FeedbackModal } from "@/components/tickets/FeedbackModal";
 
 const navigationItems = [
   { name: "DASHBOARD", href: "/dashboard" },
@@ -24,11 +25,16 @@ interface LeftSidebarProps {
   onClose?: () => void;
 }
 
+const feedbackEnabled = ["1", "true", "yes", "on"].includes(
+  (process.env.NEXT_PUBLIC_EARLY_ACCESS_FEEDBACK_ENABLED ?? "").trim().toLowerCase(),
+);
+
 export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const pathname = usePathname();
   const { openModal } = useFocus();
   const { openModal: openSettingsModal } = useSettings();
-  const { data, loading } = useDashboard();
+  const { data, loading, refetch } = useDashboard();
   const streak = data?.streak ?? 0;
   const isOverlay = variant === "overlay";
 
@@ -112,6 +118,16 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
       </nav>
 
       <div className="py-4 md:py-3 m-auto tracking-tighter text-[32px] md:text-[30px]">
+        {feedbackEnabled ? (
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+          >
+            <MessageSquareText className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
+            FEEDBACK
+          </button>
+        ) : null}
         <button
           onClick={openModal}
           className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
@@ -137,6 +153,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
       </div>
 
       <FocusModal />
+      {feedbackEnabled ? <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} onSuccess={() => void refetch()} /> : null}
     </div>
   );
 }

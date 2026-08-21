@@ -23,7 +23,12 @@ vi.mock("./CourseRail", () => ({
 }));
 
 vi.mock("./LearningCard", () => ({
-  LearningCard: ({ title }: { title: string }) => <article>{title}</article>,
+  LearningCard: ({ title, progress }: { title: string; progress?: number }) => (
+    <article>
+      {title}
+      {progress !== undefined ? <span>{title} progress: {progress}%</span> : null}
+    </article>
+  ),
 }));
 
 vi.mock("./ReportCourseModal", () => ({ ReportCourseModal: () => null }));
@@ -39,8 +44,9 @@ const card = (id: string, title: string, description: string | null = null) => (
 const data: DashboardData = {
   user: null,
   streak: 0,
-  myCourses: [card("mine", "Writing workshop")],
-  continueLearning: [card("continue", "Biology", "<p>Living cells and systems</p>")],
+  activeTicketCount: 0,
+  myCourses: [{ ...card("mine", "Writing workshop"), progress: 75 }],
+  continueLearning: [{ ...card("continue", "Biology", "<p>Living cells and systems</p>"), progress: 50 }],
   popularCourses: [card("popular", "Popular physics")],
   finishedCourses: [card("finished", "World history")],
   discoverCourses: [card("discover", "Drawing basics")],
@@ -59,6 +65,13 @@ describe("MainContent dashboard filtering", () => {
     expect(screen.getByRole("heading", { name: "Popular now" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Finished" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Discover" })).toBeInTheDocument();
+  });
+
+  it("hides progress for courses owned by the current user", () => {
+    render(<MainContent searchQuery="" onClearSearch={vi.fn()} />);
+
+    expect(screen.queryByText("Writing workshop progress: 75%")).not.toBeInTheDocument();
+    expect(screen.getByText("Biology progress: 50%")).toBeInTheDocument();
   });
 
   it("filters each rail by title or plain-text description and hides empty rails", () => {

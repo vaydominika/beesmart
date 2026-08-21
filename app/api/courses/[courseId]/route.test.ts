@@ -74,7 +74,9 @@ describe("course publication safety gate", () => {
     vi.mocked(auditCourseForPublishing).mockResolvedValue({ publishable: true, blockingIssues: [] });
     const lessonUpdate = vi.fn().mockResolvedValue({});
     const courseUpdate = vi.fn().mockResolvedValue({ ...course, published: true });
-    vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback({
+    // Prisma's overloaded transaction signature cannot preserve the lightweight test client type.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback({
       courseLesson: { update: lessonUpdate },
       course: { update: courseUpdate },
     } as never));

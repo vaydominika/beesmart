@@ -58,4 +58,10 @@ describe("LeftSidebar consistency counter", () => {
     expect(indicator).toHaveClass("-mt-0.5");
     expect(indicator).not.toHaveClass("sidebar-active-animation");
   });
+
+  it("does not expose reports or admin links in the sidebar", () => {
+    render(<LeftSidebar />);
+    expect(screen.queryByRole("link", { name: "MY REPORTS" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "ADMIN" })).not.toBeInTheDocument();
+  });
 });

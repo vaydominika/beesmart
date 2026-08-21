@@ -14,6 +14,7 @@ export const UPLOAD_PURPOSES = new Set<UploadPurpose>([
   "POST_ATTACHMENT",
   "SUBMISSION_ATTACHMENT",
   "COURSE_COVER",
+  "TICKET_ATTACHMENT",
 ]);
 
 export function storedFileUrl(storedFileId: string | null | undefined, legacyUrl?: string | null) {

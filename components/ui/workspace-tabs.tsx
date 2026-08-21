@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface WorkspaceTabItem<T extends string> {
   value: T;
   label: React.ReactNode;
+  ariaLabel?: string;
   disabled?: boolean;
 }
 
@@ -59,6 +60,7 @@ function WorkspaceTabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={selected}
+            aria-label={item.ariaLabel}
             disabled={item.disabled}
             onClick={() => onValueChange(item.value)}
             className={cn(

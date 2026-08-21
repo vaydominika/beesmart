@@ -14,6 +14,7 @@ vi.mock("@/lib/DashboardContext", () => ({
         bannerImageUrl: null,
         role: "Legacy global role",
       },
+      activeTicketCount: 2,
     },
   }),
 }));
@@ -48,5 +49,10 @@ describe("RightSidebar", () => {
 
     expect(notificationButton.compareDocumentPosition(closeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(avatar.compareDocumentPosition(settingsButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("links a subtle active-ticket count to My Reports", () => {
+    render(<RightSidebar />);
+    expect(screen.getByRole("link", { name: "Active tickets: 2" })).toHaveAttribute("href", "/tickets");
   });
 });

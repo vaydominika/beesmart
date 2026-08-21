@@ -5,6 +5,7 @@ import type {
   DashboardData,
 } from "@/lib/types";
 import { storedFileUrl } from "@/lib/files/types";
+import { getActiveTicketCount } from "@/lib/tickets";
 
 export async function getContinueLearningForUser(
   userId: string
@@ -75,17 +76,19 @@ export async function getContinueLearningForUser(
  */
 async function getProgressForCourses(userId: string, courseIds: string[]): Promise<Map<string, number>> {
   const progressMap = new Map<string, number>();
+  type ProgressCourse = { id: string; modules: Array<{ lessons: Array<{ id: string }> }> };
+  type LessonProgress = { lessonId: string; completedAt: Date | null };
 
   // Fetch all relevant lessons for these courses to calculate total
   const courses = await prisma.course.findMany({
     where: { id: { in: courseIds } },
     include: { modules: { include: { lessons: { select: { id: true } } } } }
-  });
+  }) as ProgressCourse[];
 
   const userProgress = await prisma.courseProgress.findMany({
     where: { userId, courseId: { in: courseIds } },
     select: { lessonId: true, completedAt: true, courseId: true }
-  });
+  }) as LessonProgress[];
 
   const completedLessonIds = new Set(
     userProgress
@@ -126,7 +129,7 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
     where: { userId },
     select: { courseId: true },
   })) : [];
-  const enrolledIds = new Set(enrolledData.map((enrollment) => enrollment.courseId));
+  const enrolledIds = new Set(enrolledData.map((enrollment: { courseId: string }) => enrollment.courseId));
 
   const courses = (await prisma.course.findMany({
     where: {
@@ -215,9 +218,6 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
     orderBy: { updatedAt: "desc" },
   })) as { id: string; title: string; description: string | null; coverImageUrl: string | null; coverStoredFileId: string | null; ratings: { rating: number }[] }[];
 
-  const courseIds = courses.map(c => c.id);
-  const progressMap = await getProgressForCourses(userId, courseIds);
-
   return courses.map((c) => {
     const avg =
       c.ratings.length > 0
@@ -228,7 +228,6 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
       title: c.title,
       description: c.description,
       coverImageUrl: storedFileUrl(c.coverStoredFileId, c.coverImageUrl) || null,
-      progress: progressMap.get(c.id),
       averageRating: avg !== null ? Math.round(avg * 10) / 10 : null,
     };
   });
@@ -272,6 +271,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     myCourses,
     streak,
     user,
+    activeTicketCount,
   ] = await Promise.all([
     uid ? getContinueLearningForUser(uid) : Promise.resolve([]),
     getPopularCourses(),
@@ -279,6 +279,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     uid ? getMyCoursesForUser(uid) : Promise.resolve([]),
     uid ? getStreakForUser(uid) : Promise.resolve(0),
     uid ? getCurrentUserById(uid) : Promise.resolve(null),
+    uid ? getActiveTicketCount(uid) : Promise.resolve(0),
   ]);
 
   // CATEGORIZATION LOGIC: Refined to use persisted completion and avoid duplicates
@@ -312,6 +313,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     myCourses: filteredMy,
     finishedCourses,
     streak,
+    activeTicketCount,
     user,
   };
 }

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/lib/generated/prisma";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import { ticketReceivedNotification } from "@/lib/tickets";
 
 export async function POST(
   _request: NextRequest,
@@ -34,15 +36,31 @@ export async function POST(
         { status: 404 }
       );
     }
-    await prisma.report.create({
-      data: {
-        userId: uid,
-        courseId,
-        reason,
-        description: description ?? null,
-      },
+    const ticket = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const created = await tx.report.create({
+        data: {
+          userId: uid,
+          courseId,
+          type: "COURSE_REPORT",
+          reason,
+          description: description ?? null,
+        },
+      });
+      const notice = ticketReceivedNotification(created.type);
+      await tx.notification.create({
+        data: {
+          userId: uid,
+          ...notice,
+          type: "OTHER",
+          category: "GENERAL",
+          relatedId: created.id,
+          relatedType: "report",
+          actionUrl: `/tickets#${created.id}`,
+        },
+      });
+      return created;
     });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, ticketId: ticket.id });
   } catch (e) {
     console.error("POST /api/courses/[courseId]/report", e);
     return NextResponse.json(

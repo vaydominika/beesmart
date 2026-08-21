@@ -29,7 +29,13 @@ export async function GET() {
             orderBy: { joinedAt: "desc" },
         });
 
-        const classrooms = memberships.map((m) => ({
+        const classrooms = memberships.map((m: {
+            role: string;
+            classroom: {
+                id: string; name: string; description: string | null; code: string; subject: string | null; createdById: string;
+                createdAt: Date; _count: { members: number }; creator: { id: string; name: string };
+            };
+        }) => ({
             id: m.classroom.id,
             name: m.classroom.name,
             description: m.classroom.description,

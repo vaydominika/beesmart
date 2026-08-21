@@ -18,11 +18,7 @@ import { usePathname } from "next/navigation";
 const SCROLL_THRESHOLD = 200;
 const LAPTOP_SIDEBAR_WIDTH = 288; // w-72
 
-interface AppLayoutProps {
-  children: React.ReactNode;
-}
-
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children }: { children: React.ReactNode }) {
   const isMobile = useIsMobile();
   const hasRoomForRightSidebar = useHasRoomForRightSidebar();
   const pathname = usePathname();
@@ -32,7 +28,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isCoursesIndex = pathname === "/courses";
   const isCourseBuilder = /^\/courses\/[^/]+\/builder$/.test(pathname);
   const isProfile = /^\/profile\/[^/]+$/.test(pathname);
-  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isProfile;
+  const isTickets = pathname === "/tickets";
+  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isProfile || isTickets;
   const isQuietWorkspace = isDashboard || isClassroom || isFocusedWorkspace;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);

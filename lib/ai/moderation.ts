@@ -49,7 +49,8 @@ export async function flagContent(userId: string, courseId: string, reason: stri
             courseId,
             reason: `AI_FLAG: ${reason}`,
             description: details,
-            status: "PENDING",
+            type: "AUTOMATED_COURSE_FLAG",
+            status: "OPEN",
         },
     });
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Settings, X } from "lucide-react";
 import { CalendarWidget } from "./CalendarWidget";
 import { ReminderItem } from "@/components/dashboard/ReminderItem";
@@ -56,6 +57,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   const userName = user?.name ?? "Guest";
   const userAvatar = user?.avatar ?? null;
   const bannerImageUrl = user?.bannerImageUrl ?? null;
+  const activeTicketCount = data?.activeTicketCount ?? 0;
 
   // Fetch events for the current month (for calendar highlights)
   const fetchMonthEvents = useCallback(async () => {
@@ -208,6 +210,16 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
         </div>
 
         <div className="px-6 pb-6 md:px-4 md:pb-4 flex-1 overflow-hidden">
+          {activeTicketCount > 0 ? (
+            <Link
+              href="/tickets"
+              aria-label={`Active tickets: ${activeTicketCount}`}
+              className="mb-3 flex items-center justify-between rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 font-[var(--font-geist-sans)] text-xs font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+            >
+              <span>Active tickets</span>
+              <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-0.5 text-[var(--app-text)]">{activeTicketCount}</span>
+            </Link>
+          ) : null}
           <div className="mb-6 md:mb-4">
             <CalendarWidget
               selectedDate={selectedDate}
