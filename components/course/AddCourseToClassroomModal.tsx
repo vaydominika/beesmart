@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { BookOpen, LockKeyhole, Search, X } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { ClassroomDestinationSelect } from "@/components/course/ClassroomDestinationSelect";
@@ -103,7 +104,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+      <WorkspaceDialogContent mobileSheet={false} className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom course picker" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Add to classroom</DialogTitle>
@@ -157,7 +158,7 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
           <WorkspaceButton type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" onClick={() => void addCourse()} disabled={saving || !courseId || !classroomId} className="flex-1">{saving ? "Adding…" : "Add course"}</WorkspaceButton>
         </div>
-      </DialogContent>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

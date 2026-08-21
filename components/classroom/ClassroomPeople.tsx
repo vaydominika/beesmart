@@ -5,11 +5,11 @@ import Link from "next/link";
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -298,7 +298,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
             </section>
 
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-                <DialogContent className="classroom-dialog w-[calc(100%-1.5rem)] max-w-md gap-0 rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-5 shadow-2xl">
+                <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog w-[calc(100%-1.5rem)] max-w-md gap-0 rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-5 shadow-2xl">
                     <DialogClose asChild>
                         <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close teacher invitation" className="absolute right-4 top-4">
                             <X className="h-4 w-4" />
@@ -346,7 +346,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                             {inviting ? "Adding..." : "Add teacher"}
                         </WorkspaceButton>
                     </div>
-                </DialogContent>
+                </WorkspaceDialogContent>
             </Dialog>
         </div>
     );

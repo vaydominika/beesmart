@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Star, X } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -67,7 +68,7 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="course-ui max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-6 shadow-2xl">
+      <WorkspaceDialogContent mobileSheet={false} className="course-ui max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-6 shadow-2xl">
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" className="absolute right-4 top-4" aria-label="Close rating"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <DialogHeader className="pr-8 text-left">
           <DialogTitle className="text-xl font-semibold text-[var(--course-text)]">{existing ? "Update your rating" : "How was the course?"}</DialogTitle>
@@ -86,7 +87,7 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
             <div className="flex justify-end gap-2"><WorkspaceButton type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>Maybe later</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={() => void save()} disabled={saving || rating < 1}>{saving ? "Saving..." : "Save rating"}</WorkspaceButton></div>
           </div>
         )}
-      </DialogContent>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

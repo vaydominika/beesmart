@@ -9,7 +9,8 @@ import {
   Lightbulb,
   X,
 } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { cn } from "@/lib/utils";
 
@@ -89,7 +90,7 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) resetAndClose(); }}>
-      <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[96dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:h-[min(96dvh,820px)] md:w-[calc(100vw-64px)] md:max-w-[1120px] md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
+      <WorkspaceDialogContent mobileSheet={false} className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[96dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:h-[min(96dvh,820px)] md:w-[calc(100vw-64px)] md:max-w-[1120px] md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" disabled={finishing} aria-label="Close tutorial" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="grid min-h-0 flex-1 md:grid-cols-[292px_minmax(0,1fr)]">
           <aside className="hidden border-r border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-8 md:flex md:flex-col">
@@ -164,7 +165,7 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
             </footer>
           </section>
         </div>
-      </DialogContent>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

@@ -18,7 +18,8 @@ import {
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } from "@/lib/course-builder";
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
@@ -492,7 +493,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       </div>
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !isMutating) setDeleteTarget(null); }}>
-        <DialogContent className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+        <WorkspaceDialogContent mobileSheet={false} className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={isMutating}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Delete {deleteTarget?.type}?</DialogTitle>
@@ -508,7 +509,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
               {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? "Deleting..." : `Delete ${deleteTarget?.type ?? "item"}`}
             </WorkspaceButton>
           </div>
-        </DialogContent>
+        </WorkspaceDialogContent>
       </Dialog>
     </div>
   );

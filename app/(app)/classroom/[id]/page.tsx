@@ -8,7 +8,8 @@ import { ClassroomFeed } from "@/components/classroom/ClassroomFeed";
 import { ClassroomPeople } from "@/components/classroom/ClassroomPeople";
 import { ClassroomGradebook } from "@/components/classroom/ClassroomGradebook";
 import { ClassroomSettings } from "@/components/classroom/ClassroomSettings";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Check, ChevronLeft, Copy, FileText, QrCode, Settings, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -174,7 +175,7 @@ export default function ClassroomDetailPage() {
 
                 {isTeacher && (
                     <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                        <DialogContent className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
+                        <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                             <DialogHeader>
                                 <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Classroom settings</DialogTitle>
                             </DialogHeader>
@@ -189,12 +190,12 @@ export default function ClassroomDetailPage() {
                                 onUpdated={fetchClassroom}
                                 onDeleted={() => router.push("/classroom")}
                             />
-                        </DialogContent>
+                        </WorkspaceDialogContent>
                     </Dialog>
                 )}
 
                 <Dialog open={qrOpen} onOpenChange={setQrOpen}>
-                    <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-2xl">
+                    <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-2xl">
                         <DialogHeader className="pr-10">
                             <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Join {classroom.name}</DialogTitle>
                         </DialogHeader>
@@ -210,7 +211,7 @@ export default function ClassroomDetailPage() {
                             </div>
                             <p className="mt-3 text-sm font-semibold tracking-[0.2em] text-[var(--classroom-text)]">{classroom.code}</p>
                         </div>
-                    </DialogContent>
+                    </WorkspaceDialogContent>
                 </Dialog>
             </div>
         </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -359,7 +360,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
+            <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
                 <DialogClose
                     aria-label="Close test builder"
                     className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
@@ -691,7 +692,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     </div>
                   </div>
                 </div>
-            </DialogContent>
+            </WorkspaceDialogContent>
         </Dialog>
     );
 }

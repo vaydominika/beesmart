@@ -6,7 +6,8 @@ import { ScheduleAgendaView } from "@/components/calendar/ScheduleAgendaView";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
 import { ScheduleMonthView } from "@/components/calendar/ScheduleMonthView";
 import { ScheduleWeekView } from "@/components/calendar/ScheduleWeekView";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
@@ -444,16 +445,16 @@ export default function SchedulePage() {
       </div>
 
       <Dialog open={mobilePanelOpen} onOpenChange={(open) => { setMobilePanelOpen(open); if (!open) closePanelState(); }}>
-        <DialogContent className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-0 shadow-2xl md:hidden">
+        <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-0 shadow-2xl md:hidden">
           <DialogTitle className="sr-only">Schedule details</DialogTitle>
           <DialogDescription className="sr-only">View or edit events for the selected date.</DialogDescription>
           <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobilePanelOpen(false)} aria-label="Close schedule details" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton>
           <div className="h-[min(78vh,720px)]">{panel}</div>
-        </DialogContent>
+        </WorkspaceDialogContent>
       </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
-        <DialogContent className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
+        <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete event?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">“{deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.</DialogDescription>
@@ -461,7 +462,7 @@ export default function SchedulePage() {
             <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</WorkspaceButton>
             <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : "Delete event"}</WorkspaceButton>
           </div>
-        </DialogContent>
+        </WorkspaceDialogContent>
       </Dialog>
     </div>
   );

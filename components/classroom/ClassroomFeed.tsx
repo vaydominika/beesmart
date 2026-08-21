@@ -19,7 +19,8 @@ import {
 import Link from "next/link";
 import { Editor } from "@/components/ui/editor";
 import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -972,7 +973,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
             {/* Modals */}
             <Dialog open={Boolean(editingPost)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
-                <DialogContent className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
+                <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Edit post</DialogTitle>
                         <DialogDescription className="sr-only">Update the text in your post.</DialogDescription>
@@ -1007,11 +1008,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {savingEdit ? "Saving…" : "Save changes"}
                         </WorkspaceButton>
                     </div>
-                </DialogContent>
+                </WorkspaceDialogContent>
             </Dialog>
 
             <Dialog open={Boolean(postToDelete)} onOpenChange={(open) => { if (!open && !deletingPost) setPostToDelete(null); }}>
-                <DialogContent className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
+                <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Delete post?</DialogTitle>
                         <DialogDescription className="mt-2 text-sm leading-6 text-[var(--classroom-text-muted)]">
@@ -1037,7 +1038,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {deletingPost ? "Deleting…" : "Delete"}
                         </WorkspaceButton>
                     </div>
-                </DialogContent>
+                </WorkspaceDialogContent>
             </Dialog>
 
             <CreateAssignmentModal

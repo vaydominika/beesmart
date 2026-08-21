@@ -23,7 +23,8 @@ import { cn } from "@/lib/utils";
 import type { CourseVisibility } from "@/lib/course-summary";
 import type { CoursePublishIssue } from "@/lib/course-audit";
 import { COURSE_TITLE_MAX_LENGTH, displayCourseTitle } from "@/lib/course-title";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 
 interface CourseBuilderClientProps {
   initialCourse: CourseBuilderCourse;
@@ -362,7 +363,7 @@ function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: 
   const blocked = issues.length > 0;
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !checking) onClose(); }}>
-      <DialogContent className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
+      <WorkspaceDialogContent mobileSheet={false} className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close publication safety check" className="absolute right-4 top-4 z-20" disabled={checking}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--course-text)]"><ShieldCheck className="h-5 w-5" />Publication safety check</DialogTitle>
@@ -381,7 +382,7 @@ function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: 
           )}
         </div>
         {!checking && <div className="flex justify-end border-t border-[var(--course-line)] px-5 py-4"><WorkspaceButton type="button" variant="secondary" onClick={onClose}>Close</WorkspaceButton></div>}
-      </DialogContent>
+      </WorkspaceDialogContent>
     </Dialog>
   );
 }

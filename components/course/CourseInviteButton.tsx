@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Mail, Trash2, X } from "lucide-react";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 
@@ -67,7 +68,7 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
         <Mail className="h-2.5 w-2.5" />Invite
       </WorkspaceButton>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[640px] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl">
+        <WorkspaceDialogContent mobileSheet={false} className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl sm:left-[50%] sm:top-[50%] sm:max-h-[640px] sm:max-w-md sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-2xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close course invitations" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold">Course invitations</DialogTitle>
@@ -92,7 +93,7 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
           <div className="border-t border-[var(--course-line)] px-5 py-4">
             <WorkspaceButton type="button" variant="secondary" onClick={() => setOpen(false)} className="w-full">Done</WorkspaceButton>
           </div>
-        </DialogContent>
+        </WorkspaceDialogContent>
       </Dialog>
     </>
   );

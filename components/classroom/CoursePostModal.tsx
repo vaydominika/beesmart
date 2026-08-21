@@ -5,11 +5,11 @@ import { BookOpen, Check, Search, X } from "lucide-react";
 import {
     Dialog,
     DialogClose,
-    DialogContent,
     DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -86,7 +86,7 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
 
     return (
         <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
-            <DialogContent className="classroom-dialog h-[min(35rem,calc(100dvh-1.5rem))] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-0 shadow-2xl">
+            <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog h-[min(35rem,calc(100dvh-1.5rem))] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-0 shadow-2xl">
                 <DialogClose
                     aria-label="Close course picker"
                     className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-(--classroom-text-muted) transition-colors hover:bg-(--classroom-surface-muted) hover:text-(--classroom-text) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)"
@@ -203,7 +203,7 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                         </WorkspaceButton>
                     </div>
                 </div>
-            </DialogContent>
+            </WorkspaceDialogContent>
         </Dialog>
     );
 }
