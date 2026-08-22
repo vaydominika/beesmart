@@ -14,20 +14,44 @@ BeeSmart is a feature-rich, interactive learning platform built for people creat
 
 ## 🚀 Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router) & [React 19](https://react.dev/)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router) & [React 19](https://react.dev/)
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/)
 - **Database**: [Prisma](https://www.prisma.io/) with MariaDB
 - **Authentication**: [Auth.js (NextAuth v5)](https://authjs.dev/)
 - **UI Components**: Radix UI, Lucide/Hugeicons, Framer Motion
 
-## Report and admin configuration
+## Local setup
 
-Add these values to the deployment environment when needed:
+BeeSmart requires Node.js 20.9 or newer and MariaDB. Copy `.env.example` to `.env`, fill the local values, then run:
 
-```env
-# Comma-separated, case-insensitive list. Empty or missing means no admin access.
-ADMIN_EMAILS=admin@example.com,owner@example.com
-
-# Shows the Early Access feedback button and enables feedback submission.
-NEXT_PUBLIC_EARLY_ACCESS_FEEDBACK_ENABLED=true
+```bash
+npm ci
+npx prisma migrate deploy
+npm run dev
 ```
+
+## Production configuration
+
+The production process validates its environment before `next start`. Required values are `DATABASE_URL`, an `AUTH_SECRET` of at least 32 characters, `AUTH_URL`, `DEEPSEEK_API_KEY`, an absolute durable `UPLOAD_STORAGE_DIR` shared by every application instance, and a reachable ClamAV configuration through `MALWARE_SCAN_MODE=clamav`, `CLAMAV_HOST`, and `CLAMAV_PORT`.
+
+Google sign-in is enabled only when both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are present. `ADMIN_EMAILS` is a comma-separated, case-insensitive allowlist; an empty value disables admin access. `NEXT_PUBLIC_EARLY_ACCESS_FEEDBACK_ENABLED=true` enables the feedback surface.
+
+## Production release
+
+Before promoting a release:
+
+```bash
+npm ci
+npm audit --omit=dev --audit-level=high
+npx prisma validate
+npx prisma migrate deploy
+npm run lint
+npm run audit:colors
+npx tsc --noEmit
+npm run test:run
+npm run coverage
+npm run build
+npx playwright test
+```
+
+Follow [docs/security-deployment.md](docs/security-deployment.md) for backups, legacy file migration, sanitation, persistent storage, ClamAV, cleanup scheduling, and rollback.

@@ -23,8 +23,8 @@ export default function RegisterPage() {
       toast.error("Please fill in all fields.");
       return;
     }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+    if (password.length < 12) {
+      toast.error("Password must be at least 12 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -84,7 +84,7 @@ export default function RegisterPage() {
           <WorkspaceField id="register-name" label="Name" labelClassName={authLabelClass}><Input type="text" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className={authFieldClass} placeholder="Your name" /></WorkspaceField>
           <WorkspaceField id="register-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
         </div>
-        <WorkspaceField id="register-password" label="Password" labelClassName={authLabelClass} hint="Use at least 6 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="At least 6 characters" /></WorkspaceField>
+        <WorkspaceField id="register-password" label="Password" labelClassName={authLabelClass} hint="Use at least 12 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="At least 12 characters" /></WorkspaceField>
         <WorkspaceField id="register-confirm" label="Confirm password" labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className={authFieldClass} placeholder="Enter the password again" /></WorkspaceField>
         <AuthSubmitButton loading={loading} idleLabel="Create account" loadingLabel="Creating account…" />
       </form>

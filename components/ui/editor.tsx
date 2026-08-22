@@ -3,7 +3,6 @@
 import { EditorContent, EditorRoot, EditorInstance, EditorBubble } from "novel";
 import { defaultExtensions } from "./extensions";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useDebouncedCallback } from "use-debounce";
 import { NodeSelector } from "./selectors/node-selector";
 import { LinkSelector } from "./selectors/link-selector";
 import { ColorSelector } from "./selectors/color-selector";
@@ -25,7 +24,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
 
-  const [isSyncing, setIsSyncing] = useState(false);
+  const isSyncing = useRef(false);
   const lastSyncedValue = useRef<any>(initialValue ?? "");
   const prevId = useRef<string>(id);
   const editorExtensions = useMemo(
@@ -45,22 +44,16 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
     // 1. The ID has changed (lesson switch) - ALWAYS sync on switch.
     // 2. The prop value is actually different from our last synced state (e.g. AI generation).
     if (isIdSwitch || (initialValue !== undefined && initialValue !== lastSyncedValue.current)) {
-      console.log("[UI Editor] syncing trigger. ID change:", isIdSwitch, "New length:", (initialValue || "").length);
-
-      // No more debounce to cancel here
-
-      setIsSyncing(true);
+      isSyncing.current = true;
       lastSyncedValue.current = initialValue;
       prevId.current = id;
       if (editor) {
-        console.log("[UI Editor] resetting editor content for ID:", id);
         editor.commands.setContent(initialValue, false);
       }
 
       // Reset syncing flag after a window to catch immediate transition pings
       const timer = setTimeout(() => {
-        setIsSyncing(false);
-        console.log("[UI Editor] sync guard released for ID:", id);
+        isSyncing.current = false;
       }, 300);
 
       return () => clearTimeout(timer);
@@ -75,12 +68,10 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
           initialContent={initialValue}
           extensions={editorExtensions}
           onUpdate={({ editor }) => {
-            if (isSyncing) {
-              console.log("[UI Editor] isSyncing is true, suppressing onChange");
+            if (isSyncing.current) {
               return;
             }
             const html = editor.getHTML();
-            console.log("[UI Editor] Instant onChange for ID:", id, "(length):", html.length);
 
             // Mark this value as synced so the prop-sync useEffect doesn't try to "re-sync" it back to us
             lastSyncedValue.current = html;

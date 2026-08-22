@@ -10,6 +10,30 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: password
+          MARIADB_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: mysql://root:password@127.0.0.1:3306/test
+      AUTH_SECRET: test-secret-at-least-32-characters-long
+      AUTH_URL: http://localhost:3000
+      DEEPSEEK_API_KEY: test-key
+      UPLOAD_STORAGE_DIR: /tmp/beesmart-uploads
+      MALWARE_SCAN_MODE: clamav
+      CLAMAV_HOST: 127.0.0.1
+      CLAMAV_PORT: 3310
+
     steps:
       - uses: actions/checkout@v4
 
@@ -20,10 +44,31 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
+
+      - name: Validate production environment
+        run: npm run validate:env
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Generate Prisma Client
         run: npx prisma generate
+
+      - name: Validate Prisma schema
+        run: npx prisma validate
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Audit semantic colors
+        run: npm run audit:colors
 
       - name: Run Vitest (Unit & Integration)
         run: npm run test:run
@@ -31,15 +76,14 @@ jobs:
       - name: Run Coverage
         run: npm run coverage
 
+      - name: Build production application
+        run: npm run build
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright (E2E)
         run: npx playwright test
-        env:
-          DATABASE_URL: "mysql://root:password@localhost:3306/test" # Placeholder, since we mock
-          NEXTAUTH_SECRET: "test-secret"
-          NEXTAUTH_URL: "http://localhost:3000"
 
       - uses: actions/upload-artifact@v4
         if: always()

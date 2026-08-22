@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
@@ -41,42 +41,6 @@ type Queue = "reports" | "feedback";
 type AdminTheme = "light" | "dark";
 
 const ADMIN_THEME_STORAGE_KEY = "beesmart-admin-theme";
-
-const adminThemes: Record<AdminTheme, CSSProperties> = {
-  light: {
-    "--app-canvas": "#f7f7f5",
-    "--app-surface": "#ffffff",
-    "--app-surface-muted": "#eeeeeb",
-    "--app-text": "#171715",
-    "--app-text-muted": "#666661",
-    "--app-text-faint": "#969690",
-    "--app-border": "#ddddd8",
-    "--app-border-strong": "#a8a8a1",
-    "--app-accent-soft": "#e5e5e0",
-    "--app-focus-border": "#171715",
-    "--app-focus-ring": "#8a8a84",
-    "--app-shadow-soft": "0 12px 32px rgba(17, 17, 15, 0.12)",
-  } as CSSProperties,
-  dark: {
-    "--app-canvas": "#0d0d0c",
-    "--app-surface": "#171716",
-    "--app-surface-muted": "#222220",
-    "--app-text": "#f2f2ed",
-    "--app-text-muted": "#adada6",
-    "--app-text-faint": "#777771",
-    "--app-border": "#30302e",
-    "--app-border-strong": "#5f5f59",
-    "--app-accent-soft": "#2b2b29",
-    "--app-focus-border": "#f2f2ed",
-    "--app-focus-ring": "#85857e",
-    "--app-shadow-soft": "0 18px 50px rgba(0, 0, 0, 0.48)",
-  } as CSSProperties,
-};
-
-const selectPortalThemes: Record<AdminTheme, string> = {
-  light: "font-[var(--font-geist-sans)] [--app-surface:#ffffff] [--app-surface-muted:#eeeeeb] [--app-accent-soft:#e5e5e0] [--app-text:#171715] [--app-text-muted:#666661] [--app-text-faint:#969690] [--app-border:#ddddd8] [--app-focus-ring:#8a8a84] [--app-shadow-soft:0_12px_32px_rgba(17,17,15,0.12)]",
-  dark: "font-[var(--font-geist-sans)] [--app-surface:#171716] [--app-surface-muted:#222220] [--app-accent-soft:#2b2b29] [--app-text:#f2f2ed] [--app-text-muted:#adada6] [--app-text-faint:#777771] [--app-border:#30302e] [--app-focus-ring:#85857e] [--app-shadow-soft:0_18px_50px_rgba(0,0,0,0.48)]",
-};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -176,9 +140,9 @@ export function AdminTicketsClient({
 
   return (
     <div
-      style={{ ...adminThemes[theme], colorScheme: theme, fontFamily: "var(--font-geist-sans), Arial, sans-serif" }}
+      style={{ colorScheme: theme }}
       data-admin-theme={theme}
-      className="min-h-[100dvh] bg-[var(--app-canvas)] font-[var(--font-geist-sans)] text-[var(--app-text)] transition-colors duration-200 motion-reduce:transition-none"
+      className={cn("min-h-[100dvh] bg-[var(--app-canvas)] font-[var(--font-geist-sans)] text-[var(--app-text)] transition-colors duration-200 motion-reduce:transition-none", `admin-theme-${theme}`)}
     >
       <header className="border-b border-[var(--app-border)] bg-[var(--app-canvas)]">
         <div className="mx-auto flex min-h-16 w-full max-w-[1200px] flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-6">
@@ -263,7 +227,7 @@ export function AdminTicketsClient({
                           ariaLabel={`Status for ${ticket.reason}`}
                           disabled={updatingId === ticket.id}
                           className="w-full rounded-xl"
-                          contentClassName={cn("rounded-xl", selectPortalThemes[theme])}
+                          contentClassName={cn("rounded-xl font-[var(--font-geist-sans)]", `admin-theme-${theme}`)}
                         />
                       </div>
                     </div>

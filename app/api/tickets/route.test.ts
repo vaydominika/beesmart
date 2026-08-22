@@ -32,7 +32,6 @@ describe("POST /api/tickets", () => {
     tx.report.create.mockResolvedValue({ id: "ticket-1", type: "EARLY_ACCESS_FEEDBACK" });
     tx.notification.create.mockResolvedValue({});
     // Prisma's overloaded transaction signature cannot preserve the lightweight test client type.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx));
   });
 

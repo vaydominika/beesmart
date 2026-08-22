@@ -28,7 +28,6 @@ describe("PATCH admin ticket", () => {
     tx.report.update.mockResolvedValue({ id: "ticket-1", userId: "user-1", type: "COURSE_REPORT", status: "RESOLVED" });
     tx.notification.create.mockResolvedValue({});
     // Prisma's overloaded transaction signature cannot preserve the lightweight test client type.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => callback(tx));
   });
 

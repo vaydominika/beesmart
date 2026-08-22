@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
@@ -231,7 +231,7 @@ export function BigCalendar({ events = [], onDateChange, onEventClick, onTimeRan
         const endY = Math.max(dragStart.y, dragCurrentY);
 
         // If 'click' (very small movement), default to 1 hour
-        let startObj = getTimeFromY(startY);
+        const startObj = getTimeFromY(startY);
         let endObj = getTimeFromY(endY);
 
         // Ensure at least 15 mins block if drag was tiny

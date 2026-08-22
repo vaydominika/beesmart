@@ -65,4 +65,15 @@ describe("GET /api/user/events", () => {
     expect(response.status).toBe(200);
     expect(prisma.event.findMany).toHaveBeenCalledOnce();
   });
+
+  it("rejects invalid months and unbounded upcoming limits", async () => {
+    expect((await GET(new NextRequest("http://localhost/api/user/events?month=2026-13"))).status).toBe(400);
+    expect((await GET(new NextRequest("http://localhost/api/user/events?upcoming=5000"))).status).toBe(400);
+    expect(prisma.event.findMany).not.toHaveBeenCalled();
+  });
+
+  it("bounds the legacy unfiltered response", async () => {
+    expect((await GET(new NextRequest("http://localhost/api/user/events"))).status).toBe(200);
+    expect(prisma.event.findMany).toHaveBeenCalledWith(expect.objectContaining({ take: 200 }));
+  });
 });

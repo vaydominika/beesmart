@@ -5,6 +5,7 @@ import type { ValidatedUpload } from "./types";
 
 const MAX_DEFAULT = 10 * 1024 * 1024;
 const MAX_COVER = 4 * 1024 * 1024;
+const MAX_AVATAR = 2 * 1024 * 1024;
 const EXTENSIONS: Record<string, { mime: string; type: FileType }> = {
   jpg: { mime: "image/jpeg", type: "IMAGE" }, jpeg: { mime: "image/jpeg", type: "IMAGE" },
   png: { mime: "image/png", type: "IMAGE" }, gif: { mime: "image/gif", type: "IMAGE" }, webp: { mime: "image/webp", type: "IMAGE" },
@@ -43,13 +44,18 @@ function isSafeText(buffer: Buffer) {
 
 export async function validateUpload(file: File, purpose: UploadPurpose): Promise<ValidatedUpload> {
   if (!file.name || file.size <= 0) throw new UploadValidationError("A non-empty file is required");
-  const max = purpose === "COURSE_COVER" ? MAX_COVER : MAX_DEFAULT;
+  const max = purpose === "PROFILE_AVATAR" ? MAX_AVATAR
+    : purpose === "COURSE_COVER" || purpose === "PROFILE_BANNER" ? MAX_COVER
+    : MAX_DEFAULT;
   if (file.size > max) throw new UploadValidationError(`File too large. Maximum size is ${max / 1024 / 1024} MB.`);
 
   const extension = path.extname(file.name).slice(1).toLowerCase();
   const expected = EXTENSIONS[extension];
   if (!expected) throw new UploadValidationError("Unsupported file extension");
   if (purpose === "COURSE_COVER" && expected.type !== "IMAGE") throw new UploadValidationError("Course covers must be JPEG, PNG, GIF, or WebP");
+  if ((purpose === "PROFILE_AVATAR" || purpose === "PROFILE_BANNER") && expected.type !== "IMAGE") {
+    throw new UploadValidationError("Profile images must be JPEG, PNG, GIF, or WebP");
+  }
   if (purpose === "TICKET_ATTACHMENT" && expected.type !== "IMAGE") throw new UploadValidationError("Ticket attachments must be JPEG, PNG, GIF, or WebP images");
 
   const buffer = Buffer.from(await file.arrayBuffer());

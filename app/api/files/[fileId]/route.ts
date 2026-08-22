@@ -33,6 +33,8 @@ export async function GET(_request: Request, ctx: RouteContext) {
         include: { submission: { select: { userId: true, assignedWork: { select: { classroomId: true } } } } },
       },
       reportAttachment: { include: { report: { select: { userId: true } } } },
+      avatarFor: { select: { id: true } },
+      bannerFor: { select: { id: true } },
     },
   });
   if (!file || file.state === "DELETE_PENDING" || !["CLEAN", "NOT_REQUIRED"].includes(file.scanStatus)) {
@@ -40,6 +42,7 @@ export async function GET(_request: Request, ctx: RouteContext) {
   }
 
   let allowed = file.state === "PENDING" && file.ownerId === userId;
+  if (!allowed && file.state === "ATTACHED" && (file.avatarFor || file.bannerFor)) allowed = true;
   if (!allowed && file.courseCover) allowed = await canAccessCourse(file.courseCover.id, userId);
   if (!allowed && file.courseFile) {
     const courseId = file.courseFile.courseId ?? file.courseFile.lesson?.module.courseId;

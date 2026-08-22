@@ -32,8 +32,8 @@ describe("complete-set test submission", () => {
             ],
         } as never);
         vi.mocked(prisma.testAttemptResponse.findMany).mockResolvedValue([]);
-        vi.mocked(prisma.testAttemptResponse.upsert).mockImplementation(async (args: any) => ({ id: `response-${args.create.questionId}`, ...args.create, ...args.update }) as never);
-        vi.mocked(prisma.testAttempt.update).mockImplementation(async (args: any) => ({ id: "attempt-1", attemptNumber: 1, userId: "student-1", ...args.data }) as never);
+        vi.mocked(prisma.testAttemptResponse.upsert).mockImplementation((async (args: any) => ({ id: `response-${args.create.questionId}`, ...args.create, ...args.update })) as never);
+        vi.mocked(prisma.testAttempt.update).mockImplementation((async (args: any) => ({ id: "attempt-1", attemptNumber: 1, userId: "student-1", ...args.data })) as never);
         vi.mocked(prisma.$transaction).mockImplementation(async (callback: (client: typeof prisma) => Promise<unknown>) => callback(prisma));
     });
 

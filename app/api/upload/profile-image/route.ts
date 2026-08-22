@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
-import { getCurrentUserId } from "@/lib/db";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { createHash, randomUUID } from "node:crypto";
+import { getCurrentUserId, prisma } from "@/lib/db";
 import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
+import { deletePrivateFile, writePrivateFile } from "@/lib/files/storage";
 import { UploadValidationError, validateUpload } from "@/lib/files/validation";
-
-const MAX_SIZE_AVATAR = 2 * 1024 * 1024; // 2 MB
-const MAX_SIZE_BANNER = 4 * 1024 * 1024; // 4 MB
 
 export async function POST(request: Request) {
   const userId = await getCurrentUserId();
@@ -16,8 +13,7 @@ export async function POST(request: Request) {
 
   const typeParam = new URL(request.url).searchParams.get("type");
   const imageType = typeParam === "banner" ? "banner" : "avatar";
-  const maxSize = imageType === "banner" ? MAX_SIZE_BANNER : MAX_SIZE_AVATAR;
-  const subdir = imageType === "banner" ? "banners" : "avatars";
+  const purpose = imageType === "banner" ? "PROFILE_BANNER" : "PROFILE_AVATAR";
 
   let formData: FormData;
   try {
@@ -37,31 +33,37 @@ export async function POST(request: Request) {
     );
   }
 
-  if (file.size > maxSize) {
-    const maxMB = maxSize / (1024 * 1024);
-    return NextResponse.json(
-      { error: `File too large. Max ${maxMB} MB for ${imageType}.` },
-      { status: 400 }
-    );
-  }
-
   let validated;
+  let scanStatus;
   try {
-    validated = await validateUpload(file, "COURSE_COVER");
-    await scanForMalware(validated.buffer);
+    validated = await validateUpload(file, purpose);
+    scanStatus = await scanForMalware(validated.buffer);
   } catch (error) {
     const status = error instanceof UploadValidationError ? error.status : error instanceof MalwareScanError && error.infected ? 400 : 503;
     return NextResponse.json({ error: error instanceof Error ? error.message : "Image validation failed" }, { status });
   }
-  const ext = validated.extension === "jpeg" ? "jpg" : validated.extension;
-  const filename = `${userId}-${Date.now()}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", subdir);
+  const checksum = createHash("sha256").update(validated.buffer).digest("hex");
+  const storageKey = `${checksum.slice(0, 2)}/${randomUUID()}`;
 
   try {
-    await mkdir(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, validated.buffer);
+    await writePrivateFile(storageKey, validated.buffer);
+    const stored = await prisma.storedFile.create({
+      data: {
+        ownerId: userId,
+        purpose,
+        storageKey,
+        originalName: validated.originalName,
+        detectedMime: validated.detectedMime,
+        fileType: validated.fileType,
+        size: validated.size,
+        checksum,
+        scanStatus,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      },
+    });
+    return NextResponse.json({ uploadId: stored.id, url: `/api/files/${stored.id}` }, { status: 201 });
   } catch (e) {
+    await deletePrivateFile(storageKey).catch(() => {});
     console.error("Profile image upload failed:", e);
     return NextResponse.json(
       { error: "Failed to save file" },
@@ -69,6 +71,4 @@ export async function POST(request: Request) {
     );
   }
 
-  const url = `/uploads/${subdir}/${filename}`;
-  return NextResponse.json({ url });
 }

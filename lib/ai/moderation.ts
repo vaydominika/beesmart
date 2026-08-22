@@ -32,10 +32,11 @@ export async function checkContentSafety(content: string, context?: Record<strin
             ...context,
             error: error instanceof Error ? error.message : String(error),
         });
-        // If moderation fails, we default to safe but log the error, 
-        // or we could default to unsafe for maximum security.
-        // For now, let's assume safe to avoid blocking users due to API issues.
-        return { safe: true };
+        return {
+            safe: false,
+            reason: "Content moderation is temporarily unavailable. Try again later.",
+            flaggedCategories: ["MODERATION_UNAVAILABLE"],
+        };
     }
 }
 

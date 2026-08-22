@@ -15,8 +15,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
         if (!await canAccessCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
-        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
+        const courseModule = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        if (!courseModule) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
         const lessons = await prisma.courseLesson.findMany({
             where: { moduleId },
@@ -41,8 +41,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
-        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
+        const courseModule = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        if (!courseModule) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
         const data = await req.json();
         const { title, description, content } = data;

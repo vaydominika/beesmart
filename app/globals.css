@@ -140,6 +140,8 @@
   --app-text: #20231F;
   --app-text-muted: #777B74;
   --app-text-faint: #9A9D97;
+  --app-logo-mark-outline: #171916;
+  --app-logo-wing: #FFFFFF;
   --app-border: #E6E6E0;
   --app-border-strong: #DEDED7;
   --app-focus-ring: #FFF6C4;
@@ -153,6 +155,7 @@
   --app-info: #2563EB;
   --app-info-soft: #EFF6FF;
   --app-text-inverse: #FFFFFF;
+  --app-overlay-text: #FFFFFF;
   --app-overlay: color-mix(in srgb, #20231F 58%, transparent);
   --app-shadow-color: color-mix(in srgb, #20231F 16%, transparent);
   --app-shadow-soft: 0 8px 24px var(--app-shadow-color);
@@ -174,7 +177,7 @@
   --app-warning-border: color-mix(in srgb, var(--app-warning) 38%, var(--app-border));
   --app-info-border: color-mix(in srgb, var(--app-info) 36%, var(--app-border));
   --app-theme-bee-swatch: #FADA6D;
-  --app-theme-dark-swatch: #1B1B1F;
+  --app-theme-dark-swatch: #15181C;
   --app-theme-pink-swatch: #F6A7C6;
   --app-theme-blue-swatch: #93C5FD;
   --app-event-1: #FEC435;
@@ -234,46 +237,80 @@
 /* Dark Theme */
 [data-theme="dark"],
 .theme-dark {
-  --app-accent: #F3C74F;
-  --app-accent-soft: #2D281A;
-  --app-accent-hover: #433A22;
-  --app-canvas: #101113;
-  --app-surface: #1B1B1F;
-  --app-surface-muted: #242428;
-  --app-surface-hover: #2E2E34;
-  --app-text: #F6F1E7;
-  --app-text-muted: #B9B2A7;
-  --app-text-faint: #8F897F;
-  --app-border: #38383E;
-  --app-border-strong: #4A4A52;
-  --app-focus-ring: #3A321C;
-  --app-focus-border: #E0B83F;
-  --app-accent-text: #FADA6D;
-  --app-pin: #E0B83F;
-  --app-danger: #F87171;
-  --app-danger-soft: #361C20;
-  --app-success: #74D79A;
-  --app-success-soft: #173321;
-  --app-warning: #F7C66A;
-  --app-warning-soft: #332817;
-  --app-info: #7DB7FF;
-  --app-info-soft: #18283A;
-  --app-text-inverse: #101113;
-  --app-overlay: color-mix(in srgb, #050506 76%, transparent);
-  --app-shadow-color: color-mix(in srgb, #050506 54%, transparent);
-  --app-settings-active: var(--app-canvas);
-  --theme-card: var(--app-accent);
-  --theme-sidebar: var(--app-accent-soft);
+  --app-accent: #F1C84B;
+  --app-accent-soft: #292D32;
+  --app-accent-hover: #343A41;
+  --app-canvas: #0D0F12;
+  --app-surface: #15181C;
+  --app-surface-muted: #1D2126;
+  --app-surface-hover: #252A30;
+  --app-text: #F3F5F7;
+  --app-text-muted: #A7B0BA;
+  --app-text-faint: #7A8490;
+  --app-logo-mark-outline: #FFFFFF;
+  --app-logo-wing: #FFFFFF;
+  --app-border: #2A3037;
+  --app-border-strong: #3A424C;
+  --app-focus-ring: #32363A;
+  --app-focus-border: #E6C45B;
+  --app-accent-text: #F4D36A;
+  --app-pin: #E6C45B;
+  --app-danger: #FF7D86;
+  --app-danger-soft: #321D22;
+  --app-success: #72D8A3;
+  --app-success-soft: #172C23;
+  --app-warning: #F0BC65;
+  --app-warning-soft: #2D261B;
+  --app-info: #83B9FF;
+  --app-info-soft: #17283B;
+  --app-text-inverse: #101317;
+  --app-overlay: color-mix(in srgb, #020304 78%, transparent);
+  --app-shadow-color: color-mix(in srgb, #020304 62%, transparent);
+  --app-scrollbar-color: #48515C;
+  --app-scrollbar-color-hover: #687481;
+  --app-settings-active: var(--app-surface-muted);
+  --theme-card: var(--app-surface-muted);
+  --theme-sidebar: var(--app-surface);
   --theme-text: var(--app-text);
   --theme-text-important: var(--app-focus-border);
   --theme-bg: var(--app-canvas);
-  --theme-secondary: #E0B83F;
-  --app-role-teacher-bg: #3A321C;
-  --app-role-teacher-text: #FADA6D;
-  --app-role-assistant-bg: #2C223D;
-  --app-role-assistant-text: #C4A7FB;
-  --app-role-student-bg: #1B293E;
-  --app-role-student-text: #8EBAFF;
+  --theme-secondary: #E6C45B;
+  --app-role-teacher-bg: #292D32;
+  --app-role-teacher-text: #F4D36A;
+  --app-role-assistant-bg: #282238;
+  --app-role-assistant-text: #C9B5F7;
+  --app-role-student-bg: #192A3D;
+  --app-role-student-text: #91BCF5;
+}
+
+.admin-theme-light {
+  --app-canvas: #F7F7F5;
+  --app-surface: #FFFFFF;
+  --app-surface-muted: #EEEEEB;
+  --app-text: #171715;
+  --app-text-muted: #666661;
+  --app-text-faint: #969690;
+  --app-border: #DDDDD8;
+  --app-border-strong: #A8A8A1;
+  --app-accent-soft: #E5E5E0;
+  --app-focus-border: #171715;
+  --app-focus-ring: #8A8A84;
+  --app-shadow-soft: 0 12px 32px rgba(17, 17, 15, 0.12);
+}
+
+.admin-theme-dark {
+  --app-canvas: #0D0D0C;
+  --app-surface: #171716;
+  --app-surface-muted: #222220;
+  --app-text: #F2F2ED;
+  --app-text-muted: #ADADA6;
+  --app-text-faint: #777771;
+  --app-border: #30302E;
+  --app-border-strong: #5F5F59;
+  --app-accent-soft: #2B2B29;
+  --app-focus-border: #F2F2ED;
+  --app-focus-ring: #85857E;
+  --app-shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.48);
 }
 
 /* Baby Pink Theme */

@@ -7,7 +7,7 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import {
     Clock, CheckCircle2, FileText,
-    AlertCircle, Play, ArrowRight, Save, Sparkles, UserRound, RefreshCw
+    AlertCircle, Play, ArrowRight, Save, UserRound, RefreshCw
 } from "lucide-react";
 
 interface Props {
@@ -80,7 +80,6 @@ interface TeacherDashboardView {
 }
 
 type NotStartedLearner = { user: { id: string; name: string } };
-type GradeSuggestion = { responseId: string; suggestedScore: number; feedback: string };
 
 export function TestView({ classroomId, testId, isTeacher }: Props) {
     const [loading, setLoading] = useState(true);
@@ -106,8 +105,6 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     const [grading, setGrading] = useState(false);
     // Draft grades format: { responseId: { pointsAwarded: number, isCorrect: boolean, comment: string } }
     const [draftGrades, setDraftGrades] = useState<Record<string, { pointsAwarded?: string, teacherComment?: string }>>({});
-    const [gradeSuggestions, setGradeSuggestions] = useState<Record<string, { suggestedScore: number; feedback: string }> | null>(null);
-    const [suggestingGrades, setSuggestingGrades] = useState(false);
     const submitTestRef = useRef<() => void>(() => undefined);
 
 
@@ -282,7 +279,6 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     useEffect(() => {
         if (!selectedAttempt) {
             setDraftGrades({});
-            setGradeSuggestions(null);
             return;
         }
         const next: Record<string, { pointsAwarded?: string; teacherComment?: string }> = {};
@@ -295,49 +291,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             }
         }
         setDraftGrades(next);
-        setGradeSuggestions(null);
     }, [selectedAttempt]);
-
-    const handleSuggestGrades = async () => {
-        if (!selectedAttempt) return;
-        setSuggestingGrades(true);
-        try {
-            const response = await fetch("/api/ai/grade", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ attemptId: selectedAttempt.id }),
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || "Suggestions could not be generated");
-            setGradeSuggestions(Object.fromEntries(
-                (data.suggestions ?? []).map((suggestion: GradeSuggestion) => [suggestion.responseId, suggestion]),
-            ));
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Suggestions could not be generated.");
-        } finally {
-            setSuggestingGrades(false);
-        }
-    };
-
-    const applySuggestion = (responseId: string) => {
-        const suggestion = gradeSuggestions?.[responseId];
-        if (!suggestion) return;
-        setDraftGrades((current) => ({
-            ...current,
-            [responseId]: { pointsAwarded: String(suggestion.suggestedScore), teacherComment: suggestion.feedback },
-        }));
-    };
-
-    const applyAllSuggestions = () => {
-        if (!gradeSuggestions) return;
-        setDraftGrades((current) => {
-            const next = { ...current };
-            for (const [responseId, suggestion] of Object.entries(gradeSuggestions)) {
-                next[responseId] = { pointsAwarded: String(suggestion.suggestedScore), teacherComment: suggestion.feedback };
-            }
-            return next;
-        });
-    };
 
     const handleSaveGrades = async () => {
         if (!selectedAttempt) return;
@@ -626,12 +580,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                     ) : (
                         <>
                             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div><h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2><p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p></div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleSuggestGrades()} disabled={suggestingGrades}>{suggestingGrades ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{suggestingGrades ? "Reviewing..." : "Suggest grades"}</WorkspaceButton>
-                                        {gradeSuggestions && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={applyAllSuggestions}>Apply all suggestions</WorkspaceButton>}
-                                    </div>
+                                <div>
+                                    <h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2>
+                                    <p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p>
                                 </div>
                             </div>
 
@@ -639,7 +590,6 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const manual = response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY";
                                 const selectedOption = response.question.options.find((option) => option.id === response.selectedOptionId);
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
-                                const suggestion = gradeSuggestions?.[response.id];
                                 return (
                                     <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
                                         <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
@@ -649,7 +599,6 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
                                                 <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
                                                 <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
-                                                {suggestion && <div className="sm:col-span-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] p-3"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-semibold"><Sparkles className="mr-1 inline h-3.5 w-3.5" />Generated draft · {suggestion.suggestedScore}/{response.question.points}</p><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{suggestion.feedback}</p></div><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => applySuggestion(response.id)}>Apply</WorkspaceButton></div></div>}
                                             </div>
                                         ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-[var(--app-success)]" : "text-[var(--app-danger)]"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
                                     </div>
@@ -657,7 +606,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                             })}
 
                             <div className="sticky bottom-4 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-4 shadow-lg">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">Draft total: {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">AI suggestions remain drafts until you save grades.</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? "Saving..." : "Save grades"}</WorkspaceButton></div>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">Draft total: {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">Review every written answer before saving.</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? "Saving..." : "Save grades"}</WorkspaceButton></div>
                             </div>
                         </>
                     )}

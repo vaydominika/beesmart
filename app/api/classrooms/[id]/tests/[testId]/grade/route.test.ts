@@ -33,7 +33,7 @@ describe("strict test grading", () => {
       test: { questions: [{ id: "question-1", points: 2 }, { id: "question-2", points: 3 }] },
       responses: [{ id: "response-1", pointsAwarded: null, question: { id: "question-1", points: 2, questionType: "ESSAY" } }],
     } as never);
-    vi.mocked(prisma.testAttempt.update).mockImplementation(async (args: { data: { score: number } }) => ({ id: "attempt-1", userId: "student-1", score: args.data.score }) as never);
+    vi.mocked(prisma.testAttempt.update).mockImplementation((async (args: { data: { score: number } }) => ({ id: "attempt-1", userId: "student-1", score: args.data.score })) as never);
     vi.mocked(prisma.test.findUnique).mockResolvedValue({ title: "Final" } as never);
     vi.mocked(prisma.$transaction).mockImplementation(async (callback: (client: typeof prisma) => Promise<unknown>) => callback(prisma));
   });

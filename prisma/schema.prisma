@@ -32,6 +32,8 @@ enum UploadPurpose {
   SUBMISSION_ATTACHMENT
   COURSE_COVER
   TICKET_ATTACHMENT
+  PROFILE_AVATAR
+  PROFILE_BANNER
 }
 
 enum StoredFileState {
@@ -141,13 +143,17 @@ model User {
   image          String?
   avatar         String?
   bannerImageUrl String?
+  avatarFileId   String?   @unique
+  bannerFileId   String?   @unique
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   // NextAuth
   accounts    Account[]
   sessions    Session[]
-  storedFiles StoredFile[]
+  storedFiles StoredFile[] @relation("StoredFileOwner")
+  avatarFile  StoredFile?  @relation("UserAvatar", fields: [avatarFileId], references: [id], onDelete: SetNull)
+  bannerFile  StoredFile?  @relation("UserBanner", fields: [bannerFileId], references: [id], onDelete: SetNull)
 
   // Relationships
   createdCourses         Course[]                @relation("CourseCreator")
@@ -1145,7 +1151,9 @@ model StoredFile {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner            User              @relation("StoredFileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  avatarFor        User?             @relation("UserAvatar")
+  bannerFor        User?             @relation("UserBanner")
   courseFile       CourseFile?
   postFile         PostFile?
   submissionFile   SubmissionFile?
@@ -1154,4 +1162,14 @@ model StoredFile {
 
   @@index([ownerId])
   @@index([state, expiresAt])
+}
+
+model RateLimitBucket {
+  key         String   @id @db.VarChar(191)
+  count       Int      @default(0)
+  windowStart DateTime
+  expiresAt   DateTime
+  updatedAt   DateTime @updatedAt
+
+  @@index([expiresAt])
 }

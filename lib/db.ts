@@ -1,17 +1,18 @@
+import "dotenv/config";
+import { PrismaClient } from "./generated/prisma";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+
 const globalForPrisma = globalThis as unknown as { prisma: unknown };
 
 function createPrismaClient() {
-  require("dotenv/config");
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Prisma 7 requires an adapter with a connection URL."
     );
   }
-  const { PrismaClient: PrismaClientCtor } = require("./generated/prisma");
-  const { PrismaMariaDb } = require("@prisma/adapter-mariadb");
   const adapter = new PrismaMariaDb(url);
-  return new PrismaClientCtor({ adapter });
+  return new PrismaClient({ adapter });
 }
 
 function getPrisma() {

@@ -15,8 +15,8 @@ if (typeof global.Path2D === 'undefined') {
     };
 }
 
-const { getData } = require('pdf-parse/worker');
-const { PDFParse } = require('pdf-parse');
+import { getData } from 'pdf-parse/worker';
+import { PDFParse } from 'pdf-parse';
 
 // Explicitly set the worker source to avoid "expression is too dynamic" errors in Next.js
 PDFParse.setWorker(getData());

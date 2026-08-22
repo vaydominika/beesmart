@@ -11,7 +11,7 @@ describe("/api/focus-sessions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUserId).mockResolvedValue("user-1");
-    vi.mocked(prisma.focusSession.count).mockImplementation(async ({ where }: { where: { type: string } }) => where.type === "ACTIVE" ? 4 : 2);
+    vi.mocked(prisma.focusSession.count).mockImplementation((async ({ where }: { where: { type: string } }) => where.type === "ACTIVE" ? 4 : 2) as never);
     vi.mocked(prisma.focusSession.findUnique).mockResolvedValue(null as never);
   });
 

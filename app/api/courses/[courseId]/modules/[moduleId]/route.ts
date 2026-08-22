@@ -16,8 +16,8 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const module = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
-        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
+        const courseModule = await prisma.courseModule.findFirst({ where: { id: moduleId, courseId }, select: { id: true } });
+        if (!courseModule) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
         const data = await req.json();
         const updateData: any = {};
@@ -47,13 +47,13 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({ where: { id: courseId }, select: { id: true } });
         if (!course) return NextResponse.json({ error: "Not found" }, { status: 404 });
         if (!await canManageCourse(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-        const module = await prisma.courseModule.findFirst({
+        const courseModule = await prisma.courseModule.findFirst({
             where: { id: moduleId, courseId },
             select: { id: true, lessons: { select: { files: { select: { storedFileId: true } } } } },
         });
-        if (!module) return NextResponse.json({ error: "Module not found" }, { status: 404 });
+        if (!courseModule) return NextResponse.json({ error: "Module not found" }, { status: 404 });
 
-        const storedFileIds = module.lessons.flatMap((lesson: any) => lesson.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []));
+        const storedFileIds = courseModule.lessons.flatMap((lesson: any) => lesson.files.flatMap((file: any) => file.storedFileId ? [file.storedFileId] : []));
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             await markFilesForDeletion(tx, storedFileIds);
             await tx.courseModule.delete({ where: { id: moduleId, courseId } });

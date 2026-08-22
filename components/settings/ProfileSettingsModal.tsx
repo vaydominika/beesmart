@@ -127,6 +127,11 @@ export function ProfileSettingsModal() {
       setError("New passwords don't match.");
       return;
     }
+    if (newPassword && newPassword.length < 12) {
+      setActiveSection("password");
+      setError("New password must be at least 12 characters.");
+      return;
+    }
     setSaving(true);
     try {
       const response = await fetch("/api/user/profile", {
@@ -200,18 +205,20 @@ export function ProfileSettingsModal() {
                       />
                     </div>
                     <div>
-                      <Input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleAvatarFileChange} />
-                      <WorkspaceButton type="button" variant="secondary" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}>
+                      <Input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-describedby="avatar-upload-help" onChange={handleAvatarFileChange} />
+                      <WorkspaceButton type="button" variant="secondary" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar} aria-describedby="avatar-upload-help">
                         <Upload className="h-4 w-4" />{uploadingAvatar ? "Uploading…" : "Upload avatar"}
                       </WorkspaceButton>
+                      <p id="avatar-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">JPG, PNG, WebP or GIF · Max 2 MB</p>
                     </div>
                   </div>
                 </div>
                 <div>
                   <p className={workspaceLabelClass}>Banner</p>
                   <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)]"><Image src={bannerImageUrl || "/images/default_banner.jpg"} alt="Banner preview" fill sizes="(max-width: 768px) 100vw, 512px" className={bannerImageUrl ? "object-cover object-center" : "object-cover object-top"} unoptimized /></div>
-                  <Input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleBannerFileChange} />
-                  <WorkspaceButton type="button" variant="secondary" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner} className="mt-3"><Upload className="h-4 w-4" />{uploadingBanner ? "Uploading…" : "Upload banner"}</WorkspaceButton>
+                  <Input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-describedby="banner-upload-help" onChange={handleBannerFileChange} />
+                  <WorkspaceButton type="button" variant="secondary" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner} aria-describedby="banner-upload-help" className="mt-3"><Upload className="h-4 w-4" />{uploadingBanner ? "Uploading…" : "Upload banner"}</WorkspaceButton>
+                  <p id="banner-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">JPG, PNG, WebP or GIF · Max 4 MB</p>
                 </div>
               </section>
             ) : null}

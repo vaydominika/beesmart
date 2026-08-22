@@ -21,17 +21,17 @@ function resolveStorageKey(storageKey: string) {
 
 export async function writePrivateFile(storageKey: string, buffer: Buffer) {
   const destination = resolveStorageKey(storageKey);
-  await mkdir(path.dirname(destination), { recursive: true });
-  await writeFile(destination, buffer, { flag: "wx" });
+  await mkdir(/*turbopackIgnore: true*/ path.dirname(destination), { recursive: true });
+  await writeFile(/*turbopackIgnore: true*/ destination, buffer, { flag: "wx" });
 }
 
 export async function readPrivateFile(storageKey: string) {
-  return readFile(resolveStorageKey(storageKey));
+  return readFile(/*turbopackIgnore: true*/ resolveStorageKey(storageKey));
 }
 
 export async function deletePrivateFile(storageKey: string) {
   try {
-    await unlink(resolveStorageKey(storageKey));
+    await unlink(/*turbopackIgnore: true*/ resolveStorageKey(storageKey));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }

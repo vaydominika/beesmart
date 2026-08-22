@@ -6,8 +6,14 @@ export class MalwareScanError extends Error {
 }
 
 export async function scanForMalware(buffer: Buffer): Promise<FileScanStatus> {
-  const mode = (process.env.MALWARE_SCAN_MODE ?? "off").toLowerCase();
-  if (mode === "off") return "NOT_REQUIRED";
+  const fallbackMode = process.env.NODE_ENV === "production" ? "clamav" : "off";
+  const mode = (process.env.MALWARE_SCAN_MODE ?? fallbackMode).toLowerCase();
+  if (mode === "off") {
+    if (process.env.NODE_ENV === "production") {
+      throw new MalwareScanError("Malware scanning cannot be disabled in production");
+    }
+    return "NOT_REQUIRED";
+  }
   if (mode !== "clamav") throw new MalwareScanError("Unsupported malware scanner configuration");
 
   const host = process.env.CLAMAV_HOST || "127.0.0.1";

@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+import { consumeRateLimit, rateLimitHeaders, requestClientAddress } from "@/lib/security/rate-limit";
+
+const registrationSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(12).max(128),
+});
 
 export async function POST(request: Request) {
   let body: { name?: string; email?: string; password?: string };
@@ -10,41 +18,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const name = typeof body.name === "string" ? body.name.trim() : "";
-  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const password = typeof body.password === "string" ? body.password : "";
-
-  if (!name || !email || !password) {
+  const parsed = registrationSchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Name, email, and password are required" },
+      { error: "Enter a valid name, email address, and password of at least 12 characters" },
       { status: 400 }
     );
   }
+  const { name, email, password } = parsed.data;
 
-  if (password.length < 6) {
+  const [addressLimit, emailLimit] = await Promise.all([
+    consumeRateLimit("auth-register-address", requestClientAddress(request.headers), { limit: 5, windowMs: 60 * 60_000 }),
+    consumeRateLimit("auth-register-email", email, { limit: 3, windowMs: 60 * 60_000 }),
+  ]);
+  if (!addressLimit.allowed || !emailLimit.allowed) {
+    const limit = !addressLimit.allowed ? addressLimit : emailLimit;
     return NextResponse.json(
-      { error: "Password must be at least 6 characters" },
-      { status: 400 }
+      { error: "Too many registration attempts. Try again later." },
+      { status: 429, headers: rateLimitHeaders(limit) },
     );
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json(
-      { error: "An account with this email already exists" },
-      { status: 400 }
+      { error: "Unable to create an account with these details" },
+      { status: 400 },
     );
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, 12);
 
-  await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-    },
-  });
+  try {
+    await prisma.user.create({
+      data: { name, email, password: hashedPassword },
+    });
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
+      return NextResponse.json({ error: "Unable to create an account with these details" }, { status: 400 });
+    }
+    throw error;
+  }
 
   return NextResponse.json({ ok: true });
 }

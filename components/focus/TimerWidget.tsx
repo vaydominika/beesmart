@@ -19,7 +19,6 @@ export function TimerWidget() {
     timeRemaining,
     isRunning,
     isMinimized,
-    currentMode,
     pauseTimer,
     resumeTimer,
     undo,
@@ -52,7 +51,7 @@ export function TimerWidget() {
         setWidgetPosition({ x: 20, y: window.innerHeight - 200 });
       }
     }
-  }, [isSessionActive]);
+  }, [isSessionActive, setWidgetPosition, widgetPosition.y]);
 
   if (!isSessionActive) {
     return null;

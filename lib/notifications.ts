@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@/lib/generated/prisma";
 
 type ClassroomNotificationInput = {
     classroomId: string;
@@ -13,10 +14,6 @@ type ClassroomNotificationInput = {
 };
 
 type ClassroomMemberRecipient = { userId: string };
-type ReminderTransaction = {
-    reminder: { updateMany: (args: unknown) => Promise<{ count: number }> };
-    notification: { create: (args: unknown) => Promise<unknown> };
-};
 type OptionalNotificationDb = {
     userSettings?: {
         findMany?: (args: unknown) => Promise<Array<{ userId: string }>>;
@@ -143,7 +140,7 @@ export async function materializeDueReminderNotifications(userId: string) {
 
     const triggered: Array<{ id: string; task: string }> = [];
     for (const reminder of due) {
-        const created = await prisma.$transaction(async (tx: ReminderTransaction) => {
+        const created = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const claimed = await tx.reminder.updateMany({
                 where: { id: reminder.id, userId, completed: false, notificationProcessedAt: null },
                 data: { notificationProcessedAt: now },

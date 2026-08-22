@@ -36,9 +36,10 @@ export function parseEventReminder(payload: unknown, event: ReminderEvent) {
 }
 
 export function serializeEventReminder(reminder: {
-  notifyAt: Date;
+  notifyAt: Date | null;
   notificationProcessedAt: Date | null;
 }) {
+  if (!reminder.notifyAt) return null;
   return {
     notifyAt: reminder.notifyAt.toISOString(),
     notificationProcessedAt: reminder.notificationProcessedAt?.toISOString() ?? null,

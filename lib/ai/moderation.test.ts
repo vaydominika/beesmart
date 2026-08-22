@@ -53,12 +53,12 @@ describe('Moderation Logic', () => {
       expect(result.reason).toBe('Profanity detected');
     });
 
-    it('should default to safe: true if the AI check fails', async () => {
+    it('should fail closed if the AI check fails', async () => {
       vi.mocked(generateObject).mockRejectedValue(new Error('API Down'));
 
       const result = await checkContentSafety('Any content');
 
-      expect(result.safe).toBe(true);
+      expect(result).toMatchObject({ safe: false, flaggedCategories: ['MODERATION_UNAVAILABLE'] });
     });
   });
 

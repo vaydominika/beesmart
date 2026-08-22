@@ -159,7 +159,7 @@ export function FeedbackModal({
                       type="button"
                       onClick={() => setImages((current) => current.filter((item) => item.uploadId !== image.uploadId))}
                       aria-label={`Remove ${image.fileName}`}
-                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-overlay)] text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-overlay)] text-[var(--app-overlay-text)] opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

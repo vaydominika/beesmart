@@ -134,7 +134,11 @@ export async function GET(req: NextRequest) {
 
     // Return next N upcoming events
     if (upcoming) {
-        const limit = parseInt(upcoming) || 2;
+        const requestedLimit = Number.parseInt(upcoming, 10);
+        if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 50) {
+            return NextResponse.json({ error: "Upcoming limit must be between 1 and 50." }, { status: 400 });
+        }
+        const limit = requestedLimit;
         const now = new Date();
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
@@ -182,9 +186,12 @@ export async function GET(req: NextRequest) {
 
     // Return events for a specific month
     if (month) {
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+            return NextResponse.json({ error: "Month must use YYYY-MM format." }, { status: 400 });
+        }
         const [yearStr, monthStr] = month.split("-");
-        const y = parseInt(yearStr);
-        const m = parseInt(monthStr) - 1; // JS months are 0-indexed
+        const y = Number.parseInt(yearStr, 10);
+        const m = Number.parseInt(monthStr, 10) - 1; // JS months are 0-indexed
         const start = new Date(y, m, 1);
         const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
 
@@ -199,10 +206,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
     }
 
-    // Default: return all user events
+    // Legacy fallback is bounded to prevent an unbounded database response.
     const events = await prisma.event.findMany({
         where: accessibleEvents(userId),
-        orderBy: [{ order: "asc" }, { startTime: "asc" }],
+        orderBy: [{ startDate: "desc" }, { order: "asc" }, { startTime: "asc" }],
+        take: 200,
         include: eventAccessInclude(userId),
     });
     return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
