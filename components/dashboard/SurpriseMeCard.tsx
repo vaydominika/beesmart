@@ -1,5 +1,12 @@
-import { DashboardActionCard } from "./DashboardActionCard";
+import { DailyCourseRecommendationCard } from "./DailyCourseRecommendationCard";
 
 export function SurpriseMeCard() {
-  return <DashboardActionCard title="Try something new" description="Let the hive choose a course for you." actionLabel="Surprise me" targetId="discover" />;
+  return (
+    <DailyCourseRecommendationCard
+      kind="TRY_SOMETHING_NEW"
+      title="Try something new"
+      description="Let the hive choose a course for you."
+      actionLabel="Surprise me"
+    />
+  );
 }

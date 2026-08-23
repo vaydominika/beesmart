@@ -15,16 +15,25 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-        // Get all graded assignments in the classroom
+        // Get all assignments that are still published in the classroom.
         const assignments = await prisma.assignedWork.findMany({
-            where: { classroomId: id, isGraded: true },
+            where: {
+                classroomId: id,
+                posts: { some: { classroomId: id } },
+                ...(membership.role === "STUDENT"
+                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
+                    : {}),
+            },
             select: { id: true, title: true, maxPoints: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true },
             orderBy: { createdAt: "asc" },
         });
 
         // Get all tests in the classroom
         const tests = await prisma.test.findMany({
-            where: { classroomId: id },
+            where: {
+                classroomId: id,
+                posts: { some: { classroomId: id } },
+            },
             select: { id: true, title: true, type: true },
             orderBy: { createdAt: "asc" },
         });
@@ -70,11 +79,14 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     };
                 }),
                 tests: tests.map((t: any) => {
-                    const attempts = testAttempts.filter((a: any) => a.testId === t.id && a.score != null);
-                    const attempt = attempts.sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))[0];
+                    const attempts = testAttempts.filter((a: any) => a.testId === t.id);
+                    const attempt = attempts.sort((a: any, b: any) => {
+                        const scoreDifference = (b.score ?? -1) - (a.score ?? -1);
+                        return scoreDifference || new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime();
+                    })[0];
                     return {
                         ...t,
-                        attempt: attempt ? { score: attempt.score, submittedAt: attempt.submittedAt } : null,
+                        attempt: attempt ? { id: attempt.id, score: attempt.score, submittedAt: attempt.submittedAt } : null,
                     };
                 }),
             });
@@ -116,10 +128,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 }),
                 testGrades: tests.map((t: any) => {
                     const attempt = allAttempts
-                        .filter((a: any) => a.testId === t.id && a.userId === s.userId && a.score != null)
-                        .sort((a: any, b: any) => (b.score ?? -1) - (a.score ?? -1))[0];
+                        .filter((a: any) => a.testId === t.id && a.userId === s.userId)
+                        .sort((a: any, b: any) => new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime())[0];
                     return {
                         testId: t.id,
+                        attemptId: attempt?.id ?? null,
                         score: attempt?.score ?? null,
                         submittedAt: attempt?.submittedAt ?? null,
                     };

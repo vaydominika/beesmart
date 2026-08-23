@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  AI_DAILY_LIMIT,
+  aiDailyLimitFor,
   AI_USAGE_HEADER_CATEGORY,
   AI_USAGE_HEADER_LIMIT,
   AI_USAGE_HEADER_REMAINING,
@@ -69,11 +69,11 @@ function localResetTime(resetsAt: string) {
   return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(resetsAt));
 }
 
-export function AiUsageStatus({ usage, className }: { usage: AiUsageState | null; className?: string }) {
-  const remaining = usage?.remaining ?? AI_DAILY_LIMIT;
+export function AiUsageStatus({ usage, category = "LESSON_CONTENT", unit = "AI attempt", className }: { usage: AiUsageState | null; category?: AiUsageCategory; unit?: string; className?: string }) {
+  const remaining = usage?.remaining ?? aiDailyLimitFor(category);
   return (
     <p role="status" className={cn("flex w-fit max-w-full flex-wrap items-center gap-x-1 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-muted)]", className)}>
-      <span>{remaining} AI {remaining === 1 ? "attempt" : "attempts"} left today</span>
+      <span>{remaining} {unit}{remaining === 1 ? "" : "s"} left today</span>
       {usage?.resetsAt && <span aria-label={`Resets at ${localResetTime(usage.resetsAt)}`}>· Resets {localResetTime(usage.resetsAt)}</span>}
     </p>
   );

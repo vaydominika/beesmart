@@ -9,6 +9,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { clearRateLimit, consumeRateLimit, requestClientAddress } from "@/lib/security/rate-limit";
+import { validSessionUserId, validateSessionToken } from "@/lib/auth-session";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -62,15 +63,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (!isLoggedIn && !isAuthPage) return false;
       return true;
     },
-    jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-      }
-      return token;
+    async jwt({ token, user }) {
+      const signedInUserId = user && typeof user.id === "string" ? user.id : null;
+      return validateSessionToken(token, signedInUserId, async (userId) => Boolean(await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true },
+      })));
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.id = (token.id ?? token.sub) as string;
+        session.user.id = validSessionUserId(token) ?? "";
       }
       return session;
     },

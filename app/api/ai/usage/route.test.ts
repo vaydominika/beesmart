@@ -22,6 +22,7 @@ describe("GET /api/ai/usage", () => {
         LESSON_CONTENT: { category: "LESSON_CONTENT", used: 1, remaining: 2, limit: 3, resetsAt: "2026-08-16T00:00:00.000Z" },
         SYLLABUS: { category: "SYLLABUS", used: 2, remaining: 1, limit: 3, resetsAt: "2026-08-16T00:00:00.000Z" },
         TEST_EXAM: { category: "TEST_EXAM", used: 3, remaining: 0, limit: 3, resetsAt: "2026-08-16T00:00:00.000Z" },
+        GRADING: { category: "GRADING", used: 32, remaining: 3, limit: 35, resetsAt: "2026-08-16T00:00:00.000Z" },
       },
     });
 
@@ -29,5 +30,6 @@ describe("GET /api/ai/usage", () => {
     const data = await response.json();
     expect(data.categories.SYLLABUS.remaining).toBe(1);
     expect(data.categories.TEST_EXAM.remaining).toBe(0);
+    expect(data.categories.GRADING.remaining).toBe(3);
   });
 });

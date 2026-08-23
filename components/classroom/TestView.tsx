@@ -1,13 +1,23 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceProgress } from "@/components/ui/workspace-progress";
 import { WorkspaceLoadingState } from "@/components/ui/workspace-state";
+import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import {
+    AI_GRADING_BATCH_CONCURRENCY,
+    AI_GRADING_BATCH_SIZE,
+    TEST_TOTAL_WRITTEN_CHARACTER_LIMIT,
+    totalWrittenCharacters,
+    writtenResponseLimit,
+} from "@/lib/test-response-limits";
+import {
     Clock, CheckCircle2, FileText,
-    AlertCircle, Play, ArrowRight, Save, UserRound, RefreshCw
+    AlertCircle, Play, ArrowRight, Save, UserRound, RefreshCw, Sparkles
 } from "lucide-react";
 
 interface Props {
@@ -58,6 +68,9 @@ interface TeacherTestAttempt extends TestAttempt {
         isCorrect?: boolean | null;
         pointsAwarded?: number | null;
         teacherComment?: string | null;
+        aiSuggestedPoints?: number | null;
+        aiSuggestedFeedback?: string | null;
+        aiSuggestedConfidence?: "HIGH" | "MEDIUM" | "LOW" | null;
         question: TestQuestion & { answers: Array<{ answerText: string, isCorrect: boolean }> };
     }>;
     gradingStatus: "NEEDS_REVIEW" | "GRADED" | "IN_PROGRESS";
@@ -80,8 +93,16 @@ interface TeacherDashboardView {
 }
 
 type NotStartedLearner = { user: { id: string; name: string } };
+type GradeSuggestion = {
+    responseId: string;
+    suggestedScore: number;
+    feedback: string;
+    confidence: "HIGH" | "MEDIUM" | "LOW";
+};
 
 export function TestView({ classroomId, testId, isTeacher }: Props) {
+    const searchParams = useSearchParams();
+    const requestedAttemptId = searchParams.get("attempt");
     const [loading, setLoading] = useState(true);
     const [test, setTest] = useState<TestDetails | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
@@ -105,6 +126,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     const [grading, setGrading] = useState(false);
     // Draft grades format: { responseId: { pointsAwarded: number, isCorrect: boolean, comment: string } }
     const [draftGrades, setDraftGrades] = useState<Record<string, { pointsAwarded?: string, teacherComment?: string }>>({});
+    const [gradeSuggestions, setGradeSuggestions] = useState<Record<string, GradeSuggestion>>({});
+    const [suggestingGrades, setSuggestingGrades] = useState(false);
+    const [batchProgress, setBatchProgress] = useState<{ completed: number; total: number; failed: number } | null>(null);
+    const { usage: gradingUsage, exhausted: gradingExhausted, syncFromResponse: syncGradingUsage } = useAiUsage("GRADING", isTeacher);
     const submitTestRef = useRef<() => void>(() => undefined);
 
 
@@ -119,7 +144,8 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 if (!testRes.ok) throw new Error(data.error || "Teacher dashboard could not be loaded");
                 setTest(data.test);
                 setDashboardData(data.dashboard);
-                setSelectedAttemptId((current) => current ?? data.dashboard.completed[0]?.id ?? null);
+                const requestedAttempt = data.dashboard.completed.find((attempt: TeacherTestAttempt) => attempt.id === requestedAttemptId);
+                setSelectedAttemptId((current) => requestedAttempt?.id ?? current ?? data.dashboard.completed[0]?.id ?? null);
 
             } else {
                 const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}`);
@@ -144,7 +170,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [classroomId, testId, isTeacher]);
+    }, [classroomId, testId, isTeacher, requestedAttemptId]);
 
     useEffect(() => {
         fetchInitialData();
@@ -215,10 +241,12 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         const nextValue = type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE"
             ? { selectedOptionId: value }
             : { responseText: value };
-        setResponses(prev => ({
-            ...prev,
-            [questionId]: nextValue,
-        }));
+        const nextResponses = { ...responses, [questionId]: nextValue };
+        if (totalWrittenCharacters(Object.values(nextResponses)) > TEST_TOTAL_WRITTEN_CHARACTER_LIMIT) {
+            toast.error(`Written answers can total up to ${TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} characters per attempt.`);
+            return;
+        }
+        setResponses(nextResponses);
         setSaveState("SAVING");
         clearTimeout(saveTimers.current[questionId]);
         saveTimers.current[questionId] = setTimeout(() => {
@@ -275,13 +303,29 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         () => dashboardData?.completed.find((item) => item.id === selectedAttemptId) ?? null,
         [dashboardData, selectedAttemptId],
     );
+    const selectedAttemptNeedsDrafts = selectedAttempt?.responses.some((response) =>
+        response.question.questionType === "ESSAY"
+        && response.pointsAwarded == null
+        && Boolean(response.responseText?.trim())
+        && response.aiSuggestedPoints == null,
+    ) ?? false;
+    const attemptsNeedingDrafts = useMemo(() => (dashboardData?.completed ?? []).filter((completedAttempt) =>
+        completedAttempt.responses.some((response) =>
+            response.question.questionType === "ESSAY"
+            && response.pointsAwarded == null
+            && Boolean(response.responseText?.trim())
+            && response.aiSuggestedPoints == null,
+        ),
+    ), [dashboardData]);
 
     useEffect(() => {
         if (!selectedAttempt) {
             setDraftGrades({});
+            setGradeSuggestions({});
             return;
         }
         const next: Record<string, { pointsAwarded?: string; teacherComment?: string }> = {};
+        const nextSuggestions: Record<string, GradeSuggestion> = {};
         for (const response of selectedAttempt.responses) {
             if (response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY") {
                 next[response.id] = {
@@ -289,9 +333,114 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                     teacherComment: response.teacherComment ?? "",
                 };
             }
+            if (response.question.questionType === "ESSAY" && response.aiSuggestedPoints != null && response.aiSuggestedFeedback) {
+                nextSuggestions[response.id] = {
+                    responseId: response.id,
+                    suggestedScore: response.aiSuggestedPoints,
+                    feedback: response.aiSuggestedFeedback,
+                    confidence: response.aiSuggestedConfidence ?? "LOW",
+                };
+            }
         }
         setDraftGrades(next);
+        setGradeSuggestions(nextSuggestions);
     }, [selectedAttempt]);
+
+    const storeSuggestions = useCallback((attemptId: string, suggestions: GradeSuggestion[]) => {
+        const byResponseId = new Map(suggestions.map((suggestion) => [suggestion.responseId, suggestion]));
+        setDashboardData((current) => current ? {
+            ...current,
+            completed: current.completed.map((completedAttempt) => completedAttempt.id !== attemptId ? completedAttempt : {
+                ...completedAttempt,
+                responses: completedAttempt.responses.map((response) => {
+                    const suggestion = byResponseId.get(response.id);
+                    return suggestion ? {
+                        ...response,
+                        aiSuggestedPoints: suggestion.suggestedScore,
+                        aiSuggestedFeedback: suggestion.feedback,
+                        aiSuggestedConfidence: suggestion.confidence,
+                    } : response;
+                }),
+            }),
+        } : current);
+    }, []);
+
+    const requestGradeDrafts = useCallback(async (attemptId: string) => {
+        const response = await fetch(`/api/classrooms/${classroomId}/tests/${testId}/ai-grade`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ attemptId }),
+        });
+        syncGradingUsage(response);
+        const data = await response.json().catch(() => ({})) as { error?: string; suggestions?: GradeSuggestion[] };
+        if (!response.ok) throw new Error(data.error || "Grading drafts could not be generated");
+        const suggestions = data.suggestions ?? [];
+        storeSuggestions(attemptId, suggestions);
+        return suggestions;
+    }, [classroomId, storeSuggestions, syncGradingUsage, testId]);
+
+    const handleSuggestGrades = async () => {
+        if (!selectedAttempt) return;
+        setSuggestingGrades(true);
+        try {
+            const suggestions = await requestGradeDrafts(selectedAttempt.id);
+            setGradeSuggestions(Object.fromEntries(suggestions.map((suggestion) => [suggestion.responseId, suggestion])));
+            toast.success(suggestions.length ? "Grading drafts are ready for review." : "No ungraded essays found.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Grading drafts could not be generated.");
+        } finally {
+            setSuggestingGrades(false);
+        }
+    };
+
+    const handleSuggestAllGrades = async () => {
+        const queue = attemptsNeedingDrafts.slice(0, AI_GRADING_BATCH_SIZE);
+        if (queue.length === 0) return;
+        setSuggestingGrades(true);
+        setBatchProgress({ completed: 0, total: queue.length, failed: 0 });
+        let nextIndex = 0;
+        let completed = 0;
+        let failed = 0;
+        const worker = async () => {
+            while (nextIndex < queue.length) {
+                const item = queue[nextIndex++];
+                try {
+                    await requestGradeDrafts(item.id);
+                } catch {
+                    failed += 1;
+                } finally {
+                    completed += 1;
+                    setBatchProgress({ completed, total: queue.length, failed });
+                }
+            }
+        };
+        await Promise.all(Array.from({ length: Math.min(AI_GRADING_BATCH_CONCURRENCY, queue.length) }, () => worker()));
+        setSuggestingGrades(false);
+        if (failed) {
+            toast.warning(`${queue.length - failed} grading drafts completed; ${failed} need another try.`);
+        } else {
+            toast.success(`${queue.length} grading ${queue.length === 1 ? "draft" : "drafts"} ready for review.`);
+        }
+    };
+
+    const applySuggestion = (responseId: string) => {
+        const suggestion = gradeSuggestions[responseId];
+        if (!suggestion) return;
+        setDraftGrades((current) => ({
+            ...current,
+            [responseId]: { pointsAwarded: String(suggestion.suggestedScore), teacherComment: suggestion.feedback },
+        }));
+    };
+
+    const applyAllSuggestions = () => {
+        setDraftGrades((current) => {
+            const next = { ...current };
+            for (const [responseId, suggestion] of Object.entries(gradeSuggestions)) {
+                next[responseId] = { pointsAwarded: String(suggestion.suggestedScore), teacherComment: suggestion.feedback };
+            }
+            return next;
+        });
+    };
 
     const handleSaveGrades = async () => {
         if (!selectedAttempt) return;
@@ -454,12 +603,19 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                     )}
 
                                     {(q.questionType === "SHORT_ANSWER" || q.questionType === "ESSAY") && (
-                                        <textarea
-                                            value={responses[q.id]?.responseText || ""}
-                                            onChange={(e) => handleAnswerChange(q.id, e.target.value, q.questionType)}
-                                            placeholder="Write your answer here..."
-                                            className="w-full bg-(--theme-sidebar) rounded-xl corner-squircle text-sm p-4 min-h-[150px] outline-none border-2 border-transparent focus:border-(--theme-text)/20 resize-y font-bold text-(--theme-text)"
-                                        ></textarea>
+                                        <div>
+                                            <textarea
+                                                value={responses[q.id]?.responseText || ""}
+                                                onChange={(e) => handleAnswerChange(q.id, e.target.value, q.questionType)}
+                                                maxLength={writtenResponseLimit(q.questionType) ?? undefined}
+                                                aria-describedby={`response-limit-${q.id}`}
+                                                placeholder="Write your answer here..."
+                                                className="w-full bg-(--theme-sidebar) rounded-xl corner-squircle text-sm p-4 min-h-[150px] outline-none border-2 border-transparent focus:border-(--theme-text)/20 resize-y font-bold text-(--theme-text)"
+                                            />
+                                            <p id={`response-limit-${q.id}`} className="mt-1.5 text-right text-[11px] font-medium text-[var(--classroom-text-muted)]">
+                                                {(responses[q.id]?.responseText?.length ?? 0).toLocaleString()} / {(writtenResponseLimit(q.questionType) ?? 0).toLocaleString()} characters
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -468,7 +624,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         {/* Sticky Submit Bar */}
                         <div className="fixed bottom-0 left-0 w-full bg-(--theme-card) border-t border-(--theme-text)/10 p-4 shadow-2xl z-20">
                             <div className="max-w-3xl mx-auto flex items-center justify-between">
-                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-[var(--app-danger)]" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-[var(--app-danger-border)] px-2 py-1 text-xs font-semibold text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)]">Retry save</button>}</div>
+                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className="text-xs font-medium text-[var(--classroom-text-muted)]">{totalWrittenCharacters(Object.values(responses)).toLocaleString()} / {TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} written characters</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-[var(--app-danger)]" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-[var(--app-danger-border)] px-2 py-1 text-xs font-semibold text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)]">Retry save</button>}</div>
                                 <WorkspaceButton
                                     type="button"
                                     variant="primary"
@@ -546,6 +702,27 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         </button>
                     ))}
                 </div>
+                <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-[var(--classroom-text)]">AI grading drafts</p>
+                            <AiUsageStatus usage={gradingUsage} category="GRADING" unit="student" className="bg-[var(--app-surface)]" />
+                        </div>
+                        {batchProgress ? (
+                            <WorkspaceProgress
+                                value={batchProgress.total ? Math.round((batchProgress.completed / batchProgress.total) * 100) : 0}
+                                label={`${batchProgress.completed} of ${batchProgress.total}${batchProgress.failed ? ` · ${batchProgress.failed} failed` : ""}`}
+                                className="mt-2 w-full max-w-sm"
+                            />
+                        ) : (
+                            <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Separate allowance. Drafts always require your review.</p>
+                        )}
+                    </div>
+                    <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleSuggestAllGrades()} disabled={suggestingGrades || gradingExhausted || attemptsNeedingDrafts.length === 0}>
+                        {suggestingGrades ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        {suggestingGrades ? "Drafting..." : `Draft pending (${Math.min(attemptsNeedingDrafts.length, AI_GRADING_BATCH_SIZE)})`}
+                    </WorkspaceButton>
+                </div>
             </div>
 
             <div className="grid min-h-[620px] gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
@@ -580,9 +757,18 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                     ) : (
                         <>
                             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2>
-                                    <p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2>
+                                        <p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleSuggestGrades()} disabled={suggestingGrades || gradingExhausted || !selectedAttemptNeedsDrafts}>
+                                            {suggestingGrades ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                            {Object.keys(gradeSuggestions).length && !selectedAttemptNeedsDrafts ? "Drafts ready" : "Draft essay grades"}
+                                        </WorkspaceButton>
+                                        {Object.keys(gradeSuggestions).length > 0 && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={applyAllSuggestions}>Apply all drafts</WorkspaceButton>}
+                                    </div>
                                 </div>
                             </div>
 
@@ -590,6 +776,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const manual = response.question.questionType === "SHORT_ANSWER" || response.question.questionType === "ESSAY";
                                 const selectedOption = response.question.options.find((option) => option.id === response.selectedOptionId);
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
+                                const suggestion = gradeSuggestions[response.id];
                                 return (
                                     <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
                                         <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
@@ -598,7 +785,8 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                         {manual ? (
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
                                                 <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
-                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
+                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea maxLength={1000} value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
+                                                {suggestion && <div className="rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] p-3 sm:col-span-2"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-xs font-semibold text-[var(--classroom-text)]"><Sparkles className="mr-1 inline h-3.5 w-3.5" />AI draft · {suggestion.suggestedScore}/{response.question.points} · {suggestion.confidence === "LOW" ? "Needs close review" : `${suggestion.confidence.toLowerCase()} confidence`}</p><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{suggestion.feedback}</p></div><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => applySuggestion(response.id)}>Apply</WorkspaceButton></div></div>}
                                             </div>
                                         ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-[var(--app-success)]" : "text-[var(--app-danger)]"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
                                     </div>

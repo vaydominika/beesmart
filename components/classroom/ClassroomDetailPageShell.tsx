@@ -9,7 +9,7 @@ export function ClassroomDetailPageShell({ classroomId, classroomName, detailTit
   return (
     <div className="classroom-ui mx-auto max-w-5xl space-y-6 bg-[var(--classroom-canvas)] p-4 md:p-8">
       <div className="flex items-center gap-4">
-        <button type="button" onClick={() => router.push(`/classroom/${classroomId}`)} aria-label={`Back to ${classroomName}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]">
+        <button type="button" onClick={() => router.push(`/classroom/${classroomId}?tab=Grades`)} aria-label={`Back to ${classroomName} grades`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]">
           <ArrowLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <div className="flex min-w-0 items-center gap-3">

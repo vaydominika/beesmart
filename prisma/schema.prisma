@@ -96,6 +96,12 @@ enum AiUsageCategory {
   LESSON_CONTENT
   SYLLABUS
   TEST_EXAM
+  GRADING
+}
+
+enum CourseRecommendationKind {
+  HIVE_PICK
+  TRY_SOMETHING_NEW
 }
 
 enum FocusSessionType {
@@ -156,39 +162,40 @@ model User {
   bannerFile  StoredFile?  @relation("UserBanner", fields: [bannerFileId], references: [id], onDelete: SetNull)
 
   // Relationships
-  createdCourses         Course[]                @relation("CourseCreator")
-  createdClassrooms      Classroom[]
-  classroomMemberships   ClassroomMember[]
-  courseEnrollments      CourseEnrollment[]
-  courseProgress         CourseProgress[]
-  createdTests           Test[]
-  createdFlashcardSets   FlashcardSet[]
-  personalEvents         Event[]                 @relation("PersonalEvents")
-  assignedWorkAsTeacher  AssignedWork[]          @relation("WorkAssigner")
-  assignedWorkAsStudent  AssignedWork[]          @relation("WorkAssignee")
-  schedules              Schedule[]
-  reminders              Reminder[]
-  notifications          Notification[]
-  gradesAsStudent        Grade[]                 @relation("StudentGrade")
-  gradesAsGrader         Grade[]                 @relation("Grader")
-  streak                 Streak?
-  focusSessions          FocusSession[]
-  sentInvitations        ClassroomInvitation[]
-  bookmarks              Bookmark[]
-  certificates           Certificate[]
-  uploadedFiles          CourseFile[]
-  testAttempts           TestAttempt[]
-  flashcardStudySessions FlashcardStudySession[]
-  settings               UserSettings?
-  courseRatings          CourseRating[]
-  reports                Report[]                @relation("ReportReporter")
-  reviewedReports        Report[]                @relation("ReportReviewer")
-  classroomPosts         ClassroomPost[]
-  comments               Comment[]
-  submissions            Submission[]
-  courseAccessGrants     CourseAccess[]
-  activityRecords        ActivityRecord[]
-  aiUsageQuotas          AiUsageQuota[]
+  createdCourses             Course[]                    @relation("CourseCreator")
+  createdClassrooms          Classroom[]
+  classroomMemberships       ClassroomMember[]
+  courseEnrollments          CourseEnrollment[]
+  courseProgress             CourseProgress[]
+  createdTests               Test[]
+  createdFlashcardSets       FlashcardSet[]
+  personalEvents             Event[]                     @relation("PersonalEvents")
+  assignedWorkAsTeacher      AssignedWork[]              @relation("WorkAssigner")
+  assignedWorkAsStudent      AssignedWork[]              @relation("WorkAssignee")
+  schedules                  Schedule[]
+  reminders                  Reminder[]
+  notifications              Notification[]
+  gradesAsStudent            Grade[]                     @relation("StudentGrade")
+  gradesAsGrader             Grade[]                     @relation("Grader")
+  streak                     Streak?
+  focusSessions              FocusSession[]
+  sentInvitations            ClassroomInvitation[]
+  bookmarks                  Bookmark[]
+  certificates               Certificate[]
+  uploadedFiles              CourseFile[]
+  testAttempts               TestAttempt[]
+  flashcardStudySessions     FlashcardStudySession[]
+  settings                   UserSettings?
+  courseRatings              CourseRating[]
+  reports                    Report[]                    @relation("ReportReporter")
+  reviewedReports            Report[]                    @relation("ReportReviewer")
+  classroomPosts             ClassroomPost[]
+  comments                   Comment[]
+  submissions                Submission[]
+  courseAccessGrants         CourseAccess[]
+  activityRecords            ActivityRecord[]
+  aiUsageQuotas              AiUsageQuota[]
+  dailyCourseRecommendations DailyCourseRecommendation[]
 
   @@index([email])
 }
@@ -289,26 +296,27 @@ model Course {
   updatedAt         DateTime         @updatedAt
 
   // Relationships
-  creator         User               @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  coverStoredFile StoredFile?        @relation("CourseCover", fields: [coverStoredFileId], references: [id], onDelete: SetNull)
-  classroom       Classroom?         @relation(fields: [classroomId], references: [id], onDelete: SetNull)
-  modules         CourseModule[]
-  enrollments     CourseEnrollment[]
-  progress        CourseProgress[]
-  files           CourseFile[]
-  tests           Test[]
-  flashcardSets   FlashcardSet[]
-  events          Event[]
-  assignedWork    AssignedWork[]
-  tags            CourseTag[]
-  bookmarks       Bookmark[]
-  certificates    Certificate[]
-  grades          Grade[]
-  ratings         CourseRating[]
-  reports         Report[]
-  classroomPosts  ClassroomPost[]
-  classroomLinks  ClassroomCourse[]
-  accessGrants    CourseAccess[]
+  creator              User                        @relation("CourseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  coverStoredFile      StoredFile?                 @relation("CourseCover", fields: [coverStoredFileId], references: [id], onDelete: SetNull)
+  classroom            Classroom?                  @relation(fields: [classroomId], references: [id], onDelete: SetNull)
+  modules              CourseModule[]
+  enrollments          CourseEnrollment[]
+  progress             CourseProgress[]
+  files                CourseFile[]
+  tests                Test[]
+  flashcardSets        FlashcardSet[]
+  events               Event[]
+  assignedWork         AssignedWork[]
+  tags                 CourseTag[]
+  bookmarks            Bookmark[]
+  certificates         Certificate[]
+  grades               Grade[]
+  ratings              CourseRating[]
+  reports              Report[]
+  classroomPosts       ClassroomPost[]
+  classroomLinks       ClassroomCourse[]
+  accessGrants         CourseAccess[]
+  dailyRecommendations DailyCourseRecommendation[]
 
   @@index([createdById])
   @@index([classroomId])
@@ -515,15 +523,19 @@ model TestAttempt {
 }
 
 model TestAttemptResponse {
-  id               String   @id @default(cuid())
-  attemptId        String
-  questionId       String
-  responseText     String?  @db.Text
-  selectedOptionId String?
-  isCorrect        Boolean?
-  pointsAwarded    Float?
-  teacherComment   String?  @db.Text
-  createdAt        DateTime @default(now())
+  id                    String    @id @default(cuid())
+  attemptId             String
+  questionId            String
+  responseText          String?   @db.Text
+  selectedOptionId      String?
+  isCorrect             Boolean?
+  pointsAwarded         Float?
+  teacherComment        String?   @db.Text
+  aiSuggestedPoints     Float?
+  aiSuggestedFeedback   String?   @db.Text
+  aiSuggestedConfidence String?   @db.VarChar(10)
+  aiSuggestedAt         DateTime?
+  createdAt             DateTime  @default(now())
 
   // Relationships
   attempt        TestAttempt         @relation(fields: [attemptId], references: [id], onDelete: Cascade)
@@ -1021,6 +1033,23 @@ model AiUsageQuota {
 
   @@unique([userId, category])
   @@index([periodStart])
+}
+
+model DailyCourseRecommendation {
+  id          String                   @id @default(cuid())
+  userId      String
+  courseId    String?
+  kind        CourseRecommendationKind
+  periodStart DateTime
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, kind, periodStart])
+  @@index([userId, periodStart])
+  @@index([courseId])
 }
 
 // ==========================================

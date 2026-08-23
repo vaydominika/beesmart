@@ -19,37 +19,63 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
+        const assignment = await prisma.assignedWork.findFirst({
+            where: {
+                id: assignmentId,
+                classroomId: id,
+                ...(membership.role === "STUDENT"
+                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
+                    : {}),
+            },
+            select: { id: true },
+        });
+        if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
+
         if (membership.role === "STUDENT") {
             // Student can only view their own submission
-            const submission = await prisma.submission.findUnique({
-                where: { assignedWorkId_userId: { assignedWorkId: assignmentId, userId } },
-                include: {
-                    files: true,
-                    comments: {
-                        where: { isPrivate: true },
-                        include: { author: { select: { id: true, name: true, avatar: true } } },
-                        orderBy: { createdAt: "asc" },
+            const [submission, grade] = await Promise.all([
+                prisma.submission.findUnique({
+                    where: { assignedWorkId_userId: { assignedWorkId: assignmentId, userId } },
+                    include: {
+                        files: true,
+                        comments: {
+                            where: { isPrivate: true },
+                            include: { author: { select: { id: true, name: true, avatar: true } } },
+                            orderBy: { createdAt: "asc" },
+                        },
                     },
-                },
-            });
-            return NextResponse.json(submission ? [{ ...submission, files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) }] : []);
+                }),
+                prisma.grade.findFirst({
+                    where: { assignedWorkId: assignmentId, userId },
+                    select: { score: true, maxScore: true, feedback: true, gradedAt: true },
+                }),
+            ]);
+            return NextResponse.json(submission ? [{
+                ...submission,
+                grade,
+                files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+            }] : []);
         } else {
             // Teacher/TA can view all submissions
-            const submissions = await prisma.submission.findMany({
-                where: { assignedWorkId: assignmentId },
-                include: {
-                    user: { select: { id: true, name: true, email: true, avatar: true } },
-                    files: true,
-                    _count: { select: { comments: true } },
-                },
-                orderBy: { createdAt: "desc" },
-            });
-
-            // Also get students who haven't submitted
-            const allStudents = await prisma.classroomMember.findMany({
-                where: { classroomId: id, role: "STUDENT" },
-                include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
-            });
+            const [submissions, allStudents, grades] = await Promise.all([
+                prisma.submission.findMany({
+                    where: { assignedWorkId: assignmentId },
+                    include: {
+                        user: { select: { id: true, name: true, email: true, avatar: true } },
+                        files: true,
+                        _count: { select: { comments: true } },
+                    },
+                    orderBy: { createdAt: "desc" },
+                }),
+                prisma.classroomMember.findMany({
+                    where: { classroomId: id, role: "STUDENT" },
+                    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+                }),
+                prisma.grade.findMany({
+                    where: { assignedWorkId: assignmentId },
+                    select: { userId: true, score: true, maxScore: true, feedback: true, gradedAt: true },
+                }),
+            ]);
 
             const submittedIds = new Set(submissions.map((s: any) => s.userId));
             const notSubmitted = allStudents
@@ -59,7 +85,14 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     status: "PENDING",
                 }));
 
-            return NextResponse.json({ submissions: submissions.map((submission: any) => ({ ...submission, files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) })), notSubmitted });
+            return NextResponse.json({
+                submissions: submissions.map((submission: any) => ({
+                    ...submission,
+                    grade: grades.find((grade: any) => grade.userId === submission.userId) ?? null,
+                    files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                })),
+                notSubmitted,
+            });
         }
     } catch (e) {
         console.error("GET submissions", e);
@@ -83,7 +116,15 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const uploadIds = Array.isArray(rawUploadIds) ? rawUploadIds : [];
 
         // Check if assignment exists
-        const assignment = await prisma.assignedWork.findFirst({ where: { id: assignmentId, classroomId: id } });
+        const assignment = await prisma.assignedWork.findFirst({
+            where: {
+                id: assignmentId,
+                classroomId: id,
+                ...(membership.role === "STUDENT"
+                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
+                    : {}),
+            },
+        });
         if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
 
         const submittedAt = new Date();

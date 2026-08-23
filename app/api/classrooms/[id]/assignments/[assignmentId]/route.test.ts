@@ -35,7 +35,11 @@ describe("GET assignment details", () => {
     const response = await GET(new Request("http://localhost"), context);
     expect(response.status).toBe(404);
     expect(prisma.assignedWork.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: { id: "assignment-1", classroomId: "class-1" },
+      where: expect.objectContaining({
+        id: "assignment-1",
+        classroomId: "class-1",
+        OR: [{ assignedToId: null }, { assignedToId: "user-1" }],
+      }),
     }));
   });
 

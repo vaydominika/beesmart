@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { DashboardData } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 type DashboardContextValue = {
   data: DashboardData | null;
@@ -22,6 +23,7 @@ const DashboardContext = createContext<DashboardContextValue | undefined>(
 );
 
 export function DashboardProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,11 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const res = await fetch("/api/dashboard");
+      if (res.status === 401) {
+        setData(null);
+        router.replace("/login");
+        return;
+      }
       if (!res.ok) throw new Error(await res.text());
       const next: DashboardData = await res.json();
       setData(next);
@@ -39,7 +46,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     refetch();

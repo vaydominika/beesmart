@@ -100,6 +100,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         pointsAwarded,
                         isCorrect: pointsAwarded === response.question.points,
                         teacherComment,
+                        aiSuggestedPoints: null,
+                        aiSuggestedFeedback: null,
+                        aiSuggestedConfidence: null,
+                        aiSuggestedAt: null,
                     },
                 });
             }

@@ -10,6 +10,7 @@ import type { PostType, Prisma } from "@/lib/generated/prisma";
 import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
+import { ScheduleValidationError, assertDeadlineNotPast, parseNewTestSchedule } from "@/lib/schedule-validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -146,16 +147,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }
         }
         const assignmentDeadline = assignment ? parseAssignmentDeadline(assignment) : null;
+        if (assignmentDeadline) assertDeadlineNotPast(assignmentDeadline.deadlineAt, "Assignment deadline");
 
+        const testSchedule = test ? parseNewTestSchedule(test.opensAt, test.closesAt) : null;
         if (test) {
             if (!test.title?.trim() || !Array.isArray(test.questions) || test.questions.length === 0) {
                 return NextResponse.json({ error: "Test title and questions are required" }, { status: 400 });
-            }
-            if (test.closesAt && !test.opensAt) {
-                return NextResponse.json({ error: "Opening date required" }, { status: 400 });
-            }
-            if (test.opensAt && test.closesAt && new Date(test.closesAt) < new Date(test.opensAt)) {
-                return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
             }
             if (testCourseId && !await canAccessCourse(testCourseId, userId)) {
                 return NextResponse.json({ error: "The selected source course is not available" }, { status: 403 });
@@ -229,8 +226,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         type: test.type === "EXAM" ? "EXAM" : "TEST",
                         timeLimit: test.timeLimit ? parseInt(test.timeLimit) : null,
                         passingScore: test.passingScore ? parseFloat(test.passingScore) : null,
-                        opensAt: test.opensAt ? new Date(test.opensAt) : null,
-                        closesAt: test.closesAt ? new Date(test.closesAt) : null,
+                        opensAt: testSchedule!.opensAt,
+                        closesAt: testSchedule!.closesAt,
                         maxAttempts: Number(test.maxAttempts ?? 1),
                         classroomId: id,
                         courseId: testCourseId,
@@ -372,6 +369,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (e instanceof DeadlineValidationError) {
             return NextResponse.json({ error: e.message }, { status: 400 });
         }
+        if (e instanceof ScheduleValidationError) return NextResponse.json({ error: e.message }, { status: 400 });
         console.error("POST /api/classrooms/[id]/posts", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

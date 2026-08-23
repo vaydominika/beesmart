@@ -4,11 +4,12 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
-import { ChevronDown, ClipboardList, GraduationCap } from "lucide-react";
+import { ArrowRight, ChevronDown, ClipboardList, GraduationCap } from "lucide-react";
+import Link from "next/link";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 interface Props {
     classroomId: string;
-    isTeacher: boolean;
 }
 
 interface GradebookData {
@@ -27,7 +28,7 @@ interface GradebookData {
         id: string;
         title: string;
         type: "TEST" | "EXAM";
-        attempt?: { score: number; submittedAt: string } | null;
+        attempt?: { id: string; score: number | null; submittedAt: string } | null;
     }>;
     students?: Array<{
         student: { id: string; name: string; email: string; avatar?: string | null };
@@ -38,7 +39,7 @@ interface GradebookData {
             submissionStatus: string | null;
             submittedAt: string | null;
         }>;
-        testGrades: Array<{ testId: string; score: number | null; submittedAt: string | null }>;
+        testGrades: Array<{ testId: string; attemptId: string | null; score: number | null; submittedAt: string | null }>;
     }>;
 }
 
@@ -83,6 +84,14 @@ const statusLabel = (status?: string | null) => {
     if (!status) return "Not submitted";
     return status.replaceAll("_", " ").toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
 };
+
+function WorkLink({ href, label }: { href: string; label: string }) {
+    return (
+        <WorkspaceButton asChild variant="ghost" size="compact">
+            <Link href={href}>{label}<ArrowRight aria-hidden="true" /></Link>
+        </WorkspaceButton>
+    );
+}
 
 export function ClassroomGradebook({ classroomId }: Props) {
     const [data, setData] = useState<GradebookData | null>(null);
@@ -133,7 +142,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
     if (data.assignments.length === 0 && data.tests.length === 0) {
         return (
             <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-5 py-12 text-center">
-                <p className="text-sm font-semibold text-(--classroom-text)">No graded work yet</p>
+                <p className="text-sm font-semibold text-(--classroom-text)">No work yet</p>
                 <p className="mt-1 text-xs text-(--classroom-text-muted)">
                     {data.role === "STUDENT" ? "Your assignments, tests, and exams will appear here." : "Assignments, tests, and exams will appear here after you create them."}
                 </p>
@@ -151,7 +160,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                             key={sectionId}
                             title={assignment.title}
                             type="Assignment"
-                            detail={assignment.maxPoints ? `${assignment.maxPoints} points` : "Graded"}
+                            detail={assignment.grade ? "Graded" : statusLabel(assignment.submission?.status)}
                             isOpen={openSections.has(sectionId)}
                             onToggle={() => toggleSection(sectionId)}
                         >
@@ -175,6 +184,9 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                     </tbody>
                                 </table>
                                 {assignment.grade?.feedback && <p className="border-t border-(--classroom-line) px-4 py-3 text-xs text-(--classroom-text-muted)">{assignment.grade.feedback}</p>}
+                                <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
+                                    <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label="Open assignment" />
+                                </div>
                             </div>
                         </GradeSection>
                     );
@@ -187,7 +199,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                             key={sectionId}
                             title={test.title}
                             type={test.type === "EXAM" ? "Exam" : "Test"}
-                            detail={test.attempt ? "Completed" : "Not completed"}
+                            detail={test.attempt ? (test.attempt.score != null ? "Graded" : "Awaiting review") : "Not completed"}
                             isOpen={openSections.has(sectionId)}
                             onToggle={() => toggleSection(sectionId)}
                         >
@@ -202,12 +214,15 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td className="px-4 py-3 text-(--classroom-text)">{test.attempt ? "Completed" : "Not completed"}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{test.attempt ? (test.attempt.score != null ? "Graded" : "Awaiting review") : "Not completed"}</td>
                                             <td className="px-4 py-3 text-(--classroom-text-muted)">{test.attempt?.submittedAt ? formatDateYmd(test.attempt.submittedAt) : "—"}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{test.attempt ? `${Math.round(test.attempt.score)}%` : "—"}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{test.attempt?.score != null ? `${Math.round(test.attempt.score)}%` : "—"}</td>
                                         </tr>
                                     </tbody>
                                 </table>
+                                <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
+                                    <WorkLink href={`/classroom/${classroomId}/tests/${test.id}${test.attempt ? `?attempt=${test.attempt.id}` : ""}`} label={`Open ${test.type === "EXAM" ? "exam" : "test"}`} />
+                                </div>
                             </div>
                         </GradeSection>
                     );
@@ -222,25 +237,27 @@ export function ClassroomGradebook({ classroomId }: Props) {
                 const sectionId = `assignment:${assignment.id}`;
                 const rows = (data.students ?? []).flatMap((student) => {
                     const result = student.assignmentGrades.find((grade) => grade.assignmentId === assignment.id);
-                    return result && (result.submissionStatus || result.score !== null) ? [{ student: student.student, result }] : [];
+                    return result ? [{ student: student.student, result }] : [];
                 });
+                const submissionCount = rows.filter(({ result }) => result.submissionStatus).length;
 
                 return (
                     <GradeSection
                         key={sectionId}
                         title={assignment.title}
                         type="Assignment"
-                        detail={`${rows.length} submission${rows.length === 1 ? "" : "s"}`}
+                        detail={`${submissionCount} submission${submissionCount === 1 ? "" : "s"}`}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
                     >
-                        {rows.length === 0 ? (
-                            <div className="px-5 py-9 text-center">
-                                <p className="text-sm font-medium text-(--classroom-text)">No one has handed in this assignment yet</p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[620px] text-sm">
+                        <div>
+                            {rows.length === 0 ? (
+                                <div className="px-5 py-9 text-center">
+                                    <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[520px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
                                             <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
@@ -264,9 +281,13 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                             </tr>
                                         ))}
                                     </tbody>
-                                </table>
+                                    </table>
+                                </div>
+                            )}
+                            <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
+                                <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label="Open assignment" />
                             </div>
-                        )}
+                        </div>
                     </GradeSection>
                 );
             })}
@@ -275,30 +296,33 @@ export function ClassroomGradebook({ classroomId }: Props) {
                 const sectionId = `test:${test.id}`;
                 const rows = (data.students ?? []).flatMap((student) => {
                     const result = student.testGrades.find((grade) => grade.testId === test.id);
-                    return result && (result.submittedAt || result.score !== null) ? [{ student: student.student, result }] : [];
+                    return result ? [{ student: student.student, result }] : [];
                 });
+                const completedCount = rows.filter(({ result }) => result.attemptId || result.submittedAt).length;
 
                 return (
                     <GradeSection
                         key={sectionId}
                         title={test.title}
                         type={test.type === "EXAM" ? "Exam" : "Test"}
-                        detail={`${rows.length} completed`}
+                        detail={`${completedCount} completed`}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
                     >
                         {rows.length === 0 ? (
                             <div className="px-5 py-9 text-center">
-                                <p className="text-sm font-medium text-(--classroom-text)">No one has completed this {test.type === "EXAM" ? "exam" : "test"} yet</p>
+                                <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[500px] text-sm">
+                                <table className="w-full min-w-[620px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
-                                            <th className="w-[50%] px-4 py-2.5 text-left">Student</th>
+                                            <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
                                             <th className="px-4 py-2.5 text-left">Completed</th>
+                                            <th className="px-4 py-2.5 text-left">Status</th>
                                             <th className="px-4 py-2.5 text-right">Score</th>
+                                            <th className="w-24 px-4 py-2.5"><span className="sr-only">Open</span></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-(--classroom-line)">
@@ -311,7 +335,9 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.attemptId ? (result.score !== null ? "Graded" : "Awaiting review") : "Not completed"}</td>
                                                 <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? `${Math.round(result.score)}%` : "—"}</td>
+                                                <td className="px-2 py-2 text-right">{result.attemptId && <WorkLink href={`/classroom/${classroomId}/tests/${test.id}?attempt=${result.attemptId}`} label="Open" />}</td>
                                             </tr>
                                         ))}
                                     </tbody>

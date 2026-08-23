@@ -16,7 +16,13 @@ export async function GET(_request: Request, context: RouteContext) {
   if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
   const assignment = await prisma.assignedWork.findFirst({
-    where: { id: assignmentId, classroomId },
+    where: {
+      id: assignmentId,
+      classroomId,
+      ...(membership.role === "STUDENT"
+        ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
+        : {}),
+    },
     select: {
       id: true,
       title: true,

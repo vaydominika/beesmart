@@ -15,6 +15,7 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-p
 import type { TestDraft } from "@/lib/classroom-post-drafts";
 import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
 import { AI_SOURCE_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
+import { isLocalDateTimePast, minimumLocalDateTimeInputValue } from "@/lib/schedule-validation";
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -265,6 +266,14 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             toast.error("Choose an opening date before the closing date.");
             return;
         }
+        if (opensAt && isLocalDateTimePast(opensAt)) {
+            toast.error("Opening time cannot be in the past.");
+            return;
+        }
+        if (closesAt && isLocalDateTimePast(closesAt)) {
+            toast.error("Closing time cannot be in the past.");
+            return;
+        }
         if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
             toast.error("Closing time must be after opening time.");
             return;
@@ -304,8 +313,8 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                 type: testType,
                 timeLimit: timeLimit || null,
                 passingScore: passingScore || null,
-                opensAt: opensAt || null,
-                closesAt: closesAt || null,
+                opensAt: opensAt ? new Date(opensAt).toISOString() : null,
+                closesAt: closesAt ? new Date(closesAt).toISOString() : null,
                 maxAttempts: Number(maxAttempts),
                 questions: questions.map((q) => ({
                     questionText: q.questionText.trim(),
@@ -356,6 +365,18 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             },
         ]);
         onClose();
+    };
+
+    const handleOpensAtChange = (nextOpensAt: string) => {
+        if (nextOpensAt && isLocalDateTimePast(nextOpensAt)) return;
+        setOpensAt(nextOpensAt);
+        if (nextOpensAt && closesAt && closesAt < nextOpensAt) setClosesAt("");
+    };
+
+    const handleClosesAtChange = (nextClosesAt: string) => {
+        if (nextClosesAt && isLocalDateTimePast(nextClosesAt)) return;
+        if (nextClosesAt && opensAt && nextClosesAt < opensAt) return;
+        setClosesAt(nextClosesAt);
     };
 
     return (
@@ -495,8 +516,9 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Opens At</label>
                                     <Input
                                         type="datetime-local"
+                                        min={minimumLocalDateTimeInputValue()}
                                         value={opensAt}
-                                        onChange={(e) => setOpensAt(e.target.value)}
+                                        onChange={(e) => handleOpensAtChange(e.target.value)}
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
                                     />
                                 </div>
@@ -504,8 +526,9 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Closes At</label>
                                     <Input
                                         type="datetime-local"
+                                        min={opensAt && opensAt > minimumLocalDateTimeInputValue() ? opensAt : minimumLocalDateTimeInputValue()}
                                         value={closesAt}
-                                        onChange={(e) => setClosesAt(e.target.value)}
+                                        onChange={(e) => handleClosesAtChange(e.target.value)}
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
                                     />
                                 </div>

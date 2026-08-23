@@ -55,11 +55,26 @@ describe("AI usage quotas", () => {
     }));
   });
 
+  it("reserves grading from its separate 35-student allowance", async () => {
+    vi.mocked(prisma.aiUsageQuota.updateMany)
+      .mockResolvedValueOnce({ count: 0 })
+      .mockResolvedValueOnce({ count: 1 });
+    vi.mocked(prisma.aiUsageQuota.findUniqueOrThrow).mockResolvedValue({ attempts: 32 } as never);
+
+    const usage = await reserveAiAttempt("teacher-1", "GRADING", now);
+
+    expect(usage).toMatchObject({ category: "GRADING", used: 32, remaining: 3, limit: 35 });
+    expect(prisma.aiUsageQuota.updateMany).toHaveBeenLastCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ attempts: { lt: 35 } }),
+    }));
+  });
+
   it("reports stale periods as reset while preserving independent categories", async () => {
     vi.mocked(prisma.aiUsageQuota.findMany).mockResolvedValue([
       { category: "LESSON_CONTENT", periodStart, attempts: 2 },
       { category: "SYLLABUS", periodStart: new Date("2026-08-14T00:00:00.000Z"), attempts: 3 },
       { category: "TEST_EXAM", periodStart, attempts: 1 },
+      { category: "GRADING", periodStart, attempts: 32 },
     ] as never);
 
     const snapshot = await getAiUsage("user-1", now);
@@ -67,6 +82,7 @@ describe("AI usage quotas", () => {
     expect(snapshot.categories.LESSON_CONTENT.remaining).toBe(1);
     expect(snapshot.categories.SYLLABUS.remaining).toBe(3);
     expect(snapshot.categories.TEST_EXAM.remaining).toBe(2);
+    expect(snapshot.categories.GRADING.remaining).toBe(3);
     expect(snapshot.resetsAt).toBe("2026-08-16T00:00:00.000Z");
   });
 });

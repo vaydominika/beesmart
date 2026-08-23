@@ -7,6 +7,7 @@ import type { Prisma } from "@/lib/generated/prisma";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { storedFileUrl } from "@/lib/files/types";
+import { ScheduleValidationError, assertDeadlineNotPast } from "@/lib/schedule-validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Title and due date required" }, { status: 400 });
         }
         const deadline = parseAssignmentDeadline({ dueDate, dueTime, timeZone });
+        assertDeadlineNotPast(deadline.deadlineAt, "Assignment deadline");
 
         const { assignment, post } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const files = await claimUploads(tx, uploadIds, userId, "POST_ATTACHMENT");
@@ -107,6 +109,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (e instanceof DeadlineValidationError) {
             return NextResponse.json({ error: e.message }, { status: 400 });
         }
+        if (e instanceof ScheduleValidationError) return NextResponse.json({ error: e.message }, { status: 400 });
         console.error("POST assignment", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

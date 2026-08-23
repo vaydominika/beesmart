@@ -16,6 +16,8 @@ import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Paperclip, Upload, X } from "lucide-react";
 import type { AssignmentDraft, PostAttachmentFile } from "@/lib/classroom-post-drafts";
+import { parseAssignmentDeadline } from "@/lib/assignment-deadline";
+import { localDateInputValue, minimumLocalTimeInputValue } from "@/lib/schedule-validation";
 
 type UploadedFile = PostAttachmentFile;
 
@@ -73,6 +75,18 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
         setFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
+    const handleDueDateChange = (nextDate: string) => {
+        const today = localDateInputValue();
+        if (nextDate && nextDate < today) return;
+        setDueDate(nextDate);
+        if (nextDate === today && dueTime && dueTime < minimumLocalTimeInputValue()) setDueTime("");
+    };
+
+    const handleDueTimeChange = (nextTime: string) => {
+        if (dueDate === localDateInputValue() && nextTime && nextTime < minimumLocalTimeInputValue()) return;
+        setDueTime(nextTime);
+    };
+
     const handleSave = () => {
         if (!title.trim()) {
             toast.error("Please enter a title.");
@@ -80,6 +94,15 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
         }
         if (!dueDate) {
             toast.error("Please set a due date.");
+            return;
+        }
+        try {
+            if (parseAssignmentDeadline({ dueDate, dueTime, timeZone }).deadlineAt < new Date()) {
+                toast.error("The assignment deadline cannot be in the past.");
+                return;
+            }
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "The assignment deadline is invalid.");
             return;
         }
         onAdd({
@@ -150,8 +173,9 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                     <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due date *</label>
                                     <Input
                                         type="date"
+                                        min={localDateInputValue()}
                                         value={dueDate}
-                                        onChange={(e) => setDueDate(e.target.value)}
+                                        onChange={(e) => handleDueDateChange(e.target.value)}
                                         className="h-10 w-full cursor-pointer rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>
@@ -159,8 +183,9 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                     <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due time</label>
                                     <Input
                                         type="time"
+                                        min={dueDate === localDateInputValue() ? minimumLocalTimeInputValue() : undefined}
                                         value={dueTime}
-                                        onChange={(e) => setDueTime(e.target.value)}
+                                        onChange={(e) => handleDueTimeChange(e.target.value)}
                                         className="h-10 w-full cursor-pointer rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
                                     />
                                 </div>

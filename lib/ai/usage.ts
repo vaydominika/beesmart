@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
-  AI_DAILY_LIMIT,
   AI_USAGE_CATEGORIES,
   AI_USAGE_HEADER_CATEGORY,
   AI_USAGE_HEADER_LIMIT,
@@ -10,6 +9,7 @@ import {
   type AiUsageCategory,
   type AiUsageResponse,
   type AiUsageState,
+  aiDailyLimitFor,
 } from "./usage-shared";
 
 function utcPeriod(now = new Date()) {
@@ -20,12 +20,13 @@ function utcPeriod(now = new Date()) {
 }
 
 function stateFor(category: AiUsageCategory, attempts: number, resetsAt: Date): AiUsageState {
-  const used = Math.min(AI_DAILY_LIMIT, Math.max(0, attempts));
+  const limit = aiDailyLimitFor(category);
+  const used = Math.min(limit, Math.max(0, attempts));
   return {
     category,
     used,
-    remaining: AI_DAILY_LIMIT - used,
-    limit: AI_DAILY_LIMIT,
+    remaining: limit - used,
+    limit,
     resetsAt: resetsAt.toISOString(),
   };
 }
@@ -48,6 +49,7 @@ export async function reserveAiAttempt(
   retry = true,
 ): Promise<AiUsageState> {
   const { periodStart, resetsAt } = utcPeriod(now);
+  const limit = aiDailyLimitFor(category);
 
   await prisma.aiUsageQuota.updateMany({
     where: { userId, category, periodStart: { lt: periodStart } },
@@ -55,7 +57,7 @@ export async function reserveAiAttempt(
   });
 
   const incremented = await prisma.aiUsageQuota.updateMany({
-    where: { userId, category, periodStart, attempts: { lt: AI_DAILY_LIMIT } },
+    where: { userId, category, periodStart, attempts: { lt: limit } },
     data: { attempts: { increment: 1 } },
   });
 
@@ -79,7 +81,7 @@ export async function reserveAiAttempt(
     }
 
     const isCurrentPeriod = existing.periodStart.getTime() === periodStart.getTime();
-    if (isCurrentPeriod && existing.attempts >= AI_DAILY_LIMIT) {
+    if (isCurrentPeriod && existing.attempts >= limit) {
       throw new AiDailyLimitError(stateFor(category, existing.attempts, resetsAt));
     }
 
@@ -133,7 +135,7 @@ export function withAiUsage<T extends Response>(response: T, usage: AiUsageState
 export function aiLimitResponse(error: AiDailyLimitError) {
   const retryAfter = Math.max(1, Math.ceil((new Date(error.usage.resetsAt).getTime() - Date.now()) / 1000));
   return NextResponse.json({
-    error: "You have used all 3 AI attempts for this feature today.",
+    error: `You have used all ${error.usage.limit} AI attempts for this feature today.`,
     code: "AI_DAILY_LIMIT_REACHED",
     ...error.usage,
   }, {

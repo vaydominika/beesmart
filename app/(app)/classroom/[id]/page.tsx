@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { ClassroomFeed } from "@/components/classroom/ClassroomFeed";
@@ -33,10 +33,12 @@ interface ClassroomDetail {
 export default function ClassroomDetailPage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const classroomId = params.id as string;
     const [classroom, setClassroom] = useState<ClassroomDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<Tab>("Feed");
+    const requestedTab = searchParams.get("tab");
+    const [activeTab, setActiveTab] = useState<Tab>(TABS.includes(requestedTab as Tab) ? requestedTab as Tab : "Feed");
     const [codeCopied, setCodeCopied] = useState(false);
     const [qrOpen, setQrOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -61,6 +63,19 @@ export default function ClassroomDetailPage() {
     useEffect(() => {
         fetchClassroom();
     }, [fetchClassroom]);
+
+    useEffect(() => {
+        setActiveTab(TABS.includes(requestedTab as Tab) ? requestedTab as Tab : "Feed");
+    }, [requestedTab]);
+
+    const selectTab = (tab: Tab) => {
+        setActiveTab(tab);
+        const nextParams = new URLSearchParams(searchParams.toString());
+        if (tab === "Feed") nextParams.delete("tab");
+        else nextParams.set("tab", tab);
+        const query = nextParams.toString();
+        router.replace(`/classroom/${classroomId}${query ? `?${query}` : ""}`, { scroll: false });
+    };
 
     const copyCode = async () => {
         if (!classroom) return;
@@ -148,7 +163,7 @@ export default function ClassroomDetailPage() {
                             <button
                                 key={tab}
                                 type="button"
-                                onClick={() => setActiveTab(tab)}
+                                onClick={() => selectTab(tab)}
                                 className={cn(
                                     "relative min-w-fit px-4 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--classroom-focus-border)]",
                                     activeTab === tab ? "text-[var(--classroom-text)]" : "text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)]",
@@ -170,7 +185,7 @@ export default function ClassroomDetailPage() {
                 <main>
                     {activeTab === "Feed" && <ClassroomFeed classroomId={classroomId} isTeacher={isTeacher} />}
                     {activeTab === "People" && <ClassroomPeople classroomId={classroomId} isTeacher={classroom.role === "TEACHER"} />}
-                    {activeTab === "Grades" && <ClassroomGradebook classroomId={classroomId} isTeacher={isTeacher} />}
+                    {activeTab === "Grades" && <ClassroomGradebook classroomId={classroomId} />}
                 </main>
 
                 {isTeacher && (

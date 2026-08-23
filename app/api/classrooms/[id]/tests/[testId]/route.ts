@@ -4,6 +4,7 @@ import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
 import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
+import { ScheduleValidationError, assertDeadlineNotPast, parseScheduleDate } from "@/lib/schedule-validation";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; isCompleted: boolean; score: number | null };
@@ -74,8 +75,27 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (body.type === "TEST" || body.type === "EXAM") data.type = body.type;
     if (body.timeLimit !== undefined) data.timeLimit = body.timeLimit ? Number(body.timeLimit) : null;
     if (body.passingScore !== undefined) data.passingScore = body.passingScore ? Number(body.passingScore) : null;
-    if (body.opensAt !== undefined) data.opensAt = body.opensAt ? new Date(body.opensAt) : null;
-    if (body.closesAt !== undefined) data.closesAt = body.closesAt ? new Date(body.closesAt) : null;
+    let nextOpensAt = existing.opensAt;
+    let nextClosesAt = existing.closesAt;
+    try {
+        if (body.opensAt !== undefined) {
+            nextOpensAt = parseScheduleDate(body.opensAt, "Opening time");
+            data.opensAt = nextOpensAt;
+            if (nextOpensAt && Math.floor(nextOpensAt.getTime() / 60_000) !== Math.floor((existing.opensAt?.getTime() ?? -1) / 60_000)) {
+                assertDeadlineNotPast(nextOpensAt, "Opening time");
+            }
+        }
+        if (body.closesAt !== undefined) {
+            nextClosesAt = parseScheduleDate(body.closesAt, "Closing time");
+            data.closesAt = nextClosesAt;
+            if (nextClosesAt && Math.floor(nextClosesAt.getTime() / 60_000) !== Math.floor((existing.closesAt?.getTime() ?? -1) / 60_000)) {
+                assertDeadlineNotPast(nextClosesAt, "Closing time");
+            }
+        }
+    } catch (error) {
+        if (error instanceof ScheduleValidationError) return NextResponse.json({ error: error.message }, { status: 400 });
+        throw error;
+    }
     if (body.maxAttempts !== undefined) {
         const maxAttempts = Number(body.maxAttempts);
         if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
@@ -87,8 +107,6 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         }
         data.maxAttempts = maxAttempts;
     }
-    const nextOpensAt = body.opensAt !== undefined ? (body.opensAt ? new Date(body.opensAt) : null) : existing.opensAt;
-    const nextClosesAt = body.closesAt !== undefined ? (body.closesAt ? new Date(body.closesAt) : null) : existing.closesAt;
     if (nextClosesAt && !nextOpensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });
     if (nextOpensAt && nextClosesAt && nextClosesAt < nextOpensAt) {
         return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });

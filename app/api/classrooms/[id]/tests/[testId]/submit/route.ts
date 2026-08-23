@@ -3,6 +3,12 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { calculateAttemptTotals, scoreAutomaticResponse, type ScoringResponse } from "@/lib/test-scoring";
 import type { Prisma } from "@/lib/generated/prisma";
+import {
+    TEST_RESPONSE_REQUEST_BYTE_LIMIT,
+    TEST_TOTAL_WRITTEN_CHARACTER_LIMIT,
+    totalWrittenCharacters,
+    writtenResponseLimit,
+} from "@/lib/test-response-limits";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type SubmittedResponse = { questionId: string; responseText?: string | null; selectedOptionId?: string | null };
@@ -25,6 +31,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
         });
         if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
         if (membership.role !== "STUDENT") return NextResponse.json({ error: "Only learners can submit attempts" }, { status: 403 });
+
+        const contentLength = Number(request.headers.get("content-length") ?? 0);
+        if (Number.isFinite(contentLength) && contentLength > TEST_RESPONSE_REQUEST_BYTE_LIMIT) {
+            return NextResponse.json({ error: "The response payload is too large", code: "RESPONSE_PAYLOAD_TOO_LARGE" }, { status: 413 });
+        }
 
         const body = await request.json() as { attemptId?: string; responses?: SubmittedResponse[] };
         const responses = body.responses ?? [];
@@ -58,9 +69,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
         for (const response of responses) {
             const question = questionById.get(response.questionId);
             if (!question) return NextResponse.json({ error: "A response does not belong to this test" }, { status: 400 });
+            const responseLimit = writtenResponseLimit(question.questionType);
+            if (responseLimit !== null && (response.responseText?.length ?? 0) > responseLimit) {
+                return NextResponse.json({
+                    error: `${question.questionType === "ESSAY" ? "Essay" : "Short answer"} responses must be ${responseLimit.toLocaleString()} characters or fewer`,
+                    code: "RESPONSE_TOO_LONG",
+                    limit: responseLimit,
+                }, { status: 413 });
+            }
             if (response.selectedOptionId && !question.options.some((option) => option.id === response.selectedOptionId)) {
                 return NextResponse.json({ error: "A selected option does not belong to its question" }, { status: 400 });
             }
+        }
+        if (totalWrittenCharacters(responses) > TEST_TOTAL_WRITTEN_CHARACTER_LIMIT) {
+            return NextResponse.json({
+                error: `Written responses for one attempt must total ${TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} characters or fewer`,
+                code: "ATTEMPT_TEXT_TOO_LONG",
+                limit: TEST_TOTAL_WRITTEN_CHARACTER_LIMIT,
+            }, { status: 413 });
         }
 
         const submittedAt = new Date();
@@ -68,7 +94,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
             for (const response of responses) {
                 await tx.testAttemptResponse.upsert({
                     where: { attemptId_questionId: { attemptId: attempt.id, questionId: response.questionId } },
-                    update: { responseText: response.responseText ?? null, selectedOptionId: response.selectedOptionId ?? null },
+                    update: {
+                        responseText: response.responseText ?? null,
+                        selectedOptionId: response.selectedOptionId ?? null,
+                        aiSuggestedPoints: null,
+                        aiSuggestedFeedback: null,
+                        aiSuggestedConfidence: null,
+                        aiSuggestedAt: null,
+                    },
                     create: { attemptId: attempt.id, questionId: response.questionId, responseText: response.responseText ?? null, selectedOptionId: response.selectedOptionId ?? null },
                 });
             }

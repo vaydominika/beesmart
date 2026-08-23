@@ -3,6 +3,7 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { syncTestCalendarEvent } from "@/lib/classroom-test-sync";
 import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
+import { ScheduleValidationError, parseNewTestSchedule } from "@/lib/schedule-validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -28,10 +29,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         if (!title?.trim()) {
             return NextResponse.json({ error: "Title required" }, { status: 400 });
         }
-        if (closesAt && !opensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });
-        if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
-            return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
-        }
+        const schedule = parseNewTestSchedule(opensAt, closesAt);
         const parsedMaxAttempts = Number(maxAttempts);
         if (!Number.isSafeInteger(parsedMaxAttempts) || parsedMaxAttempts < 1) {
             return NextResponse.json({ error: "Attempts allowed must be a positive integer" }, { status: 400 });
@@ -50,8 +48,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 type,
                 timeLimit: timeLimit ? parseInt(timeLimit) : null,
                 passingScore: passingScore ? parseFloat(passingScore) : null,
-                opensAt: opensAt ? new Date(opensAt) : null,
-                closesAt: closesAt ? new Date(closesAt) : null,
+                opensAt: schedule.opensAt,
+                closesAt: schedule.closesAt,
                 maxAttempts: parsedMaxAttempts,
                 classroomId: id,
                 createdById: userId,
@@ -123,6 +121,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         return NextResponse.json(test, { status: 201 });
     } catch (e) {
+        if (e instanceof ScheduleValidationError) return NextResponse.json({ error: e.message }, { status: 400 });
         console.error("POST test", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }

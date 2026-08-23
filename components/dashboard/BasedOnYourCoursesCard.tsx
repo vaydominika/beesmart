@@ -1,5 +1,12 @@
-import { DashboardActionCard } from "./DashboardActionCard";
+import { DailyCourseRecommendationCard } from "./DailyCourseRecommendationCard";
 
 export function BasedOnYourCoursesCard() {
-  return <DashboardActionCard title="Hive picks" description="Courses that match what you're already learning." actionLabel="See recommendations" targetId="discover" />;
+  return (
+    <DailyCourseRecommendationCard
+      kind="HIVE_PICK"
+      title="Hive picks"
+      description="Courses that match what you're already learning."
+      actionLabel="See today's pick"
+    />
+  );
 }

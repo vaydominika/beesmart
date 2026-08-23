@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Compass, Plus } from "lucide-react";
+import { Compass, Icon, Plus } from "lucide-react";
+import { bee } from "@lucide/lab";
 import { useDashboard } from "@/lib/DashboardContext";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { selectDailyWelcomeMessage } from "@/lib/dashboard";
@@ -16,8 +16,14 @@ export function WelcomeBanner() {
   const scrollToDiscover = () => document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)]">
-      <div className="flex min-h-48 flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between md:p-7">
+    <section className="relative overflow-hidden rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)]">
+      <Icon
+        iconNode={bee}
+        aria-hidden="true"
+        strokeWidth={1.15}
+        className="pointer-events-none absolute -right-10 -top-4 h-52 w-52 -rotate-12 text-[var(--dashboard-accent)] opacity-30 sm:h-64 sm:w-64 md:-right-8 md:top-0"
+      />
+      <div className="relative z-10 flex min-h-48 flex-col justify-center gap-5 p-5 md:p-7 lg:pr-52">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[var(--dashboard-text)] sm:text-3xl md:text-[38px]">
             Welcome back, {loading && !user ? "…" : userName}
@@ -33,16 +39,6 @@ export function WelcomeBanner() {
               <Plus className="h-4 w-4" /> Make your own
             </WorkspaceButton>
           </div>
-        </div>
-        <div className="hidden h-48 w-48 shrink-0 items-center justify-center lg:flex">
-          <Image
-            src="/images/DashboardWelcomeBee.png"
-            alt="BeeSmart welcome bee"
-            width={350}
-            height={350}
-            priority
-            className="h-full w-full object-contain"
-          />
         </div>
       </div>
     </section>

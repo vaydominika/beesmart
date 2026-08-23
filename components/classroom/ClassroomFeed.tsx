@@ -17,6 +17,7 @@ import {
     MoreHorizontal, Pencil, Trash2
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Editor } from "@/components/ui/editor";
 import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
 import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -97,6 +98,28 @@ const POST_TYPE_LABELS: Record<string, string> = {
 interface Props {
     classroomId: string;
     isTeacher: boolean;
+}
+
+function AuthorAvatar({
+    author,
+    size,
+    className,
+}: {
+    author: { name: string; avatar?: string | null };
+    size: number;
+    className: string;
+}) {
+    return (
+        <div className={cn("relative shrink-0 overflow-hidden rounded-full bg-[var(--classroom-surface-muted)]", className)}>
+            <Image
+                src={author.avatar?.trim() || "/images/default_pfp.jpg"}
+                alt={`${author.name}'s profile picture`}
+                width={size}
+                height={size}
+                className="h-full w-full object-cover object-center"
+            />
+        </div>
+    );
 }
 
 export function ClassroomFeed({ classroomId, isTeacher }: Props) {
@@ -730,9 +753,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Post Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--classroom-surface-muted)] text-xs font-semibold text-[var(--classroom-text-muted)]">
-                                        {post.author.name?.[0]?.toUpperCase() || "?"}
-                                    </div>
+                                    <AuthorAvatar author={post.author} size={32} className="h-8 w-8" />
                                     <div>
                                         <span className="text-sm font-semibold text-[var(--classroom-text)]">{post.author.name}</span>
                                         <span className="ml-2 text-xs text-[var(--classroom-text-muted)]">{formatDate(post.createdAt)}</span>
@@ -819,9 +840,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Assignment Badge */}
                             {post.assignment && (
-                                <Link href={`/classroom/${classroomId}/assignments/${post.assignment.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
-                                        <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
+                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                                        <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
                                             {post.assignment.deadlineAt && (
@@ -833,18 +853,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         {post.assignment.maxPoints && (
                                             <span className="text-xs font-bold text-(--theme-text) opacity-50 mr-2">{post.assignment.maxPoints} pts</span>
                                         )}
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
-                                            <ArrowRight className="h-4 w-4 text-(--theme-text)" />
-                                        </div>
-                                    </div>
-                                </Link>
+                                </div>
                             )}
 
                             {/* Test Badge */}
                             {post.test && (
-                                <Link href={`/classroom/${classroomId}/tests/${post.test.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
-                                        <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
+                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                                        <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
                                             {post.test.timeLimit && (
@@ -852,11 +867,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             )}
                                         </div>
                                         <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase mr-2">{post.test.type}</span>
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
-                                            <ArrowRight className="h-4 w-4 text-(--theme-text)" />
-                                        </div>
-                                    </div>
-                                </Link>
+                                </div>
                             )}
 
                             {/* Course Badge */}
@@ -914,9 +925,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     {comments[post.id]?.map((comment) => (
                                         <div key={comment.id} className="ml-4">
                                             <div className="flex items-start gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-(--theme-sidebar) flex items-center justify-center text-[10px] font-bold text-(--theme-text) shrink-0 mt-0.5">
-                                                    {comment.author.name?.[0]?.toUpperCase() || "?"}
-                                                </div>
+                                                <AuthorAvatar author={comment.author} size={24} className="mt-0.5 h-6 w-6" />
                                                 <div>
                                                     <span className="text-xs font-bold text-(--theme-text)">{comment.author.name}</span>
                                                     <span className="text-[10px] text-(--theme-text) opacity-40 ml-1.5">{formatDate(comment.createdAt)}</span>
@@ -926,9 +935,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             {/* Replies */}
                                             {comment.replies?.map((reply) => (
                                                 <div key={reply.id} className="ml-8 mt-1.5 flex items-start gap-2">
-                                                    <div className="w-5 h-5 rounded-full bg-(--theme-sidebar) flex items-center justify-center text-[9px] font-bold text-(--theme-text) shrink-0 mt-0.5">
-                                                        {reply.author.name?.[0]?.toUpperCase() || "?"}
-                                                    </div>
+                                                    <AuthorAvatar author={reply.author} size={20} className="mt-0.5 h-5 w-5" />
                                                     <div>
                                                         <span className="text-[11px] font-bold text-(--theme-text)">{reply.author.name}</span>
                                                         <span className="text-[10px] text-(--theme-text) opacity-40 ml-1">{formatDate(reply.createdAt)}</span>

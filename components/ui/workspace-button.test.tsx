@@ -24,6 +24,13 @@ describe("WorkspaceButton", () => {
     expect(screen.getByRole("link", { name: "Courses" })).toHaveAttribute("data-slot", "workspace-button");
   });
 
+  it("uses a neutral high-contrast pressed state for secondary actions", () => {
+    render(<WorkspaceButton variant="secondary">Previous</WorkspaceButton>);
+    const button = screen.getByRole("button", { name: "Previous" });
+    expect(button).toHaveClass("active:bg-[var(--app-text)]", "active:text-[var(--app-text-inverse)]");
+    expect(button).not.toHaveClass("active:bg-[var(--app-accent-soft)]");
+  });
+
   it("preserves disabled behavior and custom classes", () => {
     const onClick = vi.fn();
     render(<WorkspaceButton disabled onClick={onClick} className="w-full">Save</WorkspaceButton>);

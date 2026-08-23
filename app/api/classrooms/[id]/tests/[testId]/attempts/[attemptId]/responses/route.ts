@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
+import {
+    TEST_RESPONSE_REQUEST_BYTE_LIMIT,
+    TEST_TOTAL_WRITTEN_CHARACTER_LIMIT,
+    totalWrittenCharacters,
+    writtenResponseLimit,
+} from "@/lib/test-response-limits";
 
 type RouteContext = { params: Promise<{ id: string; testId: string; attemptId: string }> };
 
@@ -12,6 +18,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     });
     if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
     if (membership.role !== "STUDENT") return NextResponse.json({ error: "Only learners can save responses" }, { status: 403 });
+
+    const contentLength = Number(request.headers.get("content-length") ?? 0);
+    if (Number.isFinite(contentLength) && contentLength > TEST_RESPONSE_REQUEST_BYTE_LIMIT) {
+        return NextResponse.json({ error: "The response payload is too large", code: "RESPONSE_PAYLOAD_TOO_LARGE" }, { status: 413 });
+    }
 
     const body = await request.json() as { questionId?: string; responseText?: unknown; selectedOptionId?: unknown };
     if (!body.questionId || (body.responseText != null && typeof body.responseText !== "string") || (body.selectedOptionId != null && typeof body.selectedOptionId !== "string")) {
@@ -26,23 +37,51 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         include: { options: { select: { id: true } } },
     });
     if (!question) return NextResponse.json({ error: "Question not found" }, { status: 404 });
+    const responseText = typeof body.responseText === "string" ? body.responseText : null;
+    const responseLimit = writtenResponseLimit(question.questionType);
+    if (responseLimit !== null && (responseText?.length ?? 0) > responseLimit) {
+        return NextResponse.json({
+            error: `${question.questionType === "ESSAY" ? "Essay" : "Short answer"} responses must be ${responseLimit.toLocaleString()} characters or fewer`,
+            code: "RESPONSE_TOO_LONG",
+            limit: responseLimit,
+        }, { status: 413 });
+    }
     if (body.selectedOptionId && !question.options.some((option: { id: string }) => option.id === body.selectedOptionId)) {
         return NextResponse.json({ error: "The selected option does not belong to this question" }, { status: 400 });
+    }
+
+    const existingResponses = await prisma.testAttemptResponse.findMany({
+        where: { attemptId },
+        select: { questionId: true, responseText: true },
+    });
+    const writtenResponses = existingResponses
+        .filter((response) => response.questionId !== body.questionId)
+        .concat({ questionId: body.questionId, responseText });
+    if (totalWrittenCharacters(writtenResponses) > TEST_TOTAL_WRITTEN_CHARACTER_LIMIT) {
+        return NextResponse.json({
+            error: `Written responses for one attempt must total ${TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} characters or fewer`,
+            code: "ATTEMPT_TEXT_TOO_LONG",
+            limit: TEST_TOTAL_WRITTEN_CHARACTER_LIMIT,
+        }, { status: 413 });
     }
 
     const saved = await prisma.testAttemptResponse.upsert({
         where: { attemptId_questionId: { attemptId, questionId: body.questionId } },
         update: {
-            responseText: typeof body.responseText === "string" ? body.responseText : null,
+            responseText,
             selectedOptionId: typeof body.selectedOptionId === "string" ? body.selectedOptionId : null,
             isCorrect: null,
             pointsAwarded: null,
             teacherComment: null,
+            aiSuggestedPoints: null,
+            aiSuggestedFeedback: null,
+            aiSuggestedConfidence: null,
+            aiSuggestedAt: null,
         },
         create: {
             attemptId,
             questionId: body.questionId,
-            responseText: typeof body.responseText === "string" ? body.responseText : null,
+            responseText,
             selectedOptionId: typeof body.selectedOptionId === "string" ? body.selectedOptionId : null,
         },
         select: { questionId: true, responseText: true, selectedOptionId: true, createdAt: true },

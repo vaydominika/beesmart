@@ -28,7 +28,7 @@ describe("WelcomeBanner", () => {
 
     expect(screen.getByRole("heading", { name: "Welcome back, Dominika" })).toBeInTheDocument();
     expect(screen.getByText(selectDailyWelcomeMessage("user-1"))).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "BeeSmart welcome bee" }).parentElement).toHaveClass("hidden", "lg:flex");
+    expect(screen.queryByRole("img", { name: "BeeSmart welcome bee" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Explore courses/ }));
     fireEvent.click(screen.getByRole("button", { name: /Make your own/ }));

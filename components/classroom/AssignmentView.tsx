@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceLoadingState } from "@/components/ui/workspace-state";
 import { FileAttachmentChip } from "@/components/ui/file-attachment-chip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
 import {
-    Calendar, Clock, FileText, Upload, Paperclip,
-    CheckCircle2, XCircle, Send, X
+    Calendar, Clock, Upload, CheckCircle2, XCircle, Send,
+    MessageSquareText, Users
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PostAttachmentFile } from "@/lib/classroom-post-drafts";
@@ -42,6 +44,12 @@ interface AssignmentSubmission {
     user: { id: string; name: string; avatar?: string | null; email?: string };
     files: Array<{ id: string; fileName: string; fileUrl: string; fileType: string; fileSize: number }>;
     _count: { comments: number };
+    grade?: {
+        score: number;
+        maxScore?: number | null;
+        feedback?: string | null;
+        gradedAt?: string | null;
+    } | null;
 }
 
 interface TeacherSubmissionsView {
@@ -49,7 +57,36 @@ interface TeacherSubmissionsView {
     notSubmitted: Array<{ user: { id: string; name: string; avatar?: string; email?: string }; status: string }>;
 }
 
+const statusLabel = (status?: string | null) => {
+    if (!status) return "Not submitted";
+    return status.replaceAll("_", " ").toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
+};
+
+const statusTone = (status?: string | null) => {
+    if (status === "GRADED") return "border-[var(--app-success-border)] bg-[var(--app-success-soft)] text-[var(--app-success)]";
+    if (status === "LATE") return "border-[var(--app-warning-border)] bg-[var(--app-warning-soft)] text-[var(--app-warning)]";
+    if (status === "SUBMITTED") return "border-[var(--app-info-border)] bg-[var(--app-info-soft)] text-[var(--app-info)]";
+    return "border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]";
+};
+
+function ProfileAvatar({ user, className }: { user: { name: string; avatar?: string | null }; className?: string }) {
+    return (
+        <Avatar className={cn("h-9 w-9 border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]", className)}>
+            <AvatarImage
+                src={user.avatar?.trim() || "/images/default_pfp.jpg"}
+                alt={`${user.name}'s profile picture`}
+                className="object-cover object-center"
+            />
+            <AvatarFallback className="bg-[var(--classroom-surface-muted)] text-xs font-semibold text-[var(--classroom-text-muted)]">
+                {user.name?.[0]?.toUpperCase() || "?"}
+            </AvatarFallback>
+        </Avatar>
+    );
+}
+
 export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) {
+    const searchParams = useSearchParams();
+    const requestedStudentId = searchParams.get("student");
     const [assignment, setAssignment] = useState<AssignmentDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [assignmentError, setAssignmentError] = useState<string | null>(null);
@@ -106,6 +143,25 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     useEffect(() => {
         fetchAssignmentAndSubmissions();
     }, [fetchAssignmentAndSubmissions]);
+
+    useEffect(() => {
+        if (!isTeacher || !allSubmissions) return;
+        const requestedSubmission = requestedStudentId
+            ? allSubmissions.submissions.find((submission) => submission.user.id === requestedStudentId)
+            : null;
+        if (requestedSubmission) {
+            setSelectedStudentId(requestedStudentId);
+            return;
+        }
+        setSelectedStudentId((current) => current ?? allSubmissions.submissions[0]?.user.id ?? null);
+    }, [allSubmissions, isTeacher, requestedStudentId]);
+
+    useEffect(() => {
+        if (!selectedStudentId || !allSubmissions) return;
+        const submission = allSubmissions.submissions.find((item) => item.user.id === selectedStudentId);
+        setGradeScore(submission?.grade ? String(submission.grade.score) : "");
+        setGradeFeedback(submission?.grade?.feedback ?? "");
+    }, [allSubmissions, selectedStudentId]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const fileList = e.target.files;
@@ -212,45 +268,62 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     }
 
     const displayAssignment = assignment;
+    const myGrade = mySubmission?.grade ?? null;
+    const myStatus = myGrade ? "Graded" : mySubmission ? statusLabel(mySubmission.status) : "Not submitted";
+    const selectedSubmission = allSubmissions?.submissions.find((submission) => submission.user.id === selectedStudentId) ?? null;
+    const submittedCount = allSubmissions?.submissions.length ?? 0;
+    const studentCount = submittedCount + (allSubmissions?.notSubmitted.length ?? 0);
+    const dueDate = new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        ...(displayAssignment.deadlineHasTime ? { timeStyle: "short" as const } : {}),
+    }).format(new Date(displayAssignment.deadlineAt));
 
     return (
-        <div className="space-y-6">
-            {/* Header: Assignment Details */}
-            <div className="relative overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold text-(--theme-text) mb-2">{displayAssignment.title}</h1>
-                        {displayAssignment.description && (
-                            <p className="text-sm text-(--theme-text) opacity-80 whitespace-pre-wrap mb-4">
-                                {displayAssignment.description}
-                            </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">
-                                <Calendar className="h-4 w-4" />
-                                <span>
-                                    Due: {new Intl.DateTimeFormat(undefined, {
-                                        dateStyle: "medium",
-                                        ...(displayAssignment.deadlineHasTime ? { timeStyle: "short" as const } : {}),
-                                    }).format(new Date(displayAssignment.deadlineAt))}
-                                </span>
-                                <span title={`Deadline set in ${displayAssignment.deadlineTimeZone}`}>({displayAssignment.deadlineTimeZone})</span>
-                            </div>
-                            {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-60 bg-(--theme-sidebar) px-2.5 py-1.5 rounded-lg">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>{displayAssignment.maxPoints} Points Possible</span>
-                                </div>
-                            )}
-                        </div>
-                        {displayAssignment.files.length > 0 && (
-                            <div className="mt-4 flex flex-wrap gap-2" aria-label="Assignment attachments">
-                                {displayAssignment.files.map((file) => <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]" />)}
-                            </div>
-                        )}
+        <div className="space-y-4">
+            <header className="px-1 py-2">
+                <h1 className="text-2xl font-bold tracking-tight text-[var(--classroom-text)]">{displayAssignment.title}</h1>
+                {displayAssignment.description && (
+                    <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-[var(--classroom-text-muted)]">
+                        {displayAssignment.description}
+                    </p>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-[var(--classroom-text-muted)]">
+                    <div className="flex min-w-0 items-center gap-2">
+                        <ProfileAvatar user={displayAssignment.assigner} className="h-7 w-7" />
+                        <span className="truncate">
+                            Assigned by <strong className="font-semibold text-[var(--classroom-text)]">{displayAssignment.assigner.name}</strong>
+                        </span>
                     </div>
+                    <span className="hidden h-4 w-px bg-[var(--classroom-line)] sm:block" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1.5 font-medium">
+                        <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+                        Due {dueDate}
+                        <span className="hidden opacity-70 sm:inline">· {displayAssignment.deadlineTimeZone}</span>
+                    </span>
+                    {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
+                        <>
+                            <span className="hidden h-4 w-px bg-[var(--classroom-line)] sm:block" aria-hidden="true" />
+                            <span className="inline-flex items-center gap-1.5 font-medium">
+                                <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                {displayAssignment.maxPoints} points
+                            </span>
+                        </>
+                    )}
                 </div>
-            </div>
+                {displayAssignment.files.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--classroom-line)] pt-3" aria-label="Assignment attachments">
+                        {displayAssignment.files.map((file) => (
+                            <FileAttachmentChip
+                                key={file.id}
+                                name={file.fileName}
+                                href={file.fileUrl}
+                                size={file.fileSize}
+                                className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]"
+                            />
+                        ))}
+                    </div>
+                )}
+            </header>
 
             {submissionsError && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger)]">
@@ -259,282 +332,260 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 </div>
             )}
 
-            {/* Content Switch based on Role */}
             {!isTeacher ? (
-                /* ----------------- STUDENT VIEW ----------------- */
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Col: Submission Form */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
-                            <h2 className="text-lg font-bold text-(--theme-text) mb-4">Your Work</h2>
-
-                            {mySubmission && mySubmission.status !== "PENDING" ? (
-                                <div className="space-y-4">
-                                    <div className={cn(
-                                        "px-4 py-3 rounded-xl corner-squircle text-sm font-bold flex items-center justify-between",
-                                        mySubmission.status === "GRADED" ? "bg-[var(--app-success-soft)] text-[var(--app-success)]" :
-                                            mySubmission.status === "LATE" ? "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" :
-                                                "bg-[var(--app-info-soft)] text-[var(--app-info)]"
-                                    )}>
-                                        <div className="flex items-center gap-2">
-                                            {mySubmission.status === "GRADED" ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
-                                            <span>{mySubmission.status}</span>
-                                        </div>
-                                        <span className="text-xs opacity-70">
-                                            Submitted on {formatDateYmd(mySubmission.submittedAt)}
-                                        </span>
-                                    </div>
-
-                                    {mySubmission.content && (
-                                        <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle">
-                                            <p className="text-sm text-(--theme-text) opacity-80 whitespace-pre-wrap">{mySubmission.content}</p>
-                                        </div>
-                                    )}
-
-                                    {mySubmission.files.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {mySubmission.files.map((file) => <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} className="border-transparent bg-(--theme-sidebar) text-sm font-bold text-(--theme-text)" />)}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <textarea
-                                        value={submissionContent}
-                                        onChange={(e) => setSubmissionContent(e.target.value)}
-                                        placeholder="Add comments or text to your submission..."
-                                        className="w-full bg-(--theme-sidebar) rounded-xl corner-squircle text-sm p-4 min-h-[120px] outline-none border border-transparent focus:border-(--theme-text)/20 resize-none font-bold text-(--theme-text)"
-                                    ></textarea>
-
-                                    {submissionFiles.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                            {submissionFiles.map((f, i) => (
-                                                <div key={i} className="flex items-center gap-2 bg-(--theme-sidebar) px-3 py-2 rounded-lg text-sm font-bold text-(--theme-text)">
-                                                    <Paperclip className="h-4 w-4 opacity-50" />
-                                                    <span className="truncate max-w-[200px]">{f.fileName}</span>
-                                                    <button onClick={() => setSubmissionFiles(prev => prev.filter((_, j) => j !== i))} className="opacity-50 hover:opacity-100 p-1">
-                                                        <X className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-center justify-between">
-                                        <label className="flex items-center gap-2 bg-(--theme-sidebar) px-4 py-2 rounded-lg text-sm font-bold text-(--theme-text) cursor-pointer hover:opacity-80 transition-opacity">
-                                            <Upload className="h-4 w-4 opacity-50" />
-                                            {uploadingFiles ? "Uploading..." : "Attach Files"}
-                                            <input type="file" multiple onChange={handleFileUpload} className="hidden" disabled={uploadingFiles} />
-                                        </label>
-
-                                        <WorkspaceButton
-                                            type="button"
-                                            variant="primary"
-                                            onClick={handleSubmitWork}
-                                            disabled={submitting || (submissionFiles.length === 0 && !submissionContent.trim())}
-                                        >
-                                            <Send className="h-4 w-4 mr-2" />
-                                            Submit Work
-                                        </WorkspaceButton>
-                                    </div>
-                                </div>
-                            )}
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+                    <section className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)]">
+                        <div className="flex flex-col gap-2 border-b border-[var(--classroom-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-[var(--classroom-text)]">Your submission</h2>
+                                <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">
+                                    {mySubmission ? `Submitted ${formatDateYmd(mySubmission.submittedAt)}` : "Add your work when it is ready."}
+                                </p>
+                            </div>
+                            <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", statusTone(myGrade ? "GRADED" : mySubmission?.status))}>
+                                {myGrade ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : <Clock className="h-3.5 w-3.5" aria-hidden="true" />}
+                                {myStatus}
+                            </span>
                         </div>
-                    </div>
 
-                    {/* Right Col: Grading Status */}
-                    <div className="space-y-4">
-                        <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
-                            <h3 className="text-xs font-bold text-(--theme-text) opacity-50 uppercase tracking-widest mb-4">Grade Status</h3>
-
-                            {mySubmission?.status === "GRADED" ? (
-                                <div className="space-y-4">
-                                    <div className="text-center p-6 bg-(--theme-sidebar) rounded-xl corner-squircle border border-[var(--app-success-border)]">
-                                        <span className="block text-4xl font-black text-[var(--app-success)] mb-1">
-                                            {/* We need to fetch the actual grade here via the gradebook or attach it to the submission response */}
-                                            GRADED
-                                        </span>
-                                    </div>
-                                    <p className="text-sm font-bold text-(--theme-text) text-center opacity-60">
-                                        Check the Grades tab for your final score.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="text-center p-6 bg-(--theme-sidebar) rounded-xl corner-squircle">
-                                    <span className="text-sm font-bold text-(--theme-text) opacity-50">Not graded yet</span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                /* ----------------- TEACHER VIEW ----------------- */
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Col: Student List */}
-                    <div className="lg:col-span-1 space-y-4">
-                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-4 shadow-none">
-                            <h3 className="text-sm font-bold text-(--theme-text) mb-4 uppercase tracking-wider">Submissions</h3>
-
-                            <ScrollArea className="flex-1 space-y-1 -mx-2 px-2">
-                                {allSubmissions?.submissions.map(sub => (
-                                    <button
-                                        key={sub.user.id}
-                                        onClick={() => setSelectedStudentId(sub.user.id)}
-                                        className={cn(
-                                            "w-full text-left p-3 rounded-lg flex items-center justify-between transition-colors",
-                                            selectedStudentId === sub.user.id ? "bg-(--theme-sidebar)" : "hover:bg-(--theme-sidebar)/50"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-(--theme-card) border border-(--theme-text)/10 flex items-center justify-center text-xs font-bold">
-                                                {sub.user.name?.[0]?.toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <span className="block text-sm font-bold text-(--theme-text)">{sub.user.name}</span>
-                                                <span className={cn(
-                                                    "block text-[10px] font-bold uppercase",
-                                                    sub.status === "GRADED" ? "text-[var(--app-success)]" :
-                                                        sub.status === "LATE" ? "text-[var(--app-warning)]" :
-                                                            "text-[var(--app-info)]"
-                                                )}>{sub.status}</span>
-                                            </div>
-                                        </div>
-                                    </button>
-                                ))}
-
-                                {allSubmissions?.notSubmitted.map(ns => (
-                                    <div key={ns.user.id} className="w-full text-left p-3 rounded-lg flex items-center justify-between opacity-50 grayscale">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-(--theme-card) border border-(--theme-text)/10 flex items-center justify-center text-xs font-bold">
-                                                {ns.user.name?.[0]?.toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <span className="block text-sm font-bold text-(--theme-text)">{ns.user.name}</span>
-                                                <span className="block text-[10px] font-bold text-(--theme-text) uppercase">Missing</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {(!allSubmissions?.submissions.length && !allSubmissions?.notSubmitted.length) && (
-                                    <div className="text-center py-10 opacity-50">
-                                        <p className="text-sm font-bold">No students found.</p>
+                        {mySubmission && mySubmission.status !== "PENDING" ? (
+                            <div className="space-y-5 p-5">
+                                {mySubmission.content && (
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</h3>
+                                        <p className="mt-2 whitespace-pre-wrap rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm leading-6 text-[var(--classroom-text)]">{mySubmission.content}</p>
                                     </div>
                                 )}
-                            </ScrollArea>
-                        </div>
-                    </div>
-
-                    {/* Right Col: Grading Canvas */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex h-[600px] flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-none">
-                            {!selectedStudentId ? (
-                                <div className="flex-1 flex flex-col items-center justify-center opacity-30">
-                                    <h3 className="text-lg font-bold">Select a student to grade</h3>
+                                {mySubmission.files.length > 0 && (
+                                    <div>
+                                        <h3 className="mb-2 text-xs font-semibold text-[var(--classroom-text-muted)]">Attached files</h3>
+                                        <div className="grid gap-2 sm:grid-cols-2">
+                                            {mySubmission.files.map((file) => (
+                                                <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} size={file.fileSize} className="w-full border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]" />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {!mySubmission.content && mySubmission.files.length === 0 && (
+                                    <p className="rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm text-[var(--classroom-text-muted)]">This submission has no note or files.</p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-4 p-5">
+                                <label className="block">
+                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</span>
+                                    <textarea
+                                        value={submissionContent}
+                                        onChange={(event) => setSubmissionContent(event.target.value)}
+                                        placeholder="Add a note for your teacher..."
+                                        className="min-h-32 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
+                                    />
+                                </label>
+                                {submissionFiles.length > 0 && (
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        {submissionFiles.map((file, index) => (
+                                            <FileAttachmentChip
+                                                key={`${file.uploadId}:${index}`}
+                                                name={file.fileName}
+                                                size={file.fileSize}
+                                                onRemove={() => setSubmissionFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}
+                                                className="w-full border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]"
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <label className="workspace-button inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-within:ring-2 focus-within:ring-[var(--app-focus-ring)]">
+                                        <Upload className="h-4 w-4" aria-hidden="true" />
+                                        {uploadingFiles ? "Uploading…" : "Attach files"}
+                                        <input type="file" multiple onChange={handleFileUpload} className="sr-only" disabled={uploadingFiles} />
+                                    </label>
+                                    <WorkspaceButton
+                                        type="button"
+                                        variant="primary"
+                                        onClick={handleSubmitWork}
+                                        disabled={submitting || (submissionFiles.length === 0 && !submissionContent.trim())}
+                                    >
+                                        <Send aria-hidden="true" />
+                                        {submitting ? "Submitting…" : "Submit work"}
+                                    </WorkspaceButton>
                                 </div>
-                            ) : (() => {
-                                const selectedSub = allSubmissions?.submissions.find(s => s.user.id === selectedStudentId);
-                                const selectedNs = allSubmissions?.notSubmitted.find(s => s.user.id === selectedStudentId);
+                            </div>
+                        )}
+                    </section>
 
-                                if (selectedNs) {
-                                    return (
-                                        <div className="flex-1 flex flex-col items-center justify-center opacity-50">
-                                            <h3 className="text-lg font-bold">No submission yet.</h3>
-                                        </div>
-                                    );
-                                }
-
-                                if (selectedSub) {
-                                    return (
-                                        <div className="flex-1 flex flex-col gap-6">
-                                            <div className="flex items-center justify-between border-b border-(--theme-text)/10 pb-4">
-                                                <h3 className="text-xl font-bold text-(--theme-text)">{selectedSub.user.name}&apos;s Work</h3>
-                                                <span className="text-sm font-bold text-(--theme-text) opacity-50">
-                                                    Submitted {new Date(selectedSub.submittedAt).toLocaleString()}
-                                                </span>
-                                            </div>
-
-                                            <ScrollArea className="flex-1 space-y-4 pr-2">
-                                                {selectedSub.content && (
-                                                    <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle">
-                                                        <p className="text-sm text-(--theme-text) whitespace-pre-wrap">{selectedSub.content}</p>
-                                                    </div>
-                                                )}
-
-                                                {selectedSub.files.length > 0 && (
-                                                    <div className="space-y-2">
-                                                        <h4 className="text-xs font-bold uppercase opacity-50">Attached Files</h4>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                            {selectedSub.files.map(f => (
-                                                                <a
-                                                                    key={f.id}
-                                                                    href={f.fileUrl}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="flex items-center gap-3 bg-(--theme-sidebar) p-3 rounded-xl corner-squircle hover:opacity-80 transition-opacity"
-                                                                >
-                                                                    <div className="w-10 h-10 rounded-lg bg-(--theme-card) flex items-center justify-center">
-                                                                        <FileText className="h-5 w-5 text-(--theme-text) opacity-50" />
-                                                                    </div>
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <p className="text-sm font-bold truncate text-(--theme-text)">{f.fileName}</p>
-                                                                        <p className="text-[10px] font-bold opacity-50 uppercase">{(f.fileSize / 1024).toFixed(1)} KB</p>
-                                                                    </div>
-                                                                </a>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {!selectedSub.content && selectedSub.files.length === 0 && (
-                                                    <p className="text-sm opacity-50 italic">Empty submission</p>
-                                                )}
-                                            </ScrollArea>
-
-                                            {/* Grading Box */}
-                                            <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle mt-auto">
-                                                <h4 className="text-xs font-bold uppercase tracking-wider mb-3">Review Assignments</h4>
-                                                <div className="flex flex-col md:flex-row gap-4">
-                                                    <div className="flex-1">
-                                                        <textarea
-                                                            value={gradeFeedback}
-                                                            onChange={e => setGradeFeedback(e.target.value)}
-                                                            placeholder="Add teacher feedback..."
-                                                            className="h-full min-h-[80px] w-full resize-none rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 py-2 text-sm font-normal outline-none"
-                                                        ></textarea>
-                                                    </div>
-                                                    <div className="w-full md:w-48 flex flex-col gap-2">
-                                                        <div className="flex items-center gap-2 bg-(--theme-card) px-3 py-2 rounded-lg">
-                                                            <input
-                                                                type="number"
-                                                                value={gradeScore}
-                                                                onChange={e => setGradeScore(e.target.value)}
-                                                                placeholder="Score"
-                                                                className="w-full bg-transparent border-0 outline-none text-right font-bold text-lg"
-                                                            />
-                                                            <span className="text-lg font-bold opacity-30">/</span>
-                                                            <span className="text-lg font-bold opacity-50">{assignment?.maxPoints || "-"}</span>
-                                                        </div>
-                                                        <WorkspaceButton
-                                                            type="button"
-                                                            variant="primary"
-                                                            onClick={() => handleGradeSubmission(selectedStudentId)}
-                                                            disabled={grading || !gradeScore}
-                                                            className="w-full"
-                                                        >
-                                                            {grading ? "Saving..." : "Save Grade"}
-                                                        </WorkspaceButton>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-
-                                return null;
-                            })()}
+                    <aside className="self-start overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] lg:sticky lg:top-4">
+                        <div className="p-5">
+                            <span className="text-xs font-semibold text-[var(--classroom-text-muted)]">Result</span>
+                            <div className="mt-2 flex items-baseline gap-2">
+                                <span className="text-4xl font-bold tracking-tight text-[var(--classroom-text)]">{myGrade ? myGrade.score : "—"}</span>
+                                <span className="text-sm font-semibold text-[var(--classroom-text-muted)]">
+                                    {myGrade?.maxScore != null ? `/ ${myGrade.maxScore}` : displayAssignment.maxPoints != null ? `/ ${displayAssignment.maxPoints}` : "points"}
+                                </span>
+                            </div>
+                            <div className="mt-4 border-t border-[var(--classroom-line)] pt-4">
+                                <span className="text-xs text-[var(--classroom-text-muted)]">Status</span>
+                                <p className="mt-1 text-sm font-semibold text-[var(--classroom-text)]">{myStatus}</p>
+                            </div>
+                            {myGrade?.feedback && (
+                                <div className="mt-4 border-t border-[var(--classroom-line)] pt-4">
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-[var(--classroom-text-muted)]">
+                                        <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
+                                        Teacher feedback
+                                    </div>
+                                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--classroom-text)]">{myGrade.feedback}</p>
+                                </div>
+                            )}
                         </div>
-                    </div>
+                    </aside>
+                </div>
+            ) : (
+                <div className="grid items-start gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+                    <aside className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)]">
+                        <div className="flex min-h-20 items-center justify-between border-b border-[var(--classroom-line)] px-4 py-4">
+                            <div>
+                                <h2 className="text-sm font-semibold text-[var(--classroom-text)]">Students</h2>
+                                <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{submittedCount} of {studentCount} submitted</p>
+                            </div>
+                            <Users className="h-4 w-4 text-[var(--classroom-text-muted)]" aria-hidden="true" />
+                        </div>
+                        <ScrollArea className="max-h-[620px]">
+                            <div className="space-y-1 p-2">
+                                {allSubmissions?.submissions.map((submission) => (
+                                    <WorkspaceButton
+                                        key={submission.user.id}
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setSelectedStudentId(submission.user.id)}
+                                        aria-pressed={selectedStudentId === submission.user.id}
+                                        className={cn(
+                                            "h-auto w-full justify-start whitespace-normal rounded-xl border px-3 py-2.5 text-left",
+                                            selectedStudentId === submission.user.id
+                                                ? "border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text)]"
+                                                : "border-transparent"
+                                        )}
+                                    >
+                                        <ProfileAvatar user={submission.user} className="h-9 w-9" />
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-semibold text-[var(--classroom-text)]">{submission.user.name}</span>
+                                            <span className={cn("mt-0.5 block text-[11px] font-medium", submission.grade ? "text-[var(--app-success)]" : submission.status === "LATE" ? "text-[var(--app-warning)]" : "text-[var(--classroom-text-muted)]")}>
+                                                {submission.grade ? `Graded · ${submission.grade.score}${submission.grade.maxScore != null ? ` / ${submission.grade.maxScore}` : ""}` : statusLabel(submission.status)}
+                                            </span>
+                                        </span>
+                                    </WorkspaceButton>
+                                ))}
+                                {allSubmissions?.notSubmitted.map(({ user }) => (
+                                    <div key={user.id} className="flex items-center gap-3 rounded-xl px-3 py-2.5 opacity-55">
+                                        <ProfileAvatar user={user} className="h-9 w-9 grayscale" />
+                                        <div className="min-w-0">
+                                            <span className="block truncate text-sm font-medium text-[var(--classroom-text)]">{user.name}</span>
+                                            <span className="mt-0.5 block text-[11px] text-[var(--classroom-text-muted)]">Not submitted</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {studentCount === 0 && (
+                                    <p className="px-3 py-10 text-center text-sm text-[var(--classroom-text-muted)]">No students are enrolled yet.</p>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </aside>
+
+                    <section className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)]">
+                        {selectedSubmission ? (
+                            <>
+                                <div className="flex min-h-20 flex-col gap-4 border-b border-[var(--classroom-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <ProfileAvatar user={selectedSubmission.user} className="h-11 w-11" />
+                                        <div className="min-w-0">
+                                            <h2 className="truncate text-lg font-semibold text-[var(--classroom-text)]">{selectedSubmission.user.name}</h2>
+                                            <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">Submitted {new Date(selectedSubmission.submittedAt).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                    <span className={cn("inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold", statusTone(selectedSubmission.grade ? "GRADED" : selectedSubmission.status))}>
+                                        {selectedSubmission.grade
+                                            ? `Graded · ${selectedSubmission.grade.score}${selectedSubmission.grade.maxScore != null ? ` / ${selectedSubmission.grade.maxScore}` : ""}`
+                                            : statusLabel(selectedSubmission.status)}
+                                    </span>
+                                </div>
+
+                                <div className="space-y-6 p-5">
+                                    <div className="grid gap-5 md:grid-cols-2">
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</h3>
+                                            {selectedSubmission.content ? (
+                                                <p className="mt-2 whitespace-pre-wrap rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm leading-6 text-[var(--classroom-text)]">{selectedSubmission.content}</p>
+                                            ) : (
+                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">No note was added.</p>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Attached files</h3>
+                                            {selectedSubmission.files.length > 0 ? (
+                                                <div className="mt-2 space-y-2">
+                                                    {selectedSubmission.files.map((file) => (
+                                                        <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} size={file.fileSize} className="w-full border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]" />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">No files were attached.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-[var(--classroom-line)] pt-5">
+                                        <div className="mb-4">
+                                            <h3 className="text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
+                                            <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">The student sees the saved score and feedback immediately.</p>
+                                        </div>
+                                        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+                                            <label className="block">
+                                                <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback</span>
+                                                <textarea
+                                                    value={gradeFeedback}
+                                                    onChange={(event) => setGradeFeedback(event.target.value)}
+                                                    placeholder="Add feedback for the student..."
+                                                    className="h-20 min-h-20 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
+                                                />
+                                            </label>
+                                            <div>
+                                                <label htmlFor="assignment-score" className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Score</label>
+                                                <div className="flex h-9 items-center rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]">
+                                                    <input
+                                                        id="assignment-score"
+                                                        type="number"
+                                                        min={0}
+                                                        max={displayAssignment.maxPoints ?? undefined}
+                                                        value={gradeScore}
+                                                        onChange={(event) => setGradeScore(event.target.value)}
+                                                        placeholder="0"
+                                                        className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-[var(--classroom-text)] outline-none"
+                                                    />
+                                                    <span className="ml-2 border-l border-[var(--classroom-line)] pl-2 text-sm font-semibold text-[var(--classroom-text-muted)]">/ {displayAssignment.maxPoints ?? "—"}</span>
+                                                </div>
+                                                <WorkspaceButton
+                                                    type="button"
+                                                    variant="primary"
+                                                    onClick={() => handleGradeSubmission(selectedSubmission.user.id)}
+                                                    disabled={grading || !gradeScore}
+                                                    className="mt-2 w-full"
+                                                >
+                                                    {grading ? "Saving…" : selectedSubmission.grade ? "Update grade" : "Save grade"}
+                                                </WorkspaceButton>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="flex min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
+                                <Users className="h-6 w-6 text-[var(--classroom-text-faint)]" aria-hidden="true" />
+                                <h2 className="mt-3 text-sm font-semibold text-[var(--classroom-text)]">No submission selected</h2>
+                                <p className="mt-1 max-w-xs text-xs leading-5 text-[var(--classroom-text-muted)]">
+                                    {submittedCount > 0 ? "Choose a student to review their work." : "Submitted work will appear here."}
+                                </p>
+                            </div>
+                        )}
+                    </section>
                 </div>
             )}
         </div>

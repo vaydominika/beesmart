@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TestView } from "./TestView";
 
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe("TestView learner lifecycle", () => {
@@ -31,6 +33,8 @@ describe("TestView learner lifecycle", () => {
 
         fireEvent.click(start);
         await screen.findByText("What do bees collect?");
+        expect(screen.getByPlaceholderText("Write your answer here...")).toHaveAttribute("maxlength", "1000");
+        expect(screen.getByText("0 / 1,000 characters")).toBeInTheDocument();
         await waitFor(() => expect(fetchMock).toHaveBeenNthCalledWith(2, "/api/classrooms/class-1/tests/test-1/start", { method: "POST" }));
     });
 });

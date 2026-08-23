@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 interface CalendarWidgetProps {
   selectedDate?: Date;
@@ -156,29 +157,35 @@ export function CalendarWidget({
           {monthNames[month]}. {year}.
         </h3>
         <div className="flex gap-1 items-center">
-          <button
+          <WorkspaceButton
             type="button"
+            variant="secondary"
+            size="icon-compact"
             onClick={goToPreviousMonth}
             aria-label="Previous month"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
+            className="h-7 w-7"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={3} />
-          </button>
-          <button
+          </WorkspaceButton>
+          <WorkspaceButton
             type="button"
+            variant="secondary"
+            size="compact"
             onClick={goToToday}
-            className="h-7 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-2 text-xs font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
+            className="h-7 px-2"
           >
             Today
-          </button>
-          <button
+          </WorkspaceButton>
+          <WorkspaceButton
             type="button"
+            variant="secondary"
+            size="icon-compact"
             onClick={goToNextMonth}
             aria-label="Next month"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)] active:bg-[var(--app-accent-soft)]"
+            className="h-7 w-7"
           >
             <ChevronRight className="h-4 w-4" strokeWidth={3} />
-          </button>
+          </WorkspaceButton>
         </div>
       </div>
 

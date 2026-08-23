@@ -58,4 +58,16 @@ describe("complete-set test submission", () => {
         expect(response.status).toBe(400);
         expect(prisma.$transaction).not.toHaveBeenCalled();
     });
+
+    it("rejects an oversized essay before writing responses", async () => {
+        const response = await POST(new NextRequest("http://localhost", {
+            method: "POST",
+            body: JSON.stringify({ attemptId: "attempt-1", responses: [{ questionId: "q2", responseText: "a".repeat(6_001) }] }),
+        }), context);
+        const data = await response.json();
+
+        expect(response.status).toBe(413);
+        expect(data.code).toBe("RESPONSE_TOO_LONG");
+        expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
 });
