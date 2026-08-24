@@ -601,36 +601,39 @@ model FlashcardStudySession {
 }
 
 model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String?  @db.Text
-  startDate   DateTime
-  endDate     DateTime
-  startTime   String?
-  endTime     String?
-  isAllDay    Boolean  @default(false)
-  order       Int      @default(0)
-  userId      String?
-  classroomId String?
-  courseId    String?
-  testId      String?  @unique
-  isProtected Boolean  @default(false)
-  location    String?
-  color       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  description  String?  @db.Text
+  startDate    DateTime
+  endDate      DateTime
+  startTime    String?
+  endTime      String?
+  isAllDay     Boolean  @default(false)
+  order        Int      @default(0)
+  userId       String?
+  classroomId  String?
+  courseId     String?
+  testId       String?  @unique
+  assignmentId String?  @unique
+  isProtected  Boolean  @default(false)
+  location     String?
+  color        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relationships
-  user      User?      @relation("PersonalEvents", fields: [userId], references: [id], onDelete: Cascade)
-  classroom Classroom? @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  course    Course?    @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  test      Test?      @relation(fields: [testId], references: [id], onDelete: Cascade)
-  reminders Reminder[]
+  user       User?         @relation("PersonalEvents", fields: [userId], references: [id], onDelete: Cascade)
+  classroom  Classroom?    @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course     Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  test       Test?         @relation(fields: [testId], references: [id], onDelete: Cascade)
+  assignment AssignedWork? @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  reminders  Reminder[]
 
   @@index([userId])
   @@index([classroomId])
   @@index([courseId])
   @@index([testId])
+  @@index([assignmentId])
   @@index([startDate])
 }
 
@@ -654,14 +657,15 @@ model AssignedWork {
   updatedAt        DateTime  @updatedAt
 
   // Relationships
-  assigner    User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
-  assignee    User?           @relation("WorkAssignee", fields: [assignedToId], references: [id], onDelete: Cascade)
-  classroom   Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
-  course      Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  test        Test?           @relation(fields: [testId], references: [id], onDelete: SetNull)
-  grades      Grade[]
-  submissions Submission[]
-  posts       ClassroomPost[]
+  assigner      User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
+  assignee      User?           @relation("WorkAssignee", fields: [assignedToId], references: [id], onDelete: Cascade)
+  classroom     Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  course        Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  test          Test?           @relation(fields: [testId], references: [id], onDelete: SetNull)
+  grades        Grade[]
+  submissions   Submission[]
+  posts         ClassroomPost[]
+  calendarEvent Event?
 
   @@index([assignedById])
   @@index([assignedToId])
@@ -1057,18 +1061,19 @@ model DailyCourseRecommendation {
 // ==========================================
 
 model ClassroomPost {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   classroomId  String
   authorId     String
   type         PostType
   title        String?
-  content      String?  @db.Text
-  isPinned     Boolean  @default(false)
+  content      String?   @db.Text
+  isPinned     Boolean   @default(false)
   assignmentId String?
   testId       String?
   courseId     String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  editedAt     DateTime?
 
   // Relationships
   classroom  Classroom     @relation(fields: [classroomId], references: [id], onDelete: Cascade)

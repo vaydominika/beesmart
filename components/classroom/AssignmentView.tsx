@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceLoadingState } from "@/components/ui/workspace-state";
 import { FileAttachmentChip } from "@/components/ui/file-attachment-chip";
+import { ClassroomWorkEditButton } from "@/components/classroom/ClassroomWorkEditButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
@@ -85,6 +86,7 @@ function ProfileAvatar({ user, className }: { user: { name: string; avatar?: str
 }
 
 export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const requestedStudentId = searchParams.get("student");
     const [assignment, setAssignment] = useState<AssignmentDetails | null>(null);
@@ -105,6 +107,11 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
     const [grading, setGrading] = useState(false);
     const [gradeScore, setGradeScore] = useState("");
     const [gradeFeedback, setGradeFeedback] = useState("");
+
+    const handleAssignmentDeleted = useCallback(() => {
+        router.replace(`/classroom/${classroomId}`);
+        router.refresh();
+    }, [classroomId, router]);
 
     const fetchAssignmentAndSubmissions = useCallback(async () => {
         setLoading(true);
@@ -306,7 +313,30 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                             <span className="inline-flex items-center gap-1.5 font-medium">
                                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                                 {displayAssignment.maxPoints} points
+                                {isTeacher && (
+                                    <ClassroomWorkEditButton
+                                        classroomId={classroomId}
+                                        assignmentId={assignmentId}
+                                        title={displayAssignment.title}
+                                        onSaved={fetchAssignmentAndSubmissions}
+                                        onDeleted={handleAssignmentDeleted}
+                                        className="-my-1 ml-0.5"
+                                    />
+                                )}
                             </span>
+                        </>
+                    )}
+                    {isTeacher && (!displayAssignment.isGraded || displayAssignment.maxPoints == null) && (
+                        <>
+                            <span className="hidden h-4 w-px bg-[var(--classroom-line)] sm:block" aria-hidden="true" />
+                            <ClassroomWorkEditButton
+                                classroomId={classroomId}
+                                assignmentId={assignmentId}
+                                title={displayAssignment.title}
+                                onSaved={fetchAssignmentAndSubmissions}
+                                onDeleted={handleAssignmentDeleted}
+                                className="-my-1"
+                            />
                         </>
                     )}
                 </div>

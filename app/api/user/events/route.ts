@@ -281,6 +281,10 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
 
+    if (event.isProtected && event.assignmentId) {
+        return NextResponse.json({ error: "Assignments must be managed from their assignment editor." }, { status: 409 });
+    }
+
     if (event.isProtected && event.testId && event.classroomId) {
         await prisma.$transaction([
             prisma.event.delete({ where: { id } }),
@@ -319,6 +323,10 @@ export async function PATCH(req: NextRequest) {
     const canEdit = event?.userId === userId || Boolean(role && role !== "STUDENT");
     if (!event || !canEdit) {
         return NextResponse.json({ error: "Event not found." }, { status: 404 });
+    }
+
+    if (event.isProtected && event.assignmentId) {
+        return NextResponse.json({ error: "Assignments must be managed from their assignment editor." }, { status: 409 });
     }
 
     const data: Record<string, unknown> = {};

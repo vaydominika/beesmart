@@ -7,6 +7,7 @@ import { formatDateYmd } from "@/lib/date";
 import { ArrowRight, ChevronDown, ClipboardList, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { ClassroomWorkEditButton } from "@/components/classroom/ClassroomWorkEditButton";
 
 interface Props {
     classroomId: string;
@@ -49,32 +50,36 @@ interface GradeSectionProps {
     detail: string;
     isOpen: boolean;
     onToggle: () => void;
+    headerAction?: ReactNode;
     children: ReactNode;
 }
 
-function GradeSection({ title, type, detail, isOpen, onToggle, children }: GradeSectionProps) {
+function GradeSection({ title, type, detail, isOpen, onToggle, headerAction, children }: GradeSectionProps) {
     const WorkIcon = type === "Assignment" ? ClipboardList : GraduationCap;
 
     return (
         <section className="overflow-hidden rounded-xl border border-(--classroom-line) bg-(--classroom-surface)">
-            <button
-                type="button"
-                onClick={onToggle}
-                aria-expanded={isOpen}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)"
-            >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--classroom-accent)">
-                    <WorkIcon className="h-4 w-4 text-(--classroom-text-muted)" />
-                </span>
-                <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-(--classroom-text)">{title}</span>
-                    <span className="mt-0.5 flex items-center gap-2 text-xs text-(--classroom-text-muted)">
-                        <span>{type}</span>
-                        <span>{detail}</span>
+            <div className="flex items-center">
+                <button
+                    type="button"
+                    onClick={onToggle}
+                    aria-expanded={isOpen}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)"
+                >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--classroom-accent)">
+                        <WorkIcon className="h-4 w-4 text-(--classroom-text-muted)" />
                     </span>
-                </span>
-                <ChevronDown className={cn("h-4 w-4 shrink-0 text-(--classroom-text-muted) transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-180")} />
-            </button>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-(--classroom-text)">{title}</span>
+                        <span className="mt-0.5 flex items-center gap-2 text-xs text-(--classroom-text-muted)">
+                            <span>{type}</span>
+                            <span>{detail}</span>
+                        </span>
+                    </span>
+                    <ChevronDown className={cn("h-4 w-4 shrink-0 text-(--classroom-text-muted) transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-180")} />
+                </button>
+                {headerAction && <div className="pr-3">{headerAction}</div>}
+            </div>
             {isOpen && <div className="border-t border-(--classroom-line)">{children}</div>}
         </section>
     );
@@ -249,6 +254,14 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         detail={`${submissionCount} submission${submissionCount === 1 ? "" : "s"}`}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
+                        headerAction={
+                            <ClassroomWorkEditButton
+                                classroomId={classroomId}
+                                assignmentId={assignment.id}
+                                title={assignment.title}
+                                onSaved={fetchGradebook}
+                            />
+                        }
                     >
                         <div>
                             {rows.length === 0 ? (
@@ -308,6 +321,15 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         detail={`${completedCount} completed`}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
+                        headerAction={
+                            <ClassroomWorkEditButton
+                                classroomId={classroomId}
+                                testId={test.id}
+                                title={test.title}
+                                workType={test.type === "EXAM" ? "exam" : "test"}
+                                onSaved={fetchGradebook}
+                            />
+                        }
                     >
                         {rows.length === 0 ? (
                             <div className="px-5 py-9 text-center">

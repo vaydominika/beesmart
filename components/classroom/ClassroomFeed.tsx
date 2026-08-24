@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
 import { CreateAssignmentModal } from "@/components/classroom/CreateAssignmentModal";
 import { CreateTestModal } from "@/components/classroom/CreateTestModal";
+import { ClassroomWorkEditModal } from "@/components/calendar/ClassroomWorkEditModal";
+import { DeleteConfirmationModal } from "@/components/calendar/DeleteConfirmationModal";
 import { CoursePostModal, type PostCourse } from "@/components/classroom/CoursePostModal";
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
@@ -44,6 +46,7 @@ interface Post {
     content?: string | null;
     isPinned: boolean;
     createdAt: string;
+    editedAt?: string | null;
     author: { id: string; name: string; avatar?: string | null };
     isOwnPost: boolean;
     _count: { comments: number; files: number };
@@ -754,9 +757,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                     <AuthorAvatar author={post.author} size={32} className="h-8 w-8" />
-                                    <div>
+                                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                         <span className="text-sm font-semibold text-[var(--classroom-text)]">{post.author.name}</span>
-                                        <span className="ml-2 text-xs text-[var(--classroom-text-muted)]">{formatDate(post.createdAt)}</span>
+                                        <span className="text-xs text-[var(--classroom-text-muted)]" title={new Date(post.createdAt).toLocaleString()}>Posted {formatDate(post.createdAt)}</span>
+                                        {post.editedAt && (
+                                            <span className="text-xs text-[var(--classroom-text-faint)]" title={new Date(post.editedAt).toLocaleString()}>
+                                                · Edited {formatDate(post.editedAt)}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -826,7 +834,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             </div>
 
                             {/* Post Title */}
-                            {post.title && (
+                            {post.title && !post.assignment && !post.test && (
                                 <h3 className="mb-1 text-base font-semibold text-[var(--classroom-text)]">{post.title}</h3>
                             )}
 
@@ -850,8 +858,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 </span>
                                             )}
                                         </div>
-                                        {post.assignment.maxPoints && (
-                                            <span className="text-xs font-bold text-(--theme-text) opacity-50 mr-2">{post.assignment.maxPoints} pts</span>
+                                        {post.assignment.maxPoints != null && (
+                                            <span className="mr-1 text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints} pts</span>
                                         )}
                                 </div>
                             )}
@@ -866,7 +874,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit} min</span>
                                             )}
                                         </div>
-                                        <span className="text-xs font-bold text-(--theme-text) opacity-50 uppercase mr-2">{post.test.type}</span>
+                                        <span className="mr-1 text-xs font-bold uppercase text-(--theme-text) opacity-50">{post.test.type}</span>
                                 </div>
                             )}
 
@@ -979,7 +987,25 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             )}
 
             {/* Modals */}
-            <Dialog open={Boolean(editingPost)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
+            {editingPost && (editingPost.assignment || editingPost.test) && (
+                <ClassroomWorkEditModal
+                    open
+                    event={{
+                        classroomId,
+                        assignmentId: editingPost.assignment?.id,
+                        testId: editingPost.test?.id,
+                    }}
+                    post={{ id: editingPost.id }}
+                    onClose={closePostEditor}
+                    onSaved={async () => {
+                        editEditorRef.current = null;
+                        setEditingPost(null);
+                        setEditContent("");
+                        await fetchPosts(1, false);
+                    }}
+                />
+            )}
+            <Dialog open={Boolean(editingPost && !editingPost.assignment && !editingPost.test)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
                 <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
                         <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Edit post</DialogTitle>
@@ -1018,35 +1044,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 </WorkspaceDialogContent>
             </Dialog>
 
-            <Dialog open={Boolean(postToDelete)} onOpenChange={(open) => { if (!open && !deletingPost) setPostToDelete(null); }}>
-                <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
-                    <DialogHeader className="pr-10">
-                        <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Delete post?</DialogTitle>
-                        <DialogDescription className="mt-2 text-sm leading-6 text-[var(--classroom-text-muted)]">
-                            This removes the post and its comments. This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
-                    <div className="flex justify-end gap-2 pt-2">
-                        <WorkspaceButton
-                            type="button"
-                            variant="secondary"
-                            onClick={() => setPostToDelete(null)}
-                            disabled={deletingPost}
-                        >
-                            Cancel
-                        </WorkspaceButton>
-                        <WorkspaceButton
-                            type="button"
-                            variant="danger"
-                            onClick={handleDeletePost}
-                            disabled={deletingPost}
-                        >
-                            {deletingPost ? "Deleting…" : "Delete"}
-                        </WorkspaceButton>
-                    </div>
-                </WorkspaceDialogContent>
-            </Dialog>
+            <DeleteConfirmationModal
+                open={Boolean(postToDelete)}
+                onClose={() => setPostToDelete(null)}
+                onConfirm={handleDeletePost}
+                isDeleting={deletingPost}
+                title="Delete post?"
+                description="This removes the post and its comments. This action cannot be undone."
+            />
 
             <CreateAssignmentModal
                 open={assignmentModalOpen}

@@ -3,6 +3,9 @@ import { routeContext } from "@/test-utils/route-context";
 import { NextRequest } from "next/server";
 import { DELETE, PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
+import { notifyClassroomMembers } from "@/lib/notifications";
+
+vi.mock("@/lib/notifications", () => ({ notifyClassroomMembers: vi.fn() }));
 
 vi.mock("@/lib/db", () => ({
     prisma: {
@@ -54,7 +57,12 @@ describe("classroom post ownership", () => {
         expect(response.status).toBe(200);
         expect(prisma.classroomPost.update).toHaveBeenCalledWith(expect.objectContaining({
             where: { id: "post-1" },
-            data: { content: "Updated" },
+            data: { content: "Updated", editedAt: expect.any(Date) },
+        }));
+        expect(notifyClassroomMembers).toHaveBeenCalledWith(expect.objectContaining({
+            classroomId: "class-1",
+            relatedId: "post-1",
+            recipientRoles: ["STUDENT"],
         }));
     });
 
@@ -70,6 +78,18 @@ describe("classroom post ownership", () => {
 
         expect(response.status).toBe(403);
         expect(prisma.classroomPost.update).not.toHaveBeenCalled();
+    });
+
+    it("does not mark or notify an unchanged post", async () => {
+        (prisma.classroomMember.findUnique as any).mockResolvedValue({ role: "TEACHER" });
+        const request = new NextRequest("http://localhost/api/classrooms/class-1/posts/post-1", {
+            method: "PATCH",
+            body: JSON.stringify({ content: "Original" }),
+        });
+
+        expect((await PATCH(request, context)).status).toBe(200);
+        expect(prisma.classroomPost.update).toHaveBeenCalledWith(expect.objectContaining({ data: { content: "Original" } }));
+        expect(notifyClassroomMembers).not.toHaveBeenCalled();
     });
 
     it.each(["STUDENT", "TEACHER"])("lets a %s delete their own post", async (role) => {

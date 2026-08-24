@@ -5,6 +5,7 @@ import { notifyClassroomMembers } from "@/lib/notifications";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
 import { ScheduleValidationError, assertDeadlineNotPast, parseScheduleDate } from "@/lib/schedule-validation";
+import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; isCompleted: boolean; score: number | null };
@@ -73,8 +74,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     if (body.title !== undefined) data.title = body.title.trim();
     if (body.description !== undefined) data.description = body.description?.trim() || null;
     if (body.type === "TEST" || body.type === "EXAM") data.type = body.type;
-    if (body.timeLimit !== undefined) data.timeLimit = body.timeLimit ? Number(body.timeLimit) : null;
-    if (body.passingScore !== undefined) data.passingScore = body.passingScore ? Number(body.passingScore) : null;
+    if (body.timeLimit !== undefined) {
+        const timeLimit = body.timeLimit === null || body.timeLimit === "" ? null : Number(body.timeLimit);
+        if (timeLimit !== null && (!Number.isSafeInteger(timeLimit) || timeLimit < 1)) {
+            return NextResponse.json({ error: "Time limit must be a positive whole number" }, { status: 400 });
+        }
+        data.timeLimit = timeLimit;
+    }
+    if (body.passingScore !== undefined) {
+        const passingScore = body.passingScore === null || body.passingScore === "" ? null : Number(body.passingScore);
+        if (passingScore !== null && (!Number.isFinite(passingScore) || passingScore < 0 || passingScore > 100)) {
+            return NextResponse.json({ error: "Passing score must be between 0 and 100" }, { status: 400 });
+        }
+        data.passingScore = passingScore;
+    }
     let nextOpensAt = existing.opensAt;
     let nextClosesAt = existing.closesAt;
     try {
@@ -112,22 +125,46 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
     }
 
-    const updated = await prisma.test.update({ where: { id: testId }, data });
+    const existingValues = existing as unknown as Record<string, unknown>;
+    const testChanged = Object.entries(data).some(([key, value]) => {
+        const current = existingValues[key];
+        if (current instanceof Date || value instanceof Date) {
+            return (current instanceof Date ? current.getTime() : null) !== (value instanceof Date ? value.getTime() : null);
+        }
+        return current !== value;
+    });
+    const updated = await prisma.$transaction(async (transaction) => {
+        const nextTest = await transaction.test.update({ where: { id: testId }, data });
+        if (testChanged) {
+            await transaction.classroomPost.updateMany({
+                where: { testId },
+                data: {
+                    title: null,
+                    content: nextTest.description ? sanitizeRichTextHtml(nextTest.description) : null,
+                    editedAt: new Date(),
+                },
+            });
+        }
+        return nextTest;
+    });
     await syncTestCalendarEvent(testId);
-    await notifyClassroomMembers({
-        classroomId: id,
-        actorId: userId,
-        title: `${updated.type === "EXAM" ? "Exam" : "Test"} updated`,
-        body: `${updated.title} was changed or rescheduled.`,
-        type: "EVENT",
-        relatedId: testId,
-        relatedType: "test",
-        actionUrl: `/classroom/${id}/tests/${testId}`,
-    });
-    await recordMeaningfulActivity({
-        userId, activityType: "TEST_SCHEDULED", classroomId: id, relatedId: testId,
-        dedupeKey: `test:schedule:${testId}:${createHash("sha1").update(JSON.stringify(body)).digest("hex")}`,
-    });
+    if (testChanged) {
+        await notifyClassroomMembers({
+            classroomId: id,
+            actorId: userId,
+            title: `${updated.type === "EXAM" ? "Exam" : "Test"} updated`,
+            body: `${updated.title} was changed or rescheduled.`,
+            type: "EVENT",
+            relatedId: testId,
+            relatedType: "test",
+            actionUrl: `/classroom/${id}/tests/${testId}`,
+            recipientRoles: ["STUDENT"],
+        });
+        await recordMeaningfulActivity({
+            userId, activityType: "TEST_SCHEDULED", classroomId: id, relatedId: testId,
+            dedupeKey: `test:schedule:${testId}:${createHash("sha1").update(JSON.stringify(body)).digest("hex")}`,
+        });
+    }
     return NextResponse.json(updated);
 }
 
@@ -148,6 +185,9 @@ export async function DELETE(_req: NextRequest, ctx: RouteContext) {
         relatedType: "classroom",
         actionUrl: `/classroom/${id}`,
     });
-    await prisma.test.delete({ where: { id: testId } });
+    await prisma.$transaction(async (transaction) => {
+        await transaction.classroomPost.deleteMany({ where: { testId } });
+        await transaction.test.delete({ where: { id: testId } });
+    });
     return NextResponse.json({ success: true });
 }

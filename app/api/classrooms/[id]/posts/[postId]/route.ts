@@ -4,6 +4,7 @@ import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-t
 import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
 import type { Prisma } from "@/lib/generated/prisma";
+import { notifyClassroomMembers } from "@/lib/notifications";
 
 type RouteContext = { params: Promise<{ id: string; postId: string }> };
 
@@ -115,6 +116,12 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             }
         }
 
+        const contentChanged = editsContent && (
+            (data.title !== undefined && updateData.title !== post.title)
+            || (data.content !== undefined && updateData.content !== post.content)
+        );
+        if (contentChanged) updateData.editedAt = new Date();
+
         const updated = await prisma.classroomPost.update({
             where: { id: postId },
             data: updateData,
@@ -124,6 +131,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
                 files: true,
             },
         });
+
+        if (contentChanged) {
+            await notifyClassroomMembers({
+                classroomId: id,
+                actorId: userId,
+                title: "Post updated",
+                body: updated.title ? `${updated.title} was edited.` : "A classroom post was edited.",
+                type: "OTHER",
+                relatedId: postId,
+                relatedType: "post",
+                actionUrl: `/classroom/${id}?post=${postId}`,
+                recipientRoles: ["STUDENT"],
+            });
+        }
 
         return NextResponse.json({ ...updated, files: (updated.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
     } catch (e) {

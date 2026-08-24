@@ -26,21 +26,10 @@ import { EventReminderFields } from "./EventReminderFields";
 import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
 import { readJsonSafely } from "@/lib/http";
 import { formatLongDate } from "@/lib/schedule";
+import type { ScheduleEvent } from "@/lib/schedule";
+import { ClassroomWorkEditModal, isClassroomWorkEvent } from "./ClassroomWorkEditModal";
 
-interface EventData {
-  id: string;
-  title: string;
-  description?: string | null;
-  startDate: string;
-  startTime?: string | null;
-  endTime?: string | null;
-  isAllDay: boolean;
-  color?: string | null;
-  endDate?: string;
-  isProtected?: boolean;
-  canEdit?: boolean;
-  reminder?: { notifyAt: string; notificationProcessedAt: string | null } | null;
-}
+type EventData = ScheduleEvent;
 
 interface EventDetailModalProps { open: boolean; onClose: () => void; event: EventData; onEventUpdated: () => void }
 
@@ -52,6 +41,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [savingReminder, setSavingReminder] = useState(false);
+  const [editingClassroomWork, setEditingClassroomWork] = useState(false);
   const [title, setTitle] = useState(event.title);
   const [description, setDescription] = useState(event.description ?? "");
   const [startTime, setStartTime] = useState(event.startTime ?? "");
@@ -67,6 +57,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     if (!open) return;
     setDisplayEvent(event);
     setEditing(false);
+    setEditingClassroomWork(false);
     const reminder = event.reminder?.notifyAt ? new Date(event.reminder.notifyAt) : null;
     const pad = (value: number) => String(value).padStart(2, "0");
     setReminderEnabled(Boolean(reminder));
@@ -77,6 +68,10 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   const dateStr = formatLongDate(new Date(displayEvent.startDate));
 
   const beginEdit = () => {
+    if (isClassroomWorkEvent(displayEvent)) {
+      setEditingClassroomWork(true);
+      return;
+    }
     setTitle(displayEvent.title); setDescription(displayEvent.description ?? ""); setStartTime(displayEvent.startTime ?? ""); setEndTime(displayEvent.endTime ?? ""); setIsAllDay(displayEvent.isAllDay); setColor(displayEvent.color || DEFAULT_EVENT_COLOR); setEventDate(displayEvent.startDate.slice(0, 10)); setEditing(true);
   };
 
@@ -98,9 +93,16 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   const handleConfirmDelete = async () => {
     setDeleting(true);
     try {
-      const response = await fetch(`/api/user/events?id=${event.id}`, { method: "DELETE" });
-      if (!response.ok) return toast.error("Failed to delete event.");
-      toast.success("Event deleted");
+      const linkedWork = isClassroomWorkEvent(displayEvent);
+      const endpoint = linkedWork
+        ? displayEvent.assignmentId
+          ? `/api/classrooms/${displayEvent.classroomId}/assignments/${displayEvent.assignmentId}`
+          : `/api/classrooms/${displayEvent.classroomId}/tests/${displayEvent.testId}`
+        : `/api/user/events?id=${event.id}`;
+      const response = await fetch(endpoint, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return toast.error(data.error || `Failed to delete ${linkedWork ? "assessment" : "event"}.`);
+      toast.success(`${linkedWork ? "Assessment" : "Event"} deleted`);
       setShowDeleteModal(false);
       onClose();
       window.setTimeout(onEventUpdated, 100);
@@ -135,6 +137,27 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     finally { setSavingReminder(false); }
   };
 
+  if (editingClassroomWork && isClassroomWorkEvent(displayEvent)) {
+    return (
+      <ClassroomWorkEditModal
+        open={open}
+        event={displayEvent}
+        onClose={onClose}
+        onUpdated={(updatedEvent) => {
+          setDisplayEvent(updatedEvent);
+          onEventUpdated();
+        }}
+      />
+    );
+  }
+
+  const classroomWork = isClassroomWorkEvent(displayEvent);
+  const classroomWorkLabel = displayEvent.assignmentId
+    ? "assignment"
+    : displayEvent.testId
+      ? displayEvent.title.toLowerCase().startsWith("exam:") ? "exam" : "test"
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <WorkspaceDialogContent className="max-w-lg">
@@ -166,11 +189,20 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
           )}
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter className="justify-between sm:justify-between">
-          <div>{displayEvent.canEdit !== false && !editing ? <WorkspaceButton type="button" variant="danger" onClick={() => setShowDeleteModal(true)}><Trash2 className="h-4 w-4" />Delete</WorkspaceButton> : null}</div>
-          <div className="flex gap-2">{editing ? <><WorkspaceButton type="button" variant="secondary" onClick={() => setEditing(false)}>Cancel</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={saving}>{saving ? <><Spinner className="h-4 w-4" />Saving…</> : "Save changes"}</WorkspaceButton></> : displayEvent.canEdit !== false ? <WorkspaceButton type="button" variant="secondary" onClick={beginEdit}><Pencil className="h-4 w-4" />Edit event</WorkspaceButton> : null}</div>
+          <div>{displayEvent.canEdit !== false && !editing ? <WorkspaceButton type="button" variant="danger" onClick={() => setShowDeleteModal(true)}><Trash2 className="h-4 w-4" />Delete {classroomWorkLabel ?? "event"}</WorkspaceButton> : null}</div>
+          <div className="flex gap-2">{editing ? <><WorkspaceButton type="button" variant="secondary" onClick={() => setEditing(false)}>Cancel</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={saving}>{saving ? <><Spinner className="h-4 w-4" />Saving…</> : "Save changes"}</WorkspaceButton></> : displayEvent.canEdit !== false ? <WorkspaceButton type="button" variant="secondary" onClick={beginEdit}><Pencil className="h-4 w-4" />Edit {classroomWorkLabel ?? "event"}</WorkspaceButton> : null}</div>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
-      <DeleteConfirmationModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} isDeleting={deleting} />
+      <DeleteConfirmationModal
+        open={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deleting}
+        title={`Delete ${classroomWorkLabel ?? "event"}`}
+        description={classroomWork
+          ? `Delete this ${classroomWorkLabel} and all of its submissions and grades? This action cannot be undone.`
+          : "Delete this event? This action cannot be undone."}
+      />
     </Dialog>
   );
 }

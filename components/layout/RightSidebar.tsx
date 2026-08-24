@@ -12,28 +12,17 @@ import { useDashboard } from "@/lib/DashboardContext";
 import { cn } from "@/lib/utils";
 import { EventModal } from "@/components/calendar/EventModal";
 import { EventDetailModal } from "@/components/calendar/EventDetailModal";
+import { isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditModal";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { NotificationCenter } from "./NotificationCenter";
+import type { ScheduleEvent } from "@/lib/schedule";
 
 interface RightSidebarProps {
   variant?: "inline" | "overlay";
   onClose?: () => void;
 }
 
-interface EventData {
-  id: string;
-  title: string;
-  description?: string | null;
-  startDate: string;
-  startTime?: string | null;
-  endTime?: string | null;
-  isAllDay: boolean;
-  endDate?: string;
-  color?: string | null;
-  isProtected?: boolean;
-  canEdit?: boolean;
-  reminder?: { notifyAt: string; notificationProcessedAt: string | null } | null;
-}
+type EventData = ScheduleEvent;
 
 const BANNER_HEIGHT = 80;
 const DEFAULT_BANNER_URL = "/images/default_banner.jpg";
@@ -233,19 +222,28 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
             <h3 className="mb-2 text-[32px] font-semibold uppercase tracking-wide text-(--theme-text) md:mb-0 md:text-xl">REMINDERS</h3>
             <div>
               {upcomingEvents.length > 0 ? (
-                upcomingEvents.map((event) => (
-                  <button
-                    key={event.id}
-                    onClick={() => setDetailEvent(event)}
-                    className="w-full text-left cursor-pointer hover:bg-(--theme-card)/30 rounded-xl transition-colors px-1.5 py-0.5"
-                  >
-                    <ReminderItem
-                      task={event.title}
-                      date={formatEventDate(event.startDate)}
-                      time={event.isAllDay ? "All day" : `${event.startTime || ""}${event.endTime ? ` - ${event.endTime}` : ""}`}
-                    />
-                  </button>
-                ))
+                upcomingEvents.map((event) => {
+                  const classroomWork = isClassroomWorkEvent(event);
+                  const dueDate = classroomWork && event.testId && event.endDate ? event.endDate : event.startDate;
+                  const dueTime = classroomWork
+                    ? event.isAllDay
+                      ? ""
+                      : event.testId
+                        ? event.endTime || ""
+                        : event.startTime || ""
+                    : event.isAllDay
+                      ? "All day"
+                      : `${event.startTime || ""}${event.endTime ? ` - ${event.endTime}` : ""}`;
+                  return (
+                    <button
+                      key={event.id}
+                      onClick={() => setDetailEvent(event)}
+                      className="w-full cursor-pointer rounded-xl px-1.5 py-0.5 text-left transition-colors hover:bg-(--theme-card)/30"
+                    >
+                      <ReminderItem task={event.title} date={formatEventDate(dueDate)} time={dueTime} />
+                    </button>
+                  );
+                })
               ) : (
                 <p className="py-2 text-sm text-(--theme-text)/65">No upcoming events</p>
               )}

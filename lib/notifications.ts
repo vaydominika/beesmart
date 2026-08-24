@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { Prisma } from "@/lib/generated/prisma";
+import type { ClassroomRole, Prisma } from "@/lib/generated/prisma";
 
 type ClassroomNotificationInput = {
     classroomId: string;
@@ -11,6 +11,7 @@ type ClassroomNotificationInput = {
     relatedType?: string;
     actionUrl?: string;
     includeActor?: boolean;
+    recipientRoles?: ClassroomRole[];
 };
 
 type ClassroomMemberRecipient = { userId: string };
@@ -49,7 +50,13 @@ export async function notifyClassroomMembers(input: ClassroomNotificationInput) 
     const [classroom, actor, members] = await Promise.all([
         prisma.classroom.findUnique({ where: { id: input.classroomId }, select: { name: true } }),
         prisma.user.findUnique({ where: { id: input.actorId }, select: { name: true } }),
-        prisma.classroomMember.findMany({ where: { classroomId: input.classroomId }, select: { userId: true } }),
+        prisma.classroomMember.findMany({
+            where: {
+                classroomId: input.classroomId,
+                ...(input.recipientRoles?.length ? { role: { in: input.recipientRoles } } : {}),
+            },
+            select: { userId: true },
+        }),
     ]);
 
     if (!classroom || !actor) return;

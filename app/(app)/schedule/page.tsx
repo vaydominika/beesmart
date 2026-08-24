@@ -30,6 +30,7 @@ import {
   sourceLabel,
 } from "@/lib/schedule";
 import { toast } from "@/components/ui/sonner";
+import { ClassroomWorkEditModal, isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditModal";
 
 const ALL_SOURCES: EventSource[] = ["personal", "classroom", "course"];
 const VIEWS: Array<{ value: ScheduleView; label: string }> = [
@@ -96,6 +97,7 @@ export default function SchedulePage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ScheduleEvent | null>(null);
+  const [workEditEvent, setWorkEditEvent] = useState<ScheduleEvent | null>(null);
   const filterMenuRef = useRef<HTMLDivElement>(null);
   const fetchRequestRef = useRef(0);
 
@@ -359,6 +361,14 @@ export default function SchedulePage() {
     void updateEventOptimistically(event, { endTime }, "Event duration updated.");
   };
 
+  const startEdit = (event: ScheduleEvent) => {
+    if (isClassroomWorkEvent(event)) {
+      setWorkEditEvent(event);
+      return;
+    }
+    setEditor({ mode: "edit", date: parseDateKey(dateKey(event.startDate)) });
+  };
+
   const panel = (
     <ScheduleContextPanel
       selectedDate={selectedDate}
@@ -369,7 +379,7 @@ export default function SchedulePage() {
       deleting={deleting}
       onSelectEvent={selectEvent}
       onStartCreate={(date) => startCreate(date)}
-      onStartEdit={(event) => setEditor({ mode: "edit", date: parseDateKey(dateKey(event.startDate)) })}
+      onStartEdit={startEdit}
       onBack={closePanelState}
       onSave={saveEvent}
       onDelete={setDeleteTarget}
@@ -464,6 +474,21 @@ export default function SchedulePage() {
           </div>
         </WorkspaceDialogContent>
       </Dialog>
+
+      {workEditEvent && isClassroomWorkEvent(workEditEvent) ? (
+        <ClassroomWorkEditModal
+          open
+          event={workEditEvent}
+          onClose={() => setWorkEditEvent(null)}
+          onUpdated={(updatedEvent) => {
+            const normalized = normalizeEvent(updatedEvent);
+            setEvents((current) => current.map((event) => event.id === normalized.id ? normalized : event));
+            setSelectedEvent((current) => current?.id === normalized.id ? normalized : current);
+            setSelectedDate(parseDateKey(dateKey(normalized.startDate)));
+            triggerUpdate();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

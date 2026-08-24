@@ -17,6 +17,7 @@ export interface ScheduleEvent {
   classroomName?: string | null;
   courseId?: string | null;
   testId?: string | null;
+  assignmentId?: string | null;
   isProtected?: boolean;
   canEdit?: boolean;
   reminder?: ScheduleEventReminder | null;

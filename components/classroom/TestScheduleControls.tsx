@@ -5,6 +5,7 @@ import { CalendarClock, Trash2 } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { useEventSync } from "@/hooks/use-event-sync";
 import { isLocalDateTimePast, minimumLocalDateTimeInputValue } from "@/lib/schedule-validation";
 
 type TestDetails = { title: string; opensAt?: string | null; closesAt?: string | null; maxAttempts: number };
@@ -17,6 +18,7 @@ function toLocalInput(value?: string | null) {
 }
 
 export function TestScheduleControls({ classroomId, testId, onDeleted }: { classroomId: string; testId: string; onDeleted: () => void }) {
+    const { triggerUpdate } = useEventSync();
     const [title, setTitle] = useState("");
     const [opensAt, setOpensAt] = useState("");
     const [closesAt, setClosesAt] = useState("");
@@ -59,6 +61,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
             const data = await res.json().catch(() => ({}));
             if (!res.ok) return toast.error(data.error ?? "Could not update the test.");
             setOriginalSchedule({ opensAt, closesAt });
+            triggerUpdate();
             toast.success("Test and calendars updated.");
         } finally {
             setSaving(false);
@@ -81,6 +84,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
         if (!window.confirm("Remove this test and its calendar event?")) return;
         const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}`, { method: "DELETE" });
         if (!res.ok) return toast.error("Could not remove the test.");
+        triggerUpdate();
         toast.success("Test removed.");
         onDeleted();
     };

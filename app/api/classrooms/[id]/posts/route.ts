@@ -213,7 +213,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         startTime: assignment.dueTime || null,
                         endTime: assignment.dueTime || null,
                         isAllDay: !assignment.dueTime,
+                        isProtected: true,
                         classroomId: id,
+                        assignmentId: createdAssignment.id,
                     },
                 });
             }

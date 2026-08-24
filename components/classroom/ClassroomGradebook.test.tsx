@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClassroomGradebook } from "./ClassroomGradebook";
 
@@ -19,11 +19,14 @@ describe("ClassroomGradebook work links", () => {
         render(<ClassroomGradebook classroomId="class-1" />);
 
         expect(await screen.findByRole("link", { name: /Open assignment/i })).toHaveAttribute("href", "/classroom/class-1/assignments/assignment-1");
+        expect(screen.queryByRole("button", { name: /Edit assignment/i })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: /QuizTestGraded/i }));
         expect(await screen.findByRole("link", { name: /Open test/i })).toHaveAttribute("href", "/classroom/class-1/tests/test-1?attempt=attempt-1");
     });
 
     it("links a teacher to the complete assignment from the section footer", async () => {
+        const eventUpdate = vi.fn();
+        window.addEventListener("calendar-events-updated", eventUpdate);
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
             role: "TEACHER",
             assignments: [{ id: "assignment-1", title: "Essay", maxPoints: 20, deadlineAt: new Date().toISOString(), deadlineTimeZone: "Europe/Budapest", deadlineHasTime: true }],
@@ -39,5 +42,12 @@ describe("ClassroomGradebook work links", () => {
 
         expect(await screen.findByRole("link", { name: "Open assignment" })).toHaveAttribute("href", "/classroom/class-1/assignments/assignment-1");
         expect(screen.queryByRole("link", { name: "Open" })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Edit assignment Essay" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Delete assignment Essay" }));
+        expect(screen.getByRole("heading", { name: "Delete assignment?" })).toBeInTheDocument();
+        expect(screen.getByText(/all of its submissions and grades/i)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+        await waitFor(() => expect(eventUpdate).toHaveBeenCalledOnce());
+        window.removeEventListener("calendar-events-updated", eventUpdate);
     });
 });

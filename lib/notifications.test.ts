@@ -21,6 +21,23 @@ describe("notification preferences", () => {
     expect(call.data.map((item) => item.userId)).toEqual(["student-a"]);
   });
 
+  it("can target only students for edited classroom work", async () => {
+    vi.mocked(prisma.classroom.findUnique).mockResolvedValue({ name: "Biology" } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ name: "Teacher" } as never);
+    vi.mocked(prisma.classroomMember.findMany).mockResolvedValue([{ userId: "student-a" }] as never);
+    vi.mocked(prisma.userSettings.findMany).mockResolvedValue([] as never);
+
+    await notifyClassroomMembers({
+      classroomId: "class-1", actorId: "teacher", title: "Assignment updated", body: "Essay changed",
+      recipientRoles: ["STUDENT"],
+    });
+
+    expect(prisma.classroomMember.findMany).toHaveBeenCalledWith({
+      where: { classroomId: "class-1", role: { in: ["STUDENT"] } },
+      select: { userId: true },
+    });
+  });
+
   it("suppresses and marks due reminder alerts while the preference is off", async () => {
     vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ reminderNotifications: false } as never);
     vi.mocked(prisma.reminder.findMany).mockResolvedValue([{ id: "reminder-1", task: "Read" }] as never);

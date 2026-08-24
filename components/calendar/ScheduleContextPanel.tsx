@@ -195,7 +195,7 @@ function ScheduleContextPanelContent({
           {selectedEvent.canEdit !== false && (
             <div className="flex gap-2">
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onStartEdit(selectedEvent)} aria-label="Edit event"><Pencil className="h-4 w-4" /></WorkspaceButton>
-              <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label="Delete event"><Trash2 className="h-4 w-4" /></WorkspaceButton>
+              {!selectedEvent.isProtected ? <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label="Delete event"><Trash2 className="h-4 w-4" /></WorkspaceButton> : null}
             </div>
           )}
         </div>
