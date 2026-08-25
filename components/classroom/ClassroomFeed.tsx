@@ -613,7 +613,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )}
 
                 {postCourse && (
-                    <div className="mt-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                    <div className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--app-surface)]">
                             <BookOpen className="h-4 w-4" />
                         </div>
@@ -848,7 +848,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Assignment Badge */}
                             {post.assignment && (
-                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
                                         <ClipboardList className="h-5 w-5 text-(--theme-text) opacity-60" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
@@ -866,7 +866,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Test Badge */}
                             {post.test && (
-                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3">
+                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
                                         <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
@@ -881,7 +881,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             {/* Course Badge */}
                             {post.course && (
                                 <Link href={`/courses/${post.course.id}`} className="block">
-                                    <div className="group mb-3 flex items-center gap-3 rounded-xl border border-(--classroom-accent) bg-[var(--app-surface)] p-3 transition-colors hover:bg-[var(--classroom-surface-hover)]">
+                                    <div className="group mb-3 flex items-center gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3 transition-colors hover:border-[var(--classroom-line-strong)] hover:bg-[var(--classroom-surface-hover)]">
                                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-(--classroom-accent)">
                                             <BookOpen className="h-5 w-5 text-(--theme-text) opacity-60 group-hover:opacity-100 transition-opacity" />
                                         </div>

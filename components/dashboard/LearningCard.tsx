@@ -55,7 +55,7 @@ export function LearningCard({
   return (
       <article
         className={cn(
-          "group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] transition-colors hover:border-[var(--dashboard-focus-border)] hover:bg-[var(--dashboard-surface-hover)]",
+          "group flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] transition-colors hover:border-[var(--dashboard-line-strong)] hover:bg-[var(--dashboard-surface-hover)]",
           className,
         )}
       >

@@ -96,7 +96,7 @@ function SectionHeading({
         {icon}
       </span>
       <div className="flex min-h-9 min-w-0 flex-col justify-center">
-        <h2 className="font-[var(--font-koulen)] text-xl leading-[0.9] tracking-[0.02em] text-[var(--app-text)]">
+        <h2 className="font-[var(--font-barlow-condensed)] text-xl leading-[0.9] tracking-[0.02em] text-[var(--app-text)]">
           {title}
         </h2>
         <p className="mt-1 text-[11px] font-medium leading-none text-[var(--app-text-faint)]">
@@ -150,7 +150,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                 </div>
               </div>
               <div className="min-w-0 pb-0.5">
-                <h1 className="truncate font-[var(--font-koulen)] text-2xl leading-none tracking-[0.01em] text-[var(--app-text)] md:text-[32px]">
+                <h1 className="truncate font-[var(--font-barlow-condensed)] text-2xl leading-none tracking-[0.01em] text-[var(--app-text)] md:text-[32px]">
                   {profile.name || "BeeSmart learner"}
                 </h1>
                 <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">

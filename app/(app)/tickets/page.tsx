@@ -25,7 +25,7 @@ export default async function TicketsPage() {
               <ClipboardList className="h-5 w-5" />
             </span>
             <div>
-              <h1 className="font-[var(--font-koulen)] text-3xl leading-none tracking-[0.02em] text-[var(--app-text)]">My reports</h1>
+              <h1 className="font-[var(--font-barlow-condensed)] text-3xl leading-none tracking-[0.02em] text-[var(--app-text)]">My reports</h1>
               <p className="mt-1 text-sm text-[var(--app-text-muted)]">Track course reports and Early Access feedback.</p>
             </div>
           </div>

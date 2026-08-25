@@ -255,7 +255,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       </div>
 
       {isAIExpanded && (
-        <section className="rounded-xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-4" aria-label="AI lesson assistant">
+        <section className="rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-4" aria-label="AI lesson assistant">
           <div className="flex items-start justify-between gap-4">
             <div><h2 className="text-sm font-semibold">Build from a prompt or source</h2><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Describe the lesson you need, optionally attach a source, then review the result before learners see it.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
             <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setIsAIExpanded(false)} aria-label="Close AI assistant"><X className="h-4 w-4" /></WorkspaceButton>

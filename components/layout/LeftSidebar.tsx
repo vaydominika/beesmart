@@ -82,7 +82,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
                   <span
                     aria-hidden="true"
                     data-sidebar-active-indicator
-                    className="pointer-events-none absolute left-0 top-1/2 z-0 -mt-0.5 aspect-[348/145] w-full -translate-y-1/2 bg-[var(--app-canvas)]"
+                    className="pointer-events-none absolute left-0 top-1/2 z-0 aspect-[348/145] w-full -translate-y-1/2 bg-[var(--app-canvas)]"
                     style={{
                       WebkitMaskImage: "url('/svg/ActiveSidebarElement.svg')",
                       maskImage: "url('/svg/ActiveSidebarElement.svg')",
@@ -101,7 +101,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
                     aria-current={isActive ? "page" : undefined}
                     onClick={isOverlay ? onClose : undefined}
                     className={cn(
-                      "relative z-10 mx-6 flex h-full w-[calc(100%-3rem)] items-center justify-center px-0 text-center text-[40px] font-black uppercase leading-none transition-colors md:mx-0 md:w-full md:justify-start md:px-4 md:text-left md:text-[36px]",
+                      "relative z-10 mx-6 flex h-full w-[calc(100%-3rem)] items-center justify-center px-0 text-center text-[40px] font-bold uppercase leading-none transition-colors md:mx-0 md:w-full md:justify-start md:px-4 md:text-left md:text-[36px]",
                       isActive && isOverlay && "rounded-xl bg-[var(--app-canvas)]",
                       isActive
                         ? "text-(--theme-text-important)"
@@ -117,37 +117,37 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
         </ul>
       </nav>
 
-      <div className="py-4 md:py-3 m-auto tracking-tighter text-[32px] md:text-[30px]">
+      <div data-sidebar-utility-actions className="m-auto space-y-1 py-4 text-[26px] font-medium leading-none tracking-tight md:py-3 md:text-[24px]">
         {feedbackEnabled ? (
           <button
             type="button"
             onClick={() => setFeedbackOpen(true)}
-            className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+            className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
           >
-            <MessageSquareText className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
+            <MessageSquareText className="h-6 w-6 md:h-5 md:w-5" />
             FEEDBACK
           </button>
         ) : null}
         <button
           onClick={openModal}
-          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+          className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
-          <Lightbulb className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
+          <Lightbulb className="h-6 w-6 md:h-5 md:w-5" />
           FOCUS
         </button>
         <button
           onClick={openSettingsModal}
-          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+          className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
-          <Settings className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
+          <Settings className="h-6 w-6 md:h-5 md:w-5" />
           SETTINGS
         </button>
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
-          className="w-full flex items-center gap-2 uppercase text-(--theme-text) hover:text-(--theme-text-important) transition-colors cursor-pointer"
+          className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
-          <LogOut className="h-8 w-8 md:h-6 md:w-6 stroke-3" />
+          <LogOut className="h-6 w-6 md:h-5 md:w-5" />
           LOG OUT
         </button>
       </div>

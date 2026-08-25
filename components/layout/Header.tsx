@@ -56,7 +56,7 @@ export function Header() {
               </span>
             </div>
           ) : (
-            <span className="justify-self-center font-[var(--font-koulen)] text-base uppercase leading-none tracking-[0.04em] text-[var(--app-text)]">
+            <span className="justify-self-center font-[var(--font-barlow-condensed)] text-base uppercase leading-none tracking-[0.04em] text-[var(--app-text)]">
               BeeSmart
             </span>
           )}

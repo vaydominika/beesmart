@@ -30,7 +30,7 @@ const TAB_KEY = "courses-active-tab";
 
 function CourseSkeleton() {
   return (
-    <div className="min-h-[210px] animate-pulse rounded-2xl border border-[var(--course-accent)] bg-[var(--app-surface)] p-5">
+    <div className="min-h-[210px] animate-pulse rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-5">
       <div className="h-3 w-16 rounded bg-[var(--course-surface-muted)]" />
       <div className="mt-4 h-5 w-2/3 rounded bg-[var(--course-surface-muted)]" />
       <div className="mt-3 h-3 w-full rounded bg-[var(--course-surface-muted)]" />

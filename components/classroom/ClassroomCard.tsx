@@ -26,7 +26,7 @@ export function ClassroomCard({ name, description, subject, role, memberCount, o
     return (
         <EntityCardButton
             onClick={onClick}
-            className="border-(--classroom-accent) hover:bg-[var(--classroom-surface-hover)] focus-visible:ring-[var(--classroom-focus-border)]"
+            className="hover:border-[var(--classroom-line-strong)] hover:bg-[var(--classroom-surface-hover)] focus-visible:ring-[var(--classroom-focus-border)]"
         >
             {subject && (
                 <span className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--classroom-text-muted)]">{subject}</span>

@@ -115,14 +115,17 @@ export function CalendarWidget({
         <div key={day} className="flex items-center justify-center aspect-square">
           <button
             onClick={() => handleDateClick(day)}
+            aria-current={isTodayDate ? "date" : undefined}
+            aria-pressed={isSelectedDate}
             className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all relative",
-              isTodayDate
-                ? "bg-(--theme-text) text-(--theme-bg)"  // High contrast for today
-                : "text-(--theme-text) hover:bg-(--theme-text)/10",
-              isSelectedDate && !isTodayDate && "ring-2 ring-(--theme-text) ring-offset-1 ring-offset-(--theme-sidebar)", // Selection ring
-              isSelectedDate && isTodayDate && "ring-2 ring-(--theme-text) ring-offset-1 ring-offset-(--theme-sidebar)",
-              hasEvent && !isTodayDate && !isSelectedDate && "font-extrabold" // Indicate event? or maybe a dot?
+              "relative flex h-8 w-8 items-center justify-center rounded-[9px] text-sm font-bold outline-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out",
+              "focus-visible:ring-2 focus-visible:ring-[var(--app-focus-border)] focus-visible:ring-offset-2 focus-visible:ring-offset-(--theme-sidebar)",
+              isSelectedDate
+                ? "bg-(--theme-text) text-(--theme-sidebar) shadow-[0_2px_0_var(--app-shadow-color)] ring-2 ring-(--theme-text) ring-offset-1 ring-offset-(--theme-sidebar)"
+                : isTodayDate
+                  ? "bg-(--theme-text)/12 text-(--theme-text) ring-1 ring-inset ring-(--theme-text)/35 hover:bg-(--theme-text)/18"
+                  : "text-(--theme-text) hover:-translate-y-px hover:bg-(--theme-text)/10 hover:shadow-[0_2px_0_var(--app-shadow-color)] active:translate-y-0 active:shadow-none",
+              hasEvent && !isTodayDate && !isSelectedDate && "font-extrabold"
             )}
           >
             {day}

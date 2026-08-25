@@ -16,4 +16,22 @@ describe("CalendarWidget controls", () => {
       expect(button).not.toHaveClass("active:bg-[var(--app-accent-soft)]");
     }
   });
+
+  it("uses a soft-square hover and a double-keyline selected day", () => {
+    const selectedDate = new Date();
+    selectedDate.setDate(15);
+    render(<CalendarWidget selectedDate={selectedDate} />);
+
+    const selectedDay = screen.getByRole("button", { name: "15", pressed: true });
+    const hoverDay = screen.getByRole("button", { name: selectedDate.getDate() === 14 ? "16" : "14" });
+
+    expect(selectedDay).toHaveClass(
+      "rounded-[9px]",
+      "bg-(--theme-text)",
+      "text-(--theme-sidebar)",
+      "ring-2",
+      "ring-offset-1",
+    );
+    expect(hoverDay).toHaveClass("rounded-[9px]", "hover:bg-(--theme-text)/10", "hover:-translate-y-px");
+  });
 });

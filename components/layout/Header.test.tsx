@@ -30,7 +30,7 @@ describe("mobile Header", () => {
     expect(profileButton).toHaveClass("h-10", "w-10", "rounded-xl");
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
     expect(profileButton).toHaveAttribute("aria-expanded", "false");
-    expect(logo).toHaveClass("font-[var(--font-koulen)]", "uppercase");
+    expect(logo).toHaveClass("font-[var(--font-barlow-condensed)]", "uppercase");
     expect(screen.queryByRole("img", { name: "BeeSmart" })).not.toBeInTheDocument();
   });
 });

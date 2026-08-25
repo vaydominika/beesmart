@@ -28,7 +28,7 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
   return (
     <EntityCardButton
       onClick={onClick}
-      className="border-[var(--course-accent)] hover:bg-[var(--course-surface-hover)] focus-visible:ring-[var(--course-focus-border)]"
+      className="hover:border-[var(--course-line-strong)] hover:bg-[var(--course-surface-hover)] focus-visible:ring-[var(--course-focus-border)]"
       aria-label={`${course.title}, ${isOwner ? "created course" : statusLabel}`}
     >
       <div className="mb-2 flex min-h-6 items-center justify-between gap-3">

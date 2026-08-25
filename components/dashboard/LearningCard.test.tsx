@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { LearningCard } from "./LearningCard";
 
 describe("LearningCard ratings", () => {
+  it("keeps its border neutral at rest and on hover", () => {
+    const { container } = render(<LearningCard id="course-1" title="Biology" description="Cells" />);
+
+    expect(container.querySelector("article")).toHaveClass(
+      "border-[var(--dashboard-line)]",
+      "hover:border-[var(--dashboard-line-strong)]",
+    );
+    expect(container.querySelector("article")).not.toHaveClass("hover:border-[var(--dashboard-focus-border)]");
+  });
+
   it("shows the public average and exposes rating for eligible learners", () => {
     const onRate = vi.fn();
     render(<LearningCard id="course-1" title="Biology" description="Cells" progress={60} averageRating={4.2} onRateClick={onRate} />);

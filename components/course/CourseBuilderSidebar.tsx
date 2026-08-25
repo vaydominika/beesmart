@@ -346,7 +346,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
       <div className="course-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
         {isAIExpanded && (
-          <div className="mb-2.5 rounded-xl border border-[var(--course-accent-hover)] bg-[var(--course-accent)] p-3">
+          <div className="mb-2.5 rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-3">
             <div className="flex items-start justify-between gap-3">
               <div><p className="text-xs font-semibold">Create an outline</p><p className="mt-1 text-[11px] leading-4 text-[var(--course-text-muted)]">Paste notes or add a file to build a syllabus.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
               <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => { setIsAIExpanded(false); setSelectedFile(null); setSourceText(""); }} aria-label="Close outline generator"><X className="h-3.5 w-3.5" /></WorkspaceButton>

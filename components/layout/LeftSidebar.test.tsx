@@ -52,10 +52,12 @@ describe("LeftSidebar consistency counter", () => {
     const activeLink = screen.getByRole("link", { name: "COURSES" });
     const indicator = container.querySelector("[data-sidebar-active-indicator]");
     expect(activeLink).toHaveAttribute("aria-current", "page");
-    expect(activeLink).toHaveClass("flex", "items-center", "leading-none");
+    expect(activeLink).toHaveClass("flex", "items-center", "font-bold", "leading-none");
+    expect(activeLink).not.toHaveClass("font-black");
     expect(activeLink).not.toHaveClass("mt-2");
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toHaveClass("-mt-0.5");
+    expect(indicator).toHaveClass("top-1/2", "-translate-y-1/2");
+    expect(indicator).not.toHaveClass("-mt-0.5");
     expect(indicator).not.toHaveClass("sidebar-active-animation");
   });
 
@@ -63,5 +65,17 @@ describe("LeftSidebar consistency counter", () => {
     render(<LeftSidebar />);
     expect(screen.queryByRole("link", { name: "MY REPORTS" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "ADMIN" })).not.toBeInTheDocument();
+  });
+
+  it("keeps utility actions compact with medium labels and lighter icons", () => {
+    const { container } = render(<LeftSidebar />);
+    const utilityActions = container.querySelector("[data-sidebar-utility-actions]");
+    const focusButton = screen.getByRole("button", { name: "FOCUS" });
+    const focusIcon = focusButton.querySelector("svg");
+
+    expect(utilityActions).toHaveClass("text-[26px]", "md:text-[24px]", "font-medium", "space-y-1");
+    expect(focusButton).toHaveClass("min-h-8", "gap-2");
+    expect(focusIcon).toHaveClass("h-6", "w-6", "md:h-5", "md:w-5");
+    expect(focusIcon).not.toHaveClass("stroke-3");
   });
 });

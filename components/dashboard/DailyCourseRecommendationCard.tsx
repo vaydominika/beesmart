@@ -87,9 +87,9 @@ export function DailyCourseRecommendationCard({
     router.push(`/courses/${recommendation.course.id}`);
   };
 
-  const browseCourses = () => {
+  const browseDashboardCourses = () => {
     setOpen(false);
-    router.push("/courses");
+    document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -169,7 +169,7 @@ export function DailyCourseRecommendationCard({
                 Open course
               </WorkspaceButton>
             ) : error && protectedCodes.has(error.code) ? (
-              <WorkspaceButton type="button" variant="primary" onClick={browseCourses}>
+              <WorkspaceButton type="button" variant="primary" onClick={browseDashboardCourses}>
                 Browse courses
               </WorkspaceButton>
             ) : error ? (

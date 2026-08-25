@@ -38,17 +38,29 @@ describe("daily course recommendation cards", () => {
     expect(router.push).toHaveBeenCalledWith("/courses/course-2");
   });
 
-  it("shows the completion protection instead of calling AI again", async () => {
+  it("keeps protected recommendations on the dashboard and scrolls to Discover", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({
       code: "COURSE_COMPLETION_REQUIRED",
       error: "Finish one course to unlock daily course picks.",
     }), { status: 409 }));
-    render(<BasedOnYourCoursesCard />);
+    const scrollIntoView = vi.fn();
+    render(
+      <>
+        <BasedOnYourCoursesCard />
+        <div id="discover" ref={(element) => {
+          if (element) element.scrollIntoView = scrollIntoView;
+        }} />
+      </>,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /See today's pick/i }));
 
     expect(await screen.findByRole("heading", { name: "Complete your first course" })).toBeInTheDocument();
     expect(screen.getByText("Finish one course to unlock daily course picks.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Browse courses" }));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it("uses the separate try-something-new recommendation type", async () => {

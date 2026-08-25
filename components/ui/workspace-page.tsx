@@ -21,7 +21,7 @@ function WorkspacePageHeader({ title, actions, titleClassName, children, classNa
 }
 
 function LibraryToolbar({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-5 flex flex-col gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 lg:flex-row lg:items-center lg:justify-between", className)} {...props}>{children}</div>;
+  return <div className={cn("mb-5 flex flex-col gap-3 border-b border-[var(--app-border)] pb-4 lg:flex-row lg:items-center lg:justify-between", className)} {...props}>{children}</div>;
 }
 
 export { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader };

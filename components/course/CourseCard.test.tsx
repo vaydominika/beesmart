@@ -53,7 +53,9 @@ describe("CourseCard", () => {
     render(<CourseCard course={ownerCourse} onClick={vi.fn()} />);
 
     const card = screen.getByRole("button", { name: /Biology, created course/i });
-    expect(card).toHaveClass("min-h-[210px]", "border-[var(--course-accent)]", "p-5");
+    expect(card).toHaveClass("min-h-[210px]", "border-[var(--app-border)]", "p-5");
+    expect(card).toHaveClass("hover:border-[var(--course-line-strong)]");
+    expect(card).not.toHaveClass("border-[var(--course-accent)]");
     expect(screen.getByText("Draft")).toBeInTheDocument();
     expect(screen.getByText("Private")).toBeInTheDocument();
     expect(screen.getByLabelText("2 modules")).toBeInTheDocument();
