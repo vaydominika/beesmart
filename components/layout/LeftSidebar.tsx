@@ -57,8 +57,8 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             <X className="h-6 w-6" />
           </button>
         )}
-        <div className="flex justify-center mb-6 md:mb-4 -translate-x-1/18">
-          <BeeSmartLogo className="h-auto w-60 md:w-40" />
+        <div className="mb-6 flex justify-center md:mb-4">
+          <BeeSmartLogo className="h-auto w-60 md:w-[176px]" />
         </div>
 
         <div className="mx-auto mb-4 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">

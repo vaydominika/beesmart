@@ -38,6 +38,9 @@ describe("LeftSidebar consistency counter", () => {
   it("aligns the consistency counter with the active navigation backdrop", () => {
     const { container } = render(<LeftSidebar variant="overlay" onClose={vi.fn()} />);
 
+    const logo = screen.getByRole("img", { name: "BeeSmart Logo" });
+    expect(logo).toHaveClass("md:w-[176px]");
+    expect(logo.parentElement).not.toHaveClass("-translate-x-1/18");
     expect(screen.getByText("Bee consistent").parentElement).toHaveClass("w-full", "md:w-[168px]", "md:p-2");
     expect(screen.getByRole("link", { name: "DASHBOARD" })).toHaveClass("mx-6", "w-[calc(100%-3rem)]", "justify-center", "text-center", "md:justify-start", "rounded-xl", "bg-[var(--app-canvas)]");
     expect(container.querySelector("[data-sidebar-active-indicator]")).not.toBeInTheDocument();
