@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppLayout } from "./AppLayout";
 
 const responsive = vi.hoisted(() => ({ isMobile: false, hasRoom: false }));
+const navigation = vi.hoisted(() => ({ pathname: "/dashboard" }));
 const layout = vi.hoisted(() => ({
   isLeftSidebarOpen: false,
   isRightSidebarOpen: false,
@@ -11,7 +12,7 @@ const layout = vi.hoisted(() => ({
   toggleRightSidebar: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("next/navigation", () => ({ usePathname: () => navigation.pathname }));
 vi.mock("./useIsMobile", () => ({
   useIsMobile: () => responsive.isMobile,
   useHasRoomForRightSidebar: () => responsive.hasRoom,
@@ -32,6 +33,7 @@ describe("AppLayout responsive right sidebar", () => {
     responsive.hasRoom = false;
     layout.isLeftSidebarOpen = false;
     layout.isRightSidebarOpen = false;
+    navigation.pathname = "/dashboard";
   });
 
   it("keeps the right sidebar off-canvas when the content needs the space", () => {
@@ -51,5 +53,17 @@ describe("AppLayout responsive right sidebar", () => {
     expect(container.querySelector("[data-right-sidebar-shell]")).toHaveClass("relative", "w-72");
     expect(screen.getByTestId("right-sidebar")).toHaveAttribute("data-variant", "inline");
     expect(screen.getByRole("button", { name: "Close sidebar" })).toHaveStyle({ right: "288px" });
+  });
+
+  it("remounts the staggered page entrance when navigation changes", () => {
+    const { container, rerender } = render(<AppLayout><div>Main content</div></AppLayout>);
+    const firstTransition = container.querySelector("[data-page-transition]");
+
+    expect(firstTransition).toHaveClass("page-enter-stagger");
+
+    navigation.pathname = "/courses";
+    rerender(<AppLayout><div>Main content</div></AppLayout>);
+
+    expect(container.querySelector("[data-page-transition]")).not.toBe(firstTransition);
   });
 });

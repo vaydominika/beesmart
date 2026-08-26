@@ -37,6 +37,9 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
   const { data, loading, refetch } = useDashboard();
   const streak = data?.streak ?? 0;
   const isOverlay = variant === "overlay";
+  const activeNavigationIndex = navigationItems.findIndex(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  );
 
   return (
     <div
@@ -73,28 +76,29 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
       </div>
 
       <nav className="m-auto w-full flex-1 overflow-visible pl-0 tracking-tight md:pl-15">
-        <ul className="overflow-visible relative space-y-2">
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        <ul className="relative flex flex-col gap-2 overflow-visible">
+          {activeNavigationIndex >= 0 && !isOverlay && (
+            <span
+              aria-hidden="true"
+              data-sidebar-active-indicator
+              className="pointer-events-none absolute left-0 top-0 z-0 aspect-[348/145] w-full bg-[var(--app-canvas)] will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+              style={{
+                transform: `translate3d(0, ${22 + activeNavigationIndex * 52}px, 0) translateY(-50%)`,
+                WebkitMaskImage: "url('/svg/ActiveSidebarElement.svg')",
+                maskImage: "url('/svg/ActiveSidebarElement.svg')",
+                WebkitMaskPosition: "left center",
+                maskPosition: "left center",
+                WebkitMaskRepeat: "no-repeat",
+                maskRepeat: "no-repeat",
+                WebkitMaskSize: "100% 100%",
+                maskSize: "100% 100%",
+              }}
+            />
+          )}
+          {navigationItems.map((item, index) => {
+            const isActive = index === activeNavigationIndex;
             return (
               <li key={item.href} className="relative h-14 overflow-visible md:h-11">
-                {isActive && !isOverlay && (
-                  <span
-                    aria-hidden="true"
-                    data-sidebar-active-indicator
-                    className="pointer-events-none absolute left-0 top-1/2 z-0 aspect-[348/145] w-full -translate-y-1/2 bg-[var(--app-canvas)]"
-                    style={{
-                      WebkitMaskImage: "url('/svg/ActiveSidebarElement.svg')",
-                      maskImage: "url('/svg/ActiveSidebarElement.svg')",
-                      WebkitMaskPosition: "left center",
-                      maskPosition: "left center",
-                      WebkitMaskRepeat: "no-repeat",
-                      maskRepeat: "no-repeat",
-                      WebkitMaskSize: "100% 100%",
-                      maskSize: "100% 100%",
-                    }}
-                  />
-                )}
                 <div className="relative h-full overflow-visible">
                   <Link
                     href={item.href}

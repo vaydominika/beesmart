@@ -59,6 +59,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     scrollEl.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const pageContent = (
+    <div key={pathname} data-page-transition className="page-enter-stagger">
+      {children}
+    </div>
+  );
+
   if (isMobile) {
     return (
       <div className={cn("relative flex h-screen overflow-x-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
@@ -66,7 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Header />
           <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
             <ScrollArea className="h-full">
-              {children}
+              {pageContent}
             </ScrollArea>
           </main>
         </div>
@@ -137,9 +143,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header />
         <main ref={mainRef} className={cn("flex-1 overflow-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
-          {isProfile ? children : (
+          {isProfile ? pageContent : (
             <ScrollArea className="h-full">
-              {children}
+              {pageContent}
             </ScrollArea>
           )}
         </main>

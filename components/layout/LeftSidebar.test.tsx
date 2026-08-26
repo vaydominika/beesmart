@@ -48,9 +48,9 @@ describe("LeftSidebar consistency counter", () => {
     expect(container.querySelector("#sidebar-container")).not.toHaveClass("rounded-br-[30px]");
   });
 
-  it("centers the active label and keeps its backdrop static", () => {
+  it("centers the active label and slides one persistent backdrop between routes", () => {
     navigationMock.pathname = "/courses/course-1";
-    const { container } = render(<LeftSidebar />);
+    const { container, rerender } = render(<LeftSidebar />);
 
     const activeLink = screen.getByRole("link", { name: "COURSES" });
     const indicator = container.querySelector("[data-sidebar-active-indicator]");
@@ -59,9 +59,16 @@ describe("LeftSidebar consistency counter", () => {
     expect(activeLink).not.toHaveClass("font-black");
     expect(activeLink).not.toHaveClass("mt-2");
     expect(indicator).toBeInTheDocument();
-    expect(indicator).toHaveClass("top-1/2", "-translate-y-1/2");
+    expect(indicator).toHaveClass("transition-transform", "duration-500", "motion-reduce:transition-none");
+    expect(indicator).toHaveStyle({ transform: "translate3d(0, 178px, 0) translateY(-50%)" });
     expect(indicator).not.toHaveClass("-mt-0.5");
-    expect(indicator).not.toHaveClass("sidebar-active-animation");
+
+    navigationMock.pathname = "/schedule";
+    rerender(<LeftSidebar />);
+
+    const movedIndicator = container.querySelector("[data-sidebar-active-indicator]");
+    expect(movedIndicator).toBe(indicator);
+    expect(movedIndicator).toHaveStyle({ transform: "translate3d(0, 74px, 0) translateY(-50%)" });
   });
 
   it("does not expose reports or admin links in the sidebar", () => {

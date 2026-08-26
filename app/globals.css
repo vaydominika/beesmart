@@ -503,7 +503,51 @@ input[type="search"]::-ms-reveal {
 
 .sidebar-slide-transition {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}@plugin "@tailwindcss/typography";
+}
+
+@keyframes pageElementSettle {
+  from {
+    opacity: 0.94;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.page-enter-stagger {
+  display: contents;
+}
+
+:where(
+  .page-enter-stagger > :not(:only-child),
+  .page-enter-stagger > :only-child > :not(:only-child),
+  .page-enter-stagger > :only-child > :only-child > :not(:only-child),
+  .page-enter-stagger > :only-child > :only-child > :only-child > :not(:only-child)
+) {
+  animation: pageElementSettle 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--page-enter-delay, 0ms);
+}
+
+.page-enter-stagger :nth-child(2) { --page-enter-delay: 45ms; }
+.page-enter-stagger :nth-child(3) { --page-enter-delay: 90ms; }
+.page-enter-stagger :nth-child(4) { --page-enter-delay: 135ms; }
+.page-enter-stagger :nth-child(5) { --page-enter-delay: 180ms; }
+.page-enter-stagger :nth-child(n + 6) { --page-enter-delay: 225ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  :where(
+    .page-enter-stagger > :not(:only-child),
+    .page-enter-stagger > :only-child > :not(:only-child),
+    .page-enter-stagger > :only-child > :only-child > :not(:only-child),
+    .page-enter-stagger > :only-child > :only-child > :only-child > :not(:only-child)
+  ) {
+    animation: none;
+  }
+}
+
+@plugin "@tailwindcss/typography";
 
 /* Classroom workspace uses a quieter, reading-first type system. */
 .classroom-ui,
