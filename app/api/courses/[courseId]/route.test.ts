@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { PATCH } from "./route";
+import { DELETE, GET, PATCH } from "./route";
 import { getCurrentUserId, prisma } from "@/lib/db";
-import { canManageCourse } from "@/lib/course-access";
+import { canAccessCourse, canManageCourse } from "@/lib/course-access";
 import { auditCourseForPublishing } from "@/lib/course-audit";
 import { routeContext } from "@/test-utils/route-context";
+import { recordMeaningfulActivity } from "@/lib/activity";
+import { claimUploads, markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -105,6 +107,102 @@ describe("course publication safety gate", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({ error: "Course title must be 150 characters or fewer." });
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+});
+
+describe("course detail operations", () => {
+  const tx = {
+    course: { update: vi.fn(), delete: vi.fn() },
+    courseLesson: { update: vi.fn() },
+    storedFile: { findMany: vi.fn(), updateMany: vi.fn() },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getCurrentUserId).mockResolvedValue("teacher-1");
+    vi.mocked(canAccessCourse).mockResolvedValue(true);
+    vi.mocked(canManageCourse).mockResolvedValue(true);
+    vi.mocked(prisma.course.findUnique).mockResolvedValue(course as never);
+    vi.mocked(claimUploads).mockResolvedValue([]);
+    vi.mocked(prisma.$transaction).mockImplementation((async (callback: (client: typeof tx) => unknown) => callback(tx)) as never);
+    tx.course.update.mockResolvedValue({ id: "course-1", title: "Biology", published: false });
+    tx.course.delete.mockResolvedValue({ id: "course-1" });
+  });
+
+  it("requires authentication for read, update, and delete", async () => {
+    vi.mocked(getCurrentUserId).mockResolvedValue(null);
+    expect((await GET(new NextRequest("http://localhost"), context)).status).toBe(401);
+    expect((await PATCH(new NextRequest("http://localhost", { method: "PATCH", body: "{}" }), context)).status).toBe(401);
+    expect((await DELETE(new NextRequest("http://localhost"), context)).status).toBe(401);
+  });
+
+  it("returns a creator course with a protected cover URL", async () => {
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({
+      ...course, coverStoredFileId: "stored-cover", coverImageUrl: "/legacy.png", creator: { id: "teacher-1", name: "Ada" }, _count: { enrollments: 4 },
+    } as never);
+    const body = await (await GET(new NextRequest("http://localhost"), context)).json();
+    expect(body).toMatchObject({ id: "course-1", isCreator: true, coverImageUrl: "/api/files/stored-cover" });
+  });
+
+  it("hides inaccessible courses from non-creators", async () => {
+    vi.mocked(getCurrentUserId).mockResolvedValue("student-1");
+    vi.mocked(canAccessCourse).mockResolvedValue(false);
+    expect((await GET(new NextRequest("http://localhost"), context)).status).toBe(403);
+    vi.mocked(prisma.course.findUnique).mockResolvedValue(null);
+    expect((await GET(new NextRequest("http://localhost"), context)).status).toBe(404);
+  });
+
+  it("normalizes ordinary updates and records meaningful activity", async () => {
+    const response = await PATCH(new NextRequest("http://localhost", {
+      method: "PATCH",
+      body: JSON.stringify({ title: "  New biology  ", description: "  Updated  ", visibility: "PUBLIC", isPublic: false, published: false }),
+    }), context);
+    expect(response.status).toBe(200);
+    expect(tx.course.update).toHaveBeenCalledWith({
+      where: { id: "course-1" },
+      data: { title: "New biology", description: "Updated", isPublic: true, visibility: "PUBLIC", published: false },
+    });
+    expect(recordMeaningfulActivity).toHaveBeenCalledWith(expect.objectContaining({ activityType: "COURSE_UPDATED", courseId: "course-1" }));
+  });
+
+  it("rejects missing titles, legacy cover URLs, and unauthorized managers", async () => {
+    expect((await PATCH(new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ title: "   " }) }), context)).status).toBe(400);
+    expect((await PATCH(new NextRequest("http://localhost", { method: "PATCH", body: JSON.stringify({ coverImageUrl: "/unsafe.png" }) }), context)).status).toBe(400);
+    vi.mocked(canManageCourse).mockResolvedValue(false);
+    expect((await PATCH(new NextRequest("http://localhost", { method: "PATCH", body: "{}" }), context)).status).toBe(403);
+  });
+
+  it("claims a replacement cover and purges the previous file", async () => {
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({ ...course, coverStoredFileId: "old-cover" } as never);
+    vi.mocked(claimUploads).mockResolvedValue([{ id: "new-cover" }] as never);
+    const response = await PATCH(new NextRequest("http://localhost", {
+      method: "PATCH", body: JSON.stringify({ coverUploadId: "new-cover" }),
+    }), context);
+    expect(response.status).toBe(200);
+    expect(claimUploads).toHaveBeenCalledWith(tx, ["new-cover"], "teacher-1", "COURSE_COVER");
+    expect(markFilesForDeletion).toHaveBeenCalledWith(tx, ["old-cover"]);
+    expect(purgeStoredFiles).toHaveBeenCalledWith(["old-cover"]);
+  });
+
+  it("collects every stored file before deleting a course", async () => {
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({
+      createdById: "teacher-1", coverStoredFileId: "cover",
+      files: [{ storedFileId: "course-file" }, { storedFileId: null }],
+      modules: [{ lessons: [{ files: [{ storedFileId: "lesson-file" }, { storedFileId: null }] }] }],
+    } as never);
+    const response = await DELETE(new NextRequest("http://localhost"), context);
+    expect(response.status).toBe(200);
+    expect(markFilesForDeletion).toHaveBeenCalledWith(tx, ["cover", "course-file", "lesson-file"]);
+    expect(tx.course.delete).toHaveBeenCalledWith({ where: { id: "course-1" } });
+    expect(purgeStoredFiles).toHaveBeenCalledWith(["cover", "course-file", "lesson-file"]);
+  });
+
+  it("enforces existence and management rights before deletion", async () => {
+    vi.mocked(prisma.course.findUnique).mockResolvedValue(null);
+    expect((await DELETE(new NextRequest("http://localhost"), context)).status).toBe(404);
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "teacher-1", coverStoredFileId: null, files: [], modules: [] } as never);
+    vi.mocked(canManageCourse).mockResolvedValue(false);
+    expect((await DELETE(new NextRequest("http://localhost"), context)).status).toBe(403);
   });
 });
 

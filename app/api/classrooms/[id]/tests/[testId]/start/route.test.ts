@@ -61,4 +61,69 @@ describe("explicit test start", () => {
         expect(response.status).toBe(409);
         expect((await response.json()).code).toBe("ATTEMPT_LIMIT_REACHED");
     });
+
+    it("requires authentication and learner membership", async () => {
+        vi.mocked(getCurrentUserId).mockResolvedValue(null);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(401);
+        vi.mocked(getCurrentUserId).mockResolvedValue("student-1");
+        vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue(null);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(403);
+        vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "TEACHER" } as never);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(403);
+    });
+
+    it("requires a test scoped to the classroom", async () => {
+        vi.mocked(prisma.test.findFirst).mockResolvedValue(null);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(404);
+    });
+
+    it("enforces opening and closing windows", async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-26T10:00:00Z"));
+        vi.mocked(prisma.test.findFirst).mockResolvedValue({ ...test, opensAt: new Date("2026-08-26T11:00:00Z") } as never);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(400);
+        vi.mocked(prisma.test.findFirst).mockResolvedValue({ ...test, closesAt: new Date("2026-08-26T09:00:00Z") } as never);
+        expect((await POST(new Request("http://localhost"), context)).status).toBe(400);
+    });
+
+    it("returns the transaction winner when another request creates the attempt first", async () => {
+        const winner = {
+            id: "winner", userId: "student-1", attemptNumber: 2, startedAt: new Date(), submittedAt: null,
+            isCompleted: false, score: null, responses: [],
+        };
+        vi.mocked(prisma.testAttempt.findFirst).mockResolvedValueOnce(null).mockResolvedValueOnce(winner as never);
+        const response = await POST(new Request("http://localhost"), context);
+        expect(response.status).toBe(201);
+        expect((await response.json()).attempt.id).toBe("winner");
+        expect(prisma.testAttempt.create).not.toHaveBeenCalled();
+    });
+
+    it("converts the transactional attempt limit race to a conflict", async () => {
+        vi.mocked(prisma.$transaction).mockRejectedValue(new Error("ATTEMPT_LIMIT_REACHED"));
+        const response = await POST(new Request("http://localhost"), context);
+        expect(response.status).toBe(409);
+        expect((await response.json()).code).toBe("ATTEMPT_LIMIT_REACHED");
+    });
+
+    it("recovers from a unique-key race by returning the winning active attempt", async () => {
+        const winner = {
+            id: "winner", userId: "student-1", attemptNumber: 1, startedAt: new Date(), submittedAt: null,
+            isCompleted: false, score: null, responses: [],
+        };
+        vi.mocked(prisma.$transaction).mockRejectedValue({ code: "P2002" });
+        vi.mocked(prisma.testAttempt.findFirst).mockResolvedValueOnce(null).mockResolvedValueOnce(winner as never);
+        const response = await POST(new Request("http://localhost"), context);
+        expect(response.status).toBe(200);
+        expect((await response.json()).attempt.id).toBe("winner");
+    });
+
+    it("logs and hides unexpected transaction failures", async () => {
+        const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+        vi.mocked(prisma.$transaction).mockRejectedValue(new Error("database secret"));
+        const response = await POST(new Request("http://localhost"), context);
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: "Server error" });
+        expect(error).toHaveBeenCalledWith("POST start test", expect.any(Error));
+        error.mockRestore();
+    });
 });

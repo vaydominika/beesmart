@@ -10,7 +10,11 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    maxWorkers: 4,
+    testTimeout: 10_000,
+    hookTimeout: 10_000,
     setupFiles: ["./vitest.setup.tsx"],
+    include: ["**/*.test.{ts,tsx}"],
     alias: {
       "@": path.resolve(configDirectory, "./"),
     },
@@ -32,6 +36,8 @@ export default defineConfig({
         "**/*.d.ts",
         "**/*.config.*",
         "tests-e2e/**",
+        "tests-integration/**",
+        "test-utils/**",
       ],
     },
     exclude: [
@@ -41,6 +47,7 @@ export default defineConfig({
       "**/.{idea,git,cache,output,temp}/**",
       "**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*",
       "tests-e2e/**",
+      "tests-integration/**",
     ],
   },
 });

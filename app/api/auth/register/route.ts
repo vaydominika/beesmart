@@ -27,10 +27,16 @@ export async function POST(request: Request) {
   }
   const { name, email, password } = parsed.data;
 
-  const [addressLimit, emailLimit] = await Promise.all([
-    consumeRateLimit("auth-register-address", requestClientAddress(request.headers), { limit: 5, windowMs: 60 * 60_000 }),
-    consumeRateLimit("auth-register-email", email, { limit: 3, windowMs: 60 * 60_000 }),
-  ]);
+  const addressLimit = await consumeRateLimit(
+    "auth-register-address",
+    requestClientAddress(request.headers),
+    { limit: 5, windowMs: 60 * 60_000 },
+  );
+  const emailLimit = await consumeRateLimit(
+    "auth-register-email",
+    email,
+    { limit: 3, windowMs: 60 * 60_000 },
+  );
   if (!addressLimit.allowed || !emailLimit.allowed) {
     const limit = !addressLimit.allowed ? addressLimit : emailLimit;
     return NextResponse.json(

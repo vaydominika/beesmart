@@ -1,6 +1,7 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
 
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
@@ -32,9 +33,9 @@ vi.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
-// Suppress console errors from React Testing Library in some cases
-const originalError = console.error;
-console.error = (...args: any[]) => {
-  if (args[0]?.includes?.('Warning: ReactDOM.render is no longer supported')) return;
-  originalError(...args);
-};
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+  vi.clearAllMocks();
+});

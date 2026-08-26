@@ -2,14 +2,65 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DATABASE_URL: mysql://root:password@127.0.0.1:3306/test
+  TEST_DATABASE_URL: mysql://root:password@127.0.0.1:3306/test
+  AUTH_SECRET: test-secret-at-least-32-characters-long
+  AUTH_URL: http://localhost:3000
+  AUTH_TRUST_HOST: "true"
+  ADMIN_EMAILS: admin@beesmart.test
+  DEEPSEEK_API_KEY: test-key
+  UPLOAD_STORAGE_DIR: /tmp/beesmart-uploads
+  MALWARE_SCAN_MODE: clamav
+  CLAMAV_HOST: 127.0.0.1
+  CLAMAV_PORT: 3310
+  ALLOW_TEST_SEED: "true"
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  test:
+  static:
+    name: Static checks
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run validate:env
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx prisma validate
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run audit:colors
 
+  unit:
+    name: Unit and component tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run test:unit
+
+  integration:
+    name: MariaDB integration
+    runs-on: ubuntu-latest
     services:
       mariadb:
         image: mariadb:11
@@ -23,71 +74,58 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-
-    env:
-      DATABASE_URL: mysql://root:password@127.0.0.1:3306/test
-      AUTH_SECRET: test-secret-at-least-32-characters-long
-      AUTH_URL: http://localhost:3000
-      DEEPSEEK_API_KEY: test-key
-      UPLOAD_STORAGE_DIR: /tmp/beesmart-uploads
-      MALWARE_SCAN_MODE: clamav
-      CLAMAV_HOST: 127.0.0.1
-      CLAMAV_PORT: 3310
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run db:migrate:deploy
+      - run: npm run test:integration
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Validate production environment
-        run: npm run validate:env
-
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Validate Prisma schema
-        run: npx prisma validate
-
-      - name: Apply database migrations
-        run: npx prisma migrate deploy
-
-      - name: Type-check
-        run: npx tsc --noEmit
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Audit semantic colors
-        run: npm run audit:colors
-
-      - name: Run Vitest (Unit & Integration)
-        run: npm run test:run
-
-      - name: Run Coverage
-        run: npm run coverage
-
-      - name: Build production application
-        run: npm run build
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run Playwright (E2E)
-        run: npx playwright test
-
+  browser:
+    name: E2E (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile-chrome]
+    services:
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: password
+          MARIADB_DATABASE: test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run db:migrate:deploy
+      - run: npm run build
+      - name: Install browser engines
+        run: |
+          if [[ "${{ matrix.project }}" == "firefox" ]]; then npx playwright install --with-deps chromium firefox; fi
+          if [[ "${{ matrix.project }}" == "webkit" ]]; then npx playwright install --with-deps chromium webkit; fi
+          if [[ "${{ matrix.project }}" == "chromium" || "${{ matrix.project }}" == "mobile-chrome" ]]; then npx playwright install --with-deps chromium; fi
+      - run: npx playwright test --project "${{ matrix.project }}"
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: e2e-${{ matrix.project }}
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 30

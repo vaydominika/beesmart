@@ -32,10 +32,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const email = credentials.email.trim().toLowerCase();
         const password =
           typeof credentials.password === "string" ? credentials.password : "";
-        const [emailLimit, addressLimit] = await Promise.all([
-          consumeRateLimit("auth-login-email", email, { limit: 10, windowMs: 15 * 60_000 }),
-          consumeRateLimit("auth-login-address", requestClientAddress(request.headers), { limit: 50, windowMs: 15 * 60_000 }),
-        ]);
+        const emailLimit = await consumeRateLimit(
+          "auth-login-email",
+          email,
+          { limit: 10, windowMs: 15 * 60_000 },
+        );
+        const addressLimit = await consumeRateLimit(
+          "auth-login-address",
+          requestClientAddress(request.headers),
+          { limit: 50, windowMs: 15 * 60_000 },
+        );
         if (!emailLimit.allowed || !addressLimit.allowed) return null;
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.password) return null;
