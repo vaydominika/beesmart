@@ -181,6 +181,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                   width={64}
                   height={64}
                   className="h-full w-full object-cover object-center"
+                  unoptimized={userAvatar?.trim().startsWith("/api/files/") ?? false}
                 />
               </div>
               <button

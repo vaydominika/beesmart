@@ -67,7 +67,7 @@ export function LearningCard({
               className="object-cover"
               style={{ objectPosition: "50% 65%" }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              unoptimized={imageSrc.startsWith("http")}
+              unoptimized={imageSrc.startsWith("/api/files/") || imageSrc.startsWith("http")}
             />
             <div className="absolute right-2 top-2 z-10 flex gap-1.5">
               {onRateClick && (

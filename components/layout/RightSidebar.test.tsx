@@ -10,7 +10,7 @@ vi.mock("@/lib/DashboardContext", () => ({
       user: {
         id: "user-1",
         name: "Ada",
-        avatar: null,
+        avatar: "/api/files/avatar-1",
         bannerImageUrl: null,
         role: "Legacy global role",
       },
@@ -50,6 +50,7 @@ describe("RightSidebar", () => {
     const settingsButton = screen.getByRole("button", { name: "Profile settings" });
     const closeButton = screen.getByRole("button", { name: "Close sidebar" });
 
+    expect(avatar).toHaveAttribute("src", "/api/files/avatar-1");
     expect(notificationButton.compareDocumentPosition(closeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(avatar.compareDocumentPosition(settingsButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

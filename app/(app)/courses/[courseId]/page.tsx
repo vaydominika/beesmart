@@ -211,7 +211,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
             <div className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-4">
               <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-[var(--course-surface-muted)]">
                 {course.coverImageUrl ? (
-                  <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 340px" />
+                  <Image src={course.coverImageUrl} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 340px" unoptimized={course.coverImageUrl.startsWith("/api/files/")} />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-[var(--course-accent)]">
                     <BookOpen className="h-9 w-9 text-[var(--course-text-muted)]" />

@@ -35,4 +35,10 @@ describe("LearningCard ratings", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(onOpen).toHaveBeenCalledOnce();
   });
+
+  it("loads authenticated course covers directly instead of through the image optimizer", () => {
+    render(<LearningCard id="course-1" title="Biology" description="Cells" coverImageUrl="/api/files/cover-1" />);
+
+    expect(screen.getByRole("img", { name: "Biology" })).toHaveAttribute("src", "/api/files/cover-1");
+  });
 });

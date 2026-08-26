@@ -120,6 +120,7 @@ function AuthorAvatar({
                 width={size}
                 height={size}
                 className="h-full w-full object-cover object-center"
+                unoptimized={author.avatar?.trim().startsWith("/api/files/") ?? false}
             />
         </div>
     );
