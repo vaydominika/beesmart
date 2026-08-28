@@ -1,6 +1,6 @@
 # BeeSmart
 
-BeeSmart is a web-based learning platform where teachers can manage classes and course material while students can keep track of their learning in one place. It covers the day-to-day flow of a classroom, from sharing lessons and assignments to submitting work and reviewing results.
+BeeSmart is a web-based learning platform where teachers can manage classrooms and course material while students can follow assignments, submit work, and review their results. Anyone can also discover and complete standalone courses at their own pace, without needing to join a classroom.
 
 Built with Next.js, React, Prisma, and MariaDB.
 
