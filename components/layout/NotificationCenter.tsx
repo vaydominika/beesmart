@@ -89,7 +89,7 @@ export function NotificationCenter() {
           {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--app-danger)] px-1 text-[9px] font-semibold text-[var(--app-text-inverse)]">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="notification-center z-[80] w-[min(400px,calc(100vw-16px))] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-0 text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]">
+      <DropdownMenuContent align="end" sideOffset={8} className="notification-center w-[min(400px,calc(100vw-16px))] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-0 text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]">
         <div className="border-b border-[var(--app-border)] p-4">
           <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-0.5 text-xs text-[var(--app-text-muted)]">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p></div><WorkspaceButton type="button" variant="ghost" size="compact" className="disabled:border-transparent disabled:bg-transparent disabled:text-[var(--app-text-faint)]" onClick={markAllRead} disabled={!unreadCount}><CheckCheck className="h-3.5 w-3.5" />Mark all read</WorkspaceButton></div>
           <WorkspaceTabs

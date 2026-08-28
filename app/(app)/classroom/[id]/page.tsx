@@ -10,6 +10,7 @@ import { ClassroomGradebook } from "@/components/classroom/ClassroomGradebook";
 import { ClassroomSettings } from "@/components/classroom/ClassroomSettings";
 import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
+import { WorkspacePageFrame } from "@/components/ui/workspace-page";
 import { Check, ChevronLeft, Copy, FileText, QrCode, Settings, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -93,9 +94,8 @@ export default function ClassroomDetailPage() {
     const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroom.code}` : "";
 
     return (
-        <div className="classroom-ui min-h-full bg-[var(--classroom-canvas)]">
-            <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-9">
-                <header className="mb-5 px-1 py-2 md:px-0 md:py-3">
+        <WorkspacePageFrame className="classroom-ui bg-[var(--classroom-canvas)]">
+                <header className="mb-5">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0 flex-1">
                             {classroom.subject && (
@@ -228,7 +228,6 @@ export default function ClassroomDetailPage() {
                         </div>
                     </WorkspaceDialogContent>
                 </Dialog>
-            </div>
-        </div>
+        </WorkspacePageFrame>
     );
 }

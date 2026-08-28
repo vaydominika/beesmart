@@ -4,6 +4,7 @@ import { WorkspaceCheckbox } from "./workspace-checkbox";
 import { WorkspaceSelect } from "./workspace-select";
 import { WorkspaceTabs } from "./workspace-tabs";
 import { Dialog, DialogContent, DialogTitle } from "./dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 describe("workspace controls", () => {
   it("changes a checkbox through its label", () => {
@@ -30,8 +31,21 @@ describe("workspace controls", () => {
     const trigger = screen.getByRole("button", { name: "Visibility: Private" });
     expect(trigger).toHaveAttribute("data-slot", "workspace-select-trigger");
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
-    fireEvent.click(screen.getByRole("menuitem", { name: "Public" }));
+    const option = screen.getByRole("menuitem", { name: "Public" });
+    expect(option.closest('[data-slot="dropdown-menu-content"]')).toHaveClass("z-[1100]");
+    fireEvent.click(option);
     expect(onValueChange).toHaveBeenCalledWith("public");
+  });
+
+  it("renders popovers above dialogs and page content", () => {
+    render(
+      <Popover defaultOpen>
+        <PopoverTrigger>Open filters</PopoverTrigger>
+        <PopoverContent>Filter options</PopoverContent>
+      </Popover>,
+    );
+
+    expect(screen.getByText("Filter options")).toHaveClass("z-[1100]");
   });
 
   it("changes a select nested inside a modal dialog", () => {

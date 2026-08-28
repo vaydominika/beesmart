@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ClipboardList, MessageSquareText } from "lucide-react";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketAttachmentGallery } from "@/components/tickets/TicketAttachmentGallery";
+import { WorkspacePageFrame } from "@/components/ui/workspace-page";
 import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 import { getCurrentUserId } from "@/lib/db";
 import { getUserTickets, reportTypeLabel } from "@/lib/tickets";
@@ -17,8 +18,7 @@ export default async function TicketsPage() {
   const activeCount = tickets.filter((ticket) => ticket.status === "OPEN" || ticket.status === "IN_PROGRESS").length;
 
   return (
-    <div className="min-h-[calc(100dvh-65px)] bg-[var(--app-canvas)] p-4 font-[var(--font-geist-sans)] md:p-6">
-      <div className="mx-auto w-full max-w-5xl">
+    <WorkspacePageFrame className="font-[var(--font-geist-sans)]">
         <header className="mb-4 flex flex-col gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-text)]">
@@ -70,7 +70,6 @@ export default async function TicketsPage() {
         ) : (
           <WorkspaceEmptyState dashed className="min-h-72 p-8" icon={<MessageSquareText className="mb-3 h-8 w-8 text-[var(--app-text-faint)]" aria-hidden="true" />} title="No reports yet" description="Course reports and feedback you send will appear here with their latest status." />
         )}
-      </div>
-    </div>
+    </WorkspacePageFrame>
   );
 }

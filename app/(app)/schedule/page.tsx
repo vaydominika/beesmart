@@ -11,9 +11,10 @@ import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
-import { LibraryToolbar, WorkspacePageHeader } from "@/components/ui/workspace-page";
+import { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { useIsMobile } from "@/components/layout/useIsMobile";
 import {
@@ -98,7 +99,6 @@ export default function SchedulePage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ScheduleEvent | null>(null);
   const [workEditEvent, setWorkEditEvent] = useState<ScheduleEvent | null>(null);
-  const filterMenuRef = useRef<HTMLDivElement>(null);
   const fetchRequestRef = useRef(0);
 
   useEffect(() => {
@@ -106,26 +106,6 @@ export default function SchedulePage() {
     const stored = window.localStorage.getItem(key) as ScheduleView | null;
     setView(stored && VIEWS.some((item) => item.value === stored) ? stored : isMobile ? "agenda" : "week");
   }, [isMobile]);
-
-  useEffect(() => {
-    if (!filtersOpen) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (event.target instanceof Node && !filterMenuRef.current?.contains(event.target)) {
-        setFiltersOpen(false);
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setFiltersOpen(false);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [filtersOpen]);
 
   const range = rangeForView(view, selectedDate);
   const rangeStart = dateKey(range.start);
@@ -387,8 +367,7 @@ export default function SchedulePage() {
   );
 
   return (
-    <div className="schedule-ui min-h-full bg-[var(--schedule-canvas)] px-4 py-5 md:px-6 md:py-7">
-      <div className="mx-auto max-w-[1500px]">
+    <WorkspacePageFrame className="schedule-ui bg-[var(--schedule-canvas)]">
         <header className="schedule-page-header mb-5">
           <WorkspacePageHeader className="mb-0 sm:flex-col sm:items-stretch xl:flex-row xl:items-end" title="Schedule" titleClassName="text-[var(--schedule-text)]" actions={<div className="flex flex-wrap items-center gap-2">
               <WorkspaceTabs ariaLabel="Schedule view" items={VIEWS} value={view} onValueChange={changeView} />
@@ -406,10 +385,11 @@ export default function SchedulePage() {
             </div>
             <div className="flex min-w-0 items-center gap-2">
               <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" aria-label="Search events" wrapperClassName="min-w-0 flex-1 lg:w-64 lg:flex-none" className="border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-[var(--schedule-text)] placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-[var(--schedule-focus-ring)]" />
-              <div ref={filterMenuRef} className="relative">
-                <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"} onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-haspopup="true"><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
-                {filtersOpen && (
-                  <div role="group" aria-label="Event sources" className="absolute right-0 top-11 z-50 w-48 rounded-xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
+              <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <PopoverTrigger asChild>
+                  <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"}><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
+                </PopoverTrigger>
+                <PopoverContent align="end" sideOffset={6} role="group" aria-label="Event sources" className="w-48 rounded-xl border-[var(--schedule-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
                     {ALL_SOURCES.map((source) => {
                       const checked = sources.has(source);
                       return (
@@ -421,9 +401,8 @@ export default function SchedulePage() {
                         />
                       );
                     })}
-                  </div>
-                )}
-              </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </LibraryToolbar>
         </header>
@@ -436,7 +415,7 @@ export default function SchedulePage() {
           </div>
         ) : (
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-            <main className="schedule-workspace-frame h-[calc(100vh-208px)] min-h-[560px] min-w-0">
+            <main className="schedule-workspace-frame h-[calc(100vh-200px)] min-h-[560px] min-w-0">
               {loading && events.length === 0 ? (
                 <div className="flex h-full items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)]"><Spinner className="h-5 w-5 text-[var(--schedule-text-muted)]" /></div>
               ) : view === "week" ? (
@@ -447,13 +426,11 @@ export default function SchedulePage() {
                 <ScheduleAgendaView events={filteredEvents} selectedDate={selectedDate} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
               )}
             </main>
-            <aside className="schedule-workspace-frame hidden h-[calc(100vh-208px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
+            <aside className="schedule-workspace-frame hidden h-[calc(100vh-200px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
               {panel}
             </aside>
           </div>
         )}
-      </div>
-
       <Dialog open={mobilePanelOpen} onOpenChange={(open) => { setMobilePanelOpen(open); if (!open) closePanelState(); }}>
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-0 shadow-2xl md:hidden">
           <DialogTitle className="sr-only">Schedule details</DialogTitle>
@@ -489,6 +466,6 @@ export default function SchedulePage() {
           }}
         />
       ) : null}
-    </div>
+    </WorkspacePageFrame>
   );
 }

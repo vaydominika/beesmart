@@ -118,10 +118,10 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
 
   return (
     <div
-      className="profile-ui min-h-[calc(100dvh-65px)] bg-[var(--app-canvas)] p-4 md:h-dvh md:min-h-0 md:overflow-hidden md:px-6 md:py-[max(1.5rem,calc((100%_-_1500px)/2))]"
+      className="profile-ui min-h-[calc(100dvh-65px)] bg-[var(--app-canvas)] p-4 md:h-full md:min-h-0 md:overflow-hidden md:p-6"
       style={{ fontFamily: "var(--font-geist-sans)" }}
     >
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-4 md:h-full md:min-h-0">
+      <div className="flex w-full flex-col gap-4 md:h-full md:min-h-0">
         <section className="relative shrink-0 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
           <div className="relative h-14 overflow-hidden border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] md:h-16">
             <Image

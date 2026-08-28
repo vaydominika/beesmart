@@ -1,8 +1,16 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-function WorkspacePageFrame({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("min-h-full bg-[var(--app-canvas)] px-4 py-5 md:px-6 md:py-7", className)} {...props}><div className="mx-auto max-w-[1500px]">{children}</div></div>;
+type WorkspacePageFrameProps = React.HTMLAttributes<HTMLDivElement> & {
+  contentClassName?: string;
+};
+
+function WorkspacePageFrame({ className, contentClassName, children, ...props }: WorkspacePageFrameProps) {
+  return (
+    <div className={cn("min-h-full w-full bg-[var(--app-canvas)] p-4 md:p-6", className)} {...props}>
+      <div className={cn("w-full", contentClassName)}>{children}</div>
+    </div>
+  );
 }
 
 type WorkspacePageHeaderProps = React.HTMLAttributes<HTMLElement> & {

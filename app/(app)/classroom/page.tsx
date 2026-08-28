@@ -11,7 +11,7 @@ import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { ListFilter, Plus, LogIn } from "lucide-react";
 import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
 import { WorkspaceEmptyState, WorkspaceLoadingState } from "@/components/ui/workspace-state";
-import { LibraryToolbar, WorkspacePageHeader } from "@/components/ui/workspace-page";
+import { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
 
 type ClassroomTab = "joined" | "created";
 type ClassroomRoleFilter = "all" | "TEACHER" | "TEACHING_ASSISTANT" | "STUDENT";
@@ -90,8 +90,7 @@ export default function ClassroomPage() {
     const hasActiveFilters = Boolean(search.trim()) || roleFilter !== "all";
 
     return (
-        <div className="classroom-ui min-h-full bg-[var(--classroom-canvas)]">
-            <div className="mx-auto max-w-[1500px] px-4 py-5 md:px-11 md:py-7">
+        <WorkspacePageFrame className="classroom-ui bg-[var(--classroom-canvas)]">
                 <WorkspacePageHeader className="items-end" title="Classrooms" titleClassName="leading-none text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New classroom</WorkspaceButton>} />
 
                 <LibraryToolbar className="border-[var(--classroom-line)]">
@@ -135,7 +134,6 @@ export default function ClassroomPage() {
                     onClose={() => setJoinOpen(false)}
                     onJoined={(classroom) => { setClassrooms((current) => [classroom, ...current]); changeTab("joined"); }}
                 />
-            </div>
-        </div>
+        </WorkspacePageFrame>
     );
 }

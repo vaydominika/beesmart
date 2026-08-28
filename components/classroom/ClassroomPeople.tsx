@@ -15,6 +15,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Crown, Mail, MoreVertical, Trash2, UserCircle, UserPlus, X } from "lucide-react";
 
@@ -201,40 +202,37 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                 </div>
 
                 {canManage && (
-                    <div className="relative">
-                        <WorkspaceButton
-                            type="button"
-                            variant="ghost"
-                            size="icon-compact"
-                            aria-label={`Manage ${member.user.name}`}
-                            aria-expanded={menuOpen === member.id}
-                            onClick={() => setMenuOpen(menuOpen === member.id ? null : member.id)}
-                        >
-                            <MoreVertical className="h-4 w-4" />
-                        </WorkspaceButton>
-                        {menuOpen === member.id && (
-                            <div className="absolute right-0 top-full z-20 mt-1 min-w-[180px] rounded-xl border border-(--classroom-line-strong) bg-(--classroom-surface) py-1 shadow-lg">
+                    <DropdownMenu open={menuOpen === member.id} onOpenChange={(open) => setMenuOpen(open ? member.id : null)}>
+                        <DropdownMenuTrigger asChild>
+                            <WorkspaceButton
+                                type="button"
+                                variant="ghost"
+                                size="icon-compact"
+                                aria-label={`Manage ${member.user.name}`}
+                            >
+                                <MoreVertical className="h-4 w-4" />
+                            </WorkspaceButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={4} className="min-w-[180px] rounded-xl border-(--classroom-line-strong) bg-(--classroom-surface) p-1 shadow-lg">
                                 {ROLE_OPTIONS.filter((option) => option.value !== member.role).map((option) => (
-                                    <button
+                                    <DropdownMenuItem
                                         key={option.value}
-                                        type="button"
-                                        onClick={() => handleChangeRole(member.id, option.value)}
-                                        className="flex w-full px-3 py-2 text-left text-xs font-medium text-(--classroom-text-muted) hover:bg-(--classroom-surface-muted) hover:text-(--classroom-text)"
+                                        onSelect={() => void handleChangeRole(member.id, option.value)}
+                                        className="rounded-lg px-3 py-2 text-xs font-medium text-(--classroom-text-muted) focus:bg-(--classroom-surface-muted) focus:text-(--classroom-text)"
                                     >
                                         Make {option.label.toLowerCase()}
-                                    </button>
+                                    </DropdownMenuItem>
                                 ))}
-                                <div className="my-1 border-t border-(--classroom-line)" />
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemove(member.id)}
-                                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-(--classroom-danger) hover:bg-(--classroom-danger-soft)"
+                                <DropdownMenuSeparator className="bg-(--classroom-line)" />
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() => void handleRemove(member.id)}
+                                    className="rounded-lg px-3 py-2 text-xs font-medium text-(--classroom-danger) focus:bg-(--classroom-danger-soft)"
                                 >
                                     <Trash2 className="h-3.5 w-3.5" /> Remove
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                                </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
             </div>
         );

@@ -13,7 +13,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
 import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
-import { LibraryToolbar, WorkspacePageHeader } from "@/components/ui/workspace-page";
+import { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
 import {
   CourseSummary,
   CourseTab,
@@ -149,8 +149,7 @@ export default function CoursesPage() {
   const hasActiveFilters = Boolean(search.trim()) || (activeTab === "learning" ? learningFilter !== "all" : createdFilter !== "all");
 
   return (
-    <div className="course-ui min-h-full bg-[var(--course-canvas)] px-4 py-5 md:px-6 md:py-7">
-      <div className="mx-auto max-w-[1500px]">
+    <WorkspacePageFrame className="course-ui bg-[var(--course-canvas)]">
         <WorkspacePageHeader title="Courses" titleClassName="text-[var(--course-text)]" actions={<div className="flex items-center gap-2">
             <WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label="Review course creation tutorial" title="Course creation tutorial">
               <Lightbulb className="h-4 w-4" />
@@ -194,11 +193,9 @@ export default function CoursesPage() {
         ) : (
           <WorkspaceEmptyState title={hasActiveFilters ? "No courses match these filters" : activeTab === "learning" ? "No courses to learn yet" : "Create your first course"} description={hasActiveFilters ? "Try a different search or status." : activeTab === "learning" ? "Courses you join or receive through a Classroom will appear here." : "Build lessons, add materials, and share the course when it is ready."} className="min-h-72 border-[var(--course-line)]" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setLearningFilter("all"); setCreatedFilter("all"); }}>Clear filters</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>New course</WorkspaceButton> : null} />
         )}
-      </div>
-
       <CourseCreationTutorial open={tutorialOpen} intent={tutorialIntent} onClose={() => setTutorialOpen(false)} onFinish={finishTutorial} />
       <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(course) => router.push(`/courses/${course.id}/builder`)} />
       <AddCourseToClassroomModal open={addToClassroomOpen} onClose={() => setAddToClassroomOpen(false)} onAdded={() => void fetchCourses()} />
-    </div>
+    </WorkspacePageFrame>
   );
 }

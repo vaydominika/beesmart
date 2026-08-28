@@ -247,7 +247,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 bg-[var(--app-surface)] min-h-screen">
-                <div className="max-w-4xl mx-auto py-12 px-6 lg:px-12">
+                <div className="mx-auto max-w-4xl p-4 md:p-6">
                     <WorkspaceButton
                         type="button"
                         variant="secondary"

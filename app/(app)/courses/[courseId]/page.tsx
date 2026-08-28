@@ -14,6 +14,7 @@ import {
 import { EnrollButton } from "@/components/course/EnrollButton";
 import { CourseRatingButton } from "@/components/course/CourseRatingButton";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspacePageFrame } from "@/components/ui/workspace-page";
 import { WorkspaceProgress } from "@/components/ui/workspace-progress";
 import { canAccessCourse } from "@/lib/course-access";
 import { plainTextExcerpt } from "@/lib/course-summary";
@@ -96,8 +97,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
   const actionLabel = isCreator ? "Open builder" : progress > 0 ? "Continue course" : "Start course";
 
   return (
-    <div className="course-ui min-h-full overflow-y-auto bg-[var(--course-canvas)] px-4 py-5 md:px-6 md:py-7">
-      <div className="mx-auto max-w-[1500px]">
+    <WorkspacePageFrame className="course-ui overflow-y-auto bg-[var(--course-canvas)]">
         <WorkspaceButton asChild variant="secondary" size="compact">
           <Link href="/courses">
             <ArrowLeft />Back to courses
@@ -284,7 +284,6 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
             ) : null}
           </aside>
         </div>
-      </div>
-    </div>
+    </WorkspacePageFrame>
   );
 }

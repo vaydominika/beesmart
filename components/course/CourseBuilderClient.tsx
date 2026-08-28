@@ -333,7 +333,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
         <main className="course-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--course-canvas)]">
           {activeLesson ? (
-            <div className={cn("mx-auto w-full px-4 py-5 md:px-7 md:py-7", previewMode ? "max-w-4xl" : "max-w-5xl")}>
+            <div className={cn("mx-auto w-full p-4 md:p-6", previewMode ? "max-w-4xl" : "max-w-5xl")}>
               <CourseBuilderEditor ref={editorRef} lesson={activeLesson} courseId={course.id} previewMode={previewMode} onDirtyChange={handleLessonDirtyChange} onSavingChange={setIsSaving} onLessonUpdate={handleLessonUpdate} />
             </div>
           ) : (
