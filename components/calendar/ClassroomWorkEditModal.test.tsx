@@ -133,7 +133,7 @@ describe("ClassroomWorkEditModal", () => {
     />);
 
     expect(await screen.findByRole("heading", { name: "Edit post" })).toBeInTheDocument();
-    expect(screen.getByText("Assignment details")).toBeInTheDocument();
+    expect(await screen.findByText("Assignment details")).toBeInTheDocument();
     expect(screen.queryByText("Post message")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save post" }));
 
