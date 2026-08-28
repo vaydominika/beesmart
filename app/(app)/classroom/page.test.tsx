@@ -97,7 +97,7 @@ describe("ClassroomPage navigation", () => {
     render(<ClassroomPage />);
 
     expect(await screen.findByRole("tab", { name: "Joined" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("No joined classrooms yet")).toBeInTheDocument();
+    expect(await screen.findByText("No joined classrooms yet")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Physics lab" })).not.toBeInTheDocument();
   });
 

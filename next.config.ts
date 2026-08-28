@@ -14,7 +14,6 @@ const securityHeaders = [
     "media-src 'self' blob:",
     "connect-src 'self'",
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
-    ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
   ].join("; ") },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=()" },
