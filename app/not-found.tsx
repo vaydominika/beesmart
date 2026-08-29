@@ -4,7 +4,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--app-canvas)] p-4 font-[var(--font-geist-sans)]">
+    <main className="flex min-h-[100dvh] w-full items-center justify-center bg-[var(--app-canvas)] p-4 font-[var(--font-geist-sans)] md:p-6">
       <section className="relative w-full max-w-3xl overflow-hidden rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface)] px-6 py-10 shadow-[var(--app-shadow-soft)] sm:px-10 sm:py-12">
         <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-14 font-[var(--font-barlow-condensed)] text-[13rem] leading-none text-[var(--app-accent-soft)] sm:text-[18rem]">404</div>
         <div className="relative z-10 max-w-md">

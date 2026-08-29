@@ -91,7 +91,7 @@ export default function ClassroomPage() {
 
     return (
         <WorkspacePageFrame className="classroom-ui bg-[var(--classroom-canvas)]">
-                <WorkspacePageHeader className="items-end" title="Classrooms" titleClassName="leading-none text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New classroom</WorkspaceButton>} />
+                <WorkspacePageHeader className="items-end" title="Classrooms" titleClassName="text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New classroom</WorkspaceButton>} />
 
                 <LibraryToolbar className="border-[var(--classroom-line)]">
                     <WorkspaceTabs

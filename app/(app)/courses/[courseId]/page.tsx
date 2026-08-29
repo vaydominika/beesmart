@@ -97,14 +97,14 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
   const actionLabel = isCreator ? "Open builder" : progress > 0 ? "Continue course" : "Start course";
 
   return (
-    <WorkspacePageFrame className="course-ui overflow-y-auto bg-[var(--course-canvas)]">
+    <WorkspacePageFrame className="course-ui overflow-y-auto bg-[var(--course-canvas)]" contentClassName="space-y-5">
         <WorkspaceButton asChild variant="secondary" size="compact">
           <Link href="/courses">
             <ArrowLeft />Back to courses
           </Link>
         </WorkspaceButton>
 
-        <header className="mt-6 max-w-4xl">
+        <header className="max-w-4xl">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--course-text-muted)]">
             {isCreator || !isEnrolled ? (
               <span className="rounded-lg bg-[var(--course-accent)] px-2.5 py-1 text-[var(--course-text)]">
@@ -127,7 +127,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
           </div>
         </header>
 
-        <div className="mt-7 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
           <main className="space-y-5">
             <section className="rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)] p-5 md:p-6">
               <div className="flex items-center gap-3">

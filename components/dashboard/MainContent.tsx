@@ -56,7 +56,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
 
   if (error && !data) {
     return (
-      <section className="mt-6 flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
+      <section className="mt-5 flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
         <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">Dashboard courses could not be loaded</h2>
         <p className="mt-2 max-w-md text-sm text-[var(--dashboard-text-muted)]">{error}</p>
         <WorkspaceButton type="button" variant="primary" onClick={() => void refetch()} className="mt-5">
@@ -67,7 +67,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
   }
 
   return (
-      <div className="mt-7 space-y-7">
+      <div className="mt-5 space-y-5">
         {queryActive && !loading && !hasSearchResults && (
           <section className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
             <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">No courses match “{searchQuery.trim()}”</h2>

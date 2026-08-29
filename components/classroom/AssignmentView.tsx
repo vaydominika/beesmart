@@ -287,7 +287,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
     return (
         <div className="space-y-4">
-            <header className="px-1 py-2">
+            <header>
                 <h1 className="text-2xl font-bold tracking-tight text-[var(--classroom-text)]">{displayAssignment.title}</h1>
                 {displayAssignment.description && (
                     <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-[var(--classroom-text-muted)]">

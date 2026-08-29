@@ -145,7 +145,7 @@ export function AdminTicketsClient({
       className={cn("min-h-[100dvh] bg-[var(--app-canvas)] font-[var(--font-geist-sans)] text-[var(--app-text)] transition-colors duration-200 motion-reduce:transition-none", `admin-theme-${theme}`)}
     >
       <header className="border-b border-[var(--app-border)] bg-[var(--app-canvas)]">
-        <div className="mx-auto flex min-h-16 w-full max-w-[1200px] flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-6">
+        <div className="flex min-h-16 w-full flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-6">
           <h1 className="mr-2 text-base font-semibold tracking-[-0.02em]">Admin</h1>
 
           <WorkspaceTabs
@@ -188,7 +188,7 @@ export function AdminTicketsClient({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[1200px] px-4 py-6 md:px-6 md:py-10">
+      <main className="w-full p-4 md:p-6">
         <section aria-labelledby="admin-queue-heading">
           <h2 id="admin-queue-heading" className="sr-only">{queueTitle}</h2>
           <div className="flex justify-end">

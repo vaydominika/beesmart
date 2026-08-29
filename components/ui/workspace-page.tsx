@@ -7,8 +7,8 @@ type WorkspacePageFrameProps = React.HTMLAttributes<HTMLDivElement> & {
 
 function WorkspacePageFrame({ className, contentClassName, children, ...props }: WorkspacePageFrameProps) {
   return (
-    <div className={cn("min-h-full w-full bg-[var(--app-canvas)] p-4 md:p-6", className)} {...props}>
-      <div className={cn("w-full", contentClassName)}>{children}</div>
+    <div data-slot="workspace-page-frame" className={cn("min-h-full w-full bg-[var(--app-canvas)] p-4 md:p-6", className)} {...props}>
+      <div data-slot="workspace-page-content" className={cn("w-full", contentClassName)}>{children}</div>
     </div>
   );
 }

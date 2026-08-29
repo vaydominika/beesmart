@@ -157,7 +157,7 @@ export default function ClassroomDetailPage() {
                     </div>
                 </header>
 
-                <nav className="mb-6 flex gap-1 overflow-x-auto border-b border-[var(--classroom-line)]" aria-label="Classroom sections">
+                <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[var(--classroom-line)]" aria-label="Classroom sections">
                     {TABS.map((tab) => {
                         return (
                             <button

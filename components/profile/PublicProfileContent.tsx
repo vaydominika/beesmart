@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { WorkspacePageFrame } from "@/components/ui/workspace-page";
 
 const COURSE_PREVIEW_LIMIT = 12;
 const ACTIVITY_PREVIEW_LIMIT = 9;
@@ -117,11 +118,11 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
   const visibleActivity = showAllActivity ? profile.activity : profile.activity.slice(0, ACTIVITY_PREVIEW_LIMIT);
 
   return (
-    <div
-      className="profile-ui min-h-[calc(100dvh-65px)] bg-[var(--app-canvas)] p-4 md:h-full md:min-h-0 md:overflow-hidden md:p-6"
+    <WorkspacePageFrame
+      className="profile-ui min-h-[calc(100dvh-65px)] md:h-full md:min-h-0 md:overflow-hidden"
+      contentClassName="flex w-full flex-col gap-5 md:h-full md:min-h-0"
       style={{ fontFamily: "var(--font-geist-sans)" }}
     >
-      <div className="flex w-full flex-col gap-4 md:h-full md:min-h-0">
         <section className="relative shrink-0 overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]">
           <div className="relative h-14 overflow-hidden border-b border-[var(--app-border)] bg-[var(--app-surface-muted)] md:h-16">
             <Image
@@ -168,7 +169,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
           </div>
         </section>
 
-        <div className="grid gap-4 md:min-h-0 md:flex-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
+        <div className="grid gap-5 md:min-h-0 md:flex-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.75fr)]">
           <section className="flex min-h-0 flex-col rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 md:p-5">
             <SectionHeading
               icon={<BookOpen className="h-6 w-6" />}
@@ -283,7 +284,6 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
             </section>
           )}
         </div>
-      </div>
-    </div>
+    </WorkspacePageFrame>
   );
 }

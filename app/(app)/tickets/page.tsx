@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ClipboardList, MessageSquareText } from "lucide-react";
+import { MessageSquareText } from "lucide-react";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
 import { TicketAttachmentGallery } from "@/components/tickets/TicketAttachmentGallery";
-import { WorkspacePageFrame } from "@/components/ui/workspace-page";
+import { WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
 import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 import { getCurrentUserId } from "@/lib/db";
 import { getUserTickets, reportTypeLabel } from "@/lib/tickets";
@@ -19,21 +19,15 @@ export default async function TicketsPage() {
 
   return (
     <WorkspacePageFrame className="font-[var(--font-geist-sans)]">
-        <header className="mb-4 flex flex-col gap-3 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] text-[var(--app-text)]">
-              <ClipboardList className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="font-[var(--font-barlow-condensed)] text-3xl leading-none tracking-[0.02em] text-[var(--app-text)]">My reports</h1>
-              <p className="mt-1 text-sm text-[var(--app-text-muted)]">Track course reports and Early Access feedback.</p>
-            </div>
-          </div>
-          <div className="flex gap-2 text-xs font-semibold text-[var(--app-text-muted)]">
+        <WorkspacePageHeader
+          title="My reports"
+          actions={<div className="flex gap-2 text-xs font-semibold text-[var(--app-text-muted)]">
             <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1.5">{tickets.length} total</span>
             <span className="rounded-full bg-[var(--app-accent-soft)] px-3 py-1.5 text-[var(--app-text)]">{activeCount} active</span>
-          </div>
-        </header>
+          </div>}
+        >
+          <p className="mt-1 text-sm text-[var(--app-text-muted)]">Track course reports and Early Access feedback.</p>
+        </WorkspacePageHeader>
 
         {tickets.length ? (
           <div className="space-y-3">
