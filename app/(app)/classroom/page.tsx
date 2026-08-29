@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ClassroomCard } from "@/components/classroom/ClassroomCard";
 import { CreateClassroomModal } from "@/components/classroom/CreateClassroomModal";
 import { JoinClassroomModal } from "@/components/classroom/JoinClassroomModal";
@@ -40,6 +40,8 @@ interface ClassroomData {
 
 export default function ClassroomPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const joinCode = searchParams.get("join")?.trim().toUpperCase() ?? "";
     const [classrooms, setClassrooms] = useState<ClassroomData[]>([]);
     const [loading, setLoading] = useState(true);
     const [createOpen, setCreateOpen] = useState(false);
@@ -70,6 +72,20 @@ export default function ClassroomPage() {
     useEffect(() => {
         fetchClassrooms();
     }, [fetchClassrooms]);
+
+    useEffect(() => {
+        if (joinCode) setJoinOpen(true);
+    }, [joinCode]);
+
+    const closeJoin = useCallback(() => {
+        setJoinOpen(false);
+        if (!joinCode) return;
+
+        const nextParams = new URLSearchParams(searchParams.toString());
+        nextParams.delete("join");
+        const query = nextParams.toString();
+        router.replace(query ? `/classroom?${query}` : "/classroom", { scroll: false });
+    }, [joinCode, router, searchParams]);
 
     const changeTab = (tab: ClassroomTab) => {
         setActiveTab(tab);
@@ -131,7 +147,8 @@ export default function ClassroomPage() {
                 />
                 <JoinClassroomModal
                     open={joinOpen}
-                    onClose={() => setJoinOpen(false)}
+                    initialCode={joinCode}
+                    onClose={closeJoin}
                     onJoined={(classroom) => { setClassrooms((current) => [classroom, ...current]); changeTab("joined"); }}
                 />
         </WorkspacePageFrame>

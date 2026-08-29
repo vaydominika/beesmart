@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { WorkspaceCheckbox } from "./workspace-checkbox";
-import { WorkspaceSelect } from "./workspace-select";
+import { WorkspaceMultiSelect, WorkspaceSelect } from "./workspace-select";
 import { WorkspaceTabs } from "./workspace-tabs";
 import { Dialog, DialogContent, DialogTitle } from "./dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
@@ -35,6 +35,31 @@ describe("workspace controls", () => {
     expect(option.closest('[data-slot="dropdown-menu-content"]')).toHaveClass("z-[1100]");
     fireEvent.click(option);
     expect(onValueChange).toHaveBeenCalledWith("public");
+  });
+
+  it("keeps a multi-select open while toggling options", () => {
+    const onValueChange = vi.fn();
+    render(
+      <WorkspaceMultiSelect
+        ariaLabel="Event sources"
+        label="Sources"
+        values={new Set(["personal", "course"])}
+        onValueChange={onValueChange}
+        options={[
+          { value: "personal", label: "Personal" },
+          { value: "classroom", label: "Classroom" },
+          { value: "course", label: "Course" },
+        ]}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Event sources: Personal, Course" });
+    expect(trigger).toHaveAttribute("data-slot", "workspace-multi-select-trigger");
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Classroom" }));
+
+    expect(onValueChange).toHaveBeenCalledWith("classroom", true);
+    expect(screen.getByRole("menu")).toHaveAttribute("aria-label", "Event sources options");
   });
 
   it("renders popovers above dialogs and page content", () => {

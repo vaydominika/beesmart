@@ -25,9 +25,7 @@ export default async function TicketsPage() {
             <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1.5">{tickets.length} total</span>
             <span className="rounded-full bg-[var(--app-accent-soft)] px-3 py-1.5 text-[var(--app-text)]">{activeCount} active</span>
           </div>}
-        >
-          <p className="mt-1 text-sm text-[var(--app-text-muted)]">Track course reports and Early Access feedback.</p>
-        </WorkspacePageHeader>
+        />
 
         {tickets.length ? (
           <div className="space-y-3">

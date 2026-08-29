@@ -10,7 +10,6 @@ import { BeeSmartLogo } from "@/components/ui/BeeSmartLogo";
 
 interface AuthShellProps {
   title: string;
-  description: string;
   footer: ReactNode;
   children: ReactNode;
 }
@@ -18,7 +17,7 @@ interface AuthShellProps {
 export const authFieldClass = "h-11 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3.5 font-[var(--font-geist-sans)] text-sm font-normal text-[var(--app-text)] shadow-none outline-none placeholder:font-normal placeholder:text-[var(--app-text-faint)] hover:border-[var(--app-border-strong)] focus-visible:border-[var(--app-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]";
 export const authLabelClass = "mb-1.5 block font-[var(--font-geist-sans)] text-sm font-semibold text-[var(--app-text)]";
 
-export function AuthShell({ title, description, footer, children }: AuthShellProps) {
+export function AuthShell({ title, footer, children }: AuthShellProps) {
   return (
     <main className="relative z-10 mx-auto grid w-full max-w-[980px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-subtle)] lg:min-h-[640px] lg:grid-cols-[0.72fr_1.28fr]">
       <aside className="hidden border-r border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] p-10 lg:flex lg:flex-col">
@@ -42,10 +41,9 @@ export function AuthShell({ title, description, footer, children }: AuthShellPro
         <div className="w-full max-w-[430px] self-center">
           <header>
             <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em] text-[var(--app-text)] sm:text-[38px]">{title}</h1>
-            <p className="mt-2 text-sm leading-6 text-[var(--app-text-muted)]">{description}</p>
           </header>
 
-          <div className="mt-7">{children}</div>
+          <div className="mt-6">{children}</div>
           <div className="mt-6 border-t border-[var(--app-border)] pt-5 text-center text-sm text-[var(--app-text-muted)]">{footer}</div>
         </div>
       </section>

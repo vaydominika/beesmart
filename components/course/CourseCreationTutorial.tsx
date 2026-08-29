@@ -9,7 +9,7 @@ import {
   Lightbulb,
   X,
 } from "lucide-react";
-import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { cn } from "@/lib/utils";
@@ -118,7 +118,6 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
             <header className="flex items-start gap-5 border-b border-[var(--course-line)] px-5 py-4 pr-14 md:px-9 md:py-5 md:pr-14">
               <div className="min-w-0 flex-1">
                 <DialogTitle className="text-xl font-semibold tracking-[-0.02em] text-[var(--course-text)]">Course creation tutorial</DialogTitle>
-                <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">Follow the controls you will use from the first draft to publication.</DialogDescription>
               </div>
             </header>
 

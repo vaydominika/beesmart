@@ -109,7 +109,6 @@ export function DailyCourseRecommendationCard({
               <Sparkles className="h-5 w-5" aria-hidden="true" />
               {modalTitle}
             </WorkspaceDialogTitle>
-            <WorkspaceDialogDescription>One course, selected for you each day.</WorkspaceDialogDescription>
           </WorkspaceDialogHeader>
 
           <WorkspaceDialogBody className="relative min-h-56" aria-live="polite">
@@ -122,22 +121,22 @@ export function DailyCourseRecommendationCard({
             {loading ? (
               <div className="relative flex min-h-48 flex-col items-center justify-center gap-3 text-center">
                 <Spinner className="h-7 w-7" />
-                <p className="text-sm font-medium text-[var(--app-text-muted)]">Checking your completed courses…</p>
+                <p className="text-sm font-medium text-(--app-text-muted)">Checking your completed courses…</p>
               </div>
             ) : recommendation ? (
-              <div className="relative flex min-h-48 flex-col justify-center rounded-2xl border border-[var(--app-border)] bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-5 sm:p-6">
-                <span className="mb-3 flex items-center gap-2 text-xs font-semibold text-[var(--app-text-muted)]">
+              <div className="relative flex min-h-48 flex-col justify-center rounded-2xl border border-(--app-border) bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-5 sm:p-6">
+                <span className="mb-3 flex items-center gap-2 text-xs font-semibold text-(--app-text-muted)">
                   <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Daily pick
                 </span>
-                <h3 className="text-2xl font-semibold tracking-[-0.035em] text-[var(--app-text)] sm:text-3xl">
+                <h3 className="text-2xl font-semibold tracking-[-0.035em] text-(--app-text) sm:text-3xl">
                   {recommendation.course.title}
                 </h3>
                 {recommendation.course.description && (
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-[var(--app-text-muted)]">
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-(--app-text-muted)">
                     {recommendation.course.description}
                   </p>
                 )}
-                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-[var(--app-text-muted)]">
+                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-(--app-text-muted)">
                   <span>{matchText}</span>
                   {recommendation.course.averageRating != null && recommendation.course.averageRating > 0 && (
                     <span className="flex items-center gap-1">
@@ -149,13 +148,13 @@ export function DailyCourseRecommendationCard({
               </div>
             ) : error ? (
               <div className="relative flex min-h-48 flex-col items-center justify-center text-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] text-[var(--app-text)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-(--app-border) bg-(--app-surface-muted) text-(--app-text)">
                   <BookOpen className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-[var(--app-text)]">
+                <h3 className="mt-4 text-lg font-semibold text-(--app-text)">
                   {error.code === "COURSE_COMPLETION_REQUIRED" ? "Complete your first course" : error.code === "NO_ELIGIBLE_COURSES" ? "Nothing new is available" : "Pick unavailable"}
                 </h3>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--app-text-muted)]">{error.message}</p>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-(--app-text-muted)">{error.message}</p>
               </div>
             ) : null}
           </WorkspaceDialogBody>

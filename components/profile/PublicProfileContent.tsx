@@ -83,12 +83,10 @@ function MoreToggle({
 function SectionHeading({
   icon,
   title,
-  subtitle,
   count,
 }: {
   icon: ReactNode;
   title: string;
-  subtitle: string;
   count: number;
 }) {
   return (
@@ -96,13 +94,10 @@ function SectionHeading({
       <span className="flex h-9 w-9 items-center justify-center text-[var(--app-text)]">
         {icon}
       </span>
-      <div className="flex min-h-9 min-w-0 flex-col justify-center">
+      <div className="flex min-h-9 min-w-0 items-center">
         <h2 className="font-[var(--font-barlow-condensed)] text-xl leading-[0.9] tracking-[0.02em] text-[var(--app-text)]">
           {title}
         </h2>
-        <p className="mt-1 text-[11px] font-medium leading-none text-[var(--app-text-faint)]">
-          {subtitle}
-        </p>
       </div>
       <span className="self-center rounded-full bg-[var(--app-surface-muted)] px-2.5 py-1 text-[11px] font-semibold leading-none text-[var(--app-text-muted)]">
         {count}
@@ -174,7 +169,6 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
             <SectionHeading
               icon={<BookOpen className="h-6 w-6" />}
               title="Published courses"
-              subtitle="Newest first · showing up to 12"
               count={profile.courses.length}
             />
 
@@ -226,7 +220,6 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
               <SectionHeading
                 icon={<Sparkles className="h-6 w-6" />}
                 title="Recent learning"
-                subtitle="Latest 9 activities"
                 count={profile.activity.length}
               />
 

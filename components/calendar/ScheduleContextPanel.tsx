@@ -19,6 +19,7 @@ import { EventSourceIcon } from "./EventSourceIcon";
 import { EventColorPicker } from "./EventColorPicker";
 import { EventReminderFields } from "./EventReminderFields";
 import { DEFAULT_EVENT_COLOR } from "./event-palette";
+import { isClassroomWorkEvent } from "./ClassroomWorkEditModal";
 
 export interface ScheduleEditorState {
   mode: "create" | "edit";
@@ -86,10 +87,7 @@ function ScheduleContextPanelContent({
           <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={onBack} aria-label="Back to agenda">
             <ArrowLeft className="h-4 w-4" />
           </WorkspaceButton>
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--schedule-text)]">{editor.mode === "edit" ? "Edit event" : "New event"}</h2>
-            <p className="text-[11px] text-[var(--schedule-text-muted)]">{editor.mode === "edit" ? "Update the event details." : "Add time to your schedule."}</p>
-          </div>
+          <h2 className="text-sm font-semibold text-[var(--schedule-text)]">{editor.mode === "edit" ? "Edit event" : "New event"}</h2>
         </div>
         <div className="schedule-scroll flex-1 overflow-y-auto px-4 py-2.5">
           <form
@@ -156,10 +154,7 @@ function ScheduleContextPanelContent({
               <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional notes" rows={2} className="w-full resize-none rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-sm text-[var(--schedule-text)] outline-none placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-2 focus:ring-[var(--schedule-focus-ring)]" />
             </label>
             <div className="flex items-center justify-between rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2">
-              <div>
-                <span className="block text-sm font-medium text-[var(--schedule-text)]">All day</span>
-                <span className="text-[11px] text-[var(--schedule-text-muted)]">Hide specific start and end times.</span>
-              </div>
+              <span className="text-sm font-medium text-[var(--schedule-text)]">All day</span>
               <Switch checked={isAllDay} onCheckedChange={setIsAllDay} aria-label="All day" className="data-[state=checked]:bg-[var(--schedule-focus-border)] data-[state=unchecked]:bg-[var(--schedule-line-strong)]" />
             </div>
             {!isAllDay && (

@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import type { CourseVisibility } from "@/lib/course-summary";
 import type { CoursePublishIssue } from "@/lib/course-audit";
 import { COURSE_TITLE_MAX_LENGTH, displayCourseTitle } from "@/lib/course-title";
-import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 
 interface CourseBuilderClientProps {
@@ -367,7 +367,6 @@ function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: 
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close publication safety check" className="absolute right-4 top-4 z-20" disabled={checking}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--course-text)]"><ShieldCheck className="h-5 w-5" />Publication safety check</DialogTitle>
-          <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">Every publish checks the course structure, topic, and content safety.</DialogDescription>
         </div>
         <div className="px-5 py-5">
           {checking ? (

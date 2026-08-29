@@ -172,7 +172,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">New event details</h3>
             <div><label htmlFor="event-title" className={workspaceLabelClass}>Title</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder="Event title" /></div>
             <div><label htmlFor="event-description" className={workspaceLabelClass}>Description <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder="Add a note" /></div>
-            <WorkspaceSwitchRow id="event-all-day" label="All day" description="Hide start and end times." checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
+            <WorkspaceSwitchRow id="event-all-day" label="All day" checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
             {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label="Start" value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label="End" value={endTime} onChange={setEndTime} /></div> : null}
             <EventColorPicker value={color} onValueChange={setColor} />
           </section>

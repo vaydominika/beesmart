@@ -10,7 +10,6 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,
@@ -229,7 +228,6 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
             <WorkIcon className="h-5 w-5" aria-hidden="true" />
             {post ? "Edit post" : `Edit ${label}`}
           </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>{post ? `Update the complete ${label} post.` : "Changes update the Classroom and every synchronized calendar."}</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
 
         <WorkspaceDialogBody className="max-h-[calc(100dvh-11rem)] overflow-y-auto px-5 py-4">

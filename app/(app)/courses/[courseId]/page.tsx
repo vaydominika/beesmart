@@ -134,10 +134,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--course-accent)] text-[var(--course-text)]">
                   <BookOpen className="h-4 w-4" />
                 </span>
-                <div>
-                  <h2 className="text-lg font-semibold text-[var(--course-text)]">About this course</h2>
-                  <p className="text-xs text-[var(--course-text-muted)]">What you can expect before you begin</p>
-                </div>
+                <h2 className="text-lg font-semibold text-[var(--course-text)]">About this course</h2>
               </div>
               <p className="mt-5 max-w-3xl whitespace-pre-line text-sm leading-6 text-[var(--course-text-muted)] md:text-[15px]">
                 {description || "The creator has not added a course description yet. Review the syllabus below to see what is included."}
@@ -279,7 +276,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--course-line)] bg-[var(--course-accent)] p-4 text-sm text-[var(--course-text)]">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
                 <span className="min-w-0 flex-1"><strong className="font-semibold">Course completed.</strong> You can revisit any lesson at any time.</span>
-                <CourseRatingButton courseId={courseId} courseTitle={course.title} />
+                <CourseRatingButton courseId={courseId} />
               </div>
             ) : null}
           </aside>

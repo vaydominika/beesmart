@@ -173,7 +173,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
     return (
         <div className="flex-1 flex min-h-full bg-[var(--app-surface)] relative">
-            <CourseRatingModal open={ratingOpen} onOpenChange={setRatingOpen} courseId={course.id} courseTitle={course.title} />
+            <CourseRatingModal open={ratingOpen} onOpenChange={setRatingOpen} courseId={course.id} />
             {/* Sidebar Syllabus */}
             <aside
                 className={cn(

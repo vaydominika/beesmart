@@ -7,7 +7,6 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,
@@ -50,7 +49,6 @@ export function FocusModal() {
             <TimerReset className="h-5 w-5" aria-hidden="true" />
             Focus session
           </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>Set a focused work block and an optional automatic break.</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
 
         <WorkspaceDialogBody className="space-y-5">
@@ -80,7 +78,7 @@ export function FocusModal() {
             </div>
           </div>
 
-          <WorkspaceSwitchRow id="focus-auto-break" label="Start break automatically" description="Move straight into the break when focus time ends." checked={autoBreak} onCheckedChange={setAutoBreak} />
+          <WorkspaceSwitchRow id="focus-auto-break" label="Start break automatically" checked={autoBreak} onCheckedChange={setAutoBreak} />
         </WorkspaceDialogBody>
 
         <WorkspaceDialogFooter>

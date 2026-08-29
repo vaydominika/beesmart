@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Mail, Trash2, X } from "lucide-react";
-import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -72,7 +72,6 @@ export function CourseInviteButton({ courseId }: { courseId: string }) {
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close course invitations" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
             <DialogTitle className="text-lg font-semibold">Course invitations</DialogTitle>
-            <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Give specific people access to this invitation-only course.</DialogDescription>
           </div>
           <div className="course-scroll min-h-0 flex-1 overflow-y-auto p-5">
             <div className="flex gap-2">

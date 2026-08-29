@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import Draggable from "react-draggable";
+import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
 import { useFocus } from "./FocusProvider";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -29,7 +29,7 @@ export function TimerWidget() {
     setWidgetPosition,
   } = useFocus();
 
-  const nodeRef = useRef(null);
+  const nodeRef = useRef<HTMLDivElement>(null);
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -39,7 +39,7 @@ export function TimerWidget() {
   };
 
   // Update position when dragging stops
-  const handleDragStop = (e: any, data: any) => {
+  const handleDragStop = (_event: DraggableEvent, data: DraggableData) => {
     setWidgetPosition({ x: data.x, y: data.y });
   };
 
@@ -74,7 +74,9 @@ export function TimerWidget() {
               <div className="w-1.5 h-1.5 bg-(--theme-text) rounded-full"></div>
             </div>
             <button
+              type="button"
               onClick={toggleMinimize}
+              aria-label="Restore focus timer"
               className="text-(--theme-text) hover:text-(--theme-secondary)"
             >
               <HugeiconsIcon icon={Minimize01Icon} className="rotate-180" size={14} />
@@ -99,13 +101,17 @@ export function TimerWidget() {
         {/* Window controls */}
         <div className="flex items-center justify-end gap-1.5 mb-1.5">
           <button
+            type="button"
             onClick={toggleMinimize}
+            aria-label="Minimize focus timer"
             className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
           >
             <HugeiconsIcon icon={Minimize01Icon} size={16} />
           </button>
           <button
+            type="button"
             onClick={stopSession}
+            aria-label="Stop focus session"
             className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={16} />
@@ -122,21 +128,27 @@ export function TimerWidget() {
         {/* Control buttons */}
         <div className="flex items-center justify-center gap-2.5">
           <button
+            type="button"
             onClick={undo}
+            aria-label="Undo focus timer action"
             className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title="Undo"
           >
             <HugeiconsIcon icon={UndoIcon} size={20} />
           </button>
           <button
+            type="button"
             onClick={isRunning ? pauseTimer : resumeTimer}
+            aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"}
             className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title={isRunning ? "Pause" : "Play"}
           >
             <HugeiconsIcon icon={isRunning ? PauseIcon : PlayIcon} size={20} />
           </button>
           <button
+            type="button"
             onClick={next}
+            aria-label="Skip to next focus timer interval"
             className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
             title="Next"
           >

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Upload, X } from "lucide-react";
-import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Editor } from "@/components/ui/editor";
 import { toast } from "@/components/ui/sonner";
@@ -152,7 +152,6 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
         <div className="border-b border-[var(--course-line)] px-5 py-3.5 pr-12 md:px-6">
           <div className="mb-1 flex items-center gap-2 text-[11px] font-semibold text-[var(--course-text-muted)]"><span>Step {step} of 2</span><span aria-hidden="true">·</span><span>{step === 1 ? "Basics" : "Details"}</span></div>
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Create course</DialogTitle>
-          <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">{step === 1 ? "Set the course identity and who can access it." : "Add context and optional learning materials."}</DialogDescription>
         </div>
 
         <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-3.5 md:px-6">

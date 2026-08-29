@@ -91,7 +91,7 @@ export default function ClassroomDetailPage() {
 
     const isTeacher = isClassroomStaffRole(classroom.role);
     const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? "Teaching assistant" : classroom.role.toLowerCase();
-    const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom/join?code=${classroom.code}` : "";
+    const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom?join=${encodeURIComponent(classroom.code)}` : "";
 
     return (
         <WorkspacePageFrame className="classroom-ui bg-[var(--classroom-canvas)]">

@@ -64,7 +64,6 @@ function LoginForm() {
   return (
     <AuthShell
       title="Welcome back"
-      description="Sign in to continue learning, building courses, and keeping your study rhythm going."
       footer={<p>New to BeeSmart? <Link href="/register" className="font-semibold text-[var(--app-accent-text)] underline decoration-[var(--app-focus-border)] underline-offset-4 hover:no-underline">Create an account</Link></p>}
     >
       <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />

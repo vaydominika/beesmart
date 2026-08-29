@@ -10,8 +10,7 @@ import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/component
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { WorkspaceCheckbox } from "@/components/ui/workspace-checkbox";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { WorkspaceMultiSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
 import { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
@@ -33,7 +32,8 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { ClassroomWorkEditModal, isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditModal";
 
-const ALL_SOURCES: EventSource[] = ["personal", "classroom", "course"];
+const ALL_SOURCES: EventSource[] = ["personal", "classroom"];
+const SOURCE_OPTIONS = ALL_SOURCES.map((source) => ({ value: source, label: sourceLabel(source) }));
 const VIEWS: Array<{ value: ScheduleView; label: string }> = [
   { value: "week", label: "Week" },
   { value: "month", label: "Month" },
@@ -385,24 +385,23 @@ export default function SchedulePage() {
             </div>
             <div className="flex min-w-0 items-center gap-2">
               <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" aria-label="Search events" wrapperClassName="min-w-0 flex-1 lg:w-64 lg:flex-none" className="border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-[var(--schedule-text)] placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-[var(--schedule-focus-ring)]" />
-              <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-                <PopoverTrigger asChild>
-                  <WorkspaceButton type="button" variant={filtersOpen ? "primary" : "secondary"}><SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Sources</span></WorkspaceButton>
-                </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={6} role="group" aria-label="Event sources" className="w-48 rounded-xl border-[var(--schedule-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
-                    {ALL_SOURCES.map((source) => {
-                      const checked = sources.has(source);
-                      return (
-                        <WorkspaceCheckbox
-                          key={source}
-                          label={sourceLabel(source)}
-                          checked={checked}
-                          onCheckedChange={() => setSources((current) => { const next = new Set(current); if (next.has(source)) next.delete(source); else next.add(source); return next; })}
-                        />
-                      );
-                    })}
-                </PopoverContent>
-              </Popover>
+              <WorkspaceMultiSelect
+                ariaLabel="Event sources"
+                label="Sources"
+                values={sources}
+                options={SOURCE_OPTIONS}
+                triggerIcon={SlidersHorizontal}
+                align="end"
+                open={filtersOpen}
+                onOpenChange={setFiltersOpen}
+                onValueChange={(source, checked) => setSources((current) => {
+                  const next = new Set(current);
+                  if (checked) next.add(source);
+                  else next.delete(source);
+                  return next;
+                })}
+                contentClassName="w-48"
+              />
             </div>
           </LibraryToolbar>
         </header>

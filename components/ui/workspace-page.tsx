@@ -19,10 +19,10 @@ type WorkspacePageHeaderProps = React.HTMLAttributes<HTMLElement> & {
   titleClassName?: string;
 };
 
-function WorkspacePageHeader({ title, actions, titleClassName, children, className, ...props }: WorkspacePageHeaderProps) {
+function WorkspacePageHeader({ title, actions, titleClassName, className, ...props }: WorkspacePageHeaderProps) {
   return (
     <header className={cn("mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)} {...props}>
-      <div><h1 className={cn("text-3xl font-semibold tracking-[-0.04em] text-[var(--app-text)] md:text-[42px]", titleClassName)}>{title}</h1>{children}</div>
+      <h1 className={cn("text-3xl font-semibold tracking-[-0.04em] text-[var(--app-text)] md:text-[42px]", titleClassName)}>{title}</h1>
       {actions}
     </header>
   );

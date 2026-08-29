@@ -689,7 +689,6 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--classroom-text-faint)]">Assessment review</p>
                         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--classroom-text)]">{test.title}</h1>
-                        <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Inspect attempts, review written answers, and release final scores.</p>
                     </div>
                     <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchInitialData()}>
                         <RefreshCw className="h-3.5 w-3.5" />Refresh

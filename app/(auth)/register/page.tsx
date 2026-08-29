@@ -74,7 +74,6 @@ export default function RegisterPage() {
   return (
     <AuthShell
       title="Create your account"
-      description="Set up your BeeSmart space and start organizing how you learn."
       footer={<p>Already have an account? <Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline decoration-[var(--app-focus-border)] underline-offset-4 hover:no-underline">Sign in</Link></p>}
     >
       <GoogleAuthButton onClick={handleGoogleSignIn} disabled={loading} />

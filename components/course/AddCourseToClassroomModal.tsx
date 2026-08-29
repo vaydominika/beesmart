@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BookOpen, LockKeyhole, Search, X } from "lucide-react";
-import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/sonner";
@@ -108,7 +108,6 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
         <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom course picker" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
           <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Add to classroom</DialogTitle>
-          <DialogDescription className="mt-1 text-xs text-[var(--course-text-muted)]">Choose where the course should appear.</DialogDescription>
         </div>
 
         <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">

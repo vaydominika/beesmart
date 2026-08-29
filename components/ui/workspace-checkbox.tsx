@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 interface WorkspaceCheckboxProps extends Omit<React.ComponentProps<"input">, "type" | "onChange"> {
   label: React.ReactNode;
-  description?: React.ReactNode;
   onCheckedChange?: (checked: boolean) => void;
   containerClassName?: string;
   indicatorClassName?: string;
@@ -12,7 +11,6 @@ interface WorkspaceCheckboxProps extends Omit<React.ComponentProps<"input">, "ty
 
 function WorkspaceCheckbox({
   label,
-  description,
   checked,
   defaultChecked,
   disabled,
@@ -26,12 +24,12 @@ function WorkspaceCheckbox({
     <label
       className={cn(
         "group flex min-h-9 cursor-pointer gap-2.5 rounded-lg px-2 py-1.5 text-sm text-[var(--app-text-muted)]",
-        description ? "items-start" : "items-center",
+        "items-center",
         disabled && "pointer-events-none cursor-not-allowed text-[var(--app-text-faint)]",
         containerClassName,
       )}
     >
-      <span className={cn("relative flex h-4 w-4 shrink-0", description && "mt-0.5")}>
+      <span className="relative flex h-4 w-4 shrink-0">
         <input
           type="checkbox"
           checked={checked}
@@ -50,7 +48,6 @@ function WorkspaceCheckbox({
       </span>
       <span className="min-w-0">
         <span className="block font-medium text-[var(--app-text)]">{label}</span>
-        {description ? <span className="mt-0.5 block text-xs text-[var(--app-text-muted)]">{description}</span> : null}
       </span>
     </label>
   );

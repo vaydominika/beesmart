@@ -9,7 +9,6 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,
@@ -78,7 +77,6 @@ export function SettingsModal() {
             <Settings2 className="h-5 w-5" />
             General settings
           </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>Choose how BeeSmart looks, focuses, and keeps you updated.</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
@@ -88,12 +86,11 @@ export function SettingsModal() {
             {activeSection === "appearance" ? (
               <section aria-labelledby="appearance-heading">
                 <h3 id="appearance-heading" className="text-base font-semibold text-[var(--app-text)]">Appearance</h3>
-                <p className="mt-1 text-sm text-[var(--app-text-muted)]">Pick a theme. Every workspace and dialog updates together.</p>
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="mt-4 grid grid-cols-2 gap-3">
                   {themes.map((option) => (
-                    <button key={option.value} type="button" onClick={() => setTheme(option.value)} className={cn("flex items-center gap-3 rounded-2xl border bg-[var(--app-surface)] p-3 text-left transition-colors hover:bg-[var(--app-surface-hover)]", theme === option.value ? "border-[var(--app-focus-border)] ring-2 ring-[var(--app-focus-ring)]" : "border-[var(--app-border)]")}>
+                    <button key={option.value} type="button" aria-pressed={theme === option.value} onClick={() => setTheme(option.value)} className={cn("flex items-center gap-3 rounded-2xl border bg-[var(--app-surface)] p-3 text-left transition-colors hover:bg-[var(--app-surface-hover)]", theme === option.value ? "border-[var(--app-focus-border)] ring-2 ring-[var(--app-focus-ring)]" : "border-[var(--app-border)]")}>
                       <span className="h-8 w-8 rounded-xl border border-[var(--app-scrim-soft)]" style={{ backgroundColor: `var(${option.token})` }} />
-                      <span><span className="block text-sm font-semibold text-[var(--app-text)]">{option.label}</span><span className="block text-xs text-[var(--app-text-muted)]">{theme === option.value ? "Current theme" : "Use theme"}</span></span>
+                      <span className="text-sm font-semibold text-[var(--app-text)]">{option.label}</span>
                     </button>
                   ))}
                 </div>
@@ -102,20 +99,20 @@ export function SettingsModal() {
 
             {activeSection === "focus" ? (
               <section aria-labelledby="focus-settings-heading" className="space-y-5">
-                <div><h3 id="focus-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Focus timer</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Set the defaults used when you open a new focus session.</p></div>
+                <h3 id="focus-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Focus timer</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label htmlFor="default-focus-minutes" className={workspaceLabelClass}>Focus minutes</label><Input id="default-focus-minutes" type="number" min="1" max="120" value={localActiveMinutes} onChange={(event) => setLocalActiveMinutes(event.target.value)} className={workspaceFieldClass} /></div>
                   <div><label htmlFor="default-break-minutes" className={workspaceLabelClass}>Break minutes</label><Input id="default-break-minutes" type="number" min="1" max="60" value={localBreakMinutes} onChange={(event) => setLocalBreakMinutes(event.target.value)} className={workspaceFieldClass} /></div>
                 </div>
-                <WorkspaceSwitchRow id="default-auto-break" label="Start breaks automatically" description="Begin the break as soon as a focus block ends." checked={defaultAutoBreak} onCheckedChange={setDefaultAutoBreak} />
+                <WorkspaceSwitchRow id="default-auto-break" label="Start breaks automatically" checked={defaultAutoBreak} onCheckedChange={setDefaultAutoBreak} />
               </section>
             ) : null}
 
             {activeSection === "notifications" ? (
               <section aria-labelledby="notification-settings-heading" className="space-y-3">
-                <div className="mb-5"><h3 id="notification-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Control which updates appear in your notification center.</p></div>
-                <WorkspaceSwitchRow id="reminder-notifications" label="Reminders" description="Receive alerts for scheduled reminders and events." checked={reminderNotifications} onCheckedChange={setReminderNotifications} />
-                <WorkspaceSwitchRow id="classroom-notifications" label="Classroom updates" description="Receive activity and assignment updates from classrooms." checked={classroomNotifications} onCheckedChange={setClassroomNotifications} />
+                <h3 id="notification-settings-heading" className="text-base font-semibold text-[var(--app-text)]">Notifications</h3>
+                <WorkspaceSwitchRow id="reminder-notifications" label="Reminders" checked={reminderNotifications} onCheckedChange={setReminderNotifications} />
+                <WorkspaceSwitchRow id="classroom-notifications" label="Classroom updates" checked={classroomNotifications} onCheckedChange={setClassroomNotifications} />
               </section>
             ) : null}
           </WorkspaceDialogBody>

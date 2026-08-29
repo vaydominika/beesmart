@@ -11,7 +11,6 @@ import { WorkspaceTabs } from "../ui/workspace-tabs";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,
@@ -173,7 +172,6 @@ export function ProfileSettingsModal() {
             <UserRound className="h-5 w-5" />
             Profile settings
           </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>Update your identity, images, privacy, and password.</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
@@ -182,7 +180,7 @@ export function ProfileSettingsModal() {
           <WorkspaceDialogBody className="w-full">
             {activeSection === "profile" ? (
               <section aria-labelledby="profile-heading" className="space-y-5">
-                <div><h3 id="profile-heading" className="text-base font-semibold text-[var(--app-text)]">Profile</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">This is the name people see across BeeSmart.</p></div>
+                <h3 id="profile-heading" className="text-base font-semibold text-[var(--app-text)]">Profile</h3>
                 <div><label htmlFor="profile-name" className={workspaceLabelClass}>Name</label><Input id="profile-name" type="text" value={name} onChange={(event) => setName(event.target.value)} className={cn(workspaceFieldClass, "w-full")} placeholder="Your name" /></div>
                 {user?.id ? <WorkspaceButton type="button" variant="ghost" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="sm:hidden"><ExternalLink className="h-4 w-4" />View profile</WorkspaceButton> : null}
               </section>
@@ -190,7 +188,7 @@ export function ProfileSettingsModal() {
 
             {activeSection === "images" ? (
               <section aria-labelledby="images-heading" className="space-y-6">
-                <div><h3 id="images-heading" className="text-base font-semibold text-[var(--app-text)]">Images</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Choose a recognizable avatar and a profile banner.</p></div>
+                <h3 id="images-heading" className="text-base font-semibold text-[var(--app-text)]">Images</h3>
                 <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
                   <p className={workspaceLabelClass}>Profile picture</p>
                   <div className="flex items-center gap-4">
@@ -225,9 +223,9 @@ export function ProfileSettingsModal() {
 
             {activeSection === "privacy" ? (
               <section aria-labelledby="privacy-heading" className="space-y-5">
-                <div><h3 id="privacy-heading" className="text-base font-semibold text-[var(--app-text)]">Privacy</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Choose who can see your profile and learning activity.</p></div>
+                <h3 id="privacy-heading" className="text-base font-semibold text-[var(--app-text)]">Privacy</h3>
                 <div><p className={workspaceLabelClass}>Profile visibility</p><WorkspaceTabs ariaLabel="Profile visibility" items={[{ value: "public", label: "Public" }, { value: "private", label: "Private" }]} value={profileVisibility} onValueChange={setProfileVisibility} fill /></div>
-                <WorkspaceSwitchRow id="activity-sharing" label="Share learning activity" description="Show recent learning activity on your profile." checked={activitySharing} onCheckedChange={setActivitySharing} />
+                <WorkspaceSwitchRow id="activity-sharing" label="Share learning activity" checked={activitySharing} onCheckedChange={setActivitySharing} />
               </section>
             ) : null}
 

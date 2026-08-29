@@ -114,7 +114,7 @@ describe("ClassroomWorkEditModal", () => {
   });
 
   it("uses the work description as the single message for an attached post", async () => {
-    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       if (init?.method === "PATCH") {
         return new Response(JSON.stringify({ id: "assignment-1" }), { status: 200, headers: { "Content-Type": "application/json" } });
       }

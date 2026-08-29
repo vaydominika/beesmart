@@ -9,7 +9,6 @@ import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/worksp
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,
@@ -122,7 +121,6 @@ export function FeedbackModal({
             <MessageSquareText className="h-5 w-5" />
             Early Access feedback
           </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>Share a bug, suggestion, or anything that would make BeeSmart better.</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-5">
           <div>

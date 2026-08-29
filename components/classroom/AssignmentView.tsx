@@ -563,10 +563,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     </div>
 
                                     <div className="border-t border-[var(--classroom-line)] pt-5">
-                                        <div className="mb-4">
-                                            <h3 className="text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
-                                            <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">The student sees the saved score and feedback immediately.</p>
-                                        </div>
+                                        <h3 className="mb-4 text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
                                         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
                                             <label className="block">
                                                 <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback</span>

@@ -2,10 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ClassroomPage from "./page";
 
-const router = vi.hoisted(() => ({ push: vi.fn() }));
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigation = vi.hoisted(() => ({ query: "" }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
+  useSearchParams: () => new URLSearchParams(navigation.query),
 }));
 
 vi.mock("@/components/classroom/ClassroomCard", () => ({
@@ -19,7 +21,12 @@ vi.mock("@/components/classroom/CreateClassroomModal", () => ({
 }));
 
 vi.mock("@/components/classroom/JoinClassroomModal", () => ({
-  JoinClassroomModal: () => null,
+  JoinClassroomModal: ({ open, initialCode, onClose }: { open: boolean; initialCode?: string; onClose: () => void }) => open ? (
+    <div role="dialog" aria-label="Join classroom">
+      <input aria-label="Classroom code" value={initialCode} readOnly />
+      <button type="button" onClick={onClose}>Close join classroom</button>
+    </div>
+  ) : null,
 }));
 
 const classrooms = [
@@ -52,11 +59,13 @@ const classrooms = [
 describe("ClassroomPage navigation", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    navigation.query = "";
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     router.push.mockReset();
+    router.replace.mockReset();
   });
 
   it("separates joined and created classrooms and filters the active tab", async () => {
@@ -110,5 +119,21 @@ describe("ClassroomPage navigation", () => {
     render(<ClassroomPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Biology class" }));
     expect(router.push).toHaveBeenCalledWith("/classroom/joined-1");
+  });
+
+  it("opens the join form with a classroom code from a QR link", async () => {
+    navigation.query = "join=bio123";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => classrooms,
+    }));
+
+    render(<ClassroomPage />);
+
+    expect(await screen.findByRole("dialog", { name: "Join classroom" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Classroom code" })).toHaveValue("BIO123");
+
+    fireEvent.click(screen.getByRole("button", { name: "Close join classroom" }));
+    expect(router.replace).toHaveBeenCalledWith("/classroom", { scroll: false });
   });
 });

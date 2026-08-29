@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
@@ -24,13 +24,18 @@ type ClassroomSummary = {
 
 interface JoinClassroomModalProps {
     open: boolean;
+    initialCode?: string;
     onClose: () => void;
     onJoined: (classroom: ClassroomSummary) => void;
 }
 
-export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomModalProps) {
+export function JoinClassroomModal({ open, initialCode = "", onClose, onJoined }: JoinClassroomModalProps) {
     const [code, setCode] = useState("");
     const [joining, setJoining] = useState(false);
+
+    useEffect(() => {
+        if (open) setCode(initialCode.trim().toUpperCase());
+    }, [initialCode, open]);
 
     const handleJoin = async () => {
         if (!code.trim()) {
@@ -74,10 +79,11 @@ export function JoinClassroomModal({ open, onClose, onJoined }: JoinClassroomMod
 
                     <div className="space-y-3 flex-1">
                         <div>
-                            <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
+                            <label htmlFor="classroom-join-code" className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
                                 Classroom Code
                             </label>
                             <Input
+                                id="classroom-join-code"
                                 value={code}
                                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                                 className="bg-(--theme-sidebar) rounded-xl corner-squircle text-lg md:text-2xl font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-12 md:h-14 w-full text-center tracking-[0.3em]"
