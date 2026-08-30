@@ -10,7 +10,7 @@ const workspaceButtonVariants = cva(
       variant: {
         primary: "border border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] text-[var(--app-text)] hover:bg-[var(--app-accent-hover)] focus-visible:border-[var(--app-focus-border)]",
         secondary: "border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-muted)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:border-[var(--app-focus-border)] active:border-[var(--app-text)] active:bg-[var(--app-text)] active:text-[var(--app-text-inverse)]",
-        danger: "border border-[var(--app-border)] bg-[var(--app-danger-soft)] text-[var(--app-danger)] hover:border-[var(--app-danger)] focus-visible:border-[var(--app-danger)] focus-visible:ring-[var(--app-danger-soft)]",
+        danger: "border border-[var(--app-danger-border)] bg-[var(--app-surface)] text-[var(--app-danger)] hover:border-[var(--app-danger-border)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] focus-visible:border-[var(--app-danger-border)] focus-visible:ring-[var(--app-danger-soft)]",
         ghost: "border border-transparent bg-transparent text-[var(--app-text-muted)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:border-[var(--app-focus-border)]",
       },
       size: {

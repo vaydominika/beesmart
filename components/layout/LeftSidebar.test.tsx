@@ -39,6 +39,7 @@ describe("LeftSidebar consistency counter", () => {
     const { container } = render(<LeftSidebar variant="overlay" onClose={vi.fn()} />);
 
     const logo = screen.getByRole("img", { name: "BeeSmart Logo" });
+    expect(screen.getByRole("link", { name: "Go to dashboard" })).toHaveAttribute("href", "/dashboard");
     expect(logo).toHaveClass("md:w-[176px]");
     expect(logo.parentElement).not.toHaveClass("-translate-x-1/18");
     expect(screen.getByText("Bee consistent").parentElement).toHaveClass("w-full", "md:w-[168px]", "md:p-2");

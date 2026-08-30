@@ -27,7 +27,7 @@ import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
 import { readJsonSafely } from "@/lib/http";
 import { formatLongDate } from "@/lib/schedule";
 import type { ScheduleEvent } from "@/lib/schedule";
-import { ClassroomWorkEditModal, isClassroomWorkEvent } from "./ClassroomWorkEditModal";
+import { ClassroomWorkEditModal, classroomWorkDeleteEndpoint, classroomWorkKind, isClassroomWorkEvent } from "./ClassroomWorkEditModal";
 
 type EventData = ScheduleEvent;
 
@@ -94,11 +94,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     setDeleting(true);
     try {
       const linkedWork = isClassroomWorkEvent(displayEvent);
-      const endpoint = linkedWork
-        ? displayEvent.assignmentId
-          ? `/api/classrooms/${displayEvent.classroomId}/assignments/${displayEvent.assignmentId}`
-          : `/api/classrooms/${displayEvent.classroomId}/tests/${displayEvent.testId}`
-        : `/api/user/events?id=${event.id}`;
+      const endpoint = classroomWorkDeleteEndpoint(displayEvent) ?? `/api/user/events?id=${event.id}`;
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) return toast.error(data.error || `Failed to delete ${linkedWork ? "assessment" : "event"}.`);
@@ -152,11 +148,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   }
 
   const classroomWork = isClassroomWorkEvent(displayEvent);
-  const classroomWorkLabel = displayEvent.assignmentId
-    ? "assignment"
-    : displayEvent.testId
-      ? displayEvent.title.toLowerCase().startsWith("exam:") ? "exam" : "test"
-      : null;
+  const classroomWorkLabel = classroomWorkKind(displayEvent);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>

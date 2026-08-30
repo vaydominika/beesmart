@@ -61,7 +61,14 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           </button>
         )}
         <div className="mb-6 flex justify-center md:mb-4">
-          <BeeSmartLogo className="h-auto w-60 md:w-[176px]" />
+          <Link
+            href="/dashboard"
+            onClick={isOverlay ? onClose : undefined}
+            aria-label="Go to dashboard"
+            className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+          >
+            <BeeSmartLogo className="h-auto w-60 md:w-[176px]" />
+          </Link>
         </div>
 
         <div className="mx-auto mb-4 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">

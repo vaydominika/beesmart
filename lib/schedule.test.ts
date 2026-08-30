@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
-  agendaRange,
   dateKey,
   eventDuration,
   eventSourceLabel,
+  eventTimeLabel,
   eventsForDate,
   monthGridRange,
   snapMinutes,
@@ -36,11 +36,6 @@ describe("schedule date helpers", () => {
     expect(dateKey(range.end)).toBe("2026-09-06");
   });
 
-  it("returns a 30-day agenda range", () => {
-    const range = agendaRange(new Date(2026, 7, 5));
-    expect(dateKey(range.start)).toBe("2026-08-05");
-    expect(dateKey(range.end)).toBe("2026-09-03");
-  });
 });
 
 describe("schedule event helpers", () => {
@@ -59,7 +54,12 @@ describe("schedule event helpers", () => {
   });
 
   it("identifies the classroom that supplied an event", () => {
-    expect(eventSourceLabel({ source: "classroom", classroomName: "Matematika" })).toBe("Classroom · Matematika");
+    expect(eventSourceLabel({ source: "classroom", classroomName: "Matematika" })).toBe("Classroom Matematika");
     expect(eventSourceLabel({ source: "classroom", classroomName: null })).toBe("Classroom");
+  });
+
+  it("labels date-only classroom work as a due date while preserving personal all-day events", () => {
+    expect(eventTimeLabel({ ...baseEvent, assignmentId: "assignment-1", isAllDay: true })).toBe("Due Aug 5");
+    expect(eventTimeLabel({ ...baseEvent, isAllDay: true })).toBe("All day");
   });
 });

@@ -72,6 +72,15 @@ describe("GET /api/user/events", () => {
     expect(prisma.event.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
         startDate: expect.objectContaining({ gte: expect.any(Date), lte: expect.any(Date) }),
+        AND: expect.arrayContaining([
+          expect.objectContaining({
+            OR: expect.arrayContaining([
+              { assignmentId: null, testId: null },
+              { assignment: { is: { posts: { some: {} } } } },
+              { test: { is: { posts: { some: {} } } } },
+            ]),
+          }),
+        ]),
       }),
     }));
   });

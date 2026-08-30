@@ -31,6 +31,19 @@ describe("WorkspaceButton", () => {
     expect(button).not.toHaveClass("active:bg-[var(--app-accent-soft)]");
   });
 
+  it("uses a restrained pale-red hover for destructive actions", () => {
+    render(<WorkspaceButton variant="danger">Delete</WorkspaceButton>);
+    const button = screen.getByRole("button", { name: "Delete" });
+
+    expect(button).toHaveClass(
+      "border-[var(--app-danger-border)]",
+      "bg-[var(--app-surface)]",
+      "hover:bg-[var(--app-danger-soft)]",
+      "hover:border-[var(--app-danger-border)]",
+    );
+    expect(button).not.toHaveClass("hover:border-[var(--app-danger)]");
+  });
+
   it("preserves disabled behavior and custom classes", () => {
     const onClick = vi.fn();
     render(<WorkspaceButton disabled onClick={onClick} className="w-full">Save</WorkspaceButton>);

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
-import { ScheduleAgendaView } from "@/components/calendar/ScheduleAgendaView";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
 import { ScheduleMonthView } from "@/components/calendar/ScheduleMonthView";
 import { ScheduleWeekView } from "@/components/calendar/ScheduleWeekView";
@@ -30,26 +29,26 @@ import {
   sourceLabel,
 } from "@/lib/schedule";
 import { toast } from "@/components/ui/sonner";
-import { ClassroomWorkEditModal, isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditModal";
+import { ClassroomWorkEditModal, classroomWorkDeleteEndpoint, classroomWorkKind, isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditModal";
+import { calendarEventColor } from "@/components/calendar/event-palette";
 
 const ALL_SOURCES: EventSource[] = ["personal", "classroom"];
 const SOURCE_OPTIONS = ALL_SOURCES.map((source) => ({ value: source, label: sourceLabel(source) }));
 const VIEWS: Array<{ value: ScheduleView; label: string }> = [
   { value: "week", label: "Week" },
   { value: "month", label: "Month" },
-  { value: "agenda", label: "Agenda" },
 ];
 
 function normalizeEvent(event: Partial<ScheduleEvent> & Pick<ScheduleEvent, "id" | "title" | "startDate" | "isAllDay">): ScheduleEvent {
-  return {
+  const normalized = {
     ...event,
     description: event.description ?? null,
     startTime: event.startTime ?? null,
     endTime: event.endTime ?? null,
-    color: event.color || "var(--app-event-1)",
     source: event.source || (event.classroomId ? "classroom" : event.courseId ? "course" : "personal"),
     canEdit: event.canEdit ?? true,
   } as ScheduleEvent;
+  return { ...normalized, color: calendarEventColor(normalized) };
 }
 
 async function syncEventReminder(event: ScheduleEvent, reminder: ScheduleEventInput["reminder"]): Promise<ScheduleEvent> {
@@ -72,7 +71,6 @@ async function syncEventReminder(event: ScheduleEvent, reminder: ScheduleEventIn
 
 function viewTitle(view: ScheduleView, date: Date) {
   if (view === "month") return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  if (view === "agenda") return `Next 30 days · ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
   const end = addDays(date, 6 - (date.getDay() === 0 ? 6 : date.getDay() - 1));
   const start = addDays(end, -6);
   if (start.getMonth() === end.getMonth()) {
@@ -83,7 +81,7 @@ function viewTitle(view: ScheduleView, date: Date) {
 
 export default function SchedulePage() {
   const isMobile = useIsMobile();
-  const [view, setView] = useState<ScheduleView>("agenda");
+  const [view, setView] = useState<ScheduleView>("week");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [loadedRangeKey, setLoadedRangeKey] = useState<string | null>(null);
@@ -104,7 +102,7 @@ export default function SchedulePage() {
   useEffect(() => {
     const key = isMobile ? "schedule-view-mobile" : "schedule-view-desktop";
     const stored = window.localStorage.getItem(key) as ScheduleView | null;
-    setView(stored && VIEWS.some((item) => item.value === stored) ? stored : isMobile ? "agenda" : "week");
+    setView(stored && VIEWS.some((item) => item.value === stored) ? stored : isMobile ? "month" : "week");
   }, [isMobile]);
 
   const range = rangeForView(view, selectedDate);
@@ -124,7 +122,12 @@ export default function SchedulePage() {
       if (!response.ok) throw new Error("Could not load this date range.");
       const data = await response.json();
       if (requestId !== fetchRequestRef.current) return;
-      setEvents(data.map(normalizeEvent));
+      const nextEvents = data.map(normalizeEvent) as ScheduleEvent[];
+      const nextEventsById = new Map(nextEvents.map((event) => [event.id, event]));
+      setEvents(nextEvents);
+      setSelectedEvent((current) => current ? nextEventsById.get(current.id) ?? null : null);
+      setDeleteTarget((current) => current ? nextEventsById.get(current.id) ?? null : null);
+      setWorkEditEvent((current) => current ? nextEventsById.get(current.id) ?? null : null);
       setLoadedRangeKey(rangeKey);
     } catch (fetchError) {
       if (requestId !== fetchRequestRef.current) return;
@@ -162,7 +165,7 @@ export default function SchedulePage() {
       next.setDate(1);
       next.setMonth(next.getMonth() + direction);
     }
-    else next.setDate(next.getDate() + direction * (view === "agenda" ? 30 : 7));
+    else next.setDate(next.getDate() + direction * 7);
     setSelectedDate(next);
     setSelectedEvent(null);
     setEditor(null);
@@ -312,21 +315,24 @@ export default function SchedulePage() {
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+    const workKind = classroomWorkKind(deleteTarget);
+    const endpoint = classroomWorkDeleteEndpoint(deleteTarget) ?? `/api/user/events?id=${deleteTarget.id}`;
     setDeleting(true);
     const previous = events;
     setEvents((current) => current.filter((event) => event.id !== deleteTarget.id));
     try {
-      const response = await fetch(`/api/user/events?id=${deleteTarget.id}`, { method: "DELETE" });
-      if (!response.ok) throw new Error();
-      toast.success("Event deleted.");
+      const response = await fetch(endpoint, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `The ${workKind ?? "event"} could not be deleted.`);
+      toast.success(`${workKind ? workKind[0].toUpperCase() + workKind.slice(1) : "Event"} deleted.`);
       setDeleteTarget(null);
       setSelectedEvent(null);
       setEditor(null);
       if (isMobile) setMobilePanelOpen(false);
       triggerUpdate();
-    } catch {
+    } catch (deleteError) {
       setEvents(previous);
-      toast.error("The event could not be deleted. Your schedule was restored.");
+      toast.error(deleteError instanceof Error ? deleteError.message : "The item could not be deleted. Your schedule was restored.");
     } finally {
       setDeleting(false);
     }
@@ -419,10 +425,8 @@ export default function SchedulePage() {
                 <div className="flex h-full items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)]"><Spinner className="h-5 w-5 text-[var(--schedule-text-muted)]" /></div>
               ) : view === "week" ? (
                 <ScheduleWeekView selectedDate={selectedDate} events={filteredEvents} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateRange={startCreate} onMoveEvent={moveEvent} onResizeEvent={resizeEvent} />
-              ) : view === "month" ? (
-                <ScheduleMonthView selectedDate={selectedDate} events={filteredEvents} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
               ) : (
-                <ScheduleAgendaView events={filteredEvents} selectedDate={selectedDate} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
+                <ScheduleMonthView selectedDate={selectedDate} events={filteredEvents} onSelectDate={selectDate} onSelectEvent={selectEvent} onCreateDate={(date) => startCreate(date)} />
               )}
             </main>
             <aside className="schedule-workspace-frame hidden h-[calc(100vh-200px)] min-h-[560px] overflow-hidden rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] lg:block">
@@ -442,11 +446,11 @@ export default function SchedulePage() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
-          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete event?</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">“{deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.</DialogDescription>
+          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete {deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}?</DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? `“${deleteTarget.title}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.` : `“${deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.`}</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">
             <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</WorkspaceButton>
-            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : "Delete event"}</WorkspaceButton>
+            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : `Delete ${deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}`}</WorkspaceButton>
           </div>
         </WorkspaceDialogContent>
       </Dialog>

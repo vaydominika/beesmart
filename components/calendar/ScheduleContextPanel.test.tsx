@@ -51,4 +51,71 @@ describe("ScheduleContextPanel reminders", () => {
       },
     }));
   });
+
+  it("uses the lighter Honey yellow for source and time detail chips", () => {
+    render(
+      <ScheduleContextPanel
+        selectedDate={new Date(2026, 7, 21)}
+        events={[]}
+        selectedEvent={{
+          id: "event-1",
+          title: "Study",
+          startDate: "2026-08-21T00:00:00.000Z",
+          startTime: "09:00",
+          endTime: "11:00",
+          isAllDay: false,
+          source: "personal",
+        }}
+        editor={null}
+        saving={false}
+        deleting={false}
+        onSelectEvent={vi.fn()}
+        onStartCreate={vi.fn()}
+        onStartEdit={vi.fn()}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTitle("Personal")).toHaveClass("bg-[var(--app-event-6)]");
+    expect(screen.getByText("09:00–11:00")).toHaveClass("bg-[var(--app-event-6)]");
+  });
+
+  it("lets classroom staff delete a protected assignment from the schedule panel", () => {
+    const onDelete = vi.fn();
+    const assignment = {
+      id: "event-2",
+      title: "Assignment: Essay",
+      startDate: "2026-08-21T00:00:00.000Z",
+      startTime: null,
+      endTime: null,
+      isAllDay: true,
+      source: "classroom" as const,
+      classroomId: "classroom-1",
+      assignmentId: "assignment-1",
+      isProtected: true,
+      canEdit: true,
+    };
+
+    render(
+      <ScheduleContextPanel
+        selectedDate={new Date(2026, 7, 21)}
+        events={[assignment]}
+        selectedEvent={assignment}
+        editor={null}
+        saving={false}
+        deleting={false}
+        onSelectEvent={vi.fn()}
+        onStartCreate={vi.fn()}
+        onStartEdit={vi.fn()}
+        onBack={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete assignment" }));
+    expect(onDelete).toHaveBeenCalledWith(assignment);
+  });
 });

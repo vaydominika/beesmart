@@ -1,4 +1,4 @@
-export type ScheduleView = "week" | "month" | "agenda";
+export type ScheduleView = "week" | "month";
 
 export type EventSource = "personal" | "classroom" | "course";
 
@@ -101,17 +101,8 @@ export function monthGridRange(date: Date): ScheduleRange {
   return { start, end };
 }
 
-export function agendaRange(date: Date): ScheduleRange {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
-  const end = addDays(start, 29);
-  end.setHours(23, 59, 59, 999);
-  return { start, end };
-}
-
 export function rangeForView(view: ScheduleView, date: Date): ScheduleRange {
   if (view === "month") return monthGridRange(date);
-  if (view === "agenda") return agendaRange(date);
   return { start: startOfWeek(date), end: endOfWeek(date) };
 }
 
@@ -160,8 +151,16 @@ export function sourceLabel(source: EventSource): string {
 
 export function eventSourceLabel(event: Pick<ScheduleEvent, "source" | "classroomName">): string {
   const classroomName = event.classroomName?.trim();
-  if (event.source === "classroom" && classroomName) return `Classroom · ${classroomName}`;
+  if (event.source === "classroom" && classroomName) return `Classroom ${classroomName}`;
   return sourceLabel(event.source);
+}
+
+export function eventTimeLabel(event: Pick<ScheduleEvent, "assignmentId" | "endDate" | "isAllDay" | "startDate" | "startTime" | "testId">): string {
+  if (!event.isAllDay) return event.startTime || "—";
+  if (!event.assignmentId && !event.testId) return "All day";
+
+  const dueDate = parseDateKey(dateKey(event.endDate || event.startDate));
+  return `Due ${dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }
 
 export function formatLongDate(date: Date, options: { includeYear?: boolean } = {}): string {

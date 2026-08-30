@@ -27,6 +27,7 @@ const failures = [];
 for (const file of files) {
   const lines = (await readFile(file, "utf8")).split(/\r?\n/);
   lines.forEach((line, index) => {
+    if (line.includes("color-audit-ignore")) return;
     for (const check of checks) {
       if (check.pattern.test(line)) failures.push(`${relative(process.cwd(), file)}:${index + 1} ${check.name}: ${line.trim()}`);
     }

@@ -67,6 +67,20 @@ export function isClassroomWorkEvent(event: ScheduleEvent): event is ClassroomWo
   return Boolean(event.classroomId && (event.assignmentId || event.testId));
 }
 
+export type ClassroomWorkKind = "assignment" | "exam" | "test";
+
+export function classroomWorkKind(event: Pick<ScheduleEvent, "assignmentId" | "testId" | "title">): ClassroomWorkKind | null {
+  if (event.assignmentId) return "assignment";
+  if (!event.testId) return null;
+  return event.title.trim().toLowerCase().startsWith("exam:") ? "exam" : "test";
+}
+
+export function classroomWorkDeleteEndpoint(event: ScheduleEvent): string | null {
+  if (!isClassroomWorkEvent(event)) return null;
+  if (event.assignmentId) return `/api/classrooms/${event.classroomId}/assignments/${event.assignmentId}`;
+  return `/api/classrooms/${event.classroomId}/tests/${event.testId}`;
+}
+
 function localDateTimeInput(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);

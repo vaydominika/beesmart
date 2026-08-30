@@ -3,9 +3,20 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { notifyClassroomMembers } from "@/lib/notifications";
 
 const accessibleEvents = (userId: string) => ({
-    OR: [
-        { userId },
-        { classroom: { is: { members: { some: { userId } } } } },
+    AND: [
+        {
+            OR: [
+                { userId },
+                { classroom: { is: { members: { some: { userId } } } } },
+            ],
+        },
+        {
+            OR: [
+                { assignmentId: null, testId: null },
+                { assignment: { is: { posts: { some: {} } } } },
+                { test: { is: { posts: { some: {} } } } },
+            ],
+        },
     ],
 });
 

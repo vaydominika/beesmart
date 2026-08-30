@@ -1,7 +1,9 @@
 "use client";
 
 import { PanelLeft, PanelRight } from "lucide-react";
+import Link from "next/link";
 import { useFocus } from "@/components/focus/FocusProvider";
+import { BeeSmartLogo } from "@/components/ui/BeeSmartLogo";
 import { useLayout } from "./LayoutProvider";
 import { useIsMobile } from "./useIsMobile";
 import { usePathname } from "next/navigation";
@@ -56,9 +58,13 @@ export function Header() {
               </span>
             </div>
           ) : (
-            <span className="justify-self-center font-[var(--font-barlow-condensed)] text-base uppercase leading-none tracking-[0.04em] text-[var(--app-text)]">
-              BeeSmart
-            </span>
+            <Link
+              href="/dashboard"
+              aria-label="Go to dashboard"
+              className="w-24 justify-self-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+            >
+              <BeeSmartLogo className="block h-auto w-full" />
+            </Link>
           )}
           <button
             type="button"

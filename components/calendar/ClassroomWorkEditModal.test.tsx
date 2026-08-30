@@ -1,10 +1,19 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ClassroomWorkEditModal } from "./ClassroomWorkEditModal";
+import { ClassroomWorkEditModal, classroomWorkDeleteEndpoint, classroomWorkKind } from "./ClassroomWorkEditModal";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ClassroomWorkEditModal", () => {
+  it("resolves classroom-work labels and deletion endpoints", () => {
+    const assignment = { id: "event-a", title: "Assignment: Essay", startDate: "2099-08-26T00:00:00.000Z", isAllDay: true, source: "classroom" as const, classroomId: "class-1", assignmentId: "assignment-1" };
+    const exam = { id: "event-e", title: "Exam: Final", startDate: "2099-08-26T00:00:00.000Z", isAllDay: false, source: "classroom" as const, classroomId: "class-1", testId: "test-1" };
+
+    expect(classroomWorkKind(assignment)).toBe("assignment");
+    expect(classroomWorkDeleteEndpoint(assignment)).toBe("/api/classrooms/class-1/assignments/assignment-1");
+    expect(classroomWorkKind(exam)).toBe("exam");
+    expect(classroomWorkDeleteEndpoint(exam)).toBe("/api/classrooms/class-1/tests/test-1");
+  });
   it("updates the assignment instead of its calendar event", async () => {
     const onUpdated = vi.fn();
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

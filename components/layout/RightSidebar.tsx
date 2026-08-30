@@ -79,6 +79,23 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
     }
   }, []);
 
+  const reconcileDetailEvent = useCallback(async () => {
+    if (!detailEvent) return;
+    try {
+      const response = await fetch(`/api/user/events?id=${encodeURIComponent(detailEvent.id)}&ts=${Date.now()}`, {
+        cache: "no-store",
+        headers: { Pragma: "no-cache" },
+      });
+      if (response.ok) {
+        setDetailEvent(await response.json());
+      } else if (response.status === 404) {
+        setDetailEvent(null);
+      }
+    } catch {
+      // Keep the existing detail open during a transient network failure.
+    }
+  }, [detailEvent]);
+
   useEffect(() => {
     const timeout = window.setTimeout(fetchMonthEvents, 0);
     return () => window.clearTimeout(timeout);
@@ -117,14 +134,16 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
 
   // Sync with other components
   const { triggerUpdate } = useEventSync(() => {
-    fetchMonthEvents();
-    fetchUpcomingEvents();
+    void fetchMonthEvents();
+    void fetchUpcomingEvents();
+    void reconcileDetailEvent();
   });
 
   const handleEventsChanged = () => {
     triggerUpdate();
-    fetchMonthEvents();
-    fetchUpcomingEvents();
+    void fetchMonthEvents();
+    void fetchUpcomingEvents();
+    void reconcileDetailEvent();
   };
 
   const formatEventDate = (dateStr: string) => {

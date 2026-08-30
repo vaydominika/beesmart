@@ -11,6 +11,7 @@ import {
   type ScheduleSelectionProps,
   dateKey,
   eventSourceLabel,
+  eventTimeLabel,
   eventsForDate,
   formatLongDate,
 } from "@/lib/schedule";
@@ -19,7 +20,7 @@ import { EventSourceIcon } from "./EventSourceIcon";
 import { EventColorPicker } from "./EventColorPicker";
 import { EventReminderFields } from "./EventReminderFields";
 import { DEFAULT_EVENT_COLOR } from "./event-palette";
-import { isClassroomWorkEvent } from "./ClassroomWorkEditModal";
+import { classroomWorkKind } from "./ClassroomWorkEditModal";
 
 export interface ScheduleEditorState {
   mode: "create" | "edit";
@@ -84,7 +85,7 @@ function ScheduleContextPanelContent({
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex items-center gap-3 border-b border-[var(--schedule-line)] px-4 py-2.5">
-          <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={onBack} aria-label="Back to agenda">
+          <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={onBack} aria-label="Back to schedule">
             <ArrowLeft className="h-4 w-4" />
           </WorkspaceButton>
           <h2 className="text-sm font-semibold text-[var(--schedule-text)]">{editor.mode === "edit" ? "Edit event" : "New event"}</h2>
@@ -183,14 +184,16 @@ function ScheduleContextPanelContent({
   }
 
   if (selectedEvent) {
+    const workKind = classroomWorkKind(selectedEvent);
+    const itemLabel = workKind ?? "event";
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex items-center justify-between border-b border-[var(--schedule-line)] px-5 py-4">
-          <WorkspaceButton type="button" variant="ghost" size="compact" onClick={onBack}><ArrowLeft className="h-4 w-4" />Agenda</WorkspaceButton>
+          <WorkspaceButton type="button" variant="ghost" size="compact" onClick={onBack}><ArrowLeft className="h-4 w-4" />Schedule</WorkspaceButton>
           {selectedEvent.canEdit !== false && (
             <div className="flex gap-2">
-              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onStartEdit(selectedEvent)} aria-label="Edit event"><Pencil className="h-4 w-4" /></WorkspaceButton>
-              {!selectedEvent.isProtected ? <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label="Delete event"><Trash2 className="h-4 w-4" /></WorkspaceButton> : null}
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onStartEdit(selectedEvent)} aria-label={`Edit ${itemLabel}`}><Pencil className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label={`Delete ${itemLabel}`}><Trash2 className="h-4 w-4" /></WorkspaceButton>
             </div>
           )}
         </div>
@@ -198,8 +201,8 @@ function ScheduleContextPanelContent({
           <h2 className="text-xl font-semibold leading-tight text-[var(--schedule-text)]">{selectedEvent.title}</h2>
           <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate))}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-          <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }} title={eventSourceLabel(selectedEvent)}><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
-    <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--app-scrim-soft)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" style={{ backgroundColor: selectedEvent.color || "var(--schedule-accent)", borderColor: selectedEvent.color || "var(--schedule-accent-hover)" }}><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? "All day" : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
+          <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" title={eventSourceLabel(selectedEvent)}><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? eventTimeLabel(selectedEvent) : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
           </div>
           {selectedEvent.description && <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--schedule-text-muted)]">{selectedEvent.description}</p>}
           {selectedEvent.canEdit === false && (
@@ -238,7 +241,7 @@ function ScheduleContextPanelContent({
                     <span className="truncate text-sm font-semibold text-[var(--schedule-text)]">{event.title}</span>
                     {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 shrink-0 text-[var(--schedule-text-faint)]" />}
                   </div>
-                  <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? "All day" : `${event.startTime || "—"}${event.endTime ? `–${event.endTime}` : ""}`}</p>
+                  <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? eventTimeLabel(event) : `${event.startTime || "—"}${event.endTime ? `–${event.endTime}` : ""}`}</p>
                   <span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]" title={eventSourceLabel(event)}><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span>
                 </div>
               </button>

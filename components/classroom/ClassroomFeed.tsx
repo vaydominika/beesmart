@@ -22,6 +22,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { Editor } from "@/components/ui/editor";
 import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
+import { useEventSync } from "@/hooks/use-event-sync";
+import { classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "@/lib/classroom-post-events";
 import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import {
@@ -128,6 +130,7 @@ function AuthorAvatar({
 
 export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const searchParams = useSearchParams();
+    const { triggerUpdate } = useEventSync();
     const focusedPostId = searchParams.get("post");
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
@@ -304,6 +307,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             : postFiles.length > 0
                                 ? "MATERIAL"
                                 : "TEXT";
+            const updatesCalendar = classroomPostCreatesCalendarEvent(postType);
             const res = await fetch(`/api/classrooms/${classroomId}/posts`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -321,6 +325,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 toast.error(data.error ?? "Failed to create post.");
                 return;
             }
+            if (updatesCalendar) triggerUpdate();
             toast.success("Post created!");
             setNewPostContent("");
             postEditorRef.current?.commands.clearContent();
@@ -460,22 +465,23 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
     const handleDeletePost = async () => {
         if (!postToDelete) return;
+        const deletion = classroomPostDeleteDetails(classroomId, postToDelete);
+        const displayKind = deletion.kind[0].toUpperCase() + deletion.kind.slice(1);
         setDeletingPost(true);
         try {
-            const response = await fetch(`/api/classrooms/${classroomId}/posts/${postToDelete.id}`, {
-                method: "DELETE",
-            });
+            const response = await fetch(deletion.endpoint, { method: "DELETE" });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                toast.error(data.error || "Could not delete the post.");
+                toast.error(data.error || `Could not delete the ${deletion.kind}.`);
                 return;
             }
             setPosts((current) => current.filter((post) => post.id !== postToDelete.id));
             setExpandedPost((current) => current === postToDelete.id ? null : current);
             setPostToDelete(null);
-            toast.success("Post deleted.");
+            if (deletion.kind !== "post") triggerUpdate();
+            toast.success(`${displayKind} deleted.`);
         } catch {
-            toast.error("Could not delete the post.");
+            toast.error(`Could not delete the ${deletion.kind}.`);
         } finally {
             setDeletingPost(false);
         }
@@ -1050,8 +1056,10 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 onClose={() => setPostToDelete(null)}
                 onConfirm={handleDeletePost}
                 isDeleting={deletingPost}
-                title="Delete post?"
-                description="This removes the post and its comments. This action cannot be undone."
+                title={`Delete ${postToDelete ? classroomPostDeleteDetails(classroomId, postToDelete).kind : "post"}?`}
+                description={postToDelete && (postToDelete.assignment || postToDelete.test)
+                    ? `This removes the ${classroomPostDeleteDetails(classroomId, postToDelete).kind}, its classroom post, submissions, grades, and calendar event. This action cannot be undone.`
+                    : "This removes the post and its comments. This action cannot be undone."}
             />
 
             <CreateAssignmentModal
