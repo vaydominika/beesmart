@@ -55,7 +55,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                     assignment: {
                         select: {
                             id: true, title: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true,
-                            isGraded: true, maxPoints: true, isCompleted: true,
+                            isGraded: true, maxPoints: true,
                             _count: { select: { submissions: true } },
                         },
                     },
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const { type, title, content, isPinned } = data;
         const assignment = data.assignment as AssignmentDraft | null | undefined;
         const test = data.test as TestDraft | null | undefined;
-        const testCourseId = test?.courseId && typeof test.courseId === "string" ? test.courseId : null;
+        const testSourceCourseId = test?.sourceCourseId && typeof test.sourceCourseId === "string" ? test.sourceCourseId : null;
         const courseId = typeof data.courseId === "string" && data.courseId ? data.courseId : null;
         const structuredAttachmentCount = Number(Boolean(assignment)) + Number(Boolean(test)) + Number(Boolean(courseId));
         if (structuredAttachmentCount > 1) {
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             if (!test.title?.trim() || !Array.isArray(test.questions) || test.questions.length === 0) {
                 return NextResponse.json({ error: "Test title and questions are required" }, { status: 400 });
             }
-            if (testCourseId && !await canAccessCourse(testCourseId, userId)) {
+            if (testSourceCourseId && !await canAccessCourse(testSourceCourseId, userId)) {
                 return NextResponse.json({ error: "The selected source course is not available" }, { status: 403 });
             }
             if (!Number.isSafeInteger(Number(test.maxAttempts ?? 1)) || Number(test.maxAttempts ?? 1) < 1) {
@@ -232,7 +232,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         closesAt: testSchedule!.closesAt,
                         maxAttempts: Number(test.maxAttempts ?? 1),
                         classroomId: id,
-                        courseId: testCourseId,
                         createdById: userId,
                         questions: {
                             create: test.questions.map((question, questionIndex) => ({

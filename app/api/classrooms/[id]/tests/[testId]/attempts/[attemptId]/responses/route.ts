@@ -73,10 +73,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
             isCorrect: null,
             pointsAwarded: null,
             teacherComment: null,
-            aiSuggestedPoints: null,
-            aiSuggestedFeedback: null,
-            aiSuggestedConfidence: null,
-            aiSuggestedAt: null,
         },
         create: {
             attemptId,

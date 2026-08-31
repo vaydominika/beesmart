@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { parseEventReminder, serializeEventReminder } from "@/lib/event-reminders";
+import { baseEventId } from "@/lib/event-recurrence";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,14 +16,15 @@ const accessibleEventWhere = (id: string, userId: string) => ({
 async function getAccessibleEvent(id: string, userId: string) {
   return prisma.event.findFirst({
     where: accessibleEventWhere(id, userId),
-    select: { id: true, title: true, startDate: true, startTime: true, isAllDay: true },
+    select: { id: true, title: true, startDate: true, startTime: true, isAllDay: true, recurrencePattern: true },
   });
 }
 
 export async function GET(_request: Request, context: RouteContext) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { id } = await context.params;
+  const { id: requestedId } = await context.params;
+  const id = baseEventId(requestedId);
   const event = await getAccessibleEvent(id, userId);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   const reminder = await prisma.reminder.findUnique({ where: { userId_eventId: { userId, eventId: id } } });
@@ -32,12 +34,16 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { id } = await context.params;
+  const { id: requestedId } = await context.params;
+  const id = baseEventId(requestedId);
   const [event, settings] = await Promise.all([
     getAccessibleEvent(id, userId),
     prisma.userSettings.findUnique({ where: { userId }, select: { reminderNotifications: true } }),
   ]);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  if (event.recurrencePattern) {
+    return NextResponse.json({ error: "Reminders are available for one-time events." }, { status: 409 });
+  }
   if (settings?.reminderNotifications === false) {
     return NextResponse.json({ error: "Reminder notifications are turned off" }, { status: 400 });
   }
@@ -56,7 +62,6 @@ export async function PUT(request: Request, context: RouteContext) {
       dueAt: parsed.data.eventStartsAt,
       notifyAt: parsed.data.notifyAt,
       notificationProcessedAt: null,
-      completed: false,
     },
     update: {
       task: event.title,
@@ -66,7 +71,6 @@ export async function PUT(request: Request, context: RouteContext) {
       dueAt: parsed.data.eventStartsAt,
       notifyAt: parsed.data.notifyAt,
       notificationProcessedAt: null,
-      completed: false,
     },
   });
   return NextResponse.json({ reminder: serializeEventReminder(reminder) });
@@ -75,7 +79,8 @@ export async function PUT(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const userId = await getCurrentUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { id } = await context.params;
+  const { id: requestedId } = await context.params;
+  const id = baseEventId(requestedId);
   const event = await getAccessibleEvent(id, userId);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   await prisma.reminder.deleteMany({ where: { userId, eventId: id } });

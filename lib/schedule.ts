@@ -1,6 +1,15 @@
 export type ScheduleView = "week" | "month";
 
-export type EventSource = "personal" | "classroom" | "course";
+export type EventSource = "personal" | "classroom";
+export type RecurrencePattern = "DAILY" | "WEEKLY" | "MONTHLY";
+export type RecurrenceSelection = "NONE" | RecurrencePattern;
+
+export const RECURRENCE_OPTIONS: ReadonlyArray<{ value: RecurrenceSelection; label: string }> = [
+  { value: "NONE", label: "Does not repeat" },
+  { value: "DAILY", label: "Daily" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "MONTHLY", label: "Monthly" },
+];
 
 export interface ScheduleEvent {
   id: string;
@@ -12,10 +21,12 @@ export interface ScheduleEvent {
   endTime?: string | null;
   isAllDay: boolean;
   color?: string | null;
+  recurrencePattern?: RecurrencePattern | null;
+  seriesId?: string | null;
+  seriesStartDate?: string | null;
   source: EventSource;
   classroomId?: string | null;
   classroomName?: string | null;
-  courseId?: string | null;
   testId?: string | null;
   assignmentId?: string | null;
   isProtected?: boolean;
@@ -46,6 +57,7 @@ export interface ScheduleEventInput {
   endTime: string | null;
   isAllDay: boolean;
   color: string;
+  recurrencePattern: RecurrencePattern | null;
   reminder: ScheduleEventReminderInput | null;
 }
 
@@ -145,8 +157,18 @@ export function isSameDay(a: Date | string, b: Date | string): boolean {
 
 export function sourceLabel(source: EventSource): string {
   if (source === "classroom") return "Classroom";
-  if (source === "course") return "Course";
   return "Personal";
+}
+
+export function recurrenceLabel(pattern?: RecurrencePattern | null): string {
+  if (pattern === "DAILY") return "Repeats daily";
+  if (pattern === "WEEKLY") return "Repeats weekly";
+  if (pattern === "MONTHLY") return "Repeats monthly";
+  return "Does not repeat";
+}
+
+export function eventRecordId(event: Pick<ScheduleEvent, "id" | "seriesId">): string {
+  return event.seriesId || event.id;
 }
 
 export function eventSourceLabel(event: Pick<ScheduleEvent, "source" | "classroomName">): string {

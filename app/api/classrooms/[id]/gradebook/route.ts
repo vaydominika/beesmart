@@ -19,10 +19,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const assignments = await prisma.assignedWork.findMany({
             where: {
                 classroomId: id,
+                isGraded: true,
                 posts: { some: { classroomId: id } },
-                ...(membership.role === "STUDENT"
-                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
-                    : {}),
             },
             select: { id: true, title: true, maxPoints: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true },
             orderBy: { createdAt: "asc" },

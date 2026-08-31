@@ -96,7 +96,7 @@ describe("test response draft limits", () => {
         const response = await PATCH(request({ questionId: "question-1", responseText: "  pollen  " }), context);
         expect(response.status).toBe(200);
         expect(prisma.testAttemptResponse.upsert).toHaveBeenCalledWith(expect.objectContaining({
-            update: expect.objectContaining({ responseText: "  pollen  ", selectedOptionId: null, pointsAwarded: null, aiSuggestedPoints: null }),
+            update: expect.objectContaining({ responseText: "  pollen  ", selectedOptionId: null, pointsAwarded: null }),
             create: expect.objectContaining({ attemptId: "attempt-1", questionId: "question-1", responseText: "  pollen  " }),
         }));
     });

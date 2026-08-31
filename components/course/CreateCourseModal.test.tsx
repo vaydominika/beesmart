@@ -71,6 +71,10 @@ describe("CreateCourseModal", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CreateCourseModal open onClose={onClose} onCreated={onCreated} />);
     fireEvent.change(screen.getByPlaceholderText("Introduction to biology"), { target: { value: "  Cell biology  " } });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Course subjects: None" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Biology" }));
+    fireEvent.keyDown(screen.getByRole("menu"), { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Remove Biology" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Public/i }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     fireEvent.change(screen.getByLabelText("Course description"), { target: { value: "  Cells and systems  " } });
@@ -82,7 +86,7 @@ describe("CreateCourseModal", () => {
     await waitFor(() => expect(onCreated).toHaveBeenCalledWith({ id: "course-1" }));
     expect(fetchMock).toHaveBeenLastCalledWith("/api/courses", expect.objectContaining({
       method: "POST",
-      body: JSON.stringify({ title: "Cell biology", description: "Cells and systems", coverUploadId: null, uploadIds: ["file-1"], visibility: "PUBLIC" }),
+      body: JSON.stringify({ title: "Cell biology", description: "Cells and systems", coverUploadId: null, uploadIds: ["file-1"], visibility: "PUBLIC", tagSlugs: ["biology"] }),
     }));
     expect(mocks.success).toHaveBeenCalledWith("Course created.");
     expect(onClose).toHaveBeenCalled();

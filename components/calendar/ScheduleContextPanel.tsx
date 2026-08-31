@@ -1,19 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, CalendarPlus, Clock3, LockKeyhole, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Clock3, LockKeyhole, Pencil, Repeat2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import {
+  RECURRENCE_OPTIONS,
   ScheduleEvent,
   ScheduleEventInput,
+  type RecurrenceSelection,
   type ScheduleSelectionProps,
   dateKey,
   eventSourceLabel,
   eventTimeLabel,
   eventsForDate,
   formatLongDate,
+  recurrenceLabel,
 } from "@/lib/schedule";
 import { useSettings } from "@/components/settings/SettingsProvider";
 import { EventSourceIcon } from "./EventSourceIcon";
@@ -71,11 +75,12 @@ function ScheduleContextPanelContent({
   const pad = (value: number) => String(value).padStart(2, "0");
   const [title, setTitle] = useState(editingEvent?.title || "");
   const [description, setDescription] = useState(editingEvent?.description || "");
-  const [eventDate, setEventDate] = useState(editingEvent ? dateKey(editingEvent.startDate) : editor ? dateKey(editor.date) : dateKey(selectedDate));
+  const [eventDate, setEventDate] = useState(editingEvent ? dateKey(editingEvent.seriesStartDate || editingEvent.startDate) : editor ? dateKey(editor.date) : dateKey(selectedDate));
   const [startTime, setStartTime] = useState(editingEvent?.startTime || editor?.startTime || "");
   const [endTime, setEndTime] = useState(editingEvent?.endTime || editor?.endTime || "");
   const [isAllDay, setIsAllDay] = useState(editingEvent?.isAllDay || false);
   const [color, setColor] = useState(editingEvent?.color || DEFAULT_EVENT_COLOR);
+  const [recurrence, setRecurrence] = useState<RecurrenceSelection>(editingEvent?.recurrencePattern || "NONE");
   const [reminderEnabled, setReminderEnabled] = useState(Boolean(initialReminder));
   const [reminderDate, setReminderDate] = useState(initialReminder ? `${initialReminder.getFullYear()}-${pad(initialReminder.getMonth() + 1)}-${pad(initialReminder.getDate())}` : "");
   const [reminderTime, setReminderTime] = useState(initialReminder ? `${pad(initialReminder.getHours())}:${pad(initialReminder.getMinutes())}` : "");
@@ -104,7 +109,7 @@ function ScheduleContextPanelContent({
                 return;
               }
               let reminder = null;
-              if (reminderEnabled) {
+              if (reminderEnabled && recurrence === "NONE") {
                 if (!reminderNotifications) {
                   setValidation("Turn on reminder notifications in Settings first.");
                   return;
@@ -138,6 +143,7 @@ function ScheduleContextPanelContent({
                 endTime: isAllDay ? null : endTime || null,
                 isAllDay,
                 color,
+                recurrencePattern: recurrence === "NONE" ? null : recurrence,
                 reminder,
               });
             }}
@@ -149,6 +155,10 @@ function ScheduleContextPanelContent({
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Date</span>
               <Input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Repeats</span>
+              <WorkspaceSelect ariaLabel="Repeats" value={recurrence} options={RECURRENCE_OPTIONS} onValueChange={setRecurrence} triggerIcon={Repeat2} className="h-10 w-full rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)]" />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Description</span>
@@ -170,7 +180,11 @@ function ScheduleContextPanelContent({
                 </label>
               </div>
             )}
-            <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} maxDate={eventDate} className="rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5" inputClassName="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+            {recurrence === "NONE" ? (
+              <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} maxDate={eventDate} className="rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5" inputClassName="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+            ) : (
+              <p className="rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-xs text-[var(--schedule-text-muted)]">Reminders are available for one-time events.</p>
+            )}
             <EventColorPicker value={color} onValueChange={setColor} compact />
             {validation && <p role="alert" className="rounded-xl bg-[var(--schedule-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--schedule-danger)]">{validation}</p>}
             <div className="flex gap-2">
@@ -203,6 +217,7 @@ function ScheduleContextPanelContent({
           <div className="mt-3 flex flex-wrap gap-2">
           <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" title={eventSourceLabel(selectedEvent)}><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
           <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? eventTimeLabel(selectedEvent) : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
+          {selectedEvent.recurrencePattern && <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-2.5 text-[11px] font-semibold leading-none text-[var(--schedule-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{recurrenceLabel(selectedEvent.recurrencePattern)}</span>}
           </div>
           {selectedEvent.description && <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--schedule-text-muted)]">{selectedEvent.description}</p>}
           {selectedEvent.canEdit === false && (

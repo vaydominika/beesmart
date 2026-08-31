@@ -4,10 +4,7 @@ export function classroomCourseAccessWhere(userId: string) {
     return {
         published: true,
         visibility: { not: "PRIVATE" as const },
-        OR: [
-            { classroom: { is: { members: { some: { userId } } } } },
-            { classroomLinks: { some: { classroom: { members: { some: { userId } } } } } },
-        ],
+        classroomLinks: { some: { classroom: { members: { some: { userId } } } } },
     };
 }
 

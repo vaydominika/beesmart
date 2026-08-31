@@ -43,6 +43,9 @@ describe("notification preferences", () => {
     vi.mocked(prisma.reminder.findMany).mockResolvedValue([{ id: "reminder-1", task: "Read" }] as never);
     const result = await materializeDueReminderNotifications("user-1");
     expect(result).toEqual([]);
+    expect(prisma.reminder.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.not.objectContaining({ completed: expect.anything() }),
+    }));
     expect(prisma.reminder.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: { notificationProcessedAt: expect.any(Date) } }));
     expect(prisma.notification.create).not.toHaveBeenCalled();
   });

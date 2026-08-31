@@ -20,9 +20,25 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Only teachers/TAs can grade" }, { status: 403 });
         }
 
-        const { studentId, score, maxScore, feedback } = await req.json();
+        const assignment = await prisma.assignedWork.findFirst({
+            where: { id: assignmentId, classroomId: id },
+            select: { title: true, isGraded: true, maxPoints: true },
+        });
+        if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
+        if (!assignment.isGraded) {
+            return NextResponse.json({ error: "This assignment is not graded" }, { status: 400 });
+        }
+        if (assignment.maxPoints == null) {
+            return NextResponse.json({ error: "Graded assignments require maximum points" }, { status: 400 });
+        }
+
+        const { studentId, score, feedback } = await req.json();
         if (!studentId || score === undefined) {
             return NextResponse.json({ error: "Student ID and score required" }, { status: 400 });
+        }
+        const parsedScore = Number(score);
+        if (!Number.isFinite(parsedScore) || parsedScore < 0 || parsedScore > assignment.maxPoints) {
+            return NextResponse.json({ error: `Score must be between 0 and ${assignment.maxPoints}` }, { status: 400 });
         }
 
         // Update submission status
@@ -41,8 +57,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             grade = await prisma.grade.update({
                 where: { id: existingGrade.id },
                 data: {
-                    score: parseFloat(score),
-                    maxScore: maxScore ? parseFloat(maxScore) : null,
+                    score: parsedScore,
+                    maxScore: assignment.maxPoints,
                     feedback: feedback?.trim() || null,
                     gradedById: userId,
                     gradedAt: new Date(),
@@ -53,8 +69,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 data: {
                     userId: studentId,
                     assignedWorkId: assignmentId,
-                    score: parseFloat(score),
-                    maxScore: maxScore ? parseFloat(maxScore) : null,
+                    score: parsedScore,
+                    maxScore: assignment.maxPoints,
                     feedback: feedback?.trim() || null,
                     gradedById: userId,
                     gradedAt: new Date(),
@@ -62,21 +78,15 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             });
         }
 
-        // Notify student
-        const assignment = await prisma.assignedWork.findUnique({
-            where: { id: assignmentId },
-            select: { title: true },
-        });
-
         await notifyClassroomUser(studentId, {
             classroomId: id, actorId: userId, title: "Assignment graded",
-            body: `Your submission for "${assignment?.title}" was graded: ${score}${maxScore ? `/${maxScore}` : ""}`,
+            body: `Your submission for "${assignment.title}" was graded: ${parsedScore}/${assignment.maxPoints}`,
             type: "GRADE", relatedId: assignmentId, relatedType: "assignment",
             actionUrl: `/classroom/${id}/assignments/${assignmentId}`,
         });
         await recordMeaningfulActivity({
             userId, activityType: "GRADE_PROVIDED", classroomId: id, relatedId: grade.id,
-            dedupeKey: `assignment:grade:${grade.id}:${createHash("sha1").update(JSON.stringify({ score, maxScore, feedback })).digest("hex")}`,
+            dedupeKey: `assignment:grade:${grade.id}:${createHash("sha1").update(JSON.stringify({ score: parsedScore, maxScore: assignment.maxPoints, feedback })).digest("hex")}`,
         });
 
         return NextResponse.json(grade);

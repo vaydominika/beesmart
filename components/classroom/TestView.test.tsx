@@ -47,7 +47,7 @@ describe("TestView learner lifecycle", () => {
 
     it("shows a safe load error and retries successfully", async () => {
         const metadata = {
-            id: "test-1", title: "Recovered test", type: "QUIZ", maxAttempts: 1, questions: [],
+            id: "test-1", title: "Recovered test", type: "TEST", maxAttempts: 1, questions: [],
             attemptPolicy: { maxAttempts: 1, completedAttempts: 0, remainingAttempts: 1, activeAttemptId: null, nextAttemptNumber: 1, canStart: true },
             attemptHistory: [], bestAttempt: null,
         };
@@ -67,7 +67,7 @@ describe("TestView learner lifecycle", () => {
     it("reports a failed attempt start without leaving the pre-test screen", async () => {
         const fetchMock = vi.fn()
             .mockResolvedValueOnce(new Response(JSON.stringify({
-                id: "test-1", title: "Quiz", type: "QUIZ", maxAttempts: 1, questions: [],
+                id: "test-1", title: "Quiz", type: "TEST", maxAttempts: 1, questions: [],
                 attemptPolicy: { maxAttempts: 1, completedAttempts: 0, remainingAttempts: 1, activeAttemptId: null, nextAttemptNumber: 1, canStart: true },
             }), { status: 200 }))
             .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Test is closed" }), { status: 409 }));
@@ -95,6 +95,13 @@ describe("TestView learner lifecycle", () => {
             .mockResolvedValueOnce(new Response("{}", { status: 200 }))
             .mockResolvedValueOnce(new Response(JSON.stringify({
                 attempt: { id: "attempt-1", userId: "student-1", attemptNumber: 1, startedAt: now, submittedAt: now, isCompleted: true, score: null },
+            }), { status: 200 }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({
+                id: "test-1", title: "Bee biology", type: "TEST", timeLimit: null, maxAttempts: 2, questions: [],
+                attemptPolicy: { maxAttempts: 2, completedAttempts: 1, remainingAttempts: 1, activeAttemptId: null, nextAttemptNumber: 2, canStart: true },
+                attemptHistory: [{ id: "attempt-1", userId: "student-1", attemptNumber: 1, startedAt: now, submittedAt: now, isCompleted: true, score: null }],
+                bestAttempt: null,
+                resultReview: [],
             }), { status: 200 }));
         vi.stubGlobal("fetch", fetchMock);
 
@@ -115,13 +122,19 @@ describe("TestView learner lifecycle", () => {
     it("shows a completed score and exhausted attempt policy", async () => {
         const attempt = { id: "attempt-1", userId: "student-1", attemptNumber: 1, startedAt: new Date().toISOString(), submittedAt: new Date().toISOString(), isCompleted: true, score: 84.6 };
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
-            id: "test-1", title: "Finished quiz", type: "QUIZ", passingScore: 70, maxAttempts: 1, questions: [],
+            id: "test-1", title: "Finished quiz", type: "TEST", passingScore: 70, maxAttempts: 1, questions: [],
             attemptPolicy: { maxAttempts: 1, completedAttempts: 1, remainingAttempts: 0, activeAttemptId: null, nextAttemptNumber: null, canStart: false },
             attemptHistory: [attempt], bestAttempt: attempt,
+            resultReview: [
+                { questionId: "q1", questionText: "What do bees collect?", learnerAnswer: "Water", pointsAwarded: 0, maxPoints: 2, expectedAnswer: "Pollen" },
+                { questionId: "q2", questionText: "How many wings?", learnerAnswer: "Four", pointsAwarded: 1, maxPoints: 1, expectedAnswer: null },
+            ],
         }), { status: 200 })));
         render(<TestView classroomId="class-1" testId="test-1" isTeacher={false} />);
         expect(await screen.findByText("85%")).toBeInTheDocument();
         expect(screen.getByText("No attempts remaining.")).toBeInTheDocument();
+        expect(screen.getByText("Expected answer: Pollen")).toBeInTheDocument();
+        expect(screen.queryByText(/Expected answer: Four/i)).not.toBeInTheDocument();
     });
 });
 
@@ -138,7 +151,7 @@ describe("TestView teacher grading", () => {
             }],
         };
         vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
-            test: { id: "test-1", title: "Teacher quiz", type: "QUIZ", maxAttempts: 1, questions: [attempt.responses[0].question] },
+            test: { id: "test-1", title: "Teacher quiz", type: "TEST", maxAttempts: 1, questions: [attempt.responses[0].question] },
             dashboard: { completed: [attempt], inProgress: [{ ...attempt, id: "active", isCompleted: false }], notStarted: [{ user: { id: "student-2", name: "Grace" } }] },
         }), { status: 200 })));
 

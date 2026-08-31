@@ -562,45 +562,47 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-[var(--classroom-line)] pt-5">
-                                        <h3 className="mb-4 text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
-                                        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
-                                            <label className="block">
-                                                <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback</span>
-                                                <textarea
-                                                    value={gradeFeedback}
-                                                    onChange={(event) => setGradeFeedback(event.target.value)}
-                                                    placeholder="Add feedback for the student..."
-                                                    className="h-20 min-h-20 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
-                                                />
-                                            </label>
-                                            <div>
-                                                <label htmlFor="assignment-score" className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Score</label>
-                                                <div className="flex h-9 items-center rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]">
-                                                    <input
-                                                        id="assignment-score"
-                                                        type="number"
-                                                        min={0}
-                                                        max={displayAssignment.maxPoints ?? undefined}
-                                                        value={gradeScore}
-                                                        onChange={(event) => setGradeScore(event.target.value)}
-                                                        placeholder="0"
-                                                        className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-[var(--classroom-text)] outline-none"
+                                    {displayAssignment.isGraded && displayAssignment.maxPoints != null ? (
+                                        <div className="border-t border-[var(--classroom-line)] pt-5">
+                                            <h3 className="mb-4 text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
+                                            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
+                                                <label className="block">
+                                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback</span>
+                                                    <textarea
+                                                        value={gradeFeedback}
+                                                        onChange={(event) => setGradeFeedback(event.target.value)}
+                                                        placeholder="Add feedback for the student..."
+                                                        className="h-20 min-h-20 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
                                                     />
-                                                    <span className="ml-2 border-l border-[var(--classroom-line)] pl-2 text-sm font-semibold text-[var(--classroom-text-muted)]">/ {displayAssignment.maxPoints ?? "—"}</span>
+                                                </label>
+                                                <div>
+                                                    <label htmlFor="assignment-score" className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Score</label>
+                                                    <div className="flex h-9 items-center rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]">
+                                                        <input
+                                                            id="assignment-score"
+                                                            type="number"
+                                                            min={0}
+                                                            max={displayAssignment.maxPoints}
+                                                            value={gradeScore}
+                                                            onChange={(event) => setGradeScore(event.target.value)}
+                                                            placeholder="0"
+                                                            className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-[var(--classroom-text)] outline-none"
+                                                        />
+                                                        <span className="ml-2 border-l border-[var(--classroom-line)] pl-2 text-sm font-semibold text-[var(--classroom-text-muted)]">/ {displayAssignment.maxPoints}</span>
+                                                    </div>
+                                                    <WorkspaceButton
+                                                        type="button"
+                                                        variant="primary"
+                                                        onClick={() => handleGradeSubmission(selectedSubmission.user.id)}
+                                                        disabled={grading || !gradeScore}
+                                                        className="mt-2 w-full"
+                                                    >
+                                                        {grading ? "Saving…" : selectedSubmission.grade ? "Update grade" : "Save grade"}
+                                                    </WorkspaceButton>
                                                 </div>
-                                                <WorkspaceButton
-                                                    type="button"
-                                                    variant="primary"
-                                                    onClick={() => handleGradeSubmission(selectedSubmission.user.id)}
-                                                    disabled={grading || !gradeScore}
-                                                    className="mt-2 w-full"
-                                                >
-                                                    {grading ? "Saving…" : selectedSubmission.grade ? "Update grade" : "Save grade"}
-                                                </WorkspaceButton>
                                             </div>
                                         </div>
-                                    </div>
+                                    ) : null}
                                 </div>
                             </>
                         ) : (

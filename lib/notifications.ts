@@ -129,7 +129,6 @@ export async function materializeDueReminderNotifications(userId: string) {
     const due = await prisma.reminder.findMany({
         where: {
             userId,
-            completed: false,
             notifyAt: { not: null, lte: now },
             notificationProcessedAt: null,
         },
@@ -149,7 +148,7 @@ export async function materializeDueReminderNotifications(userId: string) {
     for (const reminder of due) {
         const created = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const claimed = await tx.reminder.updateMany({
-                where: { id: reminder.id, userId, completed: false, notificationProcessedAt: null },
+                where: { id: reminder.id, userId, notificationProcessedAt: null },
                 data: { notificationProcessedAt: now },
             });
             if (claimed.count !== 1) return false;

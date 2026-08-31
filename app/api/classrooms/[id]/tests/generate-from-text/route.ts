@@ -78,7 +78,7 @@ ${sourceText}`,
       return withAiUsage(NextResponse.json({ error: "The generated test was flagged as inappropriate" }, { status: 400 }), usage);
     }
 
-    return withAiUsage(NextResponse.json({ test: object, courseId: null }), usage);
+    return withAiUsage(NextResponse.json({ test: object }), usage);
   } catch (error) {
     if (error instanceof AiDailyLimitError) return aiLimitResponse(error);
     console.error("POST generated test from text", error);

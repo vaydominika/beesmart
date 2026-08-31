@@ -54,7 +54,7 @@ export async function PATCH(req: Request) {
         });
         if (current?.reminderNotifications === false) {
             await prisma.reminder.updateMany({
-                where: { userId, completed: false, notifyAt: { not: null, lte: new Date() }, notificationProcessedAt: null },
+                where: { userId, notifyAt: { not: null, lte: new Date() }, notificationProcessedAt: null },
                 data: { notificationProcessedAt: new Date() },
             });
         }

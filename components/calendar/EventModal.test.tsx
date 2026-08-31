@@ -55,10 +55,12 @@ describe("EventModal", () => {
     fireEvent.change(screen.getByLabelText("Description Optional"), { target: { value: " Notes " } });
     fireEvent.change(screen.getByLabelText("Start"), { target: { value: "09:00" } });
     fireEvent.change(screen.getByLabelText("End"), { target: { value: "10:00" } });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Repeats: Does not repeat" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Daily" }));
     fireEvent.click(screen.getByRole("button", { name: "Add event" }));
     await waitFor(() => expect(mocks.success).toHaveBeenCalledWith("Event created"));
     expect(vi.mocked(fetch)).toHaveBeenNthCalledWith(2, "/api/user/events", expect.objectContaining({ method: "POST" }));
     const options = vi.mocked(fetch).mock.calls[1]?.[1] as RequestInit;
-    expect(JSON.parse(String(options.body))).toMatchObject({ title: "New workshop", description: "Notes", startTime: "09:00", endTime: "10:00" });
+    expect(JSON.parse(String(options.body))).toMatchObject({ title: "New workshop", description: "Notes", startTime: "09:00", endTime: "10:00", recurrencePattern: "DAILY" });
   });
 });

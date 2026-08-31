@@ -7,6 +7,7 @@ import { CourseSummary, dedupeClassrooms } from "@/lib/course-summary";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
 import { COURSE_TITLE_MAX_LENGTH, normalizeCourseTitle } from "@/lib/course-title";
+import { courseTagDefinition, MAX_COURSE_TAGS, parseCourseTagSlugs } from "@/lib/course-tags";
 
 type CourseQueryRecord = {
     id: string;
@@ -15,7 +16,6 @@ type CourseQueryRecord = {
     coverImageUrl: string | null;
     coverStoredFileId: string | null;
     createdById: string;
-    classroomId: string | null;
     isPublic: boolean;
     published: boolean;
     visibility: CourseSummary["visibility"];
@@ -25,8 +25,8 @@ type CourseQueryRecord = {
     _count: CourseSummary["_count"];
     modules: Array<{ lessons: Array<{ id: string }> }>;
     enrollments: Array<{ completedAt: Date | null }>;
-    classroom: { id: string; name: string } | null;
     classroomLinks: Array<{ classroom: { id: string; name: string } }>;
+    tags: Array<{ tag: { slug: string; name: string } }>;
 };
 
 // GET /api/courses — Get all courses for the current user
@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
                         { title: { contains: search } },
                         { description: { contains: search } },
                         { creator: { name: { contains: search } } },
+                        { tags: { some: { tag: { name: { contains: search } } } } },
                     ] }] : []),
                 ],
             },
@@ -63,8 +64,8 @@ export async function GET(req: NextRequest) {
                 _count: { select: { modules: true, enrollments: true } },
                 modules: { include: { lessons: { select: { id: true } } } },
                 enrollments: { where: { userId }, select: { completedAt: true } },
-                classroom: { select: { id: true, name: true } },
                 classroomLinks: { select: { classroom: { select: { id: true, name: true } } } },
+                tags: { select: { tag: { select: { slug: true, name: true } } }, orderBy: { tag: { name: "asc" } } },
             },
             orderBy: { createdAt: "desc" },
         });
@@ -90,10 +91,7 @@ export async function GET(req: NextRequest) {
             const courseProgress = progressByCourse.get(course.id);
             const completedCount = courseProgress?.completedLessonIds.size ?? 0;
             const progress = lessonCount > 0 ? Math.round((completedCount / lessonCount) * 100) : 0;
-            const classrooms = dedupeClassrooms([
-                ...(course.classroom ? [course.classroom] : []),
-                ...course.classroomLinks.map((link) => link.classroom),
-            ]);
+            const classrooms = dedupeClassrooms(course.classroomLinks.map((link) => link.classroom));
 
             return {
                 id: course.id,
@@ -101,7 +99,6 @@ export async function GET(req: NextRequest) {
                 description: course.description,
                 coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl),
                 createdById: course.createdById,
-                classroomId: course.classroomId,
                 isPublic: course.isPublic,
                 published: course.published,
                 visibility: course.visibility,
@@ -113,6 +110,7 @@ export async function GET(req: NextRequest) {
                 lastAccessedAt: courseProgress?.lastAccessedAt?.toISOString() ?? null,
                 lessonCount,
                 classrooms,
+                tags: course.tags.map(({ tag }) => tag),
                 creator: course.creator,
                 _count: course._count,
             };
@@ -143,7 +141,11 @@ export async function POST(req: NextRequest) {
         }
 
         const data = await req.json();
-        const { title, description, classroomId, isPublic, published } = data;
+        const { title, description, isPublic, published } = data;
+        const tagSlugs = parseCourseTagSlugs(data.tagSlugs ?? []);
+        if (!tagSlugs) {
+            return NextResponse.json({ error: `Choose up to ${MAX_COURSE_TAGS} valid course tags.` }, { status: 400 });
+        }
         const visibility = ["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)
             ? data.visibility
             : (isPublic ? "PUBLIC" : "PRIVATE");
@@ -164,12 +166,26 @@ export async function POST(req: NextRequest) {
             return tx.course.create({ data: {
                 title: normalizedTitle,
                 description: description?.trim() || null,
-                classroomId: classroomId || null,
                 isPublic: visibility === "PUBLIC",
                 visibility,
                 published: published || false,
                 coverStoredFileId: covers[0]?.id ?? null,
                 createdById: userId,
+                ...(tagSlugs.length > 0 && {
+                    tags: {
+                        create: tagSlugs.map((slug) => {
+                            const tag = courseTagDefinition(slug);
+                            return {
+                                tag: {
+                                    connectOrCreate: {
+                                        where: { slug: tag.value },
+                                        create: { slug: tag.value, name: tag.label },
+                                    },
+                                },
+                            };
+                        }),
+                    },
+                }),
                 ...(attachments.length > 0 && {
                     files: {
                         create: attachments.map((file) => ({

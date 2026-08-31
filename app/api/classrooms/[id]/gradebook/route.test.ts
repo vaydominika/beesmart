@@ -38,6 +38,7 @@ describe("GET classroom gradebook", () => {
         expect(prisma.assignedWork.findMany).toHaveBeenCalledWith(expect.objectContaining({
             where: {
                 classroomId: "class-1",
+                isGraded: true,
                 posts: { some: { classroomId: "class-1" } },
             },
         }));
@@ -49,7 +50,7 @@ describe("GET classroom gradebook", () => {
         }));
     });
 
-    it("only returns class-wide or directly assigned work to a learner", async () => {
+    it("returns published classroom assignments to a learner", async () => {
         vi.mocked(getCurrentUserId).mockResolvedValue("student-1");
         vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "STUDENT" } as never);
 
@@ -57,9 +58,11 @@ describe("GET classroom gradebook", () => {
 
         expect(response.status).toBe(200);
         expect(prisma.assignedWork.findMany).toHaveBeenCalledWith(expect.objectContaining({
-            where: expect.objectContaining({
-                OR: [{ assignedToId: null }, { assignedToId: "student-1" }],
-            }),
+            where: {
+                classroomId: "class-1",
+                isGraded: true,
+                posts: { some: { classroomId: "class-1" } },
+            },
         }));
     });
 
@@ -79,7 +82,7 @@ describe("GET classroom gradebook", () => {
             { id: "assignment-1", title: "Essay", maxPoints: 20 },
             { id: "assignment-2", title: "Optional", maxPoints: 5 },
         ] as never);
-        vi.mocked(prisma.test.findMany).mockResolvedValue([{ id: "test-1", title: "Quiz", type: "QUIZ" }] as never);
+        vi.mocked(prisma.test.findMany).mockResolvedValue([{ id: "test-1", title: "Quiz", type: "TEST" }] as never);
         vi.mocked(prisma.grade.findMany).mockResolvedValue([{ assignedWorkId: "assignment-1", score: 18, maxScore: 20, feedback: "Great" }] as never);
         vi.mocked(prisma.submission.findMany).mockResolvedValue([{ assignedWorkId: "assignment-1", status: "GRADED", submittedAt: new Date("2026-08-20") }] as never);
         vi.mocked(prisma.testAttempt.findMany).mockResolvedValue([
@@ -96,7 +99,7 @@ describe("GET classroom gradebook", () => {
 
     it("builds a teacher matrix with grade and submission fallbacks", async () => {
         vi.mocked(prisma.assignedWork.findMany).mockResolvedValue([{ id: "assignment-1", title: "Essay", maxPoints: 20 }] as never);
-        vi.mocked(prisma.test.findMany).mockResolvedValue([{ id: "test-1", title: "Quiz", type: "QUIZ" }] as never);
+        vi.mocked(prisma.test.findMany).mockResolvedValue([{ id: "test-1", title: "Quiz", type: "TEST" }] as never);
         vi.mocked(prisma.classroomMember.findMany).mockResolvedValue([
             { userId: "student-1", user: { id: "student-1", name: "Ada" } },
             { userId: "student-2", user: { id: "student-2", name: "Grace" } },

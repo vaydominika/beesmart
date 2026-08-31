@@ -66,7 +66,6 @@ describe("MariaDB integration", () => {
         id: "integration-assignment",
         title: "Concurrency",
         assignedById: TEST_IDENTITIES.teacher.id,
-        assignedToId: TEST_IDENTITIES.student.id,
         classroomId: "e2e-classroom",
         deadlineAt: new Date("2030-01-01T10:00:00.000Z"),
         deadlineTimeZone: "Europe/Budapest",

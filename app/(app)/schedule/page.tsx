@@ -22,6 +22,7 @@ import {
   ScheduleView,
   addDays,
   dateKey,
+  eventRecordId,
   formatTime,
   parseDateKey,
   parseTime,
@@ -45,21 +46,22 @@ function normalizeEvent(event: Partial<ScheduleEvent> & Pick<ScheduleEvent, "id"
     description: event.description ?? null,
     startTime: event.startTime ?? null,
     endTime: event.endTime ?? null,
-    source: event.source || (event.classroomId ? "classroom" : event.courseId ? "course" : "personal"),
+    source: event.source || (event.classroomId ? "classroom" : "personal"),
     canEdit: event.canEdit ?? true,
   } as ScheduleEvent;
   return { ...normalized, color: calendarEventColor(normalized) };
 }
 
 async function syncEventReminder(event: ScheduleEvent, reminder: ScheduleEventInput["reminder"]): Promise<ScheduleEvent> {
+  const recordId = eventRecordId(event);
   if (!reminder) {
     if (!event.reminder) return event;
-    const response = await fetch(`/api/user/events/${event.id}/reminder`, { method: "DELETE" });
+    const response = await fetch(`/api/user/events/${recordId}/reminder`, { method: "DELETE" });
     if (!response.ok) throw new Error("the reminder could not be removed");
     return { ...event, reminder: null };
   }
 
-  const response = await fetch(`/api/user/events/${event.id}/reminder`, {
+  const response = await fetch(`/api/user/events/${recordId}/reminder`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(reminder),
@@ -220,13 +222,14 @@ export default function SchedulePage() {
   const updateEventOptimistically = useCallback(async (event: ScheduleEvent, changes: Partial<ScheduleEvent>, successMessage?: string) => {
     const previous = events;
     const optimistic = { ...event, ...changes };
-    setEvents((current) => current.map((item) => item.id === event.id ? optimistic : item));
+    const recordId = eventRecordId(event);
+    setEvents((current) => current.map((item) => eventRecordId(item) === recordId ? { ...item, ...changes } : item));
     if (selectedEvent?.id === event.id) setSelectedEvent(optimistic);
     try {
       const response = await fetch("/api/user/events", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: event.id, ...changes }),
+        body: JSON.stringify({ id: recordId, ...changes }),
       });
       if (!response.ok) throw new Error();
       const updated = normalizeEvent(await response.json());
@@ -257,6 +260,7 @@ export default function SchedulePage() {
           endTime: input.endTime,
           isAllDay: input.isAllDay,
           color: input.color,
+          recurrencePattern: input.recurrencePattern,
         });
         if (updated) {
           try {
@@ -284,6 +288,7 @@ export default function SchedulePage() {
             endTime: input.endTime,
             isAllDay: input.isAllDay,
             color: input.color,
+            recurrencePattern: input.recurrencePattern,
           }),
         });
         if (!response.ok) throw new Error();
@@ -316,10 +321,11 @@ export default function SchedulePage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     const workKind = classroomWorkKind(deleteTarget);
-    const endpoint = classroomWorkDeleteEndpoint(deleteTarget) ?? `/api/user/events?id=${deleteTarget.id}`;
+    const recordId = eventRecordId(deleteTarget);
+    const endpoint = classroomWorkDeleteEndpoint(deleteTarget) ?? `/api/user/events?id=${recordId}`;
     setDeleting(true);
     const previous = events;
-    setEvents((current) => current.filter((event) => event.id !== deleteTarget.id));
+    setEvents((current) => current.filter((event) => eventRecordId(event) !== recordId));
     try {
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
@@ -339,11 +345,13 @@ export default function SchedulePage() {
   };
 
   const moveEvent = (event: ScheduleEvent, date: Date, startTime: string, endTime: string) => {
+    if (event.recurrencePattern) return;
     const startDate = `${dateKey(date)}T00:00:00.000Z`;
     void updateEventOptimistically(event, { startDate, endDate: startDate, startTime, endTime }, "Event moved.");
   };
 
   const resizeEvent = (event: ScheduleEvent, endTime: string) => {
+    if (event.recurrencePattern) return;
     void updateEventOptimistically(event, { endTime }, "Event duration updated.");
   };
 
@@ -447,7 +455,7 @@ export default function SchedulePage() {
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete {deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}?</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? `“${deleteTarget.title}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.` : `“${deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.`}</DialogDescription>
+          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? `“${deleteTarget.title}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.` : deleteTarget?.recurrencePattern ? `The entire “${deleteTarget.title}” series will be removed from your schedule. This action cannot be undone.` : `“${deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.`}</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">
             <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</WorkspaceButton>
             <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : `Delete ${deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}`}</WorkspaceButton>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "./classroom-post-events";
+import { classroomAssignmentHref, classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "./classroom-post-events";
 
 describe("classroom post calendar events", () => {
     it("broadcasts calendar changes for newly published classroom work", () => {
@@ -7,6 +7,11 @@ describe("classroom post calendar events", () => {
         expect(classroomPostCreatesCalendarEvent("TEST")).toBe(true);
         expect(classroomPostCreatesCalendarEvent("TEXT")).toBe(false);
         expect(classroomPostCreatesCalendarEvent("MATERIAL")).toBe(false);
+    });
+
+    it("opens an assignment from its classroom post", () => {
+        expect(classroomAssignmentHref("class-1", "assignment-1"))
+            .toBe("/classroom/class-1/assignments/assignment-1");
     });
 
     it("deletes structured classroom work through its owning endpoint", () => {

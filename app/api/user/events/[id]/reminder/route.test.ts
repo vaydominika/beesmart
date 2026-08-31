@@ -37,11 +37,21 @@ describe("event reminder API", () => {
       where: { userId_eventId: { userId: "user-1", eventId: "event-1" } },
       create: expect.objectContaining({ eventId: "event-1", task: "Biology test" }),
     }));
+    const upsert = vi.mocked(prisma.reminder.upsert).mock.calls[0][0];
+    expect(upsert.create).not.toHaveProperty("completed");
+    expect(upsert.update).not.toHaveProperty("completed");
   });
 
   it("removes only the current user's reminder", async () => {
     const response = await DELETE(new Request("http://localhost", { method: "DELETE" }), context);
     expect(response.status).toBe(200);
     expect(prisma.reminder.deleteMany).toHaveBeenCalledWith({ where: { userId: "user-1", eventId: "event-1" } });
+  });
+
+  it("does not create a misleading one-off reminder for a recurring series", async () => {
+    vi.mocked(prisma.event.findFirst).mockResolvedValue({ ...event, recurrencePattern: "WEEKLY" } as never);
+    const response = await PUT(new Request("http://localhost", { method: "PUT", body: "{}" }), context);
+    expect(response.status).toBe(409);
+    expect(prisma.reminder.upsert).not.toHaveBeenCalled();
   });
 });

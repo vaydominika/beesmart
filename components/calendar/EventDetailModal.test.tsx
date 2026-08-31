@@ -20,6 +20,30 @@ describe("EventDetailModal reminders", () => {
     expect(screen.getByRole("button", { name: "Set reminder" })).toBeInTheDocument();
   });
 
+  it("edits the whole recurring series from an occurrence", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      id: "event-1", title: "Study", startDate: "2099-08-02T00:00:00.000Z", isAllDay: true,
+      source: "personal", recurrencePattern: "MONTHLY",
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<EventDetailModal
+      open onClose={vi.fn()} onEventUpdated={vi.fn()}
+      event={{ id: "event-1::2099-09-02", seriesId: "event-1", seriesStartDate: "2099-08-02T00:00:00.000Z", title: "Study", startDate: "2099-09-02T00:00:00.000Z", isAllDay: true, source: "personal", canEdit: true, recurrencePattern: "WEEKLY" }}
+    />);
+
+    expect(screen.getByText("Repeats weekly")).toBeInTheDocument();
+    expect(screen.queryByText("Event reminder")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit event" }));
+    expect(screen.getByLabelText("Date")).toHaveValue("2099-08-02");
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Repeats: Weekly" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Monthly" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const options = fetchMock.mock.calls[0][1] as RequestInit;
+    expect(JSON.parse(String(options.body))).toMatchObject({ id: "event-1", recurrencePattern: "MONTHLY", startDate: "2099-08-02T00:00:00" });
+  });
+
   it("opens the assignment editor for a linked classroom deadline", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
       title: "Essay",

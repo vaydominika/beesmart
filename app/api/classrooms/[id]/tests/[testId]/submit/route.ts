@@ -97,10 +97,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
                     update: {
                         responseText: response.responseText ?? null,
                         selectedOptionId: response.selectedOptionId ?? null,
-                        aiSuggestedPoints: null,
-                        aiSuggestedFeedback: null,
-                        aiSuggestedConfidence: null,
-                        aiSuggestedAt: null,
                     },
                     create: { attemptId: attempt.id, questionId: response.questionId, responseText: response.responseText ?? null, selectedOptionId: response.selectedOptionId ?? null },
                 });

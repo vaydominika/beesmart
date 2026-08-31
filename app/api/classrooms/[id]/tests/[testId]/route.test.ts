@@ -12,6 +12,7 @@ vi.mock("@/lib/db", () => ({
     classroomMember: { findUnique: vi.fn() },
     test: { findFirst: vi.fn(), update: vi.fn(), delete: vi.fn() },
     testAttempt: { aggregate: vi.fn(), findMany: vi.fn() },
+    testAttemptResponse: { findMany: vi.fn() },
     classroomPost: { updateMany: vi.fn(), deleteMany: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -77,6 +78,7 @@ describe("test detail lifecycle", () => {
       timeLimit: null, passingScore: 50, opensAt: null, closesAt: null, maxAttempts: 2,
     } as never);
     vi.mocked(prisma.testAttempt.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.testAttemptResponse.findMany).mockResolvedValue([]);
     vi.mocked(prisma.$transaction).mockImplementation((async (callback: (client: typeof prisma) => Promise<unknown>) => callback(prisma)) as never);
   });
 
@@ -112,6 +114,32 @@ describe("test detail lifecycle", () => {
     expect(body.attemptPolicy).toEqual({ maxAttempts: 3, completedAttempts: 2, remainingAttempts: 1, activeAttemptId: "active", nextAttemptNumber: 3, canStart: true });
     expect(body.bestAttempt.id).toBe("best");
     expect(body.questions).toEqual([]);
+  });
+
+  it("shows expected answers only for responses that lost points", async () => {
+    vi.mocked(prisma.testAttempt.findMany).mockResolvedValue([
+      { id: "best", attemptNumber: 1, isCompleted: true, score: 50, startedAt: new Date(), submittedAt: new Date() },
+    ] as never);
+    vi.mocked(prisma.testAttemptResponse.findMany).mockResolvedValue([
+      {
+        questionId: "wrong",
+        responseText: "Wrong answer",
+        pointsAwarded: 1,
+        selectedOption: null,
+        question: { questionText: "Explain it", points: 4, options: [], answers: [{ answerText: "Expected answer" }] },
+      },
+      {
+        questionId: "correct",
+        responseText: "Correct answer",
+        pointsAwarded: 2,
+        selectedOption: null,
+        question: { questionText: "Name it", points: 2, options: [], answers: [{ answerText: "Correct answer" }] },
+      },
+    ] as never);
+
+    const body = await (await GET(new NextRequest("http://localhost"), context)).json();
+    expect(body.resultReview[0]).toMatchObject({ pointsAwarded: 1, maxPoints: 4, expectedAnswer: "Expected answer" });
+    expect(body.resultReview[1]).toMatchObject({ pointsAwarded: 2, maxPoints: 2, expectedAnswer: null });
   });
 
   it("closes learner access outside the schedule and handles missing resources", async () => {

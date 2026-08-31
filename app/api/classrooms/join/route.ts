@@ -33,31 +33,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Already a member of this classroom" }, { status: 409 });
         }
 
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
-        const invitation = user?.email ? await prisma.classroomInvitation.findFirst({
-            where: {
-                classroomId: classroom.id,
-                email: user.email.toLowerCase(),
-                acceptedAt: null,
-                expiresAt: { gt: new Date() },
-            },
-            orderBy: { createdAt: "desc" },
-        }) : null;
-        const role = invitation?.role ?? "STUDENT";
-
         await prisma.classroomMember.create({
             data: {
                 userId,
                 classroomId: classroom.id,
-                role,
+                role: "STUDENT",
             },
         });
-        if (invitation) {
-            await prisma.classroomInvitation.update({
-                where: { id: invitation.id },
-                data: { acceptedAt: new Date() },
-            });
-        }
         if (classroom.courseLinks?.length) {
             await prisma.courseAccess.createMany({
                 data: classroom.courseLinks.map((link: { courseId: string; addedById: string }) => ({
@@ -73,7 +55,7 @@ export async function POST(req: NextRequest) {
             description: classroom.description,
             code: classroom.code,
             subject: classroom.subject,
-            role,
+            role: "STUDENT",
             memberCount: classroom._count.members + 1,
             createdAt: classroom.createdAt,
             isOwner: false,

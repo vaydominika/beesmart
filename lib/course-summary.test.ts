@@ -16,7 +16,6 @@ function course(overrides: Partial<CourseSummary> = {}): CourseSummary {
     description: "Cells and systems",
     coverImageUrl: null,
     createdById: "teacher-1",
-    classroomId: null,
     isPublic: true,
     published: true,
     visibility: "PUBLIC",

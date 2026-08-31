@@ -44,12 +44,32 @@ describe("ScheduleContextPanel reminders", () => {
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
       title: "Biology test",
+      recurrencePattern: null,
       reminder: {
         notifyAt: new Date("2099-08-09T10:00:00").toISOString(),
         eventStartsAt: new Date("2099-08-09T12:00:00").toISOString(),
         timeZone: expect.any(String),
       },
     }));
+  });
+
+  it("creates a recurring series from the same compact editor", () => {
+    const onSave = vi.fn();
+    render(
+      <ScheduleContextPanel
+        selectedDate={new Date(2099, 7, 9)} events={[]} selectedEvent={null}
+        editor={{ mode: "create", date: new Date(2099, 7, 9) }} saving={false} deleting={false}
+        onSelectEvent={vi.fn()} onStartCreate={vi.fn()} onStartEdit={vi.fn()} onBack={vi.fn()} onSave={onSave} onDelete={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Title" }), { target: { value: "Vocabulary practice" } });
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Repeats: Does not repeat" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("menuitem", { name: "Weekly" }));
+    expect(screen.getByText("Reminders are available for one-time events.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add event" }));
+
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ recurrencePattern: "WEEKLY", reminder: null }));
   });
 
   it("uses the lighter Honey yellow for source and time detail chips", () => {

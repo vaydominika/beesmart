@@ -60,7 +60,6 @@ describe("GET /api/user/events", () => {
       isAllDay: false,
       userId: null,
       classroomId: "classroom-1",
-      courseId: null,
       classroom: { id: "classroom-1", name: "Matematika", members: [{ role: "STUDENT" }] },
     }] as never);
 
@@ -71,7 +70,10 @@ describe("GET /api/user/events", () => {
     expect(data[0]).toMatchObject({ source: "classroom", classroomName: "Matematika", canEdit: false });
     expect(prisma.event.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({
-        startDate: expect.objectContaining({ gte: expect.any(Date), lte: expect.any(Date) }),
+        OR: expect.arrayContaining([
+          { startDate: expect.objectContaining({ gte: expect.any(Date), lte: expect.any(Date) }) },
+          expect.objectContaining({ recurrencePattern: { not: null } }),
+        ]),
         AND: expect.arrayContaining([
           expect.objectContaining({
             OR: expect.arrayContaining([
@@ -91,6 +93,21 @@ describe("GET /api/user/events", () => {
     expect(prisma.event.findMany).toHaveBeenCalledOnce();
   });
 
+  it("expands a recurring event inside the requested calendar range", async () => {
+    vi.mocked(prisma.event.findMany).mockResolvedValue([{
+      id: "event-1", title: "Practice", userId: "user-1", classroomId: null,
+      startDate: new Date("2026-08-03T00:00:00.000Z"), endDate: new Date("2026-08-03T00:00:00.000Z"),
+      startTime: "09:00", isAllDay: false, recurrencePattern: "WEEKLY", classroom: null, reminders: [],
+    }] as never);
+
+    const response = await GET(new NextRequest("http://localhost/api/user/events?from=2026-08-10&to=2026-08-24"));
+    const body = await response.json();
+    expect(body.map((item: { id: string }) => item.id)).toEqual([
+      "event-1::2026-08-10", "event-1::2026-08-17", "event-1::2026-08-24",
+    ]);
+    expect(body[0]).toMatchObject({ seriesId: "event-1", recurrencePattern: "WEEKLY" });
+  });
+
   it("rejects invalid months and unbounded upcoming limits", async () => {
     expect((await GET(new NextRequest("http://localhost/api/user/events?month=2026-13"))).status).toBe(400);
     expect((await GET(new NextRequest("http://localhost/api/user/events?upcoming=5000"))).status).toBe(400);
@@ -104,7 +121,7 @@ describe("GET /api/user/events", () => {
 
   it("loads one accessible event and serializes a personal reminder", async () => {
     vi.mocked(prisma.event.findFirst).mockResolvedValue({
-      id: "event-1", title: "Study", userId: "user-1", classroomId: null, courseId: null,
+      id: "event-1", title: "Study", userId: "user-1", classroomId: null,
       startDate: new Date("2026-08-20T00:00:00Z"), startTime: null, isAllDay: true, classroom: null,
       reminders: [{ notifyAt: new Date("2026-08-19T12:00:00Z"), notificationProcessedAt: null }],
     } as never);
@@ -125,7 +142,7 @@ describe("GET /api/user/events", () => {
   it("filters elapsed events from an upcoming response", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 7, 20, 12, 0));
-    const base = { userId: "user-1", classroomId: null, courseId: null, startDate: new Date(2026, 7, 20), classroom: null, reminders: [] };
+    const base = { userId: "user-1", classroomId: null, startDate: new Date(2026, 7, 20), classroom: null, reminders: [] };
     vi.mocked(prisma.event.findMany).mockResolvedValue([
       { ...base, id: "past", title: "Past", startTime: "11:00", isAllDay: false },
       { ...base, id: "all-day", title: "All day", startTime: null, isAllDay: true },
@@ -161,6 +178,23 @@ describe("event mutations", () => {
 
     expect(response.status).toBe(201);
     expect(prisma.event.create).toHaveBeenCalledWith({ data: expect.objectContaining({ userId: "user-1", order: 4, description: null, isAllDay: true }) });
+  });
+
+  it("validates recurrence and persists it on personal events", async () => {
+    const invalid = await POST(new Request("http://localhost/api/user/events", {
+      method: "POST", body: JSON.stringify({ title: "Review", startDate: "2026-08-21", recurrencePattern: "YEARLY" }),
+    }));
+    expect(invalid.status).toBe(400);
+
+    vi.mocked(prisma.event.create).mockResolvedValue({
+      id: "event-2", title: "Review", userId: "user-1", classroomId: null,
+      startDate: new Date("2026-08-21"), endDate: new Date("2026-08-21"), isAllDay: true, recurrencePattern: "DAILY",
+    } as never);
+    const response = await POST(new Request("http://localhost/api/user/events", {
+      method: "POST", body: JSON.stringify({ title: "Review", startDate: "2026-08-21", isAllDay: true, recurrencePattern: "DAILY" }),
+    }));
+    expect(response.status).toBe(201);
+    expect(prisma.event.create).toHaveBeenCalledWith({ data: expect.objectContaining({ recurrencePattern: "DAILY" }) });
   });
 
   it("enforces authentication for every mutation", async () => {
@@ -203,7 +237,7 @@ describe("event mutations", () => {
 
   it("updates an ordinary event and synchronizes reminders", async () => {
     const original = {
-      id: "event-1", title: "Old", userId: "user-1", classroomId: null, courseId: null,
+      id: "event-1", title: "Old", userId: "user-1", classroomId: null,
       startDate: new Date("2026-08-20T00:00:00Z"), endDate: new Date("2026-08-20T00:00:00Z"),
       startTime: "09:00", endTime: "10:00", isAllDay: false, isProtected: false, classroom: null, reminders: [],
     };

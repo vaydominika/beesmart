@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Upload, X } from "lucide-react";
+import { FileText, Globe2, Image as ImageIcon, Lock, Mail, Tags, Upload, X } from "lucide-react";
 import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Editor } from "@/components/ui/editor";
@@ -10,6 +10,8 @@ import { WorkspaceButton, workspaceButtonVariants } from "@/components/ui/worksp
 import { CourseVisibility } from "@/lib/course-summary";
 import { COURSE_TITLE_MAX_LENGTH } from "@/lib/course-title";
 import { cn } from "@/lib/utils";
+import { WorkspaceMultiSelect } from "@/components/ui/workspace-select";
+import { COURSE_TAG_OPTIONS, MAX_COURSE_TAGS, type CourseTagSlug } from "@/lib/course-tags";
 
 interface CreateCourseModalProps {
   open: boolean;
@@ -32,6 +34,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [coverUploadId, setCoverUploadId] = useState("");
   const [visibility, setVisibility] = useState<CourseVisibility>("PRIVATE");
+  const [tagSlugs, setTagSlugs] = useState<Set<CourseTagSlug>>(new Set());
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
@@ -45,6 +48,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
     setCoverImageUrl("");
     setCoverUploadId("");
     setVisibility("PRIVATE");
+    setTagSlugs(new Set());
     setFiles([]);
     setValidation(null);
   };
@@ -110,6 +114,19 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
     setStep(2);
   };
 
+  const updateTag = (tag: CourseTagSlug, checked: boolean) => {
+    setTagSlugs((current) => {
+      const next = new Set(current);
+      if (checked) {
+        if (next.size >= MAX_COURSE_TAGS) return current;
+        next.add(tag);
+      } else {
+        next.delete(tag);
+      }
+      return next;
+    });
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       setStep(1);
@@ -127,6 +144,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
           coverUploadId: coverUploadId || null,
           uploadIds: files.map((file) => file.uploadId),
           visibility,
+          tagSlugs: Array.from(tagSlugs),
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -162,6 +180,41 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                 <input autoFocus value={title} maxLength={COURSE_TITLE_MAX_LENGTH} onChange={(event) => { setTitle(event.target.value); if (validation) setValidation(null); }} placeholder="Introduction to biology" className="h-11 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm font-medium text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
               </label>
               {validation && <p role="alert" className="rounded-xl bg-[var(--course-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--course-danger)]">{validation}</p>}
+
+              <div>
+                <div className="mb-1.5 flex items-end justify-between gap-3">
+                  <label className="text-xs font-semibold text-[var(--course-text-muted)]">Subject tags <span className="font-normal text-[var(--course-text-faint)]">(optional)</span></label>
+                  <span className="text-[10px] font-medium text-[var(--course-text-faint)]">Up to {MAX_COURSE_TAGS}</span>
+                </div>
+                <WorkspaceMultiSelect
+                  values={tagSlugs}
+                  options={COURSE_TAG_OPTIONS.map((option) => ({
+                    ...option,
+                    disabled: tagSlugs.size >= MAX_COURSE_TAGS && !tagSlugs.has(option.value),
+                  }))}
+                  onValueChange={updateTag}
+                  ariaLabel="Course subjects"
+                  label={tagSlugs.size > 0 ? `${tagSlugs.size} ${tagSlugs.size === 1 ? "subject" : "subjects"} selected` : "Choose subjects"}
+                  triggerIcon={Tags}
+                  className="h-11 w-full border-[var(--course-line)] bg-[var(--course-surface-muted)] focus-visible:border-[var(--course-focus-border)] focus-visible:ring-[var(--course-focus-ring)]"
+                  contentClassName="max-h-72 overflow-y-auto"
+                />
+                {tagSlugs.size > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Selected course subjects">
+                    {COURSE_TAG_OPTIONS.filter((option) => tagSlugs.has(option.value)).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateTag(option.value, false)}
+                        aria-label={`Remove ${option.label}`}
+                        className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[var(--course-line-strong)] bg-[var(--course-accent)] px-2.5 text-[11px] font-semibold text-[var(--course-text)] transition-colors hover:bg-[var(--course-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]"
+                      >
+                        {option.label}<X className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <fieldset>
                 <legend className="mb-1.5 text-xs font-semibold text-[var(--course-text-muted)]">Visibility <span className="font-normal text-[var(--course-text-faint)]">(you can change this later)</span></legend>

@@ -23,9 +23,6 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             where: {
                 id: assignmentId,
                 classroomId: id,
-                ...(membership.role === "STUDENT"
-                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
-                    : {}),
             },
             select: { id: true },
         });
@@ -120,9 +117,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             where: {
                 id: assignmentId,
                 classroomId: id,
-                ...(membership.role === "STUDENT"
-                    ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
-                    : {}),
             },
         });
         if (!assignment) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });

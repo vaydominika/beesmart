@@ -24,9 +24,6 @@ export async function GET(_request: Request, context: RouteContext) {
     where: {
       id: assignmentId,
       classroomId,
-      ...(membership.role === "STUDENT"
-        ? { OR: [{ assignedToId: null }, { assignedToId: userId }] }
-        : {}),
     },
     select: {
       id: true,
@@ -110,6 +107,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
     maxPoints = parsedPoints;
   }
+  if (isGraded && maxPoints == null) {
+    return NextResponse.json({ error: "Maximum points are required for graded assignments" }, { status: 400 });
+  }
 
   const assignmentChanged = title !== existing.title
     || description !== existing.description
@@ -132,6 +132,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         ...(assignmentChanged ? { editedAt: new Date() } : {}),
       },
     });
+    if (existing.isGraded && !isGraded) {
+      await transaction.grade.deleteMany({ where: { assignedWorkId: assignmentId } });
+      await transaction.submission.updateMany({
+        where: { assignedWorkId: assignmentId, status: "GRADED", submittedAt: { gt: existing.deadlineAt } },
+        data: { status: "LATE" },
+      });
+      await transaction.submission.updateMany({
+        where: {
+          assignedWorkId: assignmentId,
+          status: "GRADED",
+          OR: [{ submittedAt: null }, { submittedAt: { lte: existing.deadlineAt } }],
+        },
+        data: { status: "SUBMITTED" },
+      });
+    }
     return assignment;
   });
 

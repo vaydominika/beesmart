@@ -307,7 +307,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         }
 
         const payload: TestDraft = {
-                courseId: sourceMode === "course" ? courseId || null : null,
+                sourceCourseId: sourceMode === "course" ? courseId || null : null,
                 title: title.trim(),
                 description: description.trim() || null,
                 type: testType,

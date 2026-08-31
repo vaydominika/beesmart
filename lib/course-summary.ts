@@ -9,13 +9,17 @@ export interface CourseClassroomSummary {
   name: string;
 }
 
+export interface CourseTagSummary {
+  slug: string;
+  name: string;
+}
+
 export interface CourseSummary {
   id: string;
   title: string;
   description?: string | null;
   coverImageUrl?: string | null;
   createdById: string;
-  classroomId: string | null;
   isPublic: boolean;
   published: boolean;
   visibility: CourseVisibility;
@@ -27,6 +31,7 @@ export interface CourseSummary {
   lastAccessedAt: string | null;
   lessonCount: number;
   classrooms: CourseClassroomSummary[];
+  tags?: CourseTagSummary[];
   creator: {
     id: string;
     name: string | null;
@@ -68,6 +73,7 @@ export function courseMatchesSearch(course: CourseSummary, search: string): bool
     plainTextExcerpt(course.description),
     course.creator.name || "",
     ...course.classrooms.map((classroom) => classroom.name),
+    ...(course.tags ?? []).flatMap((tag) => [tag.name, tag.slug]),
   ].some((value) => value.toLocaleLowerCase().includes(query));
 }
 

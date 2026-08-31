@@ -29,7 +29,6 @@ const record = {
   coverImageUrl: null,
   coverStoredFileId: null,
   createdById: "teacher-1",
-  classroomId: "classroom-1",
   isPublic: true,
   published: true,
   visibility: "PUBLIC",
@@ -39,8 +38,8 @@ const record = {
   _count: { modules: 1, enrollments: 4 },
   modules: [{ lessons: [{ id: "lesson-1" }, { id: "lesson-2" }] }],
   enrollments: [{ completedAt: null }],
-  classroom: { id: "classroom-1", name: "Matematika" },
   classroomLinks: [{ classroom: { id: "classroom-1", name: "Matematika" } }],
+  tags: [{ tag: { slug: "biology", name: "Biology" } }],
 };
 
 describe("GET /api/courses", () => {
@@ -69,6 +68,7 @@ describe("GET /api/courses", () => {
       progress: 50,
       lessonCount: 2,
       classrooms: [{ id: "classroom-1", name: "Matematika" }],
+      tags: [{ slug: "biology", name: "Biology" }],
     });
   });
 
@@ -93,7 +93,7 @@ describe("GET /api/courses", () => {
 
   it("maps owned, empty courses without progress or classrooms", async () => {
     vi.mocked(prisma.course.findMany).mockResolvedValue([{
-      ...record, id: "owned", createdById: "learner-1", classroomId: null, classroom: null,
+      ...record, id: "owned", createdById: "learner-1",
       classroomLinks: [], modules: [], enrollments: [], coverStoredFileId: "cover-1",
     }] as never);
     vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([]);
@@ -167,6 +167,21 @@ describe("POST /api/courses tutorial prerequisite", () => {
     expect((await POST(new NextRequest("http://localhost", { method: "POST", body: JSON.stringify({ title: "   " }) }))).status).toBe(400);
   });
 
+  it("rejects unknown tags and selections above the limit", async () => {
+    const unknown = await POST(new NextRequest("http://localhost", {
+      method: "POST", body: JSON.stringify({ title: "Course", tagSlugs: ["unknown"] }),
+    }));
+    expect(unknown.status).toBe(400);
+
+    const tooMany = await POST(new NextRequest("http://localhost", {
+      method: "POST", body: JSON.stringify({
+        title: "Course",
+        tagSlugs: ["biology", "chemistry", "physics", "history"],
+      }),
+    }));
+    expect(tooMany.status).toBe(400);
+  });
+
   it("creates a public course with claimed cover and attachments", async () => {
     const tx = { course: { create: vi.fn().mockResolvedValue({ id: "course-1", title: "Biology" }) } };
     vi.mocked(prisma.$transaction).mockImplementation((async (callback: (client: typeof tx) => unknown) => callback(tx)) as never);
@@ -177,14 +192,21 @@ describe("POST /api/courses tutorial prerequisite", () => {
     const response = await POST(new NextRequest("http://localhost", {
       method: "POST",
       body: JSON.stringify({
-        title: "  Biology  ", description: "  Cells  ", classroomId: "class-1", isPublic: false,
+        title: "  Biology  ", description: "  Cells  ", classroomId: "legacy-classroom", isPublic: false,
         visibility: "PUBLIC", published: true, uploadIds: ["attachment-1"], coverUploadId: "cover-1",
+        tagSlugs: ["biology", "chemistry"],
       }),
     }));
     expect(response.status).toBe(200);
     expect(tx.course.create).toHaveBeenCalledWith({ data: expect.objectContaining({
-      title: "Biology", description: "Cells", classroomId: "class-1", isPublic: true, visibility: "PUBLIC",
+      title: "Biology", description: "Cells", isPublic: true, visibility: "PUBLIC",
       published: true, coverStoredFileId: "cover-1", createdById: "user-1", files: expect.any(Object),
+      tags: {
+        create: [
+          { tag: { connectOrCreate: { where: { slug: "biology" }, create: { slug: "biology", name: "Biology" } } } },
+          { tag: { connectOrCreate: { where: { slug: "chemistry" }, create: { slug: "chemistry", name: "Chemistry" } } } },
+        ],
+      },
     }) });
     expect(recordMeaningfulActivity).toHaveBeenCalledWith(expect.objectContaining({ activityType: "COURSE_CREATED" }));
     expect(prisma.notification.create).toHaveBeenCalledWith({ data: expect.objectContaining({ title: "Course created", relatedId: "course-1" }) });
@@ -198,7 +220,7 @@ describe("POST /api/courses tutorial prerequisite", () => {
       method: "POST", body: JSON.stringify({ title: "Private", isPublic: false, uploadIds: "bad", coverUploadId: null }),
     }));
     expect(tx.course.create).toHaveBeenCalledWith({ data: {
-      title: "Private", description: null, classroomId: null, isPublic: false, visibility: "PRIVATE",
+      title: "Private", description: null, isPublic: false, visibility: "PRIVATE",
       published: false, coverStoredFileId: null, createdById: "user-1",
     } });
   });

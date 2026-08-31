@@ -21,9 +21,9 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { Editor } from "@/components/ui/editor";
-import type { AssignmentDraft, PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
+import { assignmentDescriptionPostContent, type AssignmentDraft, type PostAttachmentFile, type TestDraft } from "@/lib/classroom-post-drafts";
 import { useEventSync } from "@/hooks/use-event-sync";
-import { classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "@/lib/classroom-post-events";
+import { classroomAssignmentHref, classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "@/lib/classroom-post-events";
 import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import {
@@ -273,6 +273,9 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         setPostAssignment(assignment);
         setPostTest(null);
         setPostCourse(null);
+        if (assignment.description) {
+            setNewPostContent(assignmentDescriptionPostContent(assignment.description));
+        }
     };
 
     const handleAddTest = (test: TestDraft) => {
@@ -868,6 +871,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         {post.assignment.maxPoints != null && (
                                             <span className="mr-1 text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints} pts</span>
                                         )}
+                                        <Link
+                                            href={classroomAssignmentHref(classroomId, post.assignment.id)}
+                                            aria-label={`Open assignment ${post.assignment.title}`}
+                                            title="Open assignment"
+                                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                        >
+                                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                        </Link>
                                 </div>
                             )}
 

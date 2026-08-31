@@ -41,6 +41,13 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
       </div>
 
       <h2 className="mb-2 line-clamp-2 text-xl font-semibold leading-tight tracking-[-0.025em] text-[var(--course-text)]">{course.title}</h2>
+      {course.tags && course.tags.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5" aria-label="Course subjects">
+          {course.tags.slice(0, 3).map((tag) => (
+            <span key={tag.slug} className="rounded-full border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--course-text-muted)]">{tag.name}</span>
+          ))}
+        </div>
+      )}
       {description ? (
         <p className="line-clamp-2 text-sm leading-relaxed text-[var(--course-text-muted)]">{description}</p>
       ) : (

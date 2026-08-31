@@ -8,6 +8,10 @@ export function classroomPostCreatesCalendarEvent(postType: string) {
     return postType === "ASSIGNMENT" || postType === "TEST";
 }
 
+export function classroomAssignmentHref(classroomId: string, assignmentId: string) {
+    return `/classroom/${classroomId}/assignments/${assignmentId}`;
+}
+
 export function classroomPostDeleteDetails(classroomId: string, post: DeletableClassroomPost) {
     if (post.assignment) {
         return {

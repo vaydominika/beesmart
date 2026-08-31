@@ -19,6 +19,18 @@ export interface AssignmentDraft {
     files: PostAttachmentFile[];
 }
 
+export function assignmentDescriptionPostContent(description: string | null): string {
+    if (!description) return "";
+    const escaped = description
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    return escaped
+        .split(/\r?\n/)
+        .map((line) => `<p>${line || "<br>"}</p>`)
+        .join("");
+}
+
 export interface TestQuestionDraft {
     questionText: string;
     questionType: "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
@@ -29,7 +41,7 @@ export interface TestQuestionDraft {
 }
 
 export interface TestDraft {
-    courseId?: string | null;
+    sourceCourseId?: string | null;
     title: string;
     description: string | null;
     type: "TEST" | "EXAM";

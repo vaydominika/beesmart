@@ -1,9 +1,9 @@
+import { createHash } from "crypto";
 import { deepseek } from "@ai-sdk/deepseek";
 import { generateObject } from "ai";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getCurrentUserId, prisma } from "@/lib/db";
-import type { Prisma } from "@/lib/generated/prisma";
+import { recordMeaningfulActivity } from "@/lib/activity";
 import {
     AiDailyLimitError,
     aiLimitResponse,
@@ -11,8 +11,11 @@ import {
     withAiUsage,
 } from "@/lib/ai/usage";
 import type { AiUsageState } from "@/lib/ai/usage-shared";
+import { getCurrentUserId, prisma } from "@/lib/db";
+import type { Prisma } from "@/lib/generated/prisma";
+import { notifyClassroomUser } from "@/lib/notifications";
+import { calculateAttemptTotals } from "@/lib/test-scoring";
 import {
-    AI_GRADING_FEEDBACK_CHARACTER_LIMIT,
     AI_GRADING_MAX_ESSAYS_PER_ATTEMPT,
     AI_GRADING_QUESTION_CHARACTER_LIMIT,
     AI_GRADING_TOTAL_CONTEXT_CHARACTER_LIMIT,
@@ -20,15 +23,12 @@ import {
 } from "@/lib/test-response-limits";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
-type Confidence = "HIGH" | "MEDIUM" | "LOW";
 
 type EssayResponse = {
     id: string;
+    questionId: string;
     responseText: string | null;
     pointsAwarded: number | null;
-    aiSuggestedPoints: number | null;
-    aiSuggestedFeedback: string | null;
-    aiSuggestedConfidence: string | null;
     question: {
         questionText: string;
         questionType: string;
@@ -37,27 +37,12 @@ type EssayResponse = {
     };
 };
 
-const suggestionSchema = (count: number) => z.object({
-    suggestions: z.array(z.object({
+const gradeSchema = (count: number) => z.object({
+    grades: z.array(z.object({
         responseId: z.string().min(1),
-        suggestedScore: z.number().min(0),
-        feedback: z.string().min(1).max(AI_GRADING_FEEDBACK_CHARACTER_LIMIT),
-        confidence: z.enum(["HIGH", "MEDIUM", "LOW"]),
+        pointsAwarded: z.number().min(0),
     })).length(count),
 });
-
-function storedSuggestion(response: EssayResponse) {
-    if (response.aiSuggestedPoints == null || !response.aiSuggestedFeedback) return null;
-    const confidence: Confidence = response.aiSuggestedConfidence === "HIGH" || response.aiSuggestedConfidence === "MEDIUM"
-        ? response.aiSuggestedConfidence
-        : "LOW";
-    return {
-        responseId: response.id,
-        suggestedScore: response.aiSuggestedPoints,
-        feedback: response.aiSuggestedFeedback,
-        confidence,
-    };
-}
 
 export async function POST(request: NextRequest, context: RouteContext) {
     let usage: AiUsageState | null = null;
@@ -71,7 +56,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             select: { role: true },
         });
         if (!membership || membership.role === "STUDENT") {
-            return NextResponse.json({ error: "Only teachers/TAs can request grading drafts" }, { status: 403 });
+            return NextResponse.json({ error: "Only teachers/TAs can use AI grading" }, { status: 403 });
         }
 
         const body = await request.json() as { attemptId?: unknown };
@@ -83,7 +68,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
             where: { id: body.attemptId, testId, isCompleted: true, test: { classroomId } },
             select: {
                 id: true,
-                test: { select: { title: true } },
+                userId: true,
+                score: true,
+                test: {
+                    select: {
+                        title: true,
+                        questions: { select: { id: true, points: true } },
+                    },
+                },
                 responses: {
                     include: { question: { include: { answers: { select: { answerText: true } } } } },
                 },
@@ -91,17 +83,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
         });
         if (!attempt) return NextResponse.json({ error: "Completed attempt not found" }, { status: 404 });
 
-        const essays = (attempt.responses as unknown as EssayResponse[]).filter((response) =>
+        const responses = attempt.responses as unknown as EssayResponse[];
+        const essays = responses.filter((response) =>
             response.question.questionType === "ESSAY"
             && response.pointsAwarded == null
             && Boolean(response.responseText?.trim()),
         );
-        if (essays.length === 0) return NextResponse.json({ suggestions: [], cached: true });
-
-        const cachedSuggestions = essays.map(storedSuggestion).filter((suggestion) => suggestion !== null);
-        const missing = essays.filter((response) => storedSuggestion(response) === null);
-        if (missing.length === 0) {
-            return NextResponse.json({ suggestions: cachedSuggestions, cached: true });
+        if (essays.length === 0) {
+            return NextResponse.json({ gradedCount: 0, score: attempt.score });
         }
 
         if (essays.length > AI_GRADING_MAX_ESSAYS_PER_ATTEMPT) {
@@ -111,7 +100,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
                 limit: AI_GRADING_MAX_ESSAYS_PER_ATTEMPT,
             }, { status: 413 });
         }
-        const oversizedQuestion = missing.find((response) => response.question.questionText.length > AI_GRADING_QUESTION_CHARACTER_LIMIT);
+        const oversizedQuestion = essays.find((response) => response.question.questionText.length > AI_GRADING_QUESTION_CHARACTER_LIMIT);
         if (oversizedQuestion) {
             return NextResponse.json({
                 error: `Essay questions must be ${AI_GRADING_QUESTION_CHARACTER_LIMIT.toLocaleString()} characters or fewer for AI grading`,
@@ -119,7 +108,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
                 limit: AI_GRADING_QUESTION_CHARACTER_LIMIT,
             }, { status: 413 });
         }
-        const oversizedEssay = missing.find((response) => (response.responseText?.length ?? 0) > TEST_ESSAY_CHARACTER_LIMIT);
+        const oversizedEssay = essays.find((response) => (response.responseText?.length ?? 0) > TEST_ESSAY_CHARACTER_LIMIT);
         if (oversizedEssay) {
             return NextResponse.json({
                 error: `Essay responses must be ${TEST_ESSAY_CHARACTER_LIMIT.toLocaleString()} characters or fewer for AI grading`,
@@ -127,7 +116,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
                 limit: TEST_ESSAY_CHARACTER_LIMIT,
             }, { status: 413 });
         }
-        const contextLength = missing.reduce((total, response) => total
+        const contextLength = essays.reduce((total, response) => total
             + response.question.questionText.length
             + (response.responseText?.length ?? 0)
             + response.question.answers.reduce((answerTotal, answer) => answerTotal + (answer.answerText?.length ?? 0), 0), 0);
@@ -140,62 +129,87 @@ export async function POST(request: NextRequest, context: RouteContext) {
         }
 
         usage = await reserveAiAttempt(userId, "GRADING");
-        const expectedIds = new Set(missing.map((response) => response.id));
+        const expectedIds = new Set(essays.map((response) => response.id));
         const { object } = await generateObject({
             model: deepseek("deepseek-chat"),
-            maxOutputTokens: Math.min(4_000, 400 + missing.length * 350),
-            schema: suggestionSchema(missing.length),
-            prompt: `Create review-only grading drafts for the essay responses below from "${attempt.test.title}".
+            maxOutputTokens: Math.min(2_000, 200 + essays.length * 100),
+            schema: gradeSchema(essays.length),
+            prompt: `Grade the essay responses below from "${attempt.test.title}".
+Return only each response ID and the awarded points. Do not return feedback, explanations, confidence, or an expected answer.
 Use only the supplied question, learner answer, expected answer when present, and point maximum.
-Award a score between zero and the available points. Give concise, constructive feedback under ${AI_GRADING_FEEDBACK_CHARACTER_LIMIT} characters.
-Use LOW confidence when the expected answer is absent or the answer is ambiguous. Return every response ID exactly once.
+Award a numeric score between zero and the available points. Return every response ID exactly once.
 
-${missing.map((response) => `[ID: ${response.id}]
+${essays.map((response) => `[ID: ${response.id}]
 Question: ${response.question.questionText}
 Points available: ${response.question.points}
 Expected answer: ${response.question.answers.map((answer) => answer.answerText).filter(Boolean).join(" / ") || "Not supplied"}
 Learner answer: ${response.responseText}`).join("\n\n")}`,
         });
 
-        const generatedIds = new Set(object.suggestions.map((suggestion) => suggestion.responseId));
+        const generatedIds = new Set(object.grades.map((grade) => grade.responseId));
         if (generatedIds.size !== expectedIds.size || [...expectedIds].some((id) => !generatedIds.has(id))) {
             throw new Error("AI grading returned an incomplete response set");
         }
 
-        const responseById = new Map(missing.map((response) => [response.id, response]));
-        const generatedSuggestions = object.suggestions.map((suggestion) => {
-            const response = responseById.get(suggestion.responseId);
+        const responseById = new Map(essays.map((response) => [response.id, response]));
+        const grades = object.grades.map((grade) => {
+            const response = responseById.get(grade.responseId);
             if (!response) throw new Error("AI grading returned an unknown response");
             return {
-                responseId: response.id,
-                suggestedScore: Math.min(response.question.points, Math.max(0, suggestion.suggestedScore)),
-                feedback: suggestion.feedback.trim().slice(0, AI_GRADING_FEEDBACK_CHARACTER_LIMIT),
-                confidence: suggestion.confidence,
+                response,
+                pointsAwarded: Math.min(response.question.points, Math.max(0, grade.pointsAwarded)),
             };
         });
+        const awardedByResponseId = new Map(grades.map(({ response, pointsAwarded }) => [response.id, pointsAwarded]));
+        const responsePoints = responses.map((response) => ({
+            questionId: response.questionId,
+            pointsAwarded: awardedByResponseId.get(response.id) ?? response.pointsAwarded ?? 0,
+        }));
+        const totals = calculateAttemptTotals(attempt.test.questions, responsePoints);
 
-        const suggestedAt = new Date();
         await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-            for (const suggestion of generatedSuggestions) {
+            for (const { response, pointsAwarded } of grades) {
                 await tx.testAttemptResponse.update({
-                    where: { id: suggestion.responseId },
+                    where: { id: response.id },
                     data: {
-                        aiSuggestedPoints: suggestion.suggestedScore,
-                        aiSuggestedFeedback: suggestion.feedback,
-                        aiSuggestedConfidence: suggestion.confidence,
-                        aiSuggestedAt: suggestedAt,
+                        pointsAwarded,
+                        isCorrect: pointsAwarded === response.question.points,
                     },
                 });
             }
+            await tx.testAttempt.update({
+                where: { id: attempt.id },
+                data: { score: totals.percentage },
+            });
+        });
+
+        await notifyClassroomUser(attempt.userId, {
+            classroomId,
+            actorId: userId,
+            title: "Assessment graded",
+            body: `${attempt.test.title} was graded: ${Math.round(totals.percentage * 10) / 10}%`,
+            type: "GRADE",
+            relatedId: testId,
+            relatedType: "test",
+            actionUrl: `/classroom/${classroomId}/tests/${testId}`,
+        });
+        await recordMeaningfulActivity({
+            userId,
+            activityType: "GRADE_PROVIDED",
+            classroomId,
+            relatedId: attempt.id,
+            dedupeKey: `test:ai-grade:${attempt.id}:${createHash("sha1").update(JSON.stringify(object.grades)).digest("hex")}`,
         });
 
         return withAiUsage(NextResponse.json({
-            suggestions: [...cachedSuggestions, ...generatedSuggestions],
-            cached: false,
+            gradedCount: grades.length,
+            score: totals.percentage,
+            totalScore: totals.totalScore,
+            totalPoints: totals.totalPoints,
         }), usage);
     } catch (error) {
         if (error instanceof AiDailyLimitError) return aiLimitResponse(error);
-        console.error("POST AI grading draft", error);
-        return withAiUsage(NextResponse.json({ error: "AI grading drafts could not be generated" }, { status: 500 }), usage);
+        console.error("POST AI grade", error);
+        return withAiUsage(NextResponse.json({ error: "AI grading could not be completed" }, { status: 500 }), usage);
     }
 }

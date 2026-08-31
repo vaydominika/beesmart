@@ -13,6 +13,8 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     classroomMember: { findUnique: vi.fn() },
     assignedWork: { findFirst: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    grade: { deleteMany: vi.fn() },
+    submission: { updateMany: vi.fn() },
     classroomPost: { updateMany: vi.fn(), deleteMany: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -42,11 +44,10 @@ describe("GET assignment details", () => {
     const response = await GET(new Request("http://localhost"), context);
     expect(response.status).toBe(404);
     expect(prisma.assignedWork.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({
+      where: {
         id: "assignment-1",
         classroomId: "class-1",
-        OR: [{ assignedToId: null }, { assignedToId: "user-1" }],
-      }),
+      },
     }));
   });
 
@@ -118,6 +119,29 @@ describe("PATCH assignment details", () => {
     }));
     expect(syncAssignmentCalendarEvent).toHaveBeenCalledWith("assignment-1");
     expect(notifyClassroomMembers).toHaveBeenCalledWith(expect.objectContaining({ recipientRoles: ["STUDENT"] }));
+  });
+
+  it("removes existing grades when grading is switched off", async () => {
+    const response = await PATCH(new Request("http://localhost", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isGraded: false }),
+    }) as never, context);
+
+    expect(response.status).toBe(200);
+    expect(prisma.assignedWork.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ isGraded: false, maxPoints: null }),
+    }));
+    expect(prisma.grade.deleteMany).toHaveBeenCalledWith({ where: { assignedWorkId: "assignment-1" } });
+    expect(prisma.submission.updateMany).toHaveBeenCalledTimes(2);
+    expect(prisma.submission.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ assignedWorkId: "assignment-1", status: "GRADED" }),
+      data: { status: "LATE" },
+    }));
+    expect(prisma.submission.updateMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ assignedWorkId: "assignment-1", status: "GRADED" }),
+      data: { status: "SUBMITTED" },
+    }));
   });
 });
 

@@ -51,9 +51,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             where: { userId_classroomId: { userId, classroomId } },
             select: { role: true },
         }) : null;
-        const linkedToClassroom = Boolean(classroomId) && (
-            course.classroomId === classroomId || course.classroomLinks.some((link: { classroomId: string }) => link.classroomId === classroomId)
-        );
+        const linkedToClassroom = Boolean(classroomId)
+            && course.classroomLinks.some((link: { classroomId: string }) => link.classroomId === classroomId);
         const canGenerate = course.createdById === userId || Boolean(membership && membership.role !== "STUDENT" && linkedToClassroom);
         if (!canGenerate) {
             return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -115,7 +114,7 @@ Return a JSON structure suitable for the Test model. Each question should have o
         }
 
         // Return the generated test for preview
-        return withAiUsage(NextResponse.json({ test: object, courseId }), usage);
+        return withAiUsage(NextResponse.json({ test: object }), usage);
 
     } catch (e) {
         if (e instanceof AiDailyLimitError) return aiLimitResponse(e);

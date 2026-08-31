@@ -64,7 +64,7 @@ describe("POST generated test from text", () => {
     const data = await response.json();
     expect(response.status).toBe(200);
     expect(data.test.title).toBe("Photosynthesis quiz");
-    expect(data.courseId).toBeNull();
+    expect(data).not.toHaveProperty("courseId");
     expect(checkContentSafety).toHaveBeenCalledTimes(2);
     expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 4000 }));
   });

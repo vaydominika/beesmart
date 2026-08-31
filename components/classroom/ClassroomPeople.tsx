@@ -17,7 +17,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { Crown, Mail, MoreVertical, Trash2, UserCircle, UserPlus, X } from "lucide-react";
+import { Crown, MoreVertical, Trash2, UserCircle, UserPlus, X } from "lucide-react";
 
 type ClassroomRole = "TEACHER" | "TEACHING_ASSISTANT" | "STUDENT";
 
@@ -28,14 +28,6 @@ interface Member {
     isOwner: boolean;
     isCurrentUser: boolean;
     user: { id: string; name: string; email: string; avatar?: string | null };
-}
-
-interface PendingInvitation {
-    id: string;
-    email: string;
-    role: ClassroomRole;
-    expiresAt: string;
-    createdAt: string;
 }
 
 interface Props {
@@ -53,28 +45,23 @@ const roleLabel = (role: ClassroomRole) => ROLE_OPTIONS.find((option) => option.
 
 export function ClassroomPeople({ classroomId, isTeacher }: Props) {
     const [members, setMembers] = useState<Member[]>([]);
-    const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
     const [loading, setLoading] = useState(true);
     const [menuOpen, setMenuOpen] = useState<string | null>(null);
-    const [inviteOpen, setInviteOpen] = useState(false);
-    const [inviteEmail, setInviteEmail] = useState("");
-    const [inviteRole, setInviteRole] = useState<ClassroomRole>("TEACHER");
-    const [inviting, setInviting] = useState(false);
+    const [addMemberOpen, setAddMemberOpen] = useState(false);
+    const [memberEmail, setMemberEmail] = useState("");
+    const [memberRole, setMemberRole] = useState<ClassroomRole>("TEACHER");
+    const [addingMember, setAddingMember] = useState(false);
 
     const fetchPeople = useCallback(async () => {
         try {
-            const [membersResponse, invitationsResponse] = await Promise.all([
-                fetch(`/api/classrooms/${classroomId}/members`),
-                isTeacher ? fetch(`/api/classrooms/${classroomId}/invite`) : Promise.resolve(null),
-            ]);
+            const membersResponse = await fetch(`/api/classrooms/${classroomId}/members`);
             if (membersResponse.ok) setMembers(await membersResponse.json());
-            if (invitationsResponse?.ok) setPendingInvitations(await invitationsResponse.json());
         } catch {
             // Keep the existing lists if refreshing fails.
         } finally {
             setLoading(false);
         }
-    }, [classroomId, isTeacher]);
+    }, [classroomId]);
 
     useEffect(() => {
         fetchPeople();
@@ -120,14 +107,14 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
         }
     };
 
-    const handleInvite = async () => {
-        if (!inviteEmail.trim()) return;
-        setInviting(true);
+    const handleAddMember = async () => {
+        if (!memberEmail.trim()) return;
+        setAddingMember(true);
         try {
-            const response = await fetch(`/api/classrooms/${classroomId}/invite`, {
+            const response = await fetch(`/api/classrooms/${classroomId}/members`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+                body: JSON.stringify({ email: memberEmail, role: memberRole }),
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok) {
@@ -135,37 +122,15 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                 return;
             }
 
-            if (result.status === "added") {
-                toast.success(`${roleLabel(inviteRole)} added.`);
-            } else {
-                toast.success(`Invitation saved. Share classroom code ${result.classroomCode}.`);
-            }
-            setInviteEmail("");
-            setInviteRole("TEACHER");
-            setInviteOpen(false);
+            toast.success(`${roleLabel(memberRole)} added.`);
+            setMemberEmail("");
+            setMemberRole("TEACHER");
+            setAddMemberOpen(false);
             await fetchPeople();
         } catch {
             toast.error("Could not add this teacher.");
         } finally {
-            setInviting(false);
-        }
-    };
-
-    const cancelInvitation = async (invitationId: string) => {
-        try {
-            const response = await fetch(`/api/classrooms/${classroomId}/invite`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ invitationId }),
-            });
-            if (!response.ok) {
-                toast.error((await response.json().catch(() => ({}))).error || "Could not cancel invitation.");
-                return;
-            }
-            setPendingInvitations((current) => current.filter((invitation) => invitation.id !== invitationId));
-            toast.success("Invitation cancelled.");
-        } catch {
-            toast.error("Could not cancel invitation.");
+            setAddingMember(false);
         }
     };
 
@@ -247,42 +212,12 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                         Teachers <span className="font-normal text-(--classroom-text-muted)">{teachers.length}</span>
                     </h2>
                     {isTeacher && (
-                        <WorkspaceButton type="button" variant="secondary" onClick={() => setInviteOpen(true)}>
+                        <WorkspaceButton type="button" variant="secondary" onClick={() => setAddMemberOpen(true)}>
                             <UserPlus className="h-4 w-4" /> Add teacher
                         </WorkspaceButton>
                     )}
                 </div>
                 <div className="space-y-2">{teachers.map(memberRow)}</div>
-
-                {isTeacher && pendingInvitations.length > 0 && (
-                    <div className="mt-4">
-                        <p className="mb-2 text-xs font-medium text-(--classroom-text-muted)">Pending invitations</p>
-                        <div className="space-y-2">
-                            {pendingInvitations.map((invitation) => (
-                                <div key={invitation.id} className="flex items-center justify-between rounded-xl border border-dashed border-(--classroom-line-strong) bg-(--classroom-surface) p-3">
-                                    <div className="flex min-w-0 items-center gap-3">
-                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--classroom-surface-muted)">
-                                            <Mail className="h-4 w-4 text-(--classroom-text-muted)" />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="truncate text-sm font-medium text-(--classroom-text)">{invitation.email}</p>
-                                            <p className="text-xs text-(--classroom-text-muted)">{roleLabel(invitation.role)}</p>
-                                        </div>
-                                    </div>
-                                    <WorkspaceButton
-                                        type="button"
-                                        variant="danger"
-                                        size="icon-compact"
-                                        onClick={() => cancelInvitation(invitation.id)}
-                                        aria-label={`Cancel invitation for ${invitation.email}`}
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </WorkspaceButton>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </section>
 
             <section>
@@ -295,16 +230,16 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                     : <div className="space-y-2">{students.map(memberRow)}</div>}
             </section>
 
-            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
                 <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog w-[calc(100%-1.5rem)] max-w-md gap-0 rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-5 shadow-2xl">
                     <DialogClose asChild>
-                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close teacher invitation" className="absolute right-4 top-4">
+                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close add teacher dialog" className="absolute right-4 top-4">
                             <X className="h-4 w-4" />
                         </WorkspaceButton>
                     </DialogClose>
                     <DialogHeader className="border-b border-(--classroom-line) pb-4 pr-10 text-left">
                         <DialogTitle className="text-xl font-semibold text-(--classroom-text)">Add a teacher</DialogTitle>
-                        <DialogDescription className="sr-only">Add a registered user or create a pending classroom invitation.</DialogDescription>
+                        <DialogDescription className="sr-only">Add an existing registered user to this classroom.</DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
@@ -313,9 +248,9 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                             <Input
                                 id="teacher-email"
                                 type="email"
-                                value={inviteEmail}
-                                onChange={(event) => setInviteEmail(event.target.value)}
-                                onKeyDown={(event) => { if (event.key === "Enter") handleInvite(); }}
+                                value={memberEmail}
+                                onChange={(event) => setMemberEmail(event.target.value)}
+                                onKeyDown={(event) => { if (event.key === "Enter") handleAddMember(); }}
                                 placeholder="teacher@example.com"
                                 className="h-10 rounded-xl px-3 text-sm font-normal shadow-none"
                             />
@@ -324,8 +259,8 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                             <label htmlFor="teacher-role" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">Role</label>
                             <WorkspaceSelect
                                 id="teacher-role"
-                                value={inviteRole}
-                                onValueChange={setInviteRole}
+                                value={memberRole}
+                                onValueChange={setMemberRole}
                                 ariaLabel="Teacher role"
                                 options={[
                                     { value: "TEACHER", label: "Teacher" },
@@ -337,11 +272,11 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                     </div>
 
                     <div className="flex justify-end gap-2 border-t border-(--classroom-line) pt-3">
-                        <WorkspaceButton type="button" variant="secondary" onClick={() => setInviteOpen(false)}>
+                        <WorkspaceButton type="button" variant="secondary" onClick={() => setAddMemberOpen(false)}>
                             Cancel
                         </WorkspaceButton>
-                        <WorkspaceButton type="button" variant="primary" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
-                            {inviting ? "Adding..." : "Add teacher"}
+                        <WorkspaceButton type="button" variant="primary" onClick={handleAddMember} disabled={addingMember || !memberEmail.trim()}>
+                            {addingMember ? "Adding..." : "Add teacher"}
                         </WorkspaceButton>
                     </div>
                 </WorkspaceDialogContent>

@@ -31,7 +31,6 @@ type CourseOverviewData = {
   createdById: string;
   published: boolean;
   creator: { name: string | null };
-  classroom: ClassroomSummary | null;
   classroomLinks: Array<{ classroom: ClassroomSummary }>;
   modules: Array<{ id: string; title: string; lessons: Array<{ id: string; title: string }> }>;
   enrollments: Array<{ id: string }>;
@@ -51,7 +50,6 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
     where: { id: courseId },
     include: {
       creator: { select: { name: true } },
-      classroom: { select: { id: true, name: true } },
       classroomLinks: { select: { classroom: { select: { id: true, name: true } } } },
       modules: {
         include: {
@@ -87,11 +85,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
   const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
   const description = plainTextExcerpt(course.description);
   const classrooms = Array.from(
-    new Map(
-      [course.classroom, ...course.classroomLinks.map((link) => link.classroom)]
-        .filter((classroom): classroom is { id: string; name: string } => Boolean(classroom))
-        .map((classroom) => [classroom.id, classroom]),
-    ).values(),
+    new Map(course.classroomLinks.map((link) => [link.classroom.id, link.classroom])).values(),
   );
   const destination = `/courses/${courseId}/${isCreator ? "builder" : "viewer"}`;
   const actionLabel = isCreator ? "Open builder" : progress > 0 ? "Continue course" : "Start course";

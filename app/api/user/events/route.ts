@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { notifyClassroomMembers } from "@/lib/notifications";
+import { baseEventId, expandRecurringEvents, recurrencePattern } from "@/lib/event-recurrence";
 
 const accessibleEvents = (userId: string) => ({
     AND: [
@@ -28,10 +29,11 @@ const eventAccessInclude = (userId: string) => ({
 type EventAccessRecord = {
     userId?: string | null;
     classroomId?: string | null;
-    courseId?: string | null;
     startDate: Date;
+    endDate?: Date | null;
     startTime?: string | null;
     isAllDay: boolean;
+    recurrencePattern?: "DAILY" | "WEEKLY" | "MONTHLY" | null;
     classroom?: { id: string; name: string; members: Array<{ role: string }> } | null;
     reminders?: Array<{ notifyAt: Date | null; notificationProcessedAt: Date | null }>;
 } & Record<string, unknown>;
@@ -42,7 +44,7 @@ function serializeEvent(event: EventAccessRecord, userId: string) {
     const reminder = reminders?.[0];
     return {
         ...eventFields,
-        source: event.classroomId ? "classroom" : event.courseId ? "course" : "personal",
+        source: event.classroomId ? "classroom" : "personal",
         canEdit: event.userId === userId || Boolean(classroomRole && classroomRole !== "STUDENT"),
         classroomName: event.classroom?.name ?? null,
         classroom: event.classroom ? { id: event.classroom.id, name: event.classroom.name } : null,
@@ -51,6 +53,32 @@ function serializeEvent(event: EventAccessRecord, userId: string) {
             notificationProcessedAt: reminder.notificationProcessedAt?.toISOString() ?? null,
         } : null,
     };
+}
+
+function eventRangeWhere(start: Date, end: Date) {
+    return {
+        OR: [
+            { startDate: { gte: start, lte: end } },
+            { recurrencePattern: { not: null }, startDate: { lte: end } },
+        ],
+    };
+}
+
+function expandEventRange(events: EventAccessRecord[], start: Date, end: Date) {
+    return expandRecurringEvents(
+        events.map((event) => ({ ...event, endDate: event.endDate ?? event.startDate })) as Array<EventAccessRecord & { id: string; endDate: Date }>,
+        start,
+        end,
+    );
+}
+
+function sortEvents(events: EventAccessRecord[]) {
+    return [...events].sort((left, right) => {
+        const dateDifference = left.startDate.getTime() - right.startDate.getTime();
+        if (dateDifference) return dateDifference;
+        if (left.isAllDay !== right.isAllDay) return left.isAllDay ? -1 : 1;
+        return (left.startTime ?? "").localeCompare(right.startTime ?? "");
+    });
 }
 
 function parseDateParam(value: string | null, endOfDay = false) {
@@ -100,11 +128,22 @@ export async function GET(req: NextRequest) {
     const to = searchParams.get("to");
 
     if (id) {
+        const recordId = baseEventId(id);
         const event = await prisma.event.findFirst({
-            where: { id, ...accessibleEvents(userId) },
+            where: { id: recordId, ...accessibleEvents(userId) },
             include: eventAccessInclude(userId),
         });
         if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+        if (recordId !== id) {
+            const occurrenceDate = parseDateParam(id.slice(recordId.length + 2), true);
+            if (!occurrenceDate) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+            const occurrenceStart = new Date(occurrenceDate);
+            occurrenceStart.setHours(0, 0, 0, 0);
+            const occurrence = expandEventRange([event as EventAccessRecord], occurrenceStart, occurrenceDate)
+                .find((candidate) => candidate.id === id);
+            if (!occurrence) return NextResponse.json({ error: "Event not found" }, { status: 404 });
+            return NextResponse.json(serializeEvent(occurrence, userId));
+        }
         return NextResponse.json(serializeEvent(event as EventAccessRecord, userId));
     }
 
@@ -129,7 +168,7 @@ export async function GET(req: NextRequest) {
         const events = await prisma.event.findMany({
             where: {
                 ...accessibleEvents(userId),
-                startDate: { gte: start, lte: end },
+                ...eventRangeWhere(start, end),
             },
             orderBy: [
                 { startDate: "asc" },
@@ -140,7 +179,8 @@ export async function GET(req: NextRequest) {
             include: eventAccessInclude(userId),
         });
 
-        return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
+        const expanded = sortEvents(expandEventRange(events as EventAccessRecord[], start, end));
+        return NextResponse.json(expanded.map((event) => serializeEvent(event, userId)));
     }
 
     // Return next N upcoming events
@@ -153,25 +193,25 @@ export async function GET(req: NextRequest) {
         const now = new Date();
         const startOfToday = new Date(now);
         startOfToday.setHours(0, 0, 0, 0);
+        const horizon = new Date(startOfToday);
+        horizon.setFullYear(horizon.getFullYear() + 1);
 
         // Fetch events starting from today (buffered)
         const events = await prisma.event.findMany({
             where: {
                 ...accessibleEvents(userId),
-                startDate: {
-                    gte: startOfToday,
-                },
+                ...eventRangeWhere(startOfToday, horizon),
             },
             orderBy: [
                 { startDate: "asc" },
                 { startTime: "asc" }
             ],
-            take: limit + 5, // Fetch extra to filter in memory
+            take: 500,
             include: eventAccessInclude(userId),
         });
 
         // Filter: Keep future dates OR today if time is later than now
-        const upcomingEvents = events.filter((event: EventAccessRecord) => {
+        const upcomingEvents = sortEvents(expandEventRange(events as EventAccessRecord[], startOfToday, horizon)).filter((event: EventAccessRecord) => {
             const eventDate = new Date(event.startDate);
             const isToday =
                 eventDate.getDate() === now.getDate() &&
@@ -209,12 +249,13 @@ export async function GET(req: NextRequest) {
         const events = await prisma.event.findMany({
             where: {
                 ...accessibleEvents(userId),
-                startDate: { gte: start, lte: end },
+                ...eventRangeWhere(start, end),
             },
             orderBy: [{ order: "asc" }, { startTime: "asc" }],
             include: eventAccessInclude(userId),
         });
-        return NextResponse.json(events.map((event: EventAccessRecord) => serializeEvent(event, userId)));
+        const expanded = sortEvents(expandEventRange(events as EventAccessRecord[], start, end));
+        return NextResponse.json(expanded.map((event) => serializeEvent(event, userId)));
     }
 
     // Legacy fallback is bounded to prevent an unbounded database response.
@@ -244,6 +285,10 @@ export async function POST(req: Request) {
 
     const startDate = new Date(body.startDate);
     const endDate = body.endDate ? new Date(body.endDate) : startDate;
+    const parsedRecurrence = recurrencePattern(body.recurrencePattern);
+    if (body.recurrencePattern !== undefined && parsedRecurrence === undefined) {
+        return NextResponse.json({ error: "Invalid recurrence pattern." }, { status: 400 });
+    }
 
     // Get max order for this day to append at end
     const lastEvent = await prisma.event.findFirst({
@@ -265,12 +310,13 @@ export async function POST(req: Request) {
             endTime: body.endTime || null,
             isAllDay: body.isAllDay ?? false,
             color: body.color || null,
+            recurrencePattern: parsedRecurrence ?? null,
             order: newOrder,
             userId,
         },
     });
 
-    return NextResponse.json(event, { status: 201 });
+    return NextResponse.json(serializeEvent({ ...event, classroom: null, reminders: [] } as EventAccessRecord, userId), { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -279,10 +325,11 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const id = req.nextUrl.searchParams.get("id");
-    if (!id) {
+    const requestedId = req.nextUrl.searchParams.get("id");
+    if (!requestedId) {
         return NextResponse.json({ error: "Event ID required." }, { status: 400 });
     }
+    const id = baseEventId(requestedId);
 
     // Ensure the event belongs to the current user
     const event = await prisma.event.findUnique({ where: { id }, include: eventAccessInclude(userId) });
@@ -324,10 +371,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const id = body.id;
-    if (!id) {
+    const requestedId = body.id;
+    if (!requestedId) {
         return NextResponse.json({ error: "Event ID required." }, { status: 400 });
     }
+    const id = baseEventId(requestedId);
 
     const event = await prisma.event.findUnique({ where: { id }, include: eventAccessInclude(userId) });
     const role = event?.classroom?.members?.[0]?.role;
@@ -340,6 +388,14 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json({ error: "Assignments must be managed from their assignment editor." }, { status: 409 });
     }
 
+    const parsedRecurrence = recurrencePattern(body.recurrencePattern);
+    if (body.recurrencePattern !== undefined && parsedRecurrence === undefined) {
+        return NextResponse.json({ error: "Invalid recurrence pattern." }, { status: 400 });
+    }
+    if (parsedRecurrence && (event.isProtected || event.classroomId)) {
+        return NextResponse.json({ error: "Only personal events can repeat." }, { status: 409 });
+    }
+
     const data: Record<string, unknown> = {};
     if (body.title !== undefined) data.title = body.title;
     if (body.description !== undefined) data.description = body.description || null;
@@ -350,6 +406,7 @@ export async function PATCH(req: NextRequest) {
     if (body.order !== undefined) data.order = parseInt(body.order);
     if (body.startDate !== undefined) data.startDate = new Date(body.startDate);
     if (body.endDate !== undefined) data.endDate = new Date(body.endDate);
+    if (body.recurrencePattern !== undefined) data.recurrencePattern = parsedRecurrence;
 
     if (event.isProtected && event.testId && event.classroomId) {
         const startDate = dateWithTime(
@@ -388,14 +445,16 @@ export async function PATCH(req: NextRequest) {
         return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom, reminders: event.reminders }, userId));
     }
 
-    const updated = await prisma.event.update({
-        where: { id },
-        data,
-    });
+    const updated = parsedRecurrence
+        ? (await prisma.$transaction([
+            prisma.event.update({ where: { id }, data }),
+            prisma.reminder.deleteMany({ where: { eventId: id } }),
+        ]))[0]
+        : await prisma.event.update({ where: { id }, data });
 
     await syncEventReminders(updated);
 
-    return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom, reminders: event.reminders }, userId));
+    return NextResponse.json(serializeEvent({ ...updated, classroom: event.classroom, reminders: parsedRecurrence ? [] : event.reminders }, userId));
 }
 
 export async function PUT(req: NextRequest) {
@@ -409,8 +468,8 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "Expected array of updates" }, { status: 400 });
     }
 
-    const ids = body.map((item: { id: string }) => item.id);
-    const ownedCount = await prisma.event.count({ where: { id: { in: ids }, userId, isProtected: false } });
+    const ids = body.map((item: { id: string }) => baseEventId(item.id));
+    const ownedCount = await prisma.event.count({ where: { id: { in: ids }, userId, isProtected: false, recurrencePattern: null } });
     if (ownedCount !== ids.length) {
         return NextResponse.json({ error: "Protected Classroom events cannot be reordered" }, { status: 403 });
     }
@@ -418,7 +477,7 @@ export async function PUT(req: NextRequest) {
     await prisma.$transaction(
         body.map((item: { id: string; order: number }) =>
             prisma.event.update({
-                where: { id: item.id, userId }, // Ensure user owns event
+                where: { id: baseEventId(item.id), userId }, // Ensure user owns event
                 data: { order: item.order },
             })
         )

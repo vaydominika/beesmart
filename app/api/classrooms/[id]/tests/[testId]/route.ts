@@ -9,6 +9,18 @@ import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; isCompleted: boolean; score: number | null };
+type LearnerReviewResponse = {
+    questionId: string;
+    responseText: string | null;
+    pointsAwarded: number | null;
+    selectedOption: { optionText: string } | null;
+    question: {
+        questionText: string;
+        points: number;
+        options: Array<{ optionText: string }>;
+        answers: Array<{ answerText: string | null }>;
+    };
+};
 
 async function teacherAccess(userId: string, classroomId: string) {
     const membership = await prisma.classroomMember.findUnique({
@@ -43,6 +55,43 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     const bestAttempt = attempts
         .filter((attempt) => attempt.isCompleted && attempt.score != null)
         .sort((left, right) => (right.score ?? -1) - (left.score ?? -1))[0] ?? null;
+    const reviewResponses = bestAttempt
+        ? await prisma.testAttemptResponse.findMany({
+            where: { attemptId: bestAttempt.id },
+            orderBy: { question: { order: "asc" } },
+            select: {
+                questionId: true,
+                responseText: true,
+                pointsAwarded: true,
+                selectedOption: { select: { optionText: true } },
+                question: {
+                    select: {
+                        questionText: true,
+                        points: true,
+                        options: { where: { isCorrect: true }, select: { optionText: true } },
+                        answers: { where: { isCorrect: true }, select: { answerText: true } },
+                    },
+                },
+            },
+        }) as unknown as LearnerReviewResponse[]
+        : [];
+    const resultReview = reviewResponses.map((response) => {
+        const fullyCorrect = response.pointsAwarded === response.question.points;
+        const expectedAnswer = fullyCorrect
+            ? null
+            : [
+                ...response.question.options.map((option) => option.optionText),
+                ...response.question.answers.flatMap((answer) => answer.answerText ? [answer.answerText] : []),
+            ].join(" / ") || null;
+        return {
+            questionId: response.questionId,
+            questionText: response.question.questionText,
+            learnerAnswer: response.responseText || response.selectedOption?.optionText || "No answer",
+            pointsAwarded: response.pointsAwarded ?? 0,
+            maxPoints: response.question.points,
+            expectedAnswer,
+        };
+    });
     const now = new Date();
     const available = (!test.opensAt || now >= test.opensAt) && (!test.closesAt || now <= test.closesAt);
     return NextResponse.json({
@@ -58,6 +107,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         },
         attemptHistory: attempts,
         bestAttempt,
+        resultReview,
     });
 }
 

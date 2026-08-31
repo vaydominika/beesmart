@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Reorder, useDragControls } from "framer-motion";
-import { CalendarPlus, Clock, GripVertical, LockKeyhole, Trash2 } from "lucide-react";
+import { CalendarPlus, Clock, GripVertical, LockKeyhole, Repeat2, Trash2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
+import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
@@ -23,7 +24,7 @@ import { DEFAULT_EVENT_COLOR } from "./event-palette";
 import { EventColorPicker } from "./EventColorPicker";
 import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
 import { readJsonSafely } from "@/lib/http";
-import { formatLongDate } from "@/lib/schedule";
+import { eventRecordId, formatLongDate, RECURRENCE_OPTIONS, type RecurrencePattern, type RecurrenceSelection } from "@/lib/schedule";
 
 interface EventData {
   id: string;
@@ -35,6 +36,8 @@ interface EventData {
   isAllDay: boolean;
   isProtected?: boolean;
   canEdit?: boolean;
+  recurrencePattern?: RecurrencePattern | null;
+  seriesId?: string | null;
 }
 
 interface EventModalProps {
@@ -50,8 +53,8 @@ function SortableEventItem({ event, onDelete, onDragEnd }: { event: EventData; o
   const controls = useDragControls();
   return (
     <Reorder.Item value={event} dragListener={false} dragControls={controls} onDragEnd={onDragEnd} className="mb-2 flex items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-2.5">
-      {event.isProtected ? (
-        <span className="flex h-8 w-8 items-center justify-center text-[var(--app-text-faint)]"><LockKeyhole className="h-4 w-4" /></span>
+      {event.isProtected || event.recurrencePattern ? (
+        <span className="flex h-8 w-8 items-center justify-center text-[var(--app-text-faint)]">{event.recurrencePattern ? <Repeat2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}</span>
       ) : (
         <button type="button" aria-label={`Reorder ${event.title}`} className="flex h-8 w-8 cursor-grab touch-none items-center justify-center rounded-lg text-[var(--app-text-faint)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] active:cursor-grabbing" onPointerDown={(pointerEvent) => controls.start(pointerEvent)}><GripVertical className="h-4 w-4" /></button>
       )}
@@ -71,6 +74,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
   const [endTime, setEndTime] = useState("");
   const [isAllDay, setIsAllDay] = useState(false);
   const [color, setColor] = useState<string>(DEFAULT_EVENT_COLOR);
+  const [recurrence, setRecurrence] = useState<RecurrenceSelection>("NONE");
   const [saving, setSaving] = useState(false);
   const [events, setEvents] = useState<EventData[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -104,6 +108,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     setEndTime(initialEndTime || "");
     setIsAllDay(false);
     setColor(DEFAULT_EVENT_COLOR);
+    setRecurrence("NONE");
   }, [fetchEventsForDate, initialEndTime, initialStartTime, open]);
 
   const handleSave = async () => {
@@ -114,13 +119,13 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
       const day = String(selectedDate.getDate()).padStart(2, "0");
-      const response = await fetch("/api/user/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim(), description: description.trim() || null, startDate: `${year}-${month}-${day}T00:00:00.000Z`, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color }) });
+      const response = await fetch("/api/user/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim(), description: description.trim() || null, startDate: `${year}-${month}-${day}T00:00:00.000Z`, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color, recurrencePattern: recurrence === "NONE" ? null : recurrence }) });
       if (!response.ok) {
         const result = await readJsonSafely<{ error?: string }>(response, {});
         return toast.error(result.error ?? "Failed to create event.");
       }
       toast.success("Event created");
-      setTitle(""); setDescription(""); setStartTime(""); setEndTime(""); setIsAllDay(false); setColor(DEFAULT_EVENT_COLOR);
+      setTitle(""); setDescription(""); setStartTime(""); setEndTime(""); setIsAllDay(false); setColor(DEFAULT_EVENT_COLOR); setRecurrence("NONE");
       await fetchEventsForDate();
       window.setTimeout(onEventsChanged, 100);
     } catch {
@@ -134,7 +139,8 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     if (!eventToDeleteId) return;
     setDeleting(true);
     try {
-      const response = await fetch(`/api/user/events?id=${eventToDeleteId}`, { method: "DELETE" });
+      const selected = events.find((event) => event.id === eventToDeleteId);
+      const response = await fetch(`/api/user/events?id=${selected ? eventRecordId(selected) : eventToDeleteId}`, { method: "DELETE" });
       if (!response.ok) return toast.error("Failed to delete event.");
       toast.success("Event deleted");
       await fetchEventsForDate();
@@ -148,7 +154,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
 
   const handleDragEnd = async () => {
     try {
-      await fetch("/api/user/events", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(events.filter((event) => !event.isProtected).map((event, index) => ({ id: event.id, order: index }))) });
+      await fetch("/api/user/events", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(events.filter((event) => !event.isProtected && !event.recurrencePattern).map((event, index) => ({ id: event.id, order: index }))) });
       window.setTimeout(onEventsChanged, 50);
     } catch {
       toast.error("Failed to save order.");
@@ -172,6 +178,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
             <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">New event details</h3>
             <div><label htmlFor="event-title" className={workspaceLabelClass}>Title</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder="Event title" /></div>
             <div><label htmlFor="event-description" className={workspaceLabelClass}>Description <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder="Add a note" /></div>
+            <div><label className={workspaceLabelClass}>Repeats</label><WorkspaceSelect ariaLabel="Repeats" value={recurrence} options={RECURRENCE_OPTIONS} onValueChange={setRecurrence} triggerIcon={Repeat2} className="w-full" /></div>
             <WorkspaceSwitchRow id="event-all-day" label="All day" checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
             {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label="Start" value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label="End" value={endTime} onChange={setEndTime} /></div> : null}
             <EventColorPicker value={color} onValueChange={setColor} />

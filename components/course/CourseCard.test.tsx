@@ -9,7 +9,6 @@ const learnerCourse: CourseSummary = {
   description: "<p>Cells <strong>without</strong> unsafe markup</p>",
   coverImageUrl: null,
   createdById: "teacher-1",
-  classroomId: "classroom-1",
   isPublic: true,
   published: true,
   visibility: "PUBLIC",

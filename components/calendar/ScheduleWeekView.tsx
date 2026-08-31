@@ -234,7 +234,7 @@ export function ScheduleWeekView({
                     event.preventDefault();
                     const id = event.dataTransfer.getData("text/schedule-event");
                     const moved = events.find((item) => item.id === id);
-                    if (!moved || moved.canEdit === false || moved.isProtected || !moved.startTime) return;
+                    if (!moved || moved.canEdit === false || moved.isProtected || moved.recurrencePattern || !moved.startTime) return;
                     const rect = event.currentTarget.getBoundingClientRect();
                     const start = minutesFromY(event.clientY - rect.top);
                     onMoveEvent(moved, day, formatTime(start), formatTime(Math.min(23 * 60 + 59, start + eventDuration(moved))));
@@ -265,7 +265,7 @@ export function ScheduleWeekView({
                         key={event.id}
                         type="button"
                         data-event-card
-                        draggable={event.canEdit !== false && !event.isProtected}
+                        draggable={event.canEdit !== false && !event.isProtected && !event.recurrencePattern}
                         onDragStart={(dragEvent) => dragEvent.dataTransfer.setData("text/schedule-event", event.id)}
                         onClick={() => onSelectEvent(event)}
                         aria-label={`${event.title}, ${event.startTime} to ${event.endTime || formatTime(parseTime(event.startTime) + 60)}`}
@@ -285,7 +285,7 @@ export function ScheduleWeekView({
                         )}>
                           {event.startTime}<span className="schedule-event-end-time"> – {event.endTime || formatTime(parseTime(event.startTime) + 60)}</span>
                         </span>
-                        {event.canEdit !== false && !event.isProtected && (
+                        {event.canEdit !== false && !event.isProtected && !event.recurrencePattern && (
                           <span
                             role="presentation"
                             aria-hidden="true"

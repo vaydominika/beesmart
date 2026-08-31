@@ -2,15 +2,12 @@ import { describe, expect, it } from "vitest";
 import { accessibleCourseWhere, classroomCourseAccessWhere } from "./course-access";
 
 describe("course access rules", () => {
-  it("allows published non-private courses from direct or linked classrooms", () => {
+  it("allows published non-private courses through classroom links", () => {
     const rule = classroomCourseAccessWhere("user-1");
     expect(rule).toEqual({
       published: true,
       visibility: { not: "PRIVATE" },
-      OR: [
-        { classroom: { is: { members: { some: { userId: "user-1" } } } } },
-        { classroomLinks: { some: { classroom: { members: { some: { userId: "user-1" } } } } } },
-      ],
+      classroomLinks: { some: { classroom: { members: { some: { userId: "user-1" } } } } },
     });
   });
 

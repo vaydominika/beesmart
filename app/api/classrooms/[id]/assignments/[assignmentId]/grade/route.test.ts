@@ -19,7 +19,7 @@ vi.mock('@/lib/db', () => ({
       create: vi.fn(),
     },
     assignedWork: {
-      findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     notification: {
       create: vi.fn(),
@@ -37,6 +37,7 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.assignedWork.findFirst as any).mockResolvedValue({ title: 'Math Quiz', isGraded: true, maxPoints: 100 });
   });
 
   it('should return 401 if user is not authenticated', async () => {
@@ -75,7 +76,6 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
     });
     (prisma.grade.findFirst as any).mockResolvedValue(null);
     (prisma.grade.create as any).mockResolvedValue({ id: 'g1', score: 85 });
-    (prisma.assignedWork.findUnique as any).mockResolvedValue({ title: 'Math Quiz' });
 
     const req = new NextRequest('http://localhost/api/classrooms/c1/assignments/a1/grade', {
       method: 'POST',
@@ -92,6 +92,35 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
       data: { status: 'GRADED' },
     });
     expect(prisma.notification.create).toHaveBeenCalled();
+  });
+
+  it('should reject grading when the assignment switch is off', async () => {
+    (getCurrentUserId as any).mockResolvedValue(userId);
+    (prisma.classroomMember.findUnique as any).mockResolvedValue({ role: 'TEACHER' });
+    (prisma.assignedWork.findFirst as any).mockResolvedValue({ title: 'Practice', isGraded: false, maxPoints: null });
+
+    const response = await POST(new NextRequest('http://localhost', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, score: 10 }),
+    }), mockContext);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'This assignment is not graded' });
+    expect(prisma.grade.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject scores above the assignment maximum', async () => {
+    (getCurrentUserId as any).mockResolvedValue(userId);
+    (prisma.classroomMember.findUnique as any).mockResolvedValue({ role: 'TEACHER' });
+
+    const response = await POST(new NextRequest('http://localhost', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, score: 101 }),
+    }), mockContext);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Score must be between 0 and 100' });
+    expect(prisma.grade.create).not.toHaveBeenCalled();
   });
 
   it('should update an existing grade if it already exists', async () => {
