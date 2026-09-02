@@ -26,6 +26,7 @@ import { useEventSync } from "@/hooks/use-event-sync";
 import { classroomAssignmentHref, classroomPostCreatesCalendarEvent, classroomPostDeleteDetails } from "@/lib/classroom-post-events";
 import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -769,11 +770,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     <AuthorAvatar author={post.author} size={32} className="h-8 w-8" />
                                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                         <span className="text-sm font-semibold text-[var(--classroom-text)]">{post.author.name}</span>
-                                        <span className="text-xs text-[var(--classroom-text-muted)]" title={new Date(post.createdAt).toLocaleString()}>Posted {formatDate(post.createdAt)}</span>
+                                        <Tooltip><TooltipTrigger asChild><span className="text-xs text-[var(--classroom-text-muted)]">Posted {formatDate(post.createdAt)}</span></TooltipTrigger><TooltipContent>{new Date(post.createdAt).toLocaleString()}</TooltipContent></Tooltip>
                                         {post.editedAt && (
-                                            <span className="text-xs text-[var(--classroom-text-faint)]" title={new Date(post.editedAt).toLocaleString()}>
+                                            <Tooltip><TooltipTrigger asChild><span className="text-xs text-[var(--classroom-text-faint)]">
                                                 · Edited {formatDate(post.editedAt)}
-                                            </span>
+                                            </span></TooltipTrigger><TooltipContent>{new Date(post.editedAt).toLocaleString()}</TooltipContent></Tooltip>
                                         )}
                                     </div>
                                 </div>
@@ -785,7 +786,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         </span>
                                     )}
                                     {isTeacher ? (
-                                        <button
+                                        <Tooltip><TooltipTrigger asChild><button
                                             type="button"
                                             onClick={() => handleTogglePin(post.id, post.isPinned)}
                                             aria-label={post.isPinned ? "Unpin post" : "Pin post"}
@@ -793,13 +794,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 "p-1 text-xs text-(--theme-text) transition-all hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-text-important) rounded-md",
                                                 post.isPinned ? "opacity-100" : "opacity-40",
                                             )}
-                                            title={post.isPinned ? "Unpin" : "Pin"}
                                         >
                                             <Pin
                                                 className={cn("h-3.5 w-3.5", post.isPinned && "rotate-45 text-[var(--classroom-pin)]")}
                                                 style={post.isPinned ? { fill: "var(--classroom-accent)" } : undefined}
                                             />
-                                        </button>
+                                        </button></TooltipTrigger><TooltipContent>{post.isPinned ? "Unpin" : "Pin"}</TooltipContent></Tooltip>
                                     ) : post.isPinned ? (
                                         <Pin
                                             className="h-3.5 w-3.5 rotate-45 text-[var(--classroom-pin)]"
@@ -863,22 +863,21 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.assignment.title}</span>
                                             {post.assignment.deadlineAt && (
-                                                <span title={`Deadline set in ${post.assignment.deadlineTimeZone}`} className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.deadlineAt).color)}>
+                                                <Tooltip><TooltipTrigger asChild><span className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.deadlineAt).color)}>
                                                     {getDueDateBadge(post.assignment.deadlineAt).text}
-                                                </span>
+                                                </span></TooltipTrigger><TooltipContent>{`Deadline set in ${post.assignment.deadlineTimeZone}`}</TooltipContent></Tooltip>
                                             )}
                                         </div>
                                         {post.assignment.maxPoints != null && (
                                             <span className="mr-1 text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints} pts</span>
                                         )}
-                                        <Link
+                                        <Tooltip><TooltipTrigger asChild><Link
                                             href={classroomAssignmentHref(classroomId, post.assignment.id)}
                                             aria-label={`Open assignment ${post.assignment.title}`}
-                                            title="Open assignment"
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                         >
                                             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                        </Link>
+                                        </Link></TooltipTrigger><TooltipContent>Open assignment</TooltipContent></Tooltip>
                                 </div>
                             )}
 

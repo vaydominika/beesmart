@@ -64,7 +64,7 @@ export default async function CourseViewerPage({ params }: ViewerPageProps) {
     )[0];
 
     return (
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="course-ui flex h-[calc(100dvh-65px)] min-h-0 w-full overflow-hidden bg-[var(--course-canvas)] md:h-screen">
             <CourseViewerClient
                 course={course}
                 initialCompletedLessonIds={completedLessonIds}

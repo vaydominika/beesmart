@@ -25,6 +25,7 @@ import { EventColorPicker } from "./EventColorPicker";
 import { EventReminderFields } from "./EventReminderFields";
 import { DEFAULT_EVENT_COLOR } from "./event-palette";
 import { classroomWorkKind } from "./ClassroomWorkEditModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface ScheduleEditorState {
   mode: "create" | "edit";
@@ -215,7 +216,7 @@ function ScheduleContextPanelContent({
           <h2 className="text-xl font-semibold leading-tight text-[var(--schedule-text)]">{selectedEvent.title}</h2>
           <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate))}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-          <span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]" title={eventSourceLabel(selectedEvent)}><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span>
+          <Tooltip><TooltipTrigger asChild><span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(selectedEvent)}</TooltipContent></Tooltip>
           <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? eventTimeLabel(selectedEvent) : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
           {selectedEvent.recurrencePattern && <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-2.5 text-[11px] font-semibold leading-none text-[var(--schedule-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{recurrenceLabel(selectedEvent.recurrencePattern)}</span>}
           </div>
@@ -257,7 +258,7 @@ function ScheduleContextPanelContent({
                     {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 shrink-0 text-[var(--schedule-text-faint)]" />}
                   </div>
                   <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? eventTimeLabel(event) : `${event.startTime || "—"}${event.endTime ? `–${event.endTime}` : ""}`}</p>
-                  <span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]" title={eventSourceLabel(event)}><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span>
+                  <Tooltip><TooltipTrigger asChild><span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]"><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(event)}</TooltipContent></Tooltip>
                 </div>
               </button>
             ))}

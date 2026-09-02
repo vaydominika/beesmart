@@ -67,6 +67,7 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
         <EditorContent
           initialContent={initialValue}
           extensions={editorExtensions}
+          immediatelyRender={false}
           onUpdate={({ editor }) => {
             if (isSyncing.current) {
               return;

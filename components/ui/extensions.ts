@@ -1,5 +1,4 @@
 import StarterKit from "@tiptap/starter-kit";
-import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -86,7 +85,6 @@ export const defaultExtensions = [
     placeholder,
     slashCommand,
     tiptapLink,
-    TiptapImage,
     UpdatedImage,
     taskList,
     taskItem,

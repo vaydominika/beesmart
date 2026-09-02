@@ -89,6 +89,19 @@ describe("lesson detail operations", () => {
     expect(prisma.courseLesson.findFirst).toHaveBeenCalledWith(expect.objectContaining({ select: expect.any(Object) }));
   });
 
+  it("normalizes legacy Markdown lesson content for the viewer", async () => {
+    vi.mocked(getLessonAccess).mockResolvedValue({ allowed: true, isCreator: false } as never);
+    vi.mocked(prisma.courseLesson.findFirst).mockResolvedValue({
+      id: "lesson-1",
+      title: "Cells",
+      content: "## Cell structure\n\nCells have **membranes**.",
+      files: [],
+    } as never);
+
+    const body = await (await GET(new NextRequest("http://localhost"), context)).json();
+    expect(body.content).toBe("<h2>Cell structure</h2>\n<p>Cells have <strong>membranes</strong>.</p>");
+  });
+
   it.each([
     ["COURSE_FORBIDDEN", 403],
     ["LESSON_LOCKED", 423],

@@ -822,6 +822,12 @@ input[type="search"]::-ms-reveal {
   background: var(--course-canvas);
 }
 
+/* The learner-facing course viewer keeps BeeSmart's condensed brand typography. */
+.course-ui.course-viewer,
+.course-ui.course-viewer .workspace-button {
+  font-family: var(--font-barlow-condensed), "Arial Narrow", sans-serif;
+}
+
 .course-ui.course-surface {
   background: var(--course-surface);
 }

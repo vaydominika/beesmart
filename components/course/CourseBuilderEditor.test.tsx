@@ -41,6 +41,13 @@ afterEach(() => {
 });
 
 describe("CourseBuilderEditor", () => {
+  it("uses a white surface for the learner preview header", () => {
+    render(<CourseBuilderEditor lesson={lesson} courseId="course-1" previewMode onLessonUpdate={vi.fn()} />);
+
+    expect(screen.getByText("Learner preview").closest("header")).toHaveClass("bg-[var(--app-surface)]");
+    expect(screen.getByText("Learner preview").closest("header")).not.toHaveClass("bg-[var(--course-accent)]");
+  });
+
   it("flushes pending lesson changes when the course is saved", async () => {
     const onDirtyChange = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({
@@ -109,6 +116,13 @@ describe("CourseBuilderEditor", () => {
     render(<CourseBuilderEditor lesson={lesson} courseId="course-1" onLessonUpdate={vi.fn()} />);
     expect(screen.getByText("Editable", { selector: "span" })).toBeInTheDocument();
     expect(screen.getByLabelText("Lesson title")).toHaveValue("Cell structure");
+    expect(screen.getByLabelText("Lesson title")).toHaveClass(
+      "rounded-lg",
+      "transition-colors",
+      "hover:bg-[var(--course-surface-muted)]",
+      "hover:text-[var(--course-text-muted)]",
+      "motion-reduce:transition-none",
+    );
     expect(screen.getByRole("region", { name: "Lesson content editor" })).toHaveClass(
       "focus-within:border-[var(--course-focus-border)]",
       "focus-within:ring-2",

@@ -36,7 +36,7 @@ describe("POST lesson generation", () => {
     vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "teacher-1" } as never);
     vi.mocked(prisma.courseLesson.findFirst).mockResolvedValue({ id: "lesson-1", title: "Cells", module: { title: "Biology" } } as never);
     vi.mocked(canManageCourse).mockResolvedValue(true);
-    vi.mocked(streamText).mockReturnValue({ toTextStreamResponse: (init?: ResponseInit) => new Response("Generated lesson", init) } as never);
+    vi.mocked(streamText).mockReturnValue({ text: Promise.resolve("Generated lesson") } as never);
   });
 
   it("rejects prompts over 2,000 characters before consuming an attempt", async () => {
@@ -62,5 +62,23 @@ describe("POST lesson generation", () => {
     expect(reserveAiAttempt).toHaveBeenCalledOnce();
     expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 3000 }));
     expect(response.headers.get("X-AI-Remaining")).toBe("2");
+  });
+
+  it("requests HTML and normalizes Markdown model output before returning it", async () => {
+    vi.mocked(streamText).mockReturnValue({
+      text: Promise.resolve("## Cell structure\n\nA cell has a **membrane**."),
+    } as never);
+
+    const response = await POST(new NextRequest("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: "Explain cell structure" }),
+    }), context);
+
+    const request = vi.mocked(streamText).mock.calls[0][0];
+    expect(request.system).toContain("Return HTML only");
+    expect(request.system).toContain("Do not use Markdown");
+    expect(response.headers.get("Content-Type")).toBe("text/html; charset=utf-8");
+    await expect(response.text()).resolves.toBe("<h2>Cell structure</h2>\n<p>A cell has a <strong>membrane</strong>.</p>");
   });
 });

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { selectDailyWelcomeMessage } from "@/lib/dashboard";
+import { FIRST_LOGIN_WELCOME_MESSAGE, selectDailyWelcomeMessage } from "@/lib/dashboard";
 import { WelcomeBanner } from "./WelcomeBanner";
 
 const dashboardMock = vi.hoisted(() => ({
@@ -11,14 +11,20 @@ const dashboardMock = vi.hoisted(() => ({
     loading: false,
   },
 }));
-const routerMock = vi.hoisted(() => ({ push: vi.fn() }));
+const routerMock = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+const navigationMock = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
 
 vi.mock("@/lib/DashboardContext", () => ({ useDashboard: () => dashboardMock.state }));
-vi.mock("next/navigation", () => ({ useRouter: () => routerMock }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => routerMock,
+  useSearchParams: () => navigationMock.searchParams,
+}));
 
 describe("WelcomeBanner", () => {
   beforeEach(() => {
     routerMock.push.mockClear();
+    routerMock.replace.mockClear();
+    navigationMock.searchParams = new URLSearchParams();
     document.body.innerHTML = '<div id="discover"></div>';
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -34,5 +40,16 @@ describe("WelcomeBanner", () => {
     fireEvent.click(screen.getByRole("button", { name: /Make your own/ }));
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledOnce();
     expect(routerMock.push).toHaveBeenCalledWith("/courses");
+  });
+
+  it("welcomes a newly registered user without return-visit copy", () => {
+    navigationMock.searchParams = new URLSearchParams({ welcome: "new" });
+
+    render(<WelcomeBanner />);
+
+    expect(screen.getByRole("heading", { name: "Welcome, Dominika" })).toBeInTheDocument();
+    expect(screen.getByText(FIRST_LOGIN_WELCOME_MESSAGE)).toBeInTheDocument();
+    expect(screen.queryByText(selectDailyWelcomeMessage("user-1"))).not.toBeInTheDocument();
+    expect(routerMock.replace).toHaveBeenCalledWith("/dashboard", { scroll: false });
   });
 });

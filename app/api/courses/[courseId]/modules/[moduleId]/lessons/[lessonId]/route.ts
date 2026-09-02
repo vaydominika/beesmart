@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { canManageCourse, getLessonAccess } from "@/lib/course-access";
-import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
+import { normalizeGeneratedRichText, richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
 import type { Prisma } from "@/lib/generated/prisma";
@@ -46,7 +46,11 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
         if (!lesson) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        return NextResponse.json({ ...lesson, files: lesson.files?.map((file: StoredLessonFile) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
+        return NextResponse.json({
+            ...lesson,
+            content: normalizeGeneratedRichText(lesson.content),
+            files: lesson.files?.map((file: StoredLessonFile) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+        });
     } catch (e) {
         console.error("GET /api/courses/.../lessons/[lessonId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });

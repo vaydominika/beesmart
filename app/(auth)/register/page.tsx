@@ -58,7 +58,7 @@ export default function RegisterPage() {
         router.refresh();
         return;
       }
-      router.push("/dashboard");
+      router.push("/dashboard?welcome=new");
       router.refresh();
     } catch {
       toast.error("Something went wrong.");
@@ -68,7 +68,7 @@ export default function RegisterPage() {
   };
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { callbackUrl: "/dashboard?welcome=new" });
   };
 
   return (

@@ -12,6 +12,7 @@ import {
   Minimize01Icon,
   Cancel01Icon,
 } from "@hugeicons/core-free-icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TimerWidget() {
   const {
@@ -127,33 +128,9 @@ export function TimerWidget() {
 
         {/* Control buttons */}
         <div className="flex items-center justify-center gap-2.5">
-          <button
-            type="button"
-            onClick={undo}
-            aria-label="Undo focus timer action"
-            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
-            title="Undo"
-          >
-            <HugeiconsIcon icon={UndoIcon} size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={isRunning ? pauseTimer : resumeTimer}
-            aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"}
-            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
-            title={isRunning ? "Pause" : "Play"}
-          >
-            <HugeiconsIcon icon={isRunning ? PauseIcon : PlayIcon} size={20} />
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            aria-label="Skip to next focus timer interval"
-            className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
-            title="Next"
-          >
-            <HugeiconsIcon icon={NextIcon} size={20} />
-          </button>
+          <Tooltip><TooltipTrigger asChild><button type="button" onClick={undo} aria-label="Undo focus timer action" className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={UndoIcon} size={20} /></button></TooltipTrigger><TooltipContent>Undo</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><button type="button" onClick={isRunning ? pauseTimer : resumeTimer} aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"} className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={isRunning ? PauseIcon : PlayIcon} size={20} /></button></TooltipTrigger><TooltipContent>{isRunning ? "Pause" : "Play"}</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><button type="button" onClick={next} aria-label="Skip to next focus timer interval" className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={NextIcon} size={20} /></button></TooltipTrigger><TooltipContent>Next</TooltipContent></Tooltip>
         </div>
       </div>
     </Draggable>

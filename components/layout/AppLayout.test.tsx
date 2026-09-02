@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import Link from "next/link";
 import { AppLayout } from "./AppLayout";
 
 const responsive = vi.hoisted(() => ({ isMobile: false, hasRoom: false }));
@@ -19,7 +20,7 @@ vi.mock("./useIsMobile", () => ({
 }));
 vi.mock("./LayoutProvider", () => ({ useLayout: () => layout }));
 vi.mock("./Header", () => ({ Header: () => null }));
-vi.mock("./LeftSidebar", () => ({ LeftSidebar: () => <div>Left sidebar</div> }));
+vi.mock("./LeftSidebar", () => ({ LeftSidebar: () => <Link href="/courses" data-testid="left-sidebar">Courses</Link> }));
 vi.mock("./RightSidebar", () => ({ RightSidebar: ({ variant }: { variant: string }) => <div data-testid="right-sidebar" data-variant={variant}>Right sidebar</div> }));
 vi.mock("@/components/focus/TimerWidget", () => ({ TimerWidget: () => null }));
 vi.mock("@/components/settings/Settings", () => ({ SettingsModal: () => null }));
@@ -55,6 +56,16 @@ describe("AppLayout responsive right sidebar", () => {
     expect(screen.getByRole("button", { name: "Close sidebar" })).toHaveStyle({ right: "288px" });
   });
 
+  it("keeps the course viewer focused on its own syllabus and reader", () => {
+    navigation.pathname = "/courses/course-1/viewer";
+
+    const { container } = render(<AppLayout><div>Course viewer</div></AppLayout>);
+
+    expect(screen.queryByTestId("left-sidebar")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-right-sidebar-shell]")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open sidebar" })).not.toBeInTheDocument();
+  });
+
   it("remounts the staggered page entrance when navigation changes", () => {
     const { container, rerender } = render(<AppLayout><div>Main content</div></AppLayout>);
     const firstTransition = container.querySelector("[data-page-transition]");
@@ -65,5 +76,14 @@ describe("AppLayout responsive right sidebar", () => {
     rerender(<AppLayout><div>Main content</div></AppLayout>);
 
     expect(container.querySelector("[data-page-transition]")).not.toBe(firstTransition);
+  });
+
+  it("shows the new page content after a client-side route transition", () => {
+    const { rerender } = render(<AppLayout><div>Dashboard content</div></AppLayout>);
+    navigation.pathname = "/courses";
+    rerender(<AppLayout><div>Courses content</div></AppLayout>);
+
+    expect(screen.getByText("Courses content")).toBeInTheDocument();
+    expect(screen.queryByText("Dashboard content")).not.toBeInTheDocument();
   });
 });

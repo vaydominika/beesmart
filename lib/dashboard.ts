@@ -11,6 +11,9 @@ export const DAILY_WELCOME_MESSAGES = [
   "Great to see you again. Let’s bee-gin where you left off!",
 ] as const;
 
+export const FIRST_LOGIN_WELCOME_MESSAGE =
+  "Your learning hive is ready. Explore a course or create one of your own!";
+
 function localDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

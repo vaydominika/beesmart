@@ -3,6 +3,7 @@ import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,10 +43,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} antialiased`}
       >
-        <SessionProvider>
-          <Toaster />
-          {children}
-        </SessionProvider>
+        <TooltipProvider>
+          <SessionProvider>
+            <Toaster />
+            {children}
+          </SessionProvider>
+        </TooltipProvider>
       </body>
     </html>
   );

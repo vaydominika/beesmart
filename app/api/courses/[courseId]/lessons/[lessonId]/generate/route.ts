@@ -7,7 +7,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
 import { deletePrivateFile, writePrivateFile } from "@/lib/files/storage";
 import { UploadValidationError, validateUpload } from "@/lib/files/validation";
-import { richTextToPlainText } from "@/lib/security/rich-text";
+import { normalizeGeneratedRichText, richTextToPlainText } from "@/lib/security/rich-text";
 import { AI_LESSON_PROMPT_CHARACTER_LIMIT, AI_SOURCE_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
 import { AiDailyLimitError, aiLimitResponse, aiUsageHeaders, reserveAiAttempt, withAiUsage } from "@/lib/ai/usage";
 
@@ -118,7 +118,8 @@ Module Name: "${lesson.module.title}"
 Lesson Request: "${prompt || lesson.title}"
 ${tone ? `Tone: ${tone}` : ''}
 ${extractedFileText ? `\n--- SOURCE MATERIAL FROM FILE ---\n${extractedFileText}\n--- END SOURCE MATERIAL ---` : ""}
-Your goal is to write engaging, high-quality educational content formatted in clean, semantic HTML or Markdown that can be easily dropped into a TipTap rich text editor. Do NOT wrap the answer in a markdown code block. Just output the raw formatted text. Use bolding, lists, and headings appropriately.`;
+Your goal is to write engaging, high-quality educational content as clean, semantic HTML that can be dropped directly into a TipTap rich text editor.
+Return HTML only. Do not use Markdown and do not wrap the answer in a code block. Use semantic headings, paragraphs, strong emphasis, and lists appropriately.`;
 
         if (boundedExistingText) {
             systemPrompt += `\n\nHere is the existing lesson text for context:\n${boundedExistingText}`;
@@ -142,8 +143,13 @@ Your goal is to write engaging, high-quality educational content formatted in cl
             messages: [{ role: "user", content: `Please generate the lesson content for: ${lesson.title}` }],
         });
 
-        // Use AI SDK's built-in Route Handler response
-        return result.toTextStreamResponse({ headers: aiUsageHeaders(usage) });
+        const generatedContent = normalizeGeneratedRichText(await result.text);
+        return new Response(generatedContent, {
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                ...aiUsageHeaders(usage),
+            },
+        });
 
     } catch (e) {
         if (e instanceof AiDailyLimitError) return aiLimitResponse(e);

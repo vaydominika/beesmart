@@ -16,6 +16,7 @@ import type { TestDraft } from "@/lib/classroom-post-drafts";
 import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
 import { AI_SOURCE_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 import { isLocalDateTimePast, minimumLocalDateTimeInputValue } from "@/lib/schedule-validation";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type QuestionType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_ANSWER" | "ESSAY";
 
@@ -619,7 +620,8 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                 <div className="space-y-2">
                                                     {q.options.map((opt, oIndex) => (
                                                         <div key={oIndex} className="flex items-center gap-2">
-                                                            <button
+                                                            <Tooltip><TooltipTrigger asChild><button
+                                                                type="button"
                                                                 onClick={() => updateOption(qIndex, oIndex, "isCorrect", true)}
                                                                 className={cn(
                                                                     "shrink-0 transition-colors",
@@ -627,10 +629,9 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                                         ? "text-[var(--app-success)]"
                                                                         : "text-(--theme-text) opacity-30 hover:opacity-60"
                                                                 )}
-                                                                title={opt.isCorrect ? "Correct answer" : "Mark as correct"}
                                                             >
                                                                 <CheckCircle2 className="h-5 w-5" />
-                                                            </button>
+                                                            </button></TooltipTrigger><TooltipContent>{opt.isCorrect ? "Correct answer" : "Mark as correct"}</TooltipContent></Tooltip>
                                                             <Input
                                                                 value={opt.optionText}
                                                                 onChange={(e) =>

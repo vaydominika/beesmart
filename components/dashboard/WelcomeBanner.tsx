@@ -1,19 +1,35 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Compass, Icon, Plus } from "lucide-react";
 import { bee } from "@lucide/lab";
 import { useDashboard } from "@/lib/DashboardContext";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
-import { selectDailyWelcomeMessage } from "@/lib/dashboard";
+import { FIRST_LOGIN_WELCOME_MESSAGE, selectDailyWelcomeMessage } from "@/lib/dashboard";
 
 export function WelcomeBanner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data, loading } = useDashboard();
   const user = data?.user;
   const userName = user?.name?.trim() || "Learner";
-  const message = user ? selectDailyWelcomeMessage(user.id) : null;
+  const [isFirstLogin] = useState(() => searchParams.get("welcome") === "new");
+  const message = user
+    ? isFirstLogin
+      ? FIRST_LOGIN_WELCOME_MESSAGE
+      : selectDailyWelcomeMessage(user.id)
+    : null;
   const scrollToDiscover = () => document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" });
+
+  useEffect(() => {
+    if (!isFirstLogin || searchParams.get("welcome") !== "new") return;
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+    nextSearchParams.delete("welcome");
+    const query = nextSearchParams.toString();
+    router.replace(query ? `/dashboard?${query}` : "/dashboard", { scroll: false });
+  }, [isFirstLogin, router, searchParams]);
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)]">
@@ -26,7 +42,7 @@ export function WelcomeBanner() {
       <div className="relative z-10 flex min-h-48 flex-col justify-center gap-5 p-5 md:p-7 lg:pr-52">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[var(--dashboard-text)] sm:text-3xl md:text-[38px]">
-            Welcome back, {loading && !user ? "…" : userName}
+            {isFirstLogin ? "Welcome" : "Welcome back"}, {loading && !user ? "…" : userName}
           </h2>
           <p className="mt-2 max-w-3xl text-base font-medium leading-relaxed text-[var(--dashboard-text-muted)] md:text-xl">
             {message ?? "The hive is getting things ready…"}

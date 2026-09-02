@@ -1,12 +1,17 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render as testingRender, screen, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CourseBuilderClient from "./CourseBuilderClient";
 import type { CourseBuilderCourse } from "@/lib/course-builder";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+const render = (ui: ReactElement) => testingRender(ui, { wrapper: TooltipProvider });
 
 vi.mock("./CourseBuilderSidebar", () => ({
-  default: ({ course, onCourseChange, isSaving }: { course: CourseBuilderCourse; onCourseChange: (course: Partial<CourseBuilderCourse>) => void; isSaving?: boolean }) => (
+  default: ({ course, onCourseChange, isSaving, leadingControl }: { course: CourseBuilderCourse; onCourseChange: (course: Partial<CourseBuilderCourse>) => void; isSaving?: boolean; leadingControl?: React.ReactNode }) => (
     <div data-testid="syllabus">
       Syllabus panel
+      {leadingControl}
       <button type="button" disabled={isSaving} onClick={() => onCourseChange({ modules: course.modules.map((module) => ({ ...module, title: `${module.title} changed` })) })}>Change syllabus</button>
       <button type="button" disabled={isSaving} onClick={() => onCourseChange({ modules: course.modules.map((module) => ({ ...module, title: module.title.replace(/ changed$/, "") })) })}>Revert syllabus</button>
     </div>
@@ -58,6 +63,27 @@ describe("CourseBuilderClient", () => {
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("data-variant", "secondary");
     expect(screen.getByRole("button", { name: "Publish" })).toBeInTheDocument();
+  });
+
+  it("matches the syllabus back control height to the module control", () => {
+    render(<CourseBuilderClient initialCourse={course} />);
+
+    const backControls = screen.getAllByRole("link", { name: "Back to courses" });
+    const syllabusBackControl = backControls
+      .find((control) => control.dataset.size === "icon-compact");
+
+    expect(backControls).toHaveLength(1);
+    expect(syllabusBackControl).toHaveAttribute("data-size", "icon-compact");
+    expect(syllabusBackControl).toHaveClass("h-8");
+  });
+
+  it("keeps the back control in the syllabus while editing and removes it from preview", () => {
+    render(<CourseBuilderClient initialCourse={course} />);
+
+    expect(screen.getByRole("link", { name: "Back to courses" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
+
+    expect(screen.queryByRole("link", { name: "Back to courses" })).not.toBeInTheDocument();
   });
 
   it("opens the course creation tutorial from the editor", () => {

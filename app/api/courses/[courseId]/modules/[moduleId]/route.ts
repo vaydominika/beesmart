@@ -24,11 +24,26 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (data.title !== undefined) updateData.title = data.title.trim();
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
 
-        const updated = await prisma.courseModule.update({
-            where: { id: moduleId, courseId },
-            data: updateData,
-            include: { lessons: true }
-        });
+        if (data.isPrerequisite !== undefined) {
+            if (typeof data.isPrerequisite !== "boolean") {
+                return NextResponse.json({ error: "isPrerequisite must be a boolean" }, { status: 400 });
+            }
+            await prisma.courseLesson.updateMany({
+                where: { moduleId, module: { courseId } },
+                data: { isLocked: data.isPrerequisite },
+            });
+        }
+
+        const updated = Object.keys(updateData).length > 0
+            ? await prisma.courseModule.update({
+                where: { id: moduleId, courseId },
+                data: updateData,
+                include: { lessons: true },
+            })
+            : await prisma.courseModule.findUnique({
+                where: { id: moduleId, courseId },
+                include: { lessons: true },
+            });
 
         return NextResponse.json(updated);
     } catch (e) {

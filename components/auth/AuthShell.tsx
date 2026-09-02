@@ -24,13 +24,6 @@ export function AuthShell({ title, footer, children }: AuthShellProps) {
         <Link href="/" className="w-fit rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-border)]">
           <BeeSmartLogo className="h-[72px] w-auto" priority />
         </Link>
-
-        <div className="mt-auto max-w-[250px] pb-1">
-          <div aria-hidden="true" className="mb-5 h-px w-10 bg-[var(--app-focus-border)]" />
-          <p className="text-lg font-medium leading-7 text-[var(--app-text)]">
-            Courses, classrooms, and your schedule in one place.
-          </p>
-        </div>
       </aside>
 
       <section className="flex min-w-0 flex-col justify-center px-5 py-6 sm:px-10 sm:py-9 lg:px-14">

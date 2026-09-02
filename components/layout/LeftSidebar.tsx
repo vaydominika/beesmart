@@ -63,6 +63,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
         <div className="mb-6 flex justify-center md:mb-4">
           <Link
             href="/dashboard"
+            prefetch={true}
             onClick={isOverlay ? onClose : undefined}
             aria-label="Go to dashboard"
             className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
@@ -109,6 +110,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
                 <div className="relative h-full overflow-visible">
                   <Link
                     href={item.href}
+                    prefetch={true}
                     aria-current={isActive ? "page" : undefined}
                     onClick={isOverlay ? onClose : undefined}
                     className={cn(

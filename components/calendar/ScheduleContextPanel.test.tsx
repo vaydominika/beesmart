@@ -1,6 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render as testingRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScheduleContextPanel } from "./ScheduleContextPanel";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+const render = (ui: ReactElement) => testingRender(ui, { wrapper: TooltipProvider });
 
 vi.mock("@/components/settings/SettingsProvider", () => ({
   useSettings: () => ({ reminderNotifications: true }),
@@ -98,7 +102,7 @@ describe("ScheduleContextPanel reminders", () => {
       />,
     );
 
-    expect(screen.getByTitle("Personal")).toHaveClass("bg-[var(--app-event-6)]");
+    expect(screen.getByText("Personal").closest('[data-slot="tooltip-trigger"]')).toHaveClass("bg-[var(--app-event-6)]");
     expect(screen.getByText("09:00–11:00")).toHaveClass("bg-[var(--app-event-6)]");
   });
 

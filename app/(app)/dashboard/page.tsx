@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { MainContent } from "@/components/dashboard/MainContent";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { BasedOnYourCoursesCard } from "@/components/dashboard/BasedOnYourCoursesCard";
@@ -16,7 +16,9 @@ export default function DashboardPage() {
         <WorkspacePageHeader title="Dashboard" titleClassName="text-[var(--dashboard-text)]" actions={<WorkspaceSearchField type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} onClear={() => setSearchQuery("")} placeholder="Search courses" aria-label="Search dashboard courses" wrapperClassName="w-full sm:w-80" className="h-10 border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] text-[var(--dashboard-text)] placeholder:text-[var(--dashboard-text-faint)] focus:border-[var(--dashboard-focus-border)] focus:ring-[var(--dashboard-focus-ring)]" />} />
 
         <div className="space-y-4">
-          <WelcomeBanner />
+          <Suspense fallback={null}>
+            <WelcomeBanner />
+          </Suspense>
           <div className="grid gap-4 md:grid-cols-2">
             <BasedOnYourCoursesCard />
             <SurpriseMeCard />

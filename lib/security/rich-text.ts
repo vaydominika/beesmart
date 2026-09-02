@@ -1,4 +1,11 @@
 import sanitizeHtml from "sanitize-html";
+import MarkdownIt from "markdown-it";
+
+const markdown = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: false,
+});
 
 const ALLOWED_TAGS = [
   "p", "br", "h1", "h2", "h3", "h4", "h5", "h6",
@@ -54,6 +61,16 @@ export function sanitizeRichTextHtml(value: unknown): string {
       },
     },
   }).trim();
+}
+
+export function normalizeGeneratedRichText(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  const trimmed = value.trim();
+  const fenced = trimmed.match(/^```(?:html|markdown|md)?\s*\n([\s\S]*?)\n```$/i);
+  const unwrapped = fenced?.[1] ?? trimmed;
+
+  return sanitizeRichTextHtml(markdown.render(unwrapped));
 }
 
 export function richTextToPlainText(value: unknown): string {

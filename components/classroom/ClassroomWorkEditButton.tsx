@@ -8,6 +8,7 @@ import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { toast } from "@/components/ui/sonner";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ClassroomWorkEditButtonProps {
     classroomId: string;
@@ -65,12 +66,11 @@ export function ClassroomWorkEditButton({
     return (
         <>
             <span className={cn("inline-flex items-center gap-0.5", className)}>
-                <WorkspaceButton
+                <Tooltip><TooltipTrigger asChild><WorkspaceButton
                     type="button"
                     variant="ghost"
                     size="icon-compact"
                     aria-label={label}
-                    title={`Edit ${workType}`}
                     onClick={(event) => {
                         event.stopPropagation();
                         setOpen(true);
@@ -78,13 +78,12 @@ export function ClassroomWorkEditButton({
                     className="h-7 w-7 rounded-lg text-[var(--classroom-text-muted)]"
                 >
                     <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                </WorkspaceButton>
-                <WorkspaceButton
+                </WorkspaceButton></TooltipTrigger><TooltipContent>{`Edit ${workType}`}</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><WorkspaceButton
                     type="button"
                     variant="ghost"
                     size="icon-compact"
                     aria-label={deleteLabel}
-                    title={`Delete ${workType}`}
                     onClick={(event) => {
                         event.stopPropagation();
                         setDeleteOpen(true);
@@ -92,7 +91,7 @@ export function ClassroomWorkEditButton({
                     className="h-7 w-7 rounded-lg text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
                 >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                </WorkspaceButton>
+                </WorkspaceButton></TooltipTrigger><TooltipContent>{`Delete ${workType}`}</TooltipContent></Tooltip>
             </span>
             {open && (
                 <ClassroomWorkEditModal

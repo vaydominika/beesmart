@@ -27,9 +27,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isSchedule = pathname.startsWith("/schedule");
   const isCoursesIndex = pathname === "/courses";
   const isCourseBuilder = /^\/courses\/[^/]+\/builder$/.test(pathname);
+  const isCourseViewer = /^\/courses\/[^/]+\/viewer$/.test(pathname);
   const isProfile = /^\/profile\/[^/]+$/.test(pathname);
   const isTickets = pathname === "/tickets";
-  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isProfile || isTickets;
+  const isFocusedWorkspace = isSchedule || isCoursesIndex || isCourseBuilder || isCourseViewer || isProfile || isTickets;
   const isQuietWorkspace = isDashboard || isClassroom || isFocusedWorkspace;
   const { isLeftSidebarOpen, toggleLeftSidebar, isRightSidebarOpen, toggleRightSidebar } = useLayout();
   const mainRef = useRef<HTMLElement>(null);
@@ -135,7 +136,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={cn("relative flex h-screen overflow-x-hidden", isQuietWorkspace ? "bg-(--app-canvas)" : "bg-(--theme-bg)")}>
-      {!isCourseBuilder && (
+      {!isCourseBuilder && !isCourseViewer && (
         <div className="hidden md:block shrink-0 h-screen">
           <LeftSidebar variant="inline" />
         </div>

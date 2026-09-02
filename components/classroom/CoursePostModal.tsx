@@ -16,6 +16,7 @@ import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type CourseSource = "all" | "my";
 
@@ -146,14 +147,13 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                     const isPrivate = course.visibility === "PRIVATE";
                                     const isSelected = courseId === course.id;
 
-                                    return (
+                                    const courseOption = (
                                         <button
                                             key={course.id}
                                             type="button"
                                             onClick={() => setCourseId((currentId) => currentId === course.id ? "" : course.id)}
                                             aria-pressed={isSelected}
                                             disabled={isPrivate}
-                                            title={isPrivate ? "Change this course to public or invitation-only before sharing it" : undefined}
                                             className={cn(
                                                 "flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--classroom-focus-ring)",
                                                 isSelected
@@ -189,6 +189,13 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                             )}
                                         </button>
                                     );
+
+                                    return isPrivate ? (
+                                        <Tooltip key={course.id}>
+                                            <TooltipTrigger asChild><span className="block">{courseOption}</span></TooltipTrigger>
+                                            <TooltipContent>Change this course to public or invitation-only before sharing it</TooltipContent>
+                                        </Tooltip>
+                                    ) : courseOption;
                                 })}
                             </div>
                         )}

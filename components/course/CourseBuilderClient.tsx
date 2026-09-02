@@ -25,6 +25,7 @@ import type { CoursePublishIssue } from "@/lib/course-audit";
 import { COURSE_TITLE_MAX_LENGTH, displayCourseTitle } from "@/lib/course-title";
 import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CourseBuilderClientProps {
   initialCourse: CourseBuilderCourse;
@@ -244,6 +245,53 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
     setMobileSyllabusOpen(false);
   };
 
+  const renderCourseIdentity = (showMetadata = false) => (
+    <div className="flex min-w-0 flex-1 flex-col justify-center">
+      <div className="flex h-8 min-w-0 items-center gap-1.5">
+        {isEditingTitle && !previewMode ? (
+          <input
+            autoFocus
+            value={courseTitle}
+            aria-label="Course title"
+            maxLength={COURSE_TITLE_MAX_LENGTH}
+            onChange={(event) => setCourseTitle(event.target.value)}
+            onBlur={commitCourseTitle}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") commitCourseTitle();
+              if (event.key === "Escape") { setCourseTitle(course.title); setIsEditingTitle(false); }
+            }}
+            className="h-8 min-w-[1ch] max-w-[min(45ch,40vw)] border-0 bg-transparent px-2 text-base font-semibold outline-none [field-sizing:content]"
+          />
+        ) : (
+          <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => !previewMode && setIsEditingTitle(true)} aria-label={course.title} className="flex h-8 min-w-0 max-w-[min(45ch,40vw)] items-center rounded-lg px-2 text-left text-base font-semibold tracking-[-0.02em] outline-none transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
+            <span className="truncate" aria-hidden="true">{displayCourseTitle(course.title)}</span>
+          </button></TooltipTrigger><TooltipContent>{previewMode ? course.title : `Rename course: ${course.title}`}</TooltipContent></Tooltip>
+        )}
+        {!previewMode && <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--course-text-muted)]" aria-hidden="true" />}
+      </div>
+
+      <div className="-mt-1 flex h-8 min-w-0 items-center gap-2">
+        {!previewMode && (
+          <CourseVisibilityMenu value={course.visibility ?? (course.isPublic ? "PUBLIC" : "PRIVATE")} onChange={(visibility) => void handleVisibilityChange(visibility)} />
+        )}
+        {showMetadata && (
+          <div className="hidden min-w-0 items-center gap-2 whitespace-nowrap text-[10px] text-[var(--course-text-muted)] sm:flex">
+            <span>{course.published ? hasUnpublishedChanges ? "Published · Unpublished changes" : "Published" : "Draft"}</span>
+            <span aria-hidden="true">/</span>
+            <span>{course.modules.length} modules / {totalLessons} lessons</span>
+          </div>
+        )}
+        {!previewMode && course.visibility === "INVITATION_ONLY" && <CourseInviteButton courseId={course.id} />}
+      </div>
+    </div>
+  );
+
+  const syllabusBackControl = (
+    <WorkspaceButton asChild variant="secondary" size="icon-compact">
+      <Link href="/courses" aria-label="Back to courses"><ArrowLeft className="h-4 w-4" /></Link>
+    </WorkspaceButton>
+  );
+
   const syllabus = (
     <CourseBuilderSidebar
       course={course}
@@ -251,17 +299,30 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
       activeLessonId={activeLessonId}
       onSelectLesson={selectLesson}
       isSaving={isSaving || isSavingCourse}
+      leadingControl={syllabusBackControl}
     />
   );
 
+  const publishButton = (!course.published || hasUnpublishedChanges) ? (
+    <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handlePublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges}>
+      <CloudUpload className="h-3.5 w-3.5" /><span>{isPublishing ? "Checking..." : course.published ? "Publish changes" : "Publish"}</span>
+    </WorkspaceButton>
+  ) : null;
+  const publishControl = publishButton && hasUnsavedChanges ? (
+    <Tooltip>
+      <TooltipTrigger asChild><span className="inline-flex">{publishButton}</span></TooltipTrigger>
+      <TooltipContent>Save changes before publishing</TooltipContent>
+    </Tooltip>
+  ) : publishButton;
+
   return (
     <div className="course-builder flex h-full min-h-0 w-full bg-[var(--app-surface)] text-[var(--course-text)]">
-      {!previewMode && <aside className="hidden h-full w-[298px] shrink-0 border-r border-[var(--course-line)] bg-[var(--app-surface)] lg:block">{syllabus}</aside>}
+      {!previewMode && <aside className="hidden h-full w-[298px] shrink-0 border-r border-[var(--course-line)] bg-[var(--course-surface)] lg:block">{syllabus}</aside>}
 
       {!previewMode && mobileSyllabusOpen && (
         <>
           <button type="button" aria-label="Close syllabus" onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
-          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-[var(--app-surface)] shadow-2xl lg:hidden">
+          <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-[var(--course-surface)] shadow-2xl lg:hidden">
             <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => setMobileSyllabusOpen(false)} aria-label="Close syllabus" className="absolute right-3 top-3 z-10"><X className="h-4 w-4" /></WorkspaceButton>
             {syllabus}
           </aside>
@@ -274,50 +335,13 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
             {!previewMode && (
               <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label="Open syllabus" className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
             )}
-            <WorkspaceButton asChild variant="secondary" size="icon" className="hidden sm:inline-flex"><Link href="/courses" aria-label="Back to courses"><ArrowLeft className="h-4 w-4" /></Link></WorkspaceButton>
-
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-              <div className="flex h-8 min-w-0 shrink items-center gap-1.5">
-                {isEditingTitle && !previewMode ? (
-                  <input
-                    autoFocus
-                    value={courseTitle}
-                    aria-label="Course title"
-                    maxLength={COURSE_TITLE_MAX_LENGTH}
-                    onChange={(event) => setCourseTitle(event.target.value)}
-                    onBlur={commitCourseTitle}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") commitCourseTitle();
-                      if (event.key === "Escape") { setCourseTitle(course.title); setIsEditingTitle(false); }
-                    }}
-                    className="h-8 min-w-[1ch] max-w-[min(45ch,40vw)] border-0 bg-transparent px-2 text-base font-semibold outline-none [field-sizing:content]"
-                  />
-                ) : (
-                  <button type="button" onClick={() => !previewMode && setIsEditingTitle(true)} aria-label={course.title} className="flex h-8 min-w-0 max-w-[min(45ch,40vw)] items-center rounded-lg px-2 text-left text-base font-semibold tracking-[-0.02em] outline-none transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]" title={previewMode ? course.title : `Rename course: ${course.title}`}>
-                    <span className="truncate" aria-hidden="true">{displayCourseTitle(course.title)}</span>
-                  </button>
-                )}
-                {!previewMode && <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--course-text-muted)]" aria-hidden="true" />}
-              </div>
-
-              <div className="-mt-1 flex h-8 min-w-0 items-center gap-2">
-                {!previewMode && (
-                  <CourseVisibilityMenu value={course.visibility ?? (course.isPublic ? "PUBLIC" : "PRIVATE")} onChange={(visibility) => void handleVisibilityChange(visibility)} />
-                )}
-                <div className="hidden min-w-0 items-center gap-2 whitespace-nowrap text-[10px] text-[var(--course-text-muted)] sm:flex">
-                  <span>{course.published ? hasUnpublishedChanges ? "Published · Unpublished changes" : "Published" : "Draft"}</span>
-                  <span aria-hidden="true">/</span>
-                  <span>{course.modules.length} modules / {totalLessons} lessons</span>
-                </div>
-                {!previewMode && course.visibility === "INVITATION_ONLY" && <CourseInviteButton courseId={course.id} />}
-              </div>
-            </div>
+            <div className="flex min-w-0 flex-1">{renderCourseIdentity(true)}</div>
 
             {!previewMode && !isSaving && !isSavingCourse && hasUnsavedChanges && <span role="status" className="hidden shrink-0 text-[10px] font-medium text-[var(--course-text-muted)] sm:inline">Unsaved changes</span>}
 
-            <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setTutorialOpen(true)} aria-label="Review course creation tutorial" title="Course creation tutorial">
+            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setTutorialOpen(true)} aria-label="Review course creation tutorial">
               <Lightbulb className="h-3.5 w-3.5" />
-            </WorkspaceButton>
+            </WorkspaceButton></TooltipTrigger><TooltipContent>Course creation tutorial</TooltipContent></Tooltip>
             <WorkspaceButton type="button" variant={previewMode ? "primary" : "secondary"} size="compact" onClick={() => setPreviewMode((current) => !current)}>
               {previewMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}<span className="hidden sm:inline">{previewMode ? "Exit preview" : "Preview"}</span>
             </WorkspaceButton>
@@ -325,9 +349,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
               {isSaving || isSavingCourse ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}<span>{isSaving || isSavingCourse ? "Saving..." : "Save"}</span>
             </WorkspaceButton>}
             {course.published && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleUnpublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges}><CloudOff className="h-3.5 w-3.5" /><span>Unpublish</span></WorkspaceButton>}
-            {(!course.published || hasUnpublishedChanges) && <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handlePublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges} title={hasUnsavedChanges ? "Save changes before publishing" : undefined}>
-              <CloudUpload className="h-3.5 w-3.5" /><span>{isPublishing ? "Checking..." : course.published ? "Publish changes" : "Publish"}</span>
-            </WorkspaceButton>}
+            {publishControl}
           </div>
         </header>
 

@@ -49,6 +49,7 @@ describe("authentication pages", () => {
     expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveAttribute("data-slot", "workspace-button");
     expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveClass("h-11", "rounded-xl");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.queryByText("Courses, classrooms, and your schedule in one place.")).not.toBeInTheDocument();
     expect(container.querySelector(".uppercase")).not.toBeInTheDocument();
   });
 
@@ -127,7 +128,7 @@ describe("authentication pages", () => {
     fillRegistration();
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/dashboard"));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/dashboard?welcome=new"));
     expect(fetch).toHaveBeenCalledWith("/api/auth/register", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ name: "Test Teacher", email: "teacher@example.com", password: "long-enough-password" }),
@@ -165,6 +166,6 @@ describe("authentication pages", () => {
 
     render(<RegisterPage />);
     fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
-    expect(mocks.signIn).toHaveBeenCalledWith("google", { callbackUrl: "/dashboard" });
+    expect(mocks.signIn).toHaveBeenCalledWith("google", { callbackUrl: "/dashboard?welcome=new" });
   });
 });

@@ -14,6 +14,7 @@ import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { WorkspaceSearchField } from "@/components/ui/workspace-search-field";
 import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 import { LibraryToolbar, WorkspacePageFrame, WorkspacePageHeader } from "@/components/ui/workspace-page";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   CourseSummary,
   CourseTab,
@@ -151,9 +152,9 @@ export default function CoursesPage() {
   return (
     <WorkspacePageFrame className="course-ui bg-[var(--course-canvas)]">
         <WorkspacePageHeader title="Courses" titleClassName="text-[var(--course-text)]" actions={<div className="flex items-center gap-2">
-            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label="Review course creation tutorial" title="Course creation tutorial">
+            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label="Review course creation tutorial">
               <Lightbulb className="h-4 w-4" />
-            </WorkspaceButton>
+            </WorkspaceButton></TooltipTrigger><TooltipContent>Course creation tutorial</TooltipContent></Tooltip>
             <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>
               <Plus className="h-4 w-4" />New course
             </WorkspaceButton>

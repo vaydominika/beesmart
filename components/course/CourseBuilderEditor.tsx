@@ -219,7 +219,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
   if (previewMode) {
     return (
       <article className="overflow-hidden rounded-3xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
-        <header className="border-b border-[var(--course-line)] bg-[var(--course-accent)] px-6 py-8 text-center md:px-10">
+        <header className="border-b border-[var(--course-line)] bg-[var(--app-surface)] px-6 py-8 text-center md:px-10">
           <p className="mb-2 text-[11px] font-semibold text-[var(--course-text-muted)]">Learner preview</p>
           <h1 className="text-2xl font-semibold tracking-[-0.035em] md:text-3xl">{lesson.title}</h1>
         </header>
@@ -244,7 +244,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
             onChange={handleTitleChange}
             aria-label="Lesson title"
             placeholder="Untitled lesson"
-            className="-mx-2 h-11 w-[calc(100%+1rem)] border-0 bg-transparent px-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] md:text-[28px]"
+            className="-mx-2 h-11 w-[calc(100%+1rem)] rounded-lg border-0 bg-transparent px-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--course-text)] outline-none transition-colors placeholder:text-[var(--course-text-faint)] hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] motion-reduce:transition-none md:text-[28px]"
           />
         </div>
         <div className="flex justify-end sm:pb-1.5">

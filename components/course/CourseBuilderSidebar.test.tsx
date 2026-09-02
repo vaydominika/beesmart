@@ -11,6 +11,10 @@ type DragEndHandler = (result: {
 
 let capturedDragEnd: DragEndHandler | undefined;
 
+function openActionMenu(name: string) {
+  fireEvent.pointerDown(screen.getByRole("button", { name }), { button: 0, ctrlKey: false });
+}
+
 vi.mock("@hello-pangea/dnd", () => ({
   DragDropContext: ({ onDragEnd, children }: { onDragEnd: DragEndHandler; children: React.ReactNode }) => {
     capturedDragEnd = onDragEnd;
@@ -54,13 +58,31 @@ afterEach(() => {
 });
 
 describe("CourseBuilderSidebar module ordering", () => {
+  it("places the leading control beside the syllabus heading", () => {
+    render(
+      <CourseBuilderSidebar
+        course={course}
+        onCourseChange={vi.fn()}
+        activeLessonId={null}
+        onSelectLesson={vi.fn()}
+        leadingControl={<div data-testid="leading-control">Back</div>}
+      />,
+    );
+
+    const leadingControl = screen.getByTestId("leading-control");
+    const syllabusHeading = screen.getByRole("heading", { name: "Syllabus" });
+    expect(leadingControl.parentElement).toBe(syllabusHeading.parentElement?.parentElement);
+    expect(leadingControl.compareDocumentPosition(syllabusHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("renames a module inline", async () => {
     const onCourseChange = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
     render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Rename module Cells" }));
+    openActionMenu("Module actions for Cells");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit module Cells" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Module name for Cells" }), { target: { value: "Cell biology" } });
     fireEvent.click(screen.getByRole("button", { name: "Save module name" }));
 
@@ -79,7 +101,8 @@ describe("CourseBuilderSidebar module ordering", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Rename lesson Cell structure" }));
+    openActionMenu("Lesson actions for Cell structure");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit lesson Cell structure" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Lesson name for Cell structure" }), { target: { value: "Inside the cell" } });
     fireEvent.click(screen.getByRole("button", { name: "Save lesson name" }));
 
@@ -95,6 +118,31 @@ describe("CourseBuilderSidebar module ordering", () => {
     }));
   });
 
+  it("presents lesson rename cancellation as a non-destructive undo action", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("ResizeObserver", class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    });
+    render(<CourseBuilderSidebar course={course} onCourseChange={vi.fn()} activeLessonId="lesson-1" onSelectLesson={vi.fn()} />);
+
+    openActionMenu("Lesson actions for Cell structure");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Edit lesson Cell structure" }));
+
+    const cancelButton = screen.getByRole("button", { name: "Cancel lesson rename" });
+    expect(cancelButton).not.toHaveAttribute("title");
+    fireEvent.focus(cancelButton);
+    await waitFor(() => expect(screen.getByRole("tooltip")).toHaveTextContent("Cancel editing. Changes won't be saved."));
+    expect(document.querySelector('[data-slot="tooltip-content"]')).toHaveClass("bg-foreground", "text-background");
+
+    fireEvent.click(cancelButton);
+
+    expect(screen.queryByRole("textbox", { name: "Lesson name for Cell structure" })).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("warns before deleting a module and selects a safe fallback lesson", async () => {
     const onCourseChange = vi.fn();
     const onSelectLesson = vi.fn();
@@ -102,7 +150,8 @@ describe("CourseBuilderSidebar module ordering", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId="lesson-1" onSelectLesson={onSelectLesson} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete module Cells" }));
+    openActionMenu("Module actions for Cells");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete module Cells" }));
     expect(screen.getByRole("heading", { name: "Delete module?" })).toBeInTheDocument();
     expect(screen.getByText(/permanently delete “Cells” and every lesson inside it/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Delete module" }));
@@ -118,7 +167,8 @@ describe("CourseBuilderSidebar module ordering", () => {
     vi.stubGlobal("fetch", fetchMock);
     render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId={null} onSelectLesson={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Delete lesson Cell structure" }));
+    openActionMenu("Lesson actions for Cell structure");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete lesson Cell structure" }));
     expect(screen.getByRole("heading", { name: "Delete lesson?" })).toBeInTheDocument();
     expect(screen.getByText(/permanently delete “Cell structure”/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Delete lesson" }));
@@ -126,6 +176,48 @@ describe("CourseBuilderSidebar module ordering", () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/courses/course-1/modules/module-1/lessons/lesson-1", { method: "DELETE" }));
     expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
       modules: expect.arrayContaining([expect.objectContaining({ id: "module-1", lessons: [] })]),
+    }));
+  });
+
+  it("sets every lesson in a module as a prerequisite from the module menu", async () => {
+    const onCourseChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId={null} onSelectLesson={vi.fn()} />);
+
+    openActionMenu("Module actions for Cells");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Set Cells as prerequisite" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/course-1/modules/module-1",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ isPrerequisite: true }) }),
+    ));
+    expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
+      modules: expect.arrayContaining([expect.objectContaining({
+        id: "module-1",
+        lessons: [expect.objectContaining({ id: "lesson-1", isLocked: true })],
+      })]),
+    }));
+  });
+
+  it("sets a lesson as a prerequisite from the lesson menu", async () => {
+    const onCourseChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<CourseBuilderSidebar course={course} onCourseChange={onCourseChange} activeLessonId={null} onSelectLesson={vi.fn()} />);
+
+    openActionMenu("Lesson actions for Cell structure");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Set Cell structure as prerequisite" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/courses/course-1/modules/module-1/lessons/lesson-1",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ isLocked: true }) }),
+    ));
+    expect(onCourseChange).toHaveBeenCalledWith(expect.objectContaining({
+      modules: expect.arrayContaining([expect.objectContaining({
+        id: "module-1",
+        lessons: [expect.objectContaining({ id: "lesson-1", isLocked: true })],
+      })]),
     }));
   });
 
@@ -165,11 +257,19 @@ describe("CourseBuilderSidebar module ordering", () => {
 
     const aiButton = screen.getByRole("button", { name: "Generate syllabus with AI" });
     expect(aiButton).toHaveAttribute("data-size", "icon-compact");
+    expect(aiButton).toHaveAttribute("data-variant", "secondary");
+    expect(aiButton).toHaveClass("border");
     fireEvent.click(aiButton);
+    expect(aiButton).toHaveAttribute("data-variant", "primary");
+    expect(aiButton).toHaveClass("bg-[var(--app-accent-soft)]");
+    expect(aiButton.className).not.toMatch(/shadow/);
     fireEvent.change(screen.getByRole("textbox", { name: "Outline source text" }), {
       target: { value: "Photosynthesis converts light energy into chemical energy." },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Create syllabus" }));
+    const createButton = screen.getByRole("button", { name: "Create syllabus" });
+    expect(createButton).toHaveAttribute("data-variant", "secondary");
+    expect(screen.getByRole("textbox", { name: "Outline source text" }).compareDocumentPosition(createButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(createButton);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
       "/api/courses/course-1/generate-from-file",

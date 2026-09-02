@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import {
   Check,
@@ -10,16 +10,26 @@ import {
   Loader2,
   Lock,
   LockOpen,
+  MoreHorizontal,
   Pencil,
   Plus,
   Sparkles,
   Trash2,
+  Undo2,
   X,
 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Dialog, DialogClose, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { CourseBuilderCourse, CourseBuilderLesson, CourseBuilderModule } from "@/lib/course-builder";
 import { lessonCount, reorderModules } from "@/lib/course-builder";
 import { cn } from "@/lib/utils";
@@ -33,6 +43,7 @@ interface CourseBuilderSidebarProps {
   activeLessonId: string | null;
   onSelectLesson: (id: string | null) => void;
   isSaving?: boolean;
+  leadingControl?: ReactNode;
 }
 
 type GeneratedOutline = {
@@ -43,7 +54,7 @@ type DeleteTarget =
   | { type: "module"; id: string; title: string }
   | { type: "lesson"; id: string; moduleId: string; title: string };
 
-export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson, isSaving = false }: CourseBuilderSidebarProps) {
+export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson, isSaving = false, leadingControl }: CourseBuilderSidebarProps) {
   const [isAIExpanded, setIsAIExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -299,8 +310,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
     }
   };
 
-  const togglePrerequisite = async (lesson: CourseBuilderLesson, moduleId: string) => {
+  const toggleLessonPrerequisite = async (lesson: CourseBuilderLesson, moduleId: string) => {
     const isLocked = !lesson.isLocked;
+    setIsMutating(true);
     try {
       const response = await fetch(`/api/courses/${course.id}/modules/${moduleId}/lessons/${lesson.id}`, {
         method: "PATCH",
@@ -313,9 +325,35 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           ? { ...module, lessons: module.lessons.map((item) => item.id === lesson.id ? { ...item, isLocked } : item) }
           : module),
       });
-      toast.success(isLocked ? "Lesson locked until earlier work is complete." : "Lesson unlocked.");
+      toast.success(isLocked ? "Lesson set as a prerequisite." : "Lesson prerequisite removed.");
     } catch {
-      toast.error("The lesson lock could not be updated.");
+      toast.error("The lesson prerequisite could not be updated.");
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const toggleModulePrerequisite = async (courseModule: CourseBuilderModule) => {
+    if (courseModule.lessons.length === 0) return;
+    const isPrerequisite = !courseModule.lessons.every((lesson) => lesson.isLocked);
+    setIsMutating(true);
+    try {
+      const response = await fetch(`/api/courses/${course.id}/modules/${courseModule.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPrerequisite }),
+      });
+      if (!response.ok) throw new Error();
+      onCourseChange({
+        modules: course.modules.map((module) => module.id === courseModule.id
+          ? { ...module, lessons: module.lessons.map((lesson) => ({ ...lesson, isLocked: isPrerequisite })) }
+          : module),
+      });
+      toast.success(isPrerequisite ? "Module set as a prerequisite." : "Module prerequisite removed.");
+    } catch {
+      toast.error("The module prerequisite could not be updated.");
+    } finally {
+      setIsMutating(false);
     }
   };
 
@@ -328,14 +366,26 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[var(--app-surface)]">
-      <div className="flex h-[76px] shrink-0 items-center justify-between gap-3 border-b border-[var(--course-line)] px-3 pr-12 lg:pr-3">
-        <div>
-          <h2 className="text-sm font-semibold text-[var(--course-text)]">Syllabus</h2>
-          <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length} modules / {lessonCount(course)} lessons</p>
+    <TooltipProvider>
+    <div className="flex h-full min-h-0 flex-col bg-[var(--course-surface)]">
+      <div className="flex h-[76px] shrink-0 items-center justify-between gap-3 border-b border-[var(--course-line)] bg-[var(--course-surface)] px-3 pr-12 lg:pr-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {leadingControl}
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-[var(--course-text)]">Syllabus</h2>
+            <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length} modules / {lessonCount(course)} lessons</p>
+          </div>
         </div>
         <div className="flex gap-2">
-          <WorkspaceButton type="button" variant={isAIExpanded ? "primary" : "secondary"} size="icon-compact" onClick={() => setIsAIExpanded((current) => !current)} disabled={isSaving} aria-label="Generate syllabus with AI" aria-expanded={isAIExpanded}>
+          <WorkspaceButton
+            type="button"
+            variant={isAIExpanded ? "primary" : "secondary"}
+            size="icon-compact"
+            onClick={() => setIsAIExpanded((current) => !current)}
+            disabled={isSaving}
+            aria-label="Generate syllabus with AI"
+            aria-expanded={isAIExpanded}
+          >
             <Sparkles className="h-4 w-4" />
           </WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} disabled={isSaving}>
@@ -344,7 +394,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         </div>
       </div>
 
-      <div className="course-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+      <div className="course-scroll min-h-0 flex-1 overflow-y-auto bg-[var(--course-surface)] p-2.5">
         {isAIExpanded && (
           <div className="mb-2.5 rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-3">
             <div className="flex items-start justify-between gap-3">
@@ -363,12 +413,12 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
               className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] px-3 py-2.5 text-xs leading-5 outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]"
             />
             <span className="mt-1 block text-right text-[9px] text-[var(--course-text-faint)]">{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
+            <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating || aiExhausted} className="mt-2 w-full">
+              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create syllabus"}
+            </WorkspaceButton>
             <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>or add a file</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
             <CourseSourceFilePicker file={selectedFile} onFileChange={setSelectedFile} className="w-full" />
             <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[9px] leading-4 text-[var(--app-text-muted)]">Text and extracted file content share the 12,000-character source limit.</p>
-            <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating || aiExhausted} className="mt-2 w-full">
-              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create syllabus"}
-            </WorkspaceButton>
           </div>
         )}
 
@@ -392,6 +442,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                 <div ref={moduleListProvided.innerRef} {...moduleListProvided.droppableProps} className="space-y-2">
                   {course.modules.map((module, moduleIndex) => {
                     const collapsed = collapsedModules.has(module.id);
+                    const moduleIsPrerequisite = module.lessons.length > 0 && module.lessons.every((lesson) => lesson.isLocked);
                     return (
                       <Draggable key={module.id} draggableId={`module-${module.id}`} index={moduleIndex} isDragDisabled={isSaving || course.modules.length < 2}>
                         {(moduleDragProvided, moduleDragSnapshot) => (
@@ -418,15 +469,33 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                               {editingModuleId === module.id ? (
                                 <>
                                   <input autoFocus value={editingModuleTitle} onChange={(event) => setEditingModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameModule(module); if (event.key === "Escape") setEditingModuleId(null); }} aria-label={`Module name for ${module.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--course-surface-muted)] px-2 text-xs font-semibold outline-none ring-2 ring-[var(--course-focus-ring)]" />
-                                  <button type="button" onClick={() => void renameModule(module)} disabled={!editingModuleTitle.trim() || isMutating} aria-label="Save module name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button>
-                                  <button type="button" onClick={() => setEditingModuleId(null)} disabled={isMutating} aria-label="Cancel module rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><X className="h-3.5 w-3.5" /></button>
+                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameModule(module)} disabled={!editingModuleTitle.trim() || isMutating} aria-label="Save module name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Save changes</TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingModuleId(null)} disabled={isMutating} aria-label="Cancel module rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Cancel editing. Changes won&apos;t be saved.</TooltipContent></Tooltip>
                                 </>
                               ) : (
                                 <>
-                                  <h3 className="min-w-0 flex-1 truncate text-xs font-semibold" title={module.title}>{module.title}</h3>
-                                  <button type="button" onClick={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} disabled={isSaving || isMutating} aria-label={`Rename module ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Pencil className="h-3.5 w-3.5" /></button>
-                                  <button type="button" onClick={() => setDeleteTarget({ type: "module", id: module.id, title: module.title })} disabled={isSaving || isMutating} aria-label={`Delete module ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] disabled:opacity-40"><Trash2 className="h-3.5 w-3.5" /></button>
+                                  <Tooltip><TooltipTrigger asChild><h3 className="min-w-0 flex-1 truncate text-xs font-semibold">{module.title}</h3></TooltipTrigger><TooltipContent>{module.title}</TooltipContent></Tooltip>
+                                  {moduleIsPrerequisite && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={`${module.title} is a prerequisite`} />}
                                   <button type="button" onClick={() => { setLessonModuleId(module.id); setNewLessonTitle(""); setCollapsedModules((current) => { const next = new Set(current); next.delete(module.id); return next; }); }} disabled={isSaving || isMutating} aria-label={`Add lesson to ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <button type="button" disabled={isSaving || isMutating} aria-label={`Module actions for ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
+                                      <DropdownMenuItem aria-label={`Edit module ${module.title}`} onSelect={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                        <Pencil />Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem aria-label={`${moduleIsPrerequisite ? "Remove" : "Set"} ${module.title} ${moduleIsPrerequisite ? "prerequisite" : "as prerequisite"}`} disabled={module.lessons.length === 0} onSelect={() => void toggleModulePrerequisite(module)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                        {moduleIsPrerequisite ? <LockOpen /> : <Lock />}{moduleIsPrerequisite ? "Remove prerequisite" : "Set as prerequisite"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator className="bg-[var(--course-line)]" />
+                                      <DropdownMenuItem aria-label={`Delete module ${module.title}`} variant="destructive" onSelect={() => setDeleteTarget({ type: "module", id: module.id, title: module.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
+                                        <Trash2 />Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </>
                               )}
                             </div>
@@ -438,24 +507,41 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                             {module.lessons.map((lesson, lessonIndex) => (
                               <Draggable key={lesson.id} draggableId={lesson.id} index={lessonIndex} isDragDisabled={isSaving}>
                                 {(dragProvided, dragSnapshot) => (
-                                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn("group flex items-center gap-1 rounded-lg pr-1 transition-colors", activeLessonId === lesson.id ? "bg-[var(--course-accent)]" : "hover:bg-[var(--course-surface-muted)]", dragSnapshot.isDragging && "bg-[var(--app-surface)] shadow-lg")}>
+                                  <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} className={cn("group flex items-center gap-1 rounded-lg pr-1 transition-colors", activeLessonId === lesson.id ? "bg-[var(--course-accent)] ring-1 ring-inset ring-[var(--course-accent-hover)]" : "hover:bg-[var(--course-surface-muted)]", dragSnapshot.isDragging && "bg-[var(--course-surface)] shadow-lg")}>
                                     <span {...dragProvided.dragHandleProps} className="flex h-9 w-7 shrink-0 cursor-grab items-center justify-center text-[var(--course-text-faint)] opacity-50 group-hover:opacity-100"><GripVertical className="h-3.5 w-3.5" /></span>
                                     {editingLessonId === lesson.id ? (
                                       <>
                                         <input autoFocus value={editingLessonTitle} onChange={(event) => setEditingLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameLesson(lesson, module.id); if (event.key === "Escape") setEditingLessonId(null); }} aria-label={`Lesson name for ${lesson.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--app-surface)] px-2 text-xs font-medium outline-none ring-2 ring-[var(--course-focus-ring)]" />
-                                        <button type="button" onClick={() => void renameLesson(lesson, module.id)} disabled={!editingLessonTitle.trim() || isMutating} aria-label="Save lesson name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button>
-                                        <button type="button" onClick={() => setEditingLessonId(null)} disabled={isMutating} aria-label="Cancel lesson rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><X className="h-3.5 w-3.5" /></button>
+                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameLesson(lesson, module.id)} disabled={!editingLessonTitle.trim() || isMutating} aria-label="Save lesson name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Save changes</TooltipContent></Tooltip>
+                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingLessonId(null)} disabled={isMutating} aria-label="Cancel lesson rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Cancel editing. Changes won&apos;t be saved.</TooltipContent></Tooltip>
                                       </>
                                     ) : (
                                       <>
                                         <button type="button" onClick={() => onSelectLesson(lesson.id)} disabled={isSaving || isMutating} className="min-w-0 flex-1 py-2.5 text-left disabled:cursor-not-allowed">
-                                          <span className="block truncate text-xs font-medium">{lesson.title}</span>
+                                          <span className="flex min-w-0 items-center gap-1.5">
+                                            <span className="block min-w-0 flex-1 truncate text-xs font-medium">{lesson.title}</span>
+                                            {lesson.isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={`${lesson.title} is a prerequisite`} />}
+                                          </span>
                                         </button>
-                                        <button type="button" onClick={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} disabled={isSaving || isMutating} aria-label={`Rename lesson ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Pencil className="h-3.5 w-3.5" /></button>
-                                        <button type="button" onClick={() => setDeleteTarget({ type: "lesson", id: lesson.id, moduleId: module.id, title: lesson.title })} disabled={isSaving || isMutating} aria-label={`Delete lesson ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] disabled:opacity-40"><Trash2 className="h-3.5 w-3.5" /></button>
-                                        <button type="button" onClick={() => void togglePrerequisite(lesson, module.id)} disabled={isSaving || isMutating} aria-label={lesson.isLocked ? `Unlock ${lesson.title}` : `Lock ${lesson.title}`} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40", lesson.isLocked && "text-[var(--course-focus-border)]")}>
-                                          {lesson.isLocked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
-                                        </button>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <button type="button" disabled={isSaving || isMutating} aria-label={`Lesson actions for ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] opacity-70 transition-[background-color,color,opacity] hover:bg-[var(--app-surface)] hover:text-[var(--course-text)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
+                                            <DropdownMenuItem aria-label={`Edit lesson ${lesson.title}`} onSelect={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                              <Pencil />Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem aria-label={`${lesson.isLocked ? "Remove" : "Set"} ${lesson.title} ${lesson.isLocked ? "prerequisite" : "as prerequisite"}`} onSelect={() => void toggleLessonPrerequisite(lesson, module.id)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                              {lesson.isLocked ? <LockOpen /> : <Lock />}{lesson.isLocked ? "Remove prerequisite" : "Set as prerequisite"}
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator className="bg-[var(--course-line)]" />
+                                            <DropdownMenuItem aria-label={`Delete lesson ${lesson.title}`} variant="destructive" onSelect={() => setDeleteTarget({ type: "lesson", id: lesson.id, moduleId: module.id, title: lesson.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
+                                              <Trash2 />Delete
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
                                       </>
                                     )}
                                   </div>
@@ -512,5 +598,6 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         </WorkspaceDialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
