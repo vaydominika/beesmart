@@ -39,6 +39,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const main = mainRef.current;
     if (!main) return;
+
+    const scrollEl = isProfile && !isMobile
+      ? main
+      : main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;
+
+    scrollEl.scrollTop = 0;
+  }, [isMobile, isProfile, pathname]);
+
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
     const scrollEl = isProfile && !isMobile
       ? main
       : main.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]") ?? main;

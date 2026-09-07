@@ -26,7 +26,7 @@ vi.mock("@/components/focus/TimerWidget", () => ({ TimerWidget: () => null }));
 vi.mock("@/components/settings/Settings", () => ({ SettingsModal: () => null }));
 vi.mock("@/components/settings/ProfileSettingsModal", () => ({ ProfileSettingsModal: () => null }));
 vi.mock("@/components/ui/sonner", () => ({ Toaster: () => null }));
-vi.mock("@/components/ui/scroll-area", () => ({ ScrollArea: ({ children }: { children: ReactNode }) => <div>{children}</div> }));
+vi.mock("@/components/ui/scroll-area", () => ({ ScrollArea: ({ children }: { children: ReactNode }) => <div data-slot="scroll-area-viewport">{children}</div> }));
 
 describe("AppLayout responsive right sidebar", () => {
   beforeEach(() => {
@@ -79,11 +79,16 @@ describe("AppLayout responsive right sidebar", () => {
   });
 
   it("shows the new page content after a client-side route transition", () => {
-    const { rerender } = render(<AppLayout><div>Dashboard content</div></AppLayout>);
+    const { container, rerender } = render(<AppLayout><div>Dashboard content</div></AppLayout>);
+    const scrollViewport = container.querySelector<HTMLElement>("[data-slot=\"scroll-area-viewport\"]");
+    expect(scrollViewport).not.toBeNull();
+    scrollViewport!.scrollTop = 240;
+
     navigation.pathname = "/courses";
     rerender(<AppLayout><div>Courses content</div></AppLayout>);
 
     expect(screen.getByText("Courses content")).toBeInTheDocument();
     expect(screen.queryByText("Dashboard content")).not.toBeInTheDocument();
+    expect(scrollViewport).toHaveProperty("scrollTop", 0);
   });
 });
