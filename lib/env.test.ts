@@ -7,6 +7,8 @@ const validEnvironment = {
   AUTH_SECRET: "a-long-random-secret-at-least-32-characters",
   AUTH_URL: "https://beesmart.example",
   DEEPSEEK_API_KEY: "deepseek-key",
+  RESEND_API_KEY: "re_test",
+  EMAIL_FROM: "BeeSmart <noreply@vay.hu>",
   UPLOAD_STORAGE_DIR: path.resolve("beesmart-uploads"),
   MALWARE_SCAN_MODE: "clamav",
   CLAMAV_HOST: "clamav",

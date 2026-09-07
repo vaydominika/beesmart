@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LoginPage from "./login/page";
 import RegisterPage from "./register/page";
+import ForgotPasswordPage from "./forgot-password/page";
+import ResetPasswordPage from "./reset-password/page";
 
 const mocks = vi.hoisted(() => ({
   push: vi.fn(),
@@ -49,8 +51,28 @@ describe("authentication pages", () => {
     expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveAttribute("data-slot", "workspace-button");
     expect(screen.getByRole("button", { name: "Continue with Google" })).toHaveClass("h-11", "rounded-xl");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Forgot password?" })).toHaveAttribute("href", "/forgot-password");
     expect(screen.queryByText("Courses, classrooms, and your schedule in one place.")).not.toBeInTheDocument();
     expect(container.querySelector(".uppercase")).not.toBeInTheDocument();
+  });
+
+  it("requests a password reset without exposing account existence", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ message: "If an account exists for that email, a reset link has been sent." })));
+    render(<ForgotPasswordPage />);
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: " ADA@EXAMPLE.COM " } });
+    fireEvent.click(screen.getByRole("button", { name: "Send reset link" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("If an account exists");
+    expect(fetch).toHaveBeenCalledWith("/api/auth/forgot-password", expect.objectContaining({ body: JSON.stringify({ email: "ADA@EXAMPLE.COM" }) }));
+  });
+
+  it("validates matching passwords on the reset page", () => {
+    mocks.searchParams = new URLSearchParams({ token: "valid-token-value-that-is-long-enough" });
+    render(<ResetPasswordPage />);
+    fireEvent.change(screen.getByLabelText("New password"), { target: { value: "a-new-secure-password" } });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "different-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update password" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Passwords do not match");
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("validates missing login credentials", () => {

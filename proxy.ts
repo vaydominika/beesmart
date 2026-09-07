@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 
 export default auth((request) => {
   const pathname = request.nextUrl.pathname;
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage = pathname === "/login" || pathname === "/register" || pathname === "/forgot-password" || pathname === "/reset-password";
   const userId = request.auth?.user?.id;
   const isAuthenticated = typeof userId === "string" && userId.length > 0;
 

@@ -14,6 +14,8 @@ export function productionEnvironmentErrors(env: Environment) {
   else if (authSecret.length < 32) errors.push("AUTH_SECRET must be at least 32 characters");
   if (!present(env.AUTH_URL) && !present(env.NEXTAUTH_URL)) errors.push("AUTH_URL is required");
   if (!present(env.DEEPSEEK_API_KEY)) errors.push("DEEPSEEK_API_KEY is required");
+  if (!present(env.RESEND_API_KEY)) errors.push("RESEND_API_KEY is required");
+  if (!present(env.EMAIL_FROM)) errors.push("EMAIL_FROM is required");
 
   const storage = env.UPLOAD_STORAGE_DIR?.trim();
   if (!storage) errors.push("UPLOAD_STORAGE_DIR is required");

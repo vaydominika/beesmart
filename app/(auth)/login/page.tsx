@@ -70,7 +70,10 @@ function LoginForm() {
       <AuthDivider />
       <form onSubmit={handleCredentialsSubmit} className="space-y-4">
         <WorkspaceField id="login-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
-        <WorkspaceField id="login-password" label="Password" labelClassName={authLabelClass}><Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" /></WorkspaceField>
+        <div>
+          <WorkspaceField id="login-password" label="Password" labelClassName={authLabelClass}><Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" /></WorkspaceField>
+          <div className="mt-1.5 text-right"><Link href="/forgot-password" className="text-xs font-medium text-[var(--app-accent-text)] hover:underline">Forgot password?</Link></div>
+        </div>
         <AuthSubmitButton loading={loading} idleLabel="Sign in" loadingLabel="Signing in…" />
       </form>
     </AuthShell>

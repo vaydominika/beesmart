@@ -63,7 +63,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const isLoggedIn = typeof userId === "string" && userId.length > 0;
       const isAuthPage =
         request.nextUrl.pathname === "/login" ||
-        request.nextUrl.pathname === "/register";
+        request.nextUrl.pathname === "/register" ||
+        request.nextUrl.pathname === "/forgot-password" ||
+        request.nextUrl.pathname === "/reset-password";
       if (isAuthPage && isLoggedIn)
         return Response.redirect(new URL("/dashboard", request.nextUrl));
       if (!isLoggedIn && !isAuthPage) return false;
