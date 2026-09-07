@@ -29,7 +29,6 @@ const record = {
   coverImageUrl: null,
   coverStoredFileId: null,
   createdById: "teacher-1",
-  isPublic: true,
   published: true,
   visibility: "PUBLIC",
   createdAt: new Date("2026-08-01T08:00:00.000Z"),
@@ -199,8 +198,9 @@ describe("POST /api/courses tutorial prerequisite", () => {
     }));
     expect(response.status).toBe(200);
     expect(tx.course.create).toHaveBeenCalledWith({ data: expect.objectContaining({
-      title: "Biology", description: "Cells", isPublic: true, visibility: "PUBLIC",
-      published: true, coverStoredFileId: "cover-1", createdById: "user-1", files: expect.any(Object),
+      title: "Biology", description: "Cells", visibility: "PUBLIC",
+      published: true, coverStoredFileId: "cover-1", createdById: "user-1",
+      files: { create: [{ storedFileId: "attachment-1", uploadedById: "user-1" }] },
       tags: {
         create: [
           { tag: { connectOrCreate: { where: { slug: "biology" }, create: { slug: "biology", name: "Biology" } } } },
@@ -220,7 +220,7 @@ describe("POST /api/courses tutorial prerequisite", () => {
       method: "POST", body: JSON.stringify({ title: "Private", isPublic: false, uploadIds: "bad", coverUploadId: null }),
     }));
     expect(tx.course.create).toHaveBeenCalledWith({ data: {
-      title: "Private", description: null, isPublic: false, visibility: "PRIVATE",
+      title: "Private", description: null, visibility: "PRIVATE",
       published: false, coverStoredFileId: null, createdById: "user-1",
     } });
   });

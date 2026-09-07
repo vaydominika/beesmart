@@ -7,7 +7,7 @@ const course: CourseBuilderCourse = {
   description: null,
   coverImageUrl: null,
   createdById: "teacher-1",
-  isPublic: false,
+
   visibility: "PRIVATE",
   published: false,
   modules: [{

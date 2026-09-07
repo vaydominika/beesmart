@@ -22,17 +22,12 @@ export async function GET(_request: Request, ctx: RouteContext) {
     where: { id: fileId },
     include: {
       courseCover: { select: { id: true } },
-      courseFile: {
-        include: {
-          course: { select: { id: true } },
-          lesson: { select: { id: true, moduleId: true, module: { select: { courseId: true } } } },
-        },
-      },
-      postFile: { include: { post: { select: { classroomId: true } } } },
-      submissionFile: {
-        include: { submission: { select: { userId: true, assignedWork: { select: { classroomId: true } } } } },
-      },
-      reportAttachment: { include: { report: { select: { userId: true } } } },
+      attachment: { include: {
+        lesson: { select: { id: true, moduleId: true, module: { select: { courseId: true } } } },
+        post: { select: { classroomId: true } },
+        submission: { select: { userId: true, assignedWork: { select: { classroomId: true } } } },
+        report: { select: { userId: true } },
+      } },
       avatarFor: { select: { id: true } },
       bannerFor: { select: { id: true } },
     },
@@ -44,25 +39,25 @@ export async function GET(_request: Request, ctx: RouteContext) {
   let allowed = file.state === "PENDING" && file.ownerId === userId;
   if (!allowed && file.state === "ATTACHED" && (file.avatarFor || file.bannerFor)) allowed = true;
   if (!allowed && file.courseCover) allowed = await canAccessCourse(file.courseCover.id, userId);
-  if (!allowed && file.courseFile) {
-    const courseId = file.courseFile.courseId ?? file.courseFile.lesson?.module.courseId;
+  if (!allowed && file.attachment && (file.attachment.courseId || file.attachment.lesson)) {
+    const courseId = file.attachment.courseId ?? file.attachment.lesson?.module.courseId;
     if (courseId && await canManageCourse(courseId, userId)) allowed = true;
-    else if (courseId && file.courseFile.isVisible && await canAccessCourse(courseId, userId)) {
-      if (file.courseFile.lesson) {
+    else if (courseId && file.attachment.isVisible && await canAccessCourse(courseId, userId)) {
+      if (file.attachment.lesson) {
         const access = await getLessonAccess({
-          courseId, moduleId: file.courseFile.lesson.moduleId, lessonId: file.courseFile.lesson.id, userId,
+          courseId, moduleId: file.attachment.lesson.moduleId, lessonId: file.attachment.lesson.id, userId,
         });
         allowed = access.allowed;
       } else allowed = true;
     }
   }
-  if (!allowed && file.postFile) {
+  if (!allowed && file.attachment?.post) {
     allowed = Boolean(await prisma.classroomMember.findUnique({
-      where: { userId_classroomId: { userId, classroomId: file.postFile.post.classroomId } }, select: { id: true },
+      where: { userId_classroomId: { userId, classroomId: file.attachment.post.classroomId } }, select: { id: true },
     }));
   }
-  if (!allowed && file.submissionFile) {
-    const submission = file.submissionFile.submission;
+  if (!allowed && file.attachment?.submission) {
+    const submission = file.attachment.submission;
     allowed = submission.userId === userId;
     if (!allowed && submission.assignedWork.classroomId) {
       const membership = await prisma.classroomMember.findUnique({
@@ -71,8 +66,8 @@ export async function GET(_request: Request, ctx: RouteContext) {
       allowed = Boolean(membership && membership.role !== "STUDENT");
     }
   }
-  if (!allowed && file.reportAttachment) {
-    allowed = file.reportAttachment.report.userId === userId || await isAdminUser(userId);
+  if (!allowed && file.attachment?.report) {
+    allowed = file.attachment.report.userId === userId || await isAdminUser(userId);
   }
 
   if (!allowed) {

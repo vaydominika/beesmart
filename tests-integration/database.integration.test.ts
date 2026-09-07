@@ -57,6 +57,40 @@ describe("MariaDB integration", () => {
     expect(await prisma.course.findUnique({ where: { id: "integration-course" } })).toBeNull();
   });
 
+  it("stores attachment metadata once and enforces attachment destinations", async () => {
+    const userId = TEST_IDENTITIES.teacher.id;
+    const course = await prisma.course.create({
+      data: { title: "Attachment course", createdById: userId },
+    });
+    const file = await prisma.storedFile.create({
+      data: {
+        ownerId: userId, purpose: "COURSE_ATTACHMENT", storageKey: "integration/attachment",
+        originalName: "lesson.pdf", detectedMime: "application/pdf", fileType: "PDF",
+        size: 42, checksum: "integration-checksum", scanStatus: "CLEAN", state: "ATTACHED",
+        expiresAt: new Date("2099-01-01"),
+        attachment: { create: { courseId: course.id, uploadedById: userId, isVisible: false } },
+      },
+      include: { attachment: true },
+    });
+    expect(file.attachment).toMatchObject({
+      courseId: course.id, isVisible: false, legacyFileName: null, legacyFileSize: null,
+    });
+    await expect(prisma.attachment.create({
+      data: { courseId: course.id, storedFileId: file.id },
+    })).rejects.toMatchObject({ code: "P2002" });
+    await expect(prisma.attachment.update({
+      where: { id: file.attachment!.id }, data: { legacyFileName: "duplicate.pdf" },
+    })).rejects.toThrow(/metadata belongs on StoredFile/);
+    await expect(prisma.attachment.update({
+      where: { id: file.attachment!.id }, data: { courseId: null },
+    })).rejects.toThrow(/exactly one destination/);
+
+    await prisma.course.delete({ where: { id: course.id } });
+    expect(await prisma.attachment.findUnique({ where: { id: file.attachment!.id } })).toBeNull();
+    // Storage remains available for the application's queued byte cleanup.
+    expect(await prisma.storedFile.findUnique({ where: { id: file.id } })).not.toBeNull();
+  });
+
   it("enforces submission and focus-session idempotency under concurrent writes", async () => {
     await prisma.classroom.create({
       data: { id: "e2e-classroom", name: "Integration Classroom", code: "INTG2026", createdById: TEST_IDENTITIES.teacher.id },

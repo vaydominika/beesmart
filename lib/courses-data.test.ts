@@ -115,7 +115,7 @@ describe("course dashboard data", () => {
     expect(result.map((item) => item.id)).toEqual(["tie", "popular", "low", "unrated"]);
     expect(result[0].averageRating).toBe(4.5);
     expect(prisma.course.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: expect.objectContaining({ isPublic: true, published: true, createdById: undefined }),
+      where: expect.objectContaining({ visibility: "PUBLIC", published: true, createdById: undefined }),
       take: 12,
     }));
   });

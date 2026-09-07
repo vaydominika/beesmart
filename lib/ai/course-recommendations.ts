@@ -106,7 +106,7 @@ async function loadEligibleCourse(userId: string, courseId: string) {
   return prisma.course.findFirst({
     where: {
       id: courseId,
-      isPublic: true,
+      visibility: "PUBLIC",
       published: true,
       createdById: { not: userId },
       enrollments: { none: { userId } },
@@ -213,7 +213,7 @@ export async function getDailyCourseRecommendation(
 
     const candidates = await prisma.course.findMany({
       where: {
-        isPublic: true,
+        visibility: "PUBLIC",
         published: true,
         createdById: { not: userId },
         enrollments: { none: { userId } },

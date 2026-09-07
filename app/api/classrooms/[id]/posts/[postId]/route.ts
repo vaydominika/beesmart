@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
-import { storedFileUrl } from "@/lib/files/types";
+import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
 import type { Prisma } from "@/lib/generated/prisma";
 import { notifyClassroomMembers } from "@/lib/notifications";
 
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             where: { id: postId },
             include: {
                 author: { select: { id: true, name: true, avatar: true } },
-                files: true,
+                files: { include: attachmentInclude },
                 _count: { select: { comments: true } },
                 assignment: {
                     include: {
@@ -57,7 +57,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: "Not found" }, { status: 404 });
         }
 
-        return NextResponse.json({ ...post, files: (post.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })), isOwnPost: post.author.id === userId });
+        return NextResponse.json({ ...post, files: (post.files ?? []).map(serializeAttachment), isOwnPost: post.author.id === userId });
     } catch (e) {
         console.error("GET /api/classrooms/[id]/posts/[postId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -128,7 +128,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             include: {
                 author: { select: { id: true, name: true, avatar: true } },
                 _count: { select: { comments: true, files: true } },
-                files: true,
+                files: { include: attachmentInclude },
             },
         });
 
@@ -146,7 +146,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             });
         }
 
-        return NextResponse.json({ ...updated, files: (updated.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
+        return NextResponse.json({ ...updated, files: (updated.files ?? []).map(serializeAttachment) });
     } catch (e) {
         console.error("PATCH /api/classrooms/[id]/posts/[postId]", e);
         return NextResponse.json({ error: "Server error" }, { status: 500 });

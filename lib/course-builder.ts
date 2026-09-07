@@ -35,7 +35,6 @@ export interface CourseBuilderCourse {
   description: string | null;
   coverImageUrl: string | null;
   createdById: string;
-  isPublic: boolean;
   visibility: CourseVisibility;
   published: boolean;
   modules: CourseBuilderModule[];

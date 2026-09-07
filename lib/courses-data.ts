@@ -133,7 +133,7 @@ export async function getPopularCourses(): Promise<CourseCard[]> {
 
   const courses = (await prisma.course.findMany({
     where: {
-      isPublic: true,
+      visibility: "PUBLIC",
       published: true,
       id: { notIn: Array.from(enrolledIds) },
       createdById: userId ? { not: userId } : undefined,
@@ -186,7 +186,7 @@ export async function getDiscoverCoursesForUser(
 
   const courses = (await prisma.course.findMany({
     where: {
-      isPublic: true,
+      visibility: "PUBLIC",
       published: true,
       id: { notIn: [...enrolled] },
       createdById: { not: userId }

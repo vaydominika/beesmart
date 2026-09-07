@@ -62,7 +62,6 @@ export async function seedTestData() {
       title: "Reliable Learning Systems",
       description: "A published course fixture for end-to-end testing.",
       createdById: TEST_IDENTITIES.teacher.id,
-      isPublic: true,
       visibility: "PUBLIC",
       published: true,
       modules: {

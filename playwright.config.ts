@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
+const port = new URL(baseURL).port || '3000';
+
 export default defineConfig({
   testDir: './tests-e2e',
   globalSetup: './tests-e2e/global-setup.ts',
@@ -10,7 +13,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['line'], ['html', { open: 'never' }]] : 'html',
   expect: { timeout: 10_000 },
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -34,13 +37,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'node node_modules/next/dist/bin/next start',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
+    command: `node node_modules/next/dist/bin/next start --port ${port}`,
+    url: baseURL,
+    reuseExistingServer: !process.env.CI && !process.env.E2E_BASE_URL,
     env: {
       ...process.env,
       AUTH_SECRET: process.env.AUTH_SECRET ?? 'test-secret-at-least-32-characters-long',
-      AUTH_URL: process.env.AUTH_URL ?? 'http://localhost:3000',
+      AUTH_URL: baseURL,
       ADMIN_EMAILS: process.env.ADMIN_EMAILS ?? 'admin@beesmart.test',
       DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY ?? 'test-key',
       E2E_TEST_MODE: 'true',

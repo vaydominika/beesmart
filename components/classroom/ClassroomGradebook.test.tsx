@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClassroomGradebook } from "./ClassroomGradebook";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -16,7 +17,7 @@ describe("ClassroomGradebook work links", () => {
             tests: [{ id: "test-1", title: "Quiz", type: "TEST", attempt: { id: "attempt-1", score: 85, submittedAt: new Date().toISOString() } }],
         }), { status: 200, headers: { "Content-Type": "application/json" } })));
 
-        render(<ClassroomGradebook classroomId="class-1" />);
+        render(<ClassroomGradebook classroomId="class-1" />, { wrapper: TooltipProvider });
 
         expect(await screen.findByRole("link", { name: /Open assignment/i })).toHaveAttribute("href", "/classroom/class-1/assignments/assignment-1");
         expect(screen.queryByRole("button", { name: /Edit assignment/i })).not.toBeInTheDocument();
@@ -38,7 +39,7 @@ describe("ClassroomGradebook work links", () => {
             }],
         }), { status: 200, headers: { "Content-Type": "application/json" } })));
 
-        render(<ClassroomGradebook classroomId="class-1" />);
+        render(<ClassroomGradebook classroomId="class-1" />, { wrapper: TooltipProvider });
 
         expect(await screen.findByRole("link", { name: "Open assignment" })).toHaveAttribute("href", "/classroom/class-1/assignments/assignment-1");
         expect(screen.queryByRole("link", { name: "Open" })).not.toBeInTheDocument();

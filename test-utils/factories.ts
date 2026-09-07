@@ -88,7 +88,6 @@ function baseCourse() {
     coverImageUrl: null as string | null,
     coverStoredFileId: null as string | null,
     createdById: "user-teacher",
-    isPublic: false,
     visibility: "PRIVATE" as CourseVisibility,
     published: false,
     createdAt: FIXED_NOW,

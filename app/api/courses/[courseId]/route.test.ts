@@ -160,7 +160,7 @@ describe("course detail operations", () => {
     expect(response.status).toBe(200);
     expect(tx.course.update).toHaveBeenCalledWith({
       where: { id: "course-1" },
-      data: { title: "New biology", description: "Updated", isPublic: true, visibility: "PUBLIC", published: false },
+      data: { title: "New biology", description: "Updated", visibility: "PUBLIC", published: false },
     });
     expect(recordMeaningfulActivity).toHaveBeenCalledWith(expect.objectContaining({ activityType: "COURSE_UPDATED", courseId: "course-1" }));
   });

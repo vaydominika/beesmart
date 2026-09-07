@@ -1,7 +1,7 @@
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import CourseBuilderClient from "@/components/course/CourseBuilderClient";
-import { storedFileUrl } from "@/lib/files/types";
+import { storedFileUrl, serializeAttachment, attachmentInclude } from "@/lib/files/types";
 
 export default async function CourseBuilderPage({
     params,
@@ -21,7 +21,7 @@ export default async function CourseBuilderPage({
                 include: {
                     lessons: {
                         orderBy: { order: "asc" },
-                        include: { files: true },
+                        include: { files: { include: attachmentInclude } },
                     },
                 },
             },
@@ -44,7 +44,7 @@ export default async function CourseBuilderPage({
                     ...module,
                     lessons: module.lessons.map((lesson: any) => ({
                         ...lesson,
-                        files: lesson.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                        files: lesson.files.map(serializeAttachment),
                     })),
                 })),
             }} />

@@ -3,7 +3,7 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import type { Prisma } from "@/lib/generated/prisma";
 import { claimUploads, markFilesForDeletion, purgeStoredFiles, UploadClaimError } from "@/lib/files/lifecycle";
-import { storedFileUrl } from "@/lib/files/types";
+import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
 
 type RouteContext = { params: Promise<{ id: string; assignmentId: string }> };
 
@@ -34,7 +34,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 prisma.submission.findUnique({
                     where: { assignedWorkId_userId: { assignedWorkId: assignmentId, userId } },
                     include: {
-                        files: true,
+                        files: { include: attachmentInclude },
                         comments: {
                             where: { isPrivate: true },
                             include: { author: { select: { id: true, name: true, avatar: true } } },
@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             return NextResponse.json(submission ? [{
                 ...submission,
                 grade,
-                files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                files: submission.files.map(serializeAttachment),
             }] : []);
         } else {
             // Teacher/TA can view all submissions
@@ -59,7 +59,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     where: { assignedWorkId: assignmentId },
                     include: {
                         user: { select: { id: true, name: true, email: true, avatar: true } },
-                        files: true,
+                        files: { include: attachmentInclude },
                         _count: { select: { comments: true } },
                     },
                     orderBy: { createdAt: "desc" },
@@ -86,7 +86,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 submissions: submissions.map((submission: any) => ({
                     ...submission,
                     grade: grades.find((grade: any) => grade.userId === submission.userId) ?? null,
-                    files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                    files: submission.files.map(serializeAttachment),
                 })),
                 notSubmitted,
             });
@@ -143,10 +143,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 files: {
                         deleteMany: {},
                         create: files.map((f) => ({
-                            fileName: f.originalName,
                             storedFileId: f.id,
-                            fileType: f.fileType,
-                            fileSize: f.size,
                         })),
                     },
             },
@@ -159,15 +156,12 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 files: files.length
                     ? {
                         create: files.map((f) => ({
-                            fileName: f.originalName,
                             storedFileId: f.id,
-                            fileType: f.fileType,
-                            fileSize: f.size,
                         })),
                     }
                     : undefined,
             },
-            include: { files: true },
+            include: { files: { include: attachmentInclude } },
           });
         });
         await purgeStoredFiles(oldStoredFileIds);
@@ -177,7 +171,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             dedupeKey: `assignment:submit:${assignmentId}:${userId}`,
         });
 
-        return NextResponse.json({ ...submission, files: submission.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) });
+        return NextResponse.json({ ...submission, files: submission.files.map(serializeAttachment) });
     } catch (e) {
         if (e instanceof UploadClaimError) return NextResponse.json({ error: e.message }, { status: 400 });
         console.error("POST submission", e);

@@ -9,7 +9,7 @@ vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
   prisma: {
     course: { findUnique: vi.fn() },
-    courseFile: { findUnique: vi.fn(), update: vi.fn() },
+    attachment: { findUnique: vi.fn(), update: vi.fn() },
   },
 }));
 vi.mock("@/lib/course-access", () => ({ canManageCourse: vi.fn() }));
@@ -30,16 +30,19 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
     vi.mocked(getCurrentUserId).mockResolvedValue("owner-1");
     vi.mocked(prisma.course.findUnique).mockResolvedValue({ createdById: "owner-1" } as never);
     vi.mocked(canManageCourse).mockResolvedValue(true);
-    vi.mocked(prisma.courseFile.findUnique).mockResolvedValue({
+    vi.mocked(prisma.attachment.findUnique).mockResolvedValue({
       id: "file-1",
       courseId: "course-1",
       lesson: null,
     } as never);
-    vi.mocked(prisma.courseFile.update).mockResolvedValue({
+    vi.mocked(prisma.attachment.update).mockResolvedValue({
       id: "file-1",
-      fileName: "diagram.png",
-      fileUrl: "/uploads/diagram.png",
-      fileSize: 1200,
+      storedFileId: null,
+      storedFile: null,
+      legacyFileName: "diagram.png",
+      legacyFileUrl: "/uploads/diagram.png",
+      legacyFileSize: 1200,
+      legacyFileType: "IMAGE",
       isVisible: false,
     } as never);
   });
@@ -47,7 +50,10 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
   it("lets the course owner change attachment visibility", async () => {
     const response = await PATCH(request(false), context);
     expect(response.status).toBe(200);
-    expect(prisma.courseFile.update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(await response.json()).toMatchObject({
+      fileName: "diagram.png", fileUrl: "/uploads/diagram.png", fileSize: 1200, isVisible: false,
+    });
+    expect(prisma.attachment.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: "file-1" },
       data: { isVisible: false },
     }));
@@ -58,17 +64,17 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
     vi.mocked(canManageCourse).mockResolvedValue(false);
     const response = await PATCH(request(false), context);
     expect(response.status).toBe(403);
-    expect(prisma.courseFile.update).not.toHaveBeenCalled();
+    expect(prisma.attachment.update).not.toHaveBeenCalled();
   });
 
   it("rejects files that do not belong to the course", async () => {
-    vi.mocked(prisma.courseFile.findUnique).mockResolvedValue({
+    vi.mocked(prisma.attachment.findUnique).mockResolvedValue({
       id: "file-1",
       courseId: "course-2",
       lesson: null,
     } as never);
     const response = await PATCH(request(true), context);
     expect(response.status).toBe(404);
-    expect(prisma.courseFile.update).not.toHaveBeenCalled();
+    expect(prisma.attachment.update).not.toHaveBeenCalled();
   });
 });

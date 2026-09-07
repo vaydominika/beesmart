@@ -7,7 +7,6 @@ import { Dialog } from "@/components/ui/dialog";
 import {
   WorkspaceDialogBody,
   WorkspaceDialogContent,
-  WorkspaceDialogDescription,
   WorkspaceDialogFooter,
   WorkspaceDialogHeader,
   WorkspaceDialogTitle,

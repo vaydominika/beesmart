@@ -272,7 +272,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
       <div className="-mt-1 flex h-8 min-w-0 items-center gap-2">
         {!previewMode && (
-          <CourseVisibilityMenu value={course.visibility ?? (course.isPublic ? "PUBLIC" : "PRIVATE")} onChange={(visibility) => void handleVisibilityChange(visibility)} />
+          <CourseVisibilityMenu value={course.visibility} onChange={(visibility) => void handleVisibilityChange(visibility)} />
         )}
         {showMetadata && (
           <div className="hidden min-w-0 items-center gap-2 whitespace-nowrap text-[10px] text-[var(--course-text-muted)] sm:flex">

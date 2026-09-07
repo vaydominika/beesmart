@@ -109,10 +109,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             updateData.title = normalizedTitle;
         }
         if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-        if (data.isPublic !== undefined) updateData.isPublic = Boolean(data.isPublic);
+        if (data.isPublic !== undefined) updateData.visibility = data.isPublic ? "PUBLIC" : "PRIVATE";
         if (["PRIVATE", "PUBLIC", "INVITATION_ONLY"].includes(data.visibility)) {
             updateData.visibility = data.visibility;
-            updateData.isPublic = data.visibility === "PUBLIC";
+
         }
         const isPublishRequest = data.published === true;
         if (data.published !== undefined) updateData.published = Boolean(data.published);

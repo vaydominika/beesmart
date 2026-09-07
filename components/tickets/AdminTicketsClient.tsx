@@ -33,7 +33,7 @@ export type AdminTicketItem = {
   reporter: { id: string; name: string; email: string };
   reviewer: { id: string; name: string; email: string } | null;
   course: { id: string; title: string } | null;
-  attachments: Array<{ id: string; storedFile: { id: string; originalName: string } }>;
+  attachments: Array<{ id: string; storedFile: { id: string; originalName: string } | null }>;
 };
 
 type View = "active" | "all";

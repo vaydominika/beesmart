@@ -59,18 +59,28 @@ async function migrateOne(input: {
 }
 
 try {
-  const [courseFiles, postFiles, submissionFiles, covers, avatars, banners] = await Promise.all([
-    prisma.courseFile.findMany({ where: { storedFileId: null, fileUrl: { startsWith: "/uploads/" } }, select: { id: true, fileUrl: true, fileName: true, fileType: true, uploadedById: true } }),
-    prisma.postFile.findMany({ where: { storedFileId: null, fileUrl: { startsWith: "/uploads/" } }, select: { id: true, fileUrl: true, fileName: true, fileType: true, post: { select: { authorId: true } } } }),
-    prisma.submissionFile.findMany({ where: { storedFileId: null, fileUrl: { startsWith: "/uploads/" } }, select: { id: true, fileUrl: true, fileName: true, fileType: true, submission: { select: { userId: true } } } }),
+  const [attachments, covers, avatars, banners] = await Promise.all([
+    prisma.attachment.findMany({
+      where: { storedFileId: null, legacyFileUrl: { startsWith: "/uploads/" } },
+      include: { post: { select: { authorId: true } }, submission: { select: { userId: true } } },
+    }),
     prisma.course.findMany({ where: { coverStoredFileId: null, coverImageUrl: { startsWith: "/uploads/" } }, select: { id: true, coverImageUrl: true, createdById: true } }),
     prisma.user.findMany({ where: { avatarFileId: null, avatar: { startsWith: "/uploads/avatars/" } }, select: { id: true, avatar: true } }),
     prisma.user.findMany({ where: { bannerFileId: null, bannerImageUrl: { startsWith: "/uploads/banners/" } }, select: { id: true, bannerImageUrl: true } }),
   ]);
 
-  for (const file of courseFiles) await migrateOne({ fileUrl: file.fileUrl!, ownerId: file.uploadedById, purpose: "COURSE_ATTACHMENT", originalName: file.fileName, fileType: file.fileType, attach: (id) => prisma.courseFile.update({ where: { id: file.id }, data: { storedFileId: id } }) });
-  for (const file of postFiles) await migrateOne({ fileUrl: file.fileUrl!, ownerId: file.post.authorId, purpose: "POST_ATTACHMENT", originalName: file.fileName, fileType: file.fileType, attach: (id) => prisma.postFile.update({ where: { id: file.id }, data: { storedFileId: id } }) });
-  for (const file of submissionFiles) await migrateOne({ fileUrl: file.fileUrl!, ownerId: file.submission.userId, purpose: "SUBMISSION_ATTACHMENT", originalName: file.fileName, fileType: file.fileType, attach: (id) => prisma.submissionFile.update({ where: { id: file.id }, data: { storedFileId: id } }) });
+  for (const file of attachments) {
+    const ownerId = file.uploadedById ?? file.post?.authorId ?? file.submission?.userId;
+    if (!ownerId || !file.legacyFileName || !file.legacyFileType) { skipped++; continue; }
+    await migrateOne({
+      fileUrl: file.legacyFileUrl!, ownerId,
+      purpose: file.postId ? "POST_ATTACHMENT" : file.submissionId ? "SUBMISSION_ATTACHMENT" : "COURSE_ATTACHMENT",
+      originalName: file.legacyFileName, fileType: file.legacyFileType,
+      attach: (id) => prisma.attachment.update({ where: { id: file.id }, data: {
+        storedFileId: id, legacyFileName: null, legacyFileUrl: null, legacyFileType: null, legacyFileSize: null,
+      } }),
+    });
+  }
   for (const course of covers) await migrateOne({ fileUrl: course.coverImageUrl!, ownerId: course.createdById, purpose: "COURSE_COVER", originalName: path.basename(course.coverImageUrl!), fileType: "IMAGE", attach: (id) => prisma.course.update({ where: { id: course.id }, data: { coverStoredFileId: id } }) });
   for (const user of avatars) await migrateOne({ fileUrl: user.avatar!, ownerId: user.id, purpose: "PROFILE_AVATAR", originalName: path.basename(user.avatar!), fileType: "IMAGE", attach: (id) => prisma.user.update({ where: { id: user.id }, data: { avatarFileId: id, avatar: `/api/files/${id}` } }) });
   for (const user of banners) await migrateOne({ fileUrl: user.bannerImageUrl!, ownerId: user.id, purpose: "PROFILE_BANNER", originalName: path.basename(user.bannerImageUrl!), fileType: "IMAGE", attach: (id) => prisma.user.update({ where: { id: user.id }, data: { bannerFileId: id, bannerImageUrl: `/api/files/${id}` } }) });

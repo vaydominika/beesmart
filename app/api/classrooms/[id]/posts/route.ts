@@ -9,7 +9,7 @@ import type { AssignmentDraft, TestDraft } from "@/lib/classroom-post-drafts";
 import type { PostType, Prisma } from "@/lib/generated/prisma";
 import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
-import { storedFileUrl } from "@/lib/files/types";
+import { storedFileUrl, serializeAttachment, attachmentInclude } from "@/lib/files/types";
 import { ScheduleValidationError, assertDeadlineNotPast, parseNewTestSchedule } from "@/lib/schedule-validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
                 include: {
                     author: { select: { id: true, name: true, avatar: true } },
                     _count: { select: { comments: true, files: true } },
-                    files: true,
+                    files: { include: attachmentInclude },
                     assignment: {
                         select: {
                             id: true, title: true, deadlineAt: true, deadlineTimeZone: true, deadlineHasTime: true,
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
         return NextResponse.json({
             posts: posts.map((post: any) => ({
                 ...post,
-                files: post.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+                files: post.files.map(serializeAttachment),
                 course: post.course ? { ...post.course, coverImageUrl: storedFileUrl(post.course.coverStoredFileId, post.course.coverImageUrl) || null } : null,
                 isOwnPost: post.author.id === userId,
             })),
@@ -277,9 +277,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                     files: hasFiles
                         ? {
                             create: claimedFiles.map((file) => ({
-                                fileName: file.originalName,
-                                fileType: file.fileType,
-                                fileSize: file.size,
                                 storedFileId: file.id,
                             })),
                         }
@@ -288,7 +285,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 include: {
                     author: { select: { id: true, name: true, avatar: true } },
                     _count: { select: { comments: true, files: true } },
-                    files: true,
+                    files: { include: attachmentInclude },
                     assignment: true,
                     test: true,
                 },
@@ -364,7 +361,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             if (result.status === "rejected") console.error("Classroom post side effect failed", result.reason);
         });
 
-        return NextResponse.json({ ...post, files: post.files.map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })) }, { status: 201 });
+        return NextResponse.json({ ...post, files: post.files.map(serializeAttachment) }, { status: 201 });
     } catch (e) {
         if (e instanceof UploadClaimError) return NextResponse.json({ error: e.message }, { status: 400 });
         if (e instanceof DeadlineValidationError) {

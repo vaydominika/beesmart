@@ -20,7 +20,6 @@ export interface CourseSummary {
   description?: string | null;
   coverImageUrl?: string | null;
   createdById: string;
-  isPublic: boolean;
   published: boolean;
   visibility: CourseVisibility;
   createdAt: string;

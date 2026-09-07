@@ -99,9 +99,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         originalName: pendingFile.originalName, detectedMime: pendingFile.detectedMime,
                         fileType: pendingFile.fileType, size: pendingFile.size, checksum, scanStatus: pendingScanStatus,
                         state: "ATTACHED", expiresAt: new Date("9999-12-31T23:59:59.000Z"),
-                        courseFile: { create: {
-                            lessonId, courseId, fileName: pendingFile.originalName,
-                            fileType: pendingFile.fileType, fileSize: pendingFile.size,
+                        attachment: { create: {
+                            lessonId, courseId,
                             isVisible, uploadedById: userId,
                         } },
                     },

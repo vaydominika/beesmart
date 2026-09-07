@@ -3,11 +3,10 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 import { canManageCourse, getLessonAccess } from "@/lib/course-access";
 import { normalizeGeneratedRichText, richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-text";
 import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
-import { storedFileUrl } from "@/lib/files/types";
+import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
 import type { Prisma } from "@/lib/generated/prisma";
 
 type RouteContext = { params: Promise<{ courseId: string; moduleId: string; lessonId: string }> };
-type StoredLessonFile = { storedFileId: string | null; fileUrl: string | null };
 type StoredFileReference = { storedFileId: string | null };
 
 // GET /api/courses/[courseId]/modules/[moduleId]/lessons/[lessonId]
@@ -27,7 +26,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const lesson = access.isCreator
             ? await prisma.courseLesson.findFirst({
                 where: { id: lessonId, moduleId, module: { courseId } },
-                include: { files: true },
+                include: { files: { include: attachmentInclude } },
             })
             : await prisma.courseLesson.findFirst({
                 where: { id: lessonId, moduleId, module: { courseId } },
@@ -40,7 +39,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                     order: true,
                     isLocked: true,
                     updatedAt: true,
-                    files: { where: { isVisible: true } },
+                    files: { where: { isVisible: true }, include: attachmentInclude },
                 },
             });
 
@@ -49,7 +48,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         return NextResponse.json({
             ...lesson,
             content: normalizeGeneratedRichText(lesson.content),
-            files: lesson.files?.map((file: StoredLessonFile) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+            files: lesson.files?.map(serializeAttachment),
         });
     } catch (e) {
         console.error("GET /api/courses/.../lessons/[lessonId]", e);

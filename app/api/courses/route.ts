@@ -16,7 +16,6 @@ type CourseQueryRecord = {
     coverImageUrl: string | null;
     coverStoredFileId: string | null;
     createdById: string;
-    isPublic: boolean;
     published: boolean;
     visibility: CourseSummary["visibility"];
     createdAt: Date;
@@ -99,7 +98,6 @@ export async function GET(req: NextRequest) {
                 description: course.description,
                 coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl),
                 createdById: course.createdById,
-                isPublic: course.isPublic,
                 published: course.published,
                 visibility: course.visibility,
                 createdAt: course.createdAt.toISOString(),
@@ -166,7 +164,6 @@ export async function POST(req: NextRequest) {
             return tx.course.create({ data: {
                 title: normalizedTitle,
                 description: description?.trim() || null,
-                isPublic: visibility === "PUBLIC",
                 visibility,
                 published: published || false,
                 coverStoredFileId: covers[0]?.id ?? null,
@@ -189,9 +186,6 @@ export async function POST(req: NextRequest) {
                 ...(attachments.length > 0 && {
                     files: {
                         create: attachments.map((file) => ({
-                            fileName: file.originalName,
-                            fileSize: file.size,
-                            fileType: file.fileType,
                             storedFileId: file.id,
                             uploadedById: userId,
                         }))

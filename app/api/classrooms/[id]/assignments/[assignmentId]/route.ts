@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUserId, prisma } from "@/lib/db";
-import { storedFileUrl } from "@/lib/files/types";
+import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
 import { parseAssignmentDeadline, DeadlineValidationError } from "@/lib/assignment-deadline";
 import { assertDeadlineNotPast, ScheduleValidationError } from "@/lib/schedule-validation";
 import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
@@ -39,7 +39,7 @@ export async function GET(_request: Request, context: RouteContext) {
       posts: {
         orderBy: { createdAt: "asc" },
         take: 1,
-        select: { files: true },
+        select: { files: { include: attachmentInclude } },
       },
     },
   });
@@ -48,7 +48,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { posts, ...details } = assignment;
   return NextResponse.json({
     ...details,
-    files: (posts[0]?.files ?? []).map((file: any) => ({ ...file, fileUrl: storedFileUrl(file.storedFileId, file.fileUrl) })),
+    files: (posts[0]?.files ?? []).map(serializeAttachment),
     viewerRole: membership.role,
   });
 }

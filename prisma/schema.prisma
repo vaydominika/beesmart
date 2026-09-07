@@ -175,7 +175,7 @@ model User {
   gradesAsGrader             Grade[]                     @relation("Grader")
   streak                     Streak?
   focusSessions              FocusSession[]
-  uploadedFiles              CourseFile[]
+  uploadedFiles              Attachment[]
   testAttempts               TestAttempt[]
   settings                   UserSettings?
   courseRatings              CourseRating[]
@@ -188,8 +188,6 @@ model User {
   activityRecords            ActivityRecord[]
   aiUsageQuotas              AiUsageQuota[]
   dailyCourseRecommendations DailyCourseRecommendation[]
-
-  @@index([email])
 }
 
 model Account {
@@ -251,7 +249,6 @@ model Classroom {
   courseLinks  ClassroomCourse[]
 
   @@index([createdById])
-  @@index([code])
 }
 
 model ClassroomMember {
@@ -277,7 +274,6 @@ model Course {
   coverImageUrl     String?
   coverStoredFileId String?          @unique
   createdById       String
-  isPublic          Boolean          @default(false)
   visibility        CourseVisibility @default(PRIVATE)
   published         Boolean          @default(false)
   createdAt         DateTime         @default(now())
@@ -289,7 +285,7 @@ model Course {
   modules              CourseModule[]
   enrollments          CourseEnrollment[]
   progress             CourseProgress[]
-  files                CourseFile[]
+  files                Attachment[]
   tags                 CourseTag[]
   ratings              CourseRating[]
   reports              Report[]
@@ -331,34 +327,10 @@ model CourseLesson {
 
   // Relationships
   module   CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  files    CourseFile[]
+  files    Attachment[]
   progress CourseProgress[]
 
   @@index([moduleId])
-}
-
-model CourseFile {
-  id           String   @id @default(cuid())
-  lessonId     String?
-  courseId     String?
-  fileName     String
-  fileUrl      String?
-  storedFileId String?  @unique
-  fileType     FileType
-  fileSize     Int
-  isVisible    Boolean  @default(true)
-  uploadedById String
-  createdAt    DateTime @default(now())
-
-  // Relationships
-  lesson     CourseLesson? @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  course     Course?       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  uploader   User          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
-  storedFile StoredFile?   @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
-
-  @@index([lessonId])
-  @@index([courseId])
-  @@index([uploadedById])
 }
 
 model CourseEnrollment {
@@ -539,24 +511,22 @@ model Event {
 
   @@index([userId])
   @@index([classroomId])
-  @@index([testId])
-  @@index([assignmentId])
   @@index([startDate])
 }
 
 model AssignedWork {
-  id               String    @id @default(cuid())
+  id               String   @id @default(cuid())
   title            String
-  description      String?   @db.Text
+  description      String?  @db.Text
   assignedById     String
   classroomId      String?
   deadlineAt       DateTime
   deadlineTimeZone String
-  deadlineHasTime  Boolean   @default(false)
-  isGraded         Boolean   @default(true)
+  deadlineHasTime  Boolean  @default(false)
+  isGraded         Boolean  @default(true)
   maxPoints        Float?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relationships
   assigner      User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
@@ -704,8 +674,6 @@ model Streak {
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model FocusSession {
@@ -734,8 +702,6 @@ model Tag {
 
   // Relationships
   courses CourseTag[]
-
-  @@index([slug])
 }
 
 model CourseTag {
@@ -785,26 +751,15 @@ model Report {
   updatedAt    DateTime     @updatedAt
 
   // Relationships
-  reporter    User               @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
-  course      Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  reviewer    User?              @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
-  attachments ReportAttachment[]
+  reporter    User         @relation("ReportReporter", fields: [userId], references: [id], onDelete: Cascade)
+  course      Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  reviewer    User?        @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  attachments Attachment[]
 
   @@index([userId])
   @@index([courseId])
   @@index([status])
   @@index([createdAt])
-}
-
-model ReportAttachment {
-  id           String @id @default(cuid())
-  reportId     String
-  storedFileId String @unique
-
-  report     Report     @relation(fields: [reportId], references: [id], onDelete: Cascade)
-  storedFile StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Cascade)
-
-  @@index([reportId])
 }
 
 model UserSettings {
@@ -824,8 +779,6 @@ model UserSettings {
 
   // Relationships
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model AiUsageQuota {
@@ -886,29 +839,12 @@ model ClassroomPost {
   test       Test?         @relation(fields: [testId], references: [id], onDelete: SetNull)
   course     Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
   comments   Comment[]
-  files      PostFile[]
+  files      Attachment[]
 
   @@index([classroomId])
   @@index([authorId])
   @@index([type])
   @@index([createdAt])
-}
-
-model PostFile {
-  id           String   @id @default(cuid())
-  postId       String
-  fileName     String
-  fileUrl      String?
-  storedFileId String?  @unique
-  fileType     FileType
-  fileSize     Int
-  createdAt    DateTime @default(now())
-
-  // Relationships
-  post       ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  storedFile StoredFile?   @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
-
-  @@index([postId])
 }
 
 model Comment {
@@ -946,31 +882,14 @@ model Submission {
   updatedAt      DateTime         @updatedAt
 
   // Relationships
-  assignedWork AssignedWork     @relation(fields: [assignedWorkId], references: [id], onDelete: Cascade)
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  files        SubmissionFile[]
+  assignedWork AssignedWork @relation(fields: [assignedWorkId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files        Attachment[]
   comments     Comment[]
 
   @@unique([assignedWorkId, userId])
   @@index([assignedWorkId])
   @@index([userId])
-}
-
-model SubmissionFile {
-  id           String   @id @default(cuid())
-  submissionId String
-  fileName     String
-  fileUrl      String?
-  storedFileId String?  @unique
-  fileType     FileType
-  fileSize     Int
-  createdAt    DateTime @default(now())
-
-  // Relationships
-  submission Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  storedFile StoredFile? @relation(fields: [storedFileId], references: [id], onDelete: SetNull)
-
-  @@index([submissionId])
 }
 
 model StoredFile {
@@ -989,14 +908,11 @@ model StoredFile {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  owner            User              @relation("StoredFileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  avatarFor        User?             @relation("UserAvatar")
-  bannerFor        User?             @relation("UserBanner")
-  courseFile       CourseFile?
-  postFile         PostFile?
-  submissionFile   SubmissionFile?
-  reportAttachment ReportAttachment?
-  courseCover      Course?           @relation("CourseCover")
+  owner       User        @relation("StoredFileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  avatarFor   User?       @relation("UserAvatar")
+  bannerFor   User?       @relation("UserBanner")
+  attachment  Attachment?
+  courseCover Course?     @relation("CourseCover")
 
   @@index([ownerId])
   @@index([state, expiresAt])
@@ -1010,4 +926,40 @@ model RateLimitBucket {
   updatedAt   DateTime @updatedAt
 
   @@index([expiresAt])
+}
+
+// A file's metadata lives on StoredFile. Legacy fields only describe uploads
+// that have not yet been imported into private storage.
+// Migration triggers enforce one destination (course/lesson, post, submission,
+// or report) and prevent managed files from retaining copied metadata.
+model Attachment {
+  id             String    @id @default(cuid())
+  courseId       String?
+  lessonId       String?
+  postId         String?
+  submissionId   String?
+  reportId       String?
+  storedFileId   String?   @unique
+  uploadedById   String?
+  isVisible      Boolean   @default(true)
+  legacyFileName String?
+  legacyFileUrl  String?
+  legacyFileType FileType?
+  legacyFileSize Int?
+  createdAt      DateTime  @default(now())
+
+  course     Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson     CourseLesson?  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  post       ClassroomPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  submission Submission?    @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  report     Report?        @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  uploader   User?          @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  storedFile StoredFile?    @relation(fields: [storedFileId], references: [id], onDelete: Cascade)
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@index([postId])
+  @@index([submissionId])
+  @@index([reportId])
+  @@index([uploadedById])
 }

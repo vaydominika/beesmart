@@ -19,20 +19,26 @@ test.describe("teacher journeys", () => {
 test.describe("student journeys", () => {
   test.use({ storageState: authStatePath("student") });
 
-  test("opens joined learning, schedule, assignment, and test areas", async ({ page }) => {
+  test("opens joined classroom and learning areas", async ({ page }) => {
     await page.goto("/classroom");
     await expect(page.getByText("BeeSmart Testing Lab")).toBeVisible();
 
     await page.goto("/courses");
     await expect(page.getByRole("heading", { name: "Courses" })).toBeVisible();
     await expect(page.getByText("Reliable Learning Systems")).toBeVisible();
+  });
 
+  test("opens the schedule", async ({ page }) => {
     await page.goto("/schedule");
     await expect(page.getByRole("heading", { name: "Schedule" })).toBeVisible();
+  });
 
+  test("opens the assignment", async ({ page }) => {
     await page.goto(`/classroom/${E2E_IDS.classroom}/assignments/${E2E_IDS.assignment}`);
     await expect(page.getByText("Testing reflection").first()).toBeVisible();
+  });
 
+  test("opens the test", async ({ page }) => {
     await page.goto(`/classroom/${E2E_IDS.classroom}/tests/${E2E_IDS.test}`);
     await expect(page.getByText("Testing fundamentals").first()).toBeVisible();
   });
