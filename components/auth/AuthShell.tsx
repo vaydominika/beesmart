@@ -17,6 +17,10 @@ interface AuthShellProps {
 export const authFieldClass = "h-11 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3.5 font-[var(--font-geist-sans)] text-sm font-normal text-[var(--app-text)] shadow-none outline-none placeholder:font-normal placeholder:text-[var(--app-text-faint)] hover:border-[var(--app-border-strong)] focus-visible:border-[var(--app-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]";
 export const authLabelClass = "mb-1.5 block font-[var(--font-geist-sans)] text-sm font-semibold text-[var(--app-text)]";
 
+export function AuthStatusMessage({ children }: { children: ReactNode }) {
+  return <div role="status" className="space-y-3 text-left text-sm leading-6 text-[var(--app-text-muted)]">{children}</div>;
+}
+
 export function AuthShell({ title, footer, children }: AuthShellProps) {
   return (
     <main className="relative z-10 mx-auto grid w-full max-w-[980px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[var(--app-shadow-subtle)] lg:min-h-[640px] lg:grid-cols-[0.72fr_1.28fr]">

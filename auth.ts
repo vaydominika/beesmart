@@ -2,14 +2,18 @@
  * NextAuth config. Required env: AUTH_SECRET (or NEXTAUTH_SECRET), and for Google:
  * GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET. Optional: AUTH_URL / NEXTAUTH_URL for production.
  */
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { clearRateLimit, consumeRateLimit, requestClientAddress } from "@/lib/security/rate-limit";
 import { validSessionUserId, validateSessionToken } from "@/lib/auth-session";
+import { passwordCredentialsStatus } from "@/lib/password-credentials";
+
+class EmailNotVerified extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -44,9 +48,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
         if (!emailLimit.allowed || !addressLimit.allowed) return null;
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user?.password) return null;
-        const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return null;
+        if (!user) return null;
+        const credentialsStatus = await passwordCredentialsStatus(user, password);
+        if (credentialsStatus === "invalid") return null;
+        if (credentialsStatus === "unverified") throw new EmailNotVerified();
         await clearRateLimit("auth-login-email", email);
         return {
           id: user.id,

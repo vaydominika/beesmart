@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { AuthShell, AuthSubmitButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
+import { AuthShell, AuthStatusMessage, AuthSubmitButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
 import { WorkspaceField } from "@/components/ui/workspace-field";
 
 function ResetPasswordForm() {
@@ -35,8 +35,8 @@ function ResetPasswordForm() {
   }
 
   return (
-    <AuthShell title="Choose a new password" footer={<p><Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">Back to sign in</Link></p>}>
-      {message ? <div role="status" className="rounded-xl bg-[var(--app-accent-soft)] p-4 text-sm text-[var(--app-text)]"><p>{message}</p><Link href="/login" className="mt-3 inline-block font-semibold underline underline-offset-4">Sign in</Link></div> : (
+    <AuthShell title={message ? "Password updated" : "Choose a new password"} footer={<p><Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">Back to sign in</Link></p>}>
+      {message ? <AuthStatusMessage><p>{message}</p></AuthStatusMessage> : (
         <form onSubmit={submit} className="space-y-4">
           <WorkspaceField id="reset-password" label="New password" labelClassName={authLabelClass} hint="Use at least 12 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} /></WorkspaceField>
           <WorkspaceField id="reset-confirmation" label="Confirm new password" labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authFieldClass} /></WorkspaceField>

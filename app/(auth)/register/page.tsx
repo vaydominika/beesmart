@@ -2,20 +2,20 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
+import { CheckEmailView } from "@/components/auth/CheckEmailView";
 import { WorkspaceField } from "@/components/ui/workspace-field";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
 
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,19 +47,7 @@ export default function RegisterPage() {
         toast.error(data.error ?? "Registration failed.");
         return;
       }
-      const signInRes = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
-        password,
-        redirect: false,
-      });
-      if (signInRes?.error) {
-        toast.success("Account created. Please sign in.");
-        router.push("/login");
-        router.refresh();
-        return;
-      }
-      router.push("/dashboard?welcome=new");
-      router.refresh();
+      setVerificationEmail(email.trim().toLowerCase());
     } catch {
       toast.error("Something went wrong.");
     } finally {
@@ -70,6 +58,10 @@ export default function RegisterPage() {
   const handleGoogleSignIn = () => {
     signIn("google", { callbackUrl: "/dashboard?welcome=new" });
   };
+
+  if (verificationEmail) {
+    return <CheckEmailView email={verificationEmail} />;
+  }
 
   return (
     <AuthShell

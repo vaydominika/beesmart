@@ -2,6 +2,8 @@ import path from "node:path";
 
 type Environment = Record<string, string | undefined>;
 
+export const RESEND_EMAIL_FROM = "BeeSmart <noreply@beesmart.vay.hu>";
+
 function present(value: string | undefined) {
   return Boolean(value?.trim());
 }
@@ -15,7 +17,9 @@ export function productionEnvironmentErrors(env: Environment) {
   if (!present(env.AUTH_URL) && !present(env.NEXTAUTH_URL)) errors.push("AUTH_URL is required");
   if (!present(env.DEEPSEEK_API_KEY)) errors.push("DEEPSEEK_API_KEY is required");
   if (!present(env.RESEND_API_KEY)) errors.push("RESEND_API_KEY is required");
-  if (!present(env.EMAIL_FROM)) errors.push("EMAIL_FROM is required");
+  const emailFrom = env.EMAIL_FROM?.trim();
+  if (!emailFrom) errors.push("EMAIL_FROM is required");
+  else if (emailFrom !== RESEND_EMAIL_FROM) errors.push(`EMAIL_FROM must be ${RESEND_EMAIL_FROM}`);
 
   const storage = env.UPLOAD_STORAGE_DIR?.trim();
   if (!storage) errors.push("UPLOAD_STORAGE_DIR is required");

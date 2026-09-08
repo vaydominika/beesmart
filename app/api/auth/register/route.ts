@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
+import { sendEmailVerificationEmail } from "@/lib/email";
+import {
+  createEmailVerificationToken,
+  EMAIL_VERIFICATION_TTL_MS,
+  emailVerificationIdentifier,
+  emailVerificationUrl,
+  hashEmailVerificationToken,
+} from "@/lib/email-verification";
 import { consumeRateLimit, rateLimitHeaders, requestClientAddress } from "@/lib/security/rate-limit";
 
 const registrationSchema = z.object({
@@ -54,10 +62,25 @@ export async function POST(request: Request) {
   }
 
   const hashedPassword = await bcrypt.hash(password, 12);
+  const verificationToken = createEmailVerificationToken();
+  const verificationTokenHash = hashEmailVerificationToken(verificationToken);
+  const verificationUrl = emailVerificationUrl(verificationToken);
+  let userId: string;
 
   try {
-    await prisma.user.create({
-      data: { name, email, password: hashedPassword },
+    userId = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: { name, email, password: hashedPassword },
+        select: { id: true },
+      });
+      await tx.verificationToken.create({
+        data: {
+          identifier: emailVerificationIdentifier(user.id),
+          token: verificationTokenHash,
+          expires: new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+        },
+      });
+      return user.id;
     });
   } catch (error) {
     if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") {
@@ -66,5 +89,23 @@ export async function POST(request: Request) {
     throw error;
   }
 
-  return NextResponse.json({ ok: true });
+  try {
+    await sendEmailVerificationEmail({
+      to: email,
+      verificationUrl,
+      idempotencyKey: verificationTokenHash,
+    });
+  } catch (error) {
+    await prisma.$transaction([
+      prisma.verificationToken.deleteMany({ where: { identifier: emailVerificationIdentifier(userId) } }),
+      prisma.user.deleteMany({ where: { id: userId, emailVerified: null } }),
+    ]);
+    console.error("Registration verification email delivery failed", error);
+    return NextResponse.json(
+      { error: "Unable to send the verification email. Please try again." },
+      { status: 503 },
+    );
+  }
+
+  return NextResponse.json({ ok: true, verificationRequired: true }, { status: 201 });
 }

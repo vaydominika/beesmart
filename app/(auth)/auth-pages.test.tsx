@@ -39,6 +39,7 @@ function fillRegistration(password = "long-enough-password", confirmation = pass
 
 describe("authentication pages", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.searchParams = new URLSearchParams();
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -62,7 +63,22 @@ describe("authentication pages", () => {
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: " ADA@EXAMPLE.COM " } });
     fireEvent.click(screen.getByRole("button", { name: "Send reset link" }));
     expect(await screen.findByRole("status")).toHaveTextContent("If an account exists");
+    expect(screen.getByRole("status")).toHaveClass("text-left");
+    expect(screen.getByRole("heading", { name: "Check your email" })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/auth/forgot-password", expect.objectContaining({ body: JSON.stringify({ email: "ADA@EXAMPLE.COM" }) }));
+  });
+
+  it("requests a new verification link from the login page", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ message: "If this account needs verification, a new link has been sent." })));
+    render(<LoginPage />);
+    fireEvent.change(screen.getByLabelText("Email address"), { target: { value: " ADA@EXAMPLE.COM " } });
+    fireEvent.click(screen.getByRole("button", { name: "Resend verification email" }));
+
+    await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalledWith("If this account needs verification, a new link has been sent."));
+    expect(fetch).toHaveBeenCalledWith("/api/auth/resend-verification", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ email: "ada@example.com" }),
+    }));
   });
 
   it("validates matching passwords on the reset page", () => {
@@ -73,6 +89,19 @@ describe("authentication pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Update password" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Passwords do not match");
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses the shared success layout after updating a password", async () => {
+    mocks.searchParams = new URLSearchParams({ token: "valid-token-value-that-is-long-enough" });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ message: "Password updated. You can now sign in." })));
+    render(<ResetPasswordPage />);
+    fireEvent.change(screen.getByLabelText("New password"), { target: { value: "a-new-secure-password" } });
+    fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "a-new-secure-password" } });
+    fireEvent.click(screen.getByRole("button", { name: "Update password" }));
+
+    expect(await screen.findByRole("heading", { name: "Password updated" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveClass("text-left");
+    expect(screen.getAllByRole("link", { name: "Back to sign in" })).toHaveLength(1);
   });
 
   it("validates missing login credentials", () => {
@@ -112,6 +141,32 @@ describe("authentication pages", () => {
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Something went wrong."));
   });
 
+  it("shows the check-email page instead of an error for an unverified account", async () => {
+    mocks.signIn.mockResolvedValue({ error: "CredentialsSignin", code: "email_not_verified" });
+    render(<LoginPage />);
+    fillLogin("  TEACHER@EXAMPLE.COM  ");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("heading", { name: "Check your email" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("teacher@example.com");
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
+  it("recovers the pending state when Auth.js returns a generic credentials error", async () => {
+    mocks.signIn.mockResolvedValue({ error: "CredentialsSignin", code: "credentials" });
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ pending: true })));
+    render(<LoginPage />);
+    fillLogin("  TEACHER@EXAMPLE.COM  ");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("heading", { name: "Check your email" })).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/auth/pending-verification", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ email: "teacher@example.com", password: "long-enough-password" }),
+    }));
+    expect(mocks.toastError).not.toHaveBeenCalled();
+  });
+
   it("surfaces OAuth errors and starts Google sign-in", () => {
     mocks.searchParams = new URLSearchParams({ error: "OAuthAccountNotLinked", callbackUrl: "/schedule" });
     render(<LoginPage />);
@@ -119,6 +174,23 @@ describe("authentication pages", () => {
     expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining("already registered"));
     fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
     expect(mocks.signIn).toHaveBeenCalledWith("google", { callbackUrl: "/schedule" });
+  });
+
+  it("reports email verification results", () => {
+    mocks.searchParams = new URLSearchParams({ verification: "verified" });
+    const first = render(<LoginPage />);
+    expect(mocks.toastSuccess).toHaveBeenCalledWith(
+      "Email verified. You can now sign in.",
+      { id: "email-verification-result" },
+    );
+    first.unmount();
+
+    mocks.searchParams = new URLSearchParams({ verification: "invalid" });
+    render(<LoginPage />);
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      "This verification link is invalid or has expired.",
+      { id: "email-verification-result" },
+    );
   });
 
   it("gives registration the same shell and readable form styling", () => {
@@ -143,19 +215,21 @@ describe("authentication pages", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("registers normalized credentials and opens the dashboard", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ id: "user-1" }), { status: 201 }));
-    mocks.signIn.mockResolvedValue({ ok: true });
+  it("registers normalized credentials and asks the user to verify their email", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ ok: true, verificationRequired: true }), { status: 201 }));
     render(<RegisterPage />);
     fillRegistration();
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/dashboard?welcome=new"));
+    expect(await screen.findByRole("heading", { name: "Check your email" })).not.toHaveClass("text-center");
+    expect(screen.getByRole("status")).toHaveClass("text-left");
+    expect(screen.getByRole("status")).toHaveTextContent("teacher@example.com");
     expect(fetch).toHaveBeenCalledWith("/api/auth/register", expect.objectContaining({
       method: "POST",
       body: JSON.stringify({ name: "Test Teacher", email: "teacher@example.com", password: "long-enough-password" }),
     }));
-    expect(mocks.refresh).toHaveBeenCalled();
+    expect(mocks.signIn).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 
   it("shows API errors and handles invalid JSON responses", async () => {
@@ -165,17 +239,6 @@ describe("authentication pages", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Registration failed."));
     expect(mocks.signIn).not.toHaveBeenCalled();
-  });
-
-  it("redirects to login when automatic sign-in fails", async () => {
-    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 201 }));
-    mocks.signIn.mockResolvedValue({ error: "CredentialsSignin" });
-    render(<RegisterPage />);
-    fillRegistration();
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
-
-    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/login"));
-    expect(mocks.toastSuccess).toHaveBeenCalledWith("Account created. Please sign in.");
   });
 
   it("handles registration network failure and Google registration", async () => {
