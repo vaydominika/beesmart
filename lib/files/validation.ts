@@ -22,6 +22,7 @@ const EXTENSIONS: Record<string, { mime: string; type: FileType }> = {
 };
 
 const MIME_ALIASES: Record<string, string[]> = {
+  "image/png": ["image/png", "image/apng"],
   "audio/wav": ["audio/wav", "audio/x-wav"],
   "text/csv": ["text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"],
 };
@@ -69,7 +70,8 @@ export async function validateUpload(file: File, purpose: UploadPurpose): Promis
   } else if (["doc", "xls", "ppt"].includes(extension) && isCfb(buffer)) {
     detectedMime = expected.mime;
   } else {
-    if (!detected || detected.mime !== expected.mime) throw new UploadValidationError("File contents do not match the extension");
+    const acceptedMimes = MIME_ALIASES[expected.mime] ?? [expected.mime];
+    if (!detected || !acceptedMimes.includes(detected.mime)) throw new UploadValidationError("File contents do not match the extension");
     detectedMime = detected.mime;
   }
 
