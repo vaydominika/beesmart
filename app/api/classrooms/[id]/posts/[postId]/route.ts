@@ -23,7 +23,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const post = await prisma.classroomPost.findUnique({
             where: { id: postId },
             include: {
-                author: { select: { id: true, name: true, avatar: true } },
+                author: { select: { id: true, name: true, image: true } },
                 files: { include: attachmentInclude },
                 _count: { select: { comments: true } },
                 assignment: {
@@ -39,10 +39,10 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 comments: {
                     where: { parentId: null, isPrivate: false },
                     include: {
-                        author: { select: { id: true, name: true, avatar: true } },
+                        author: { select: { id: true, name: true, image: true } },
                         replies: {
                             include: {
-                                author: { select: { id: true, name: true, avatar: true } },
+                                author: { select: { id: true, name: true, image: true } },
                             },
                             orderBy: { createdAt: "asc" },
                         },
@@ -126,7 +126,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             where: { id: postId },
             data: updateData,
             include: {
-                author: { select: { id: true, name: true, avatar: true } },
+                author: { select: { id: true, name: true, image: true } },
                 _count: { select: { comments: true, files: true } },
                 files: { include: attachmentInclude },
             },

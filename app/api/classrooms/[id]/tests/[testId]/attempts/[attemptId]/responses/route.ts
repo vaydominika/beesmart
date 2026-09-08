@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: "Invalid response payload" }, { status: 400 });
     }
     const attempt = await prisma.testAttempt.findFirst({
-        where: { id: attemptId, testId, userId, isCompleted: false, test: { classroomId } }, select: { id: true },
+        where: { id: attemptId, testId, userId, submittedAt: null, test: { classroomId } }, select: { id: true },
     });
     if (!attempt) return NextResponse.json({ error: "Active attempt not found" }, { status: 404 });
     const question = await prisma.testQuestion.findFirst({

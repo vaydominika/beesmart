@@ -41,32 +41,21 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             return NextResponse.json({ error: `Score must be between 0 and ${assignment.maxPoints}` }, { status: 400 });
         }
 
-        // Update submission status
-        await prisma.submission.updateMany({
-            where: { assignedWorkId: assignmentId, userId: studentId },
-            data: { status: "GRADED" },
-        });
-
-        // Create/update grade
-        const existingGrade = await prisma.grade.findFirst({
-            where: { assignedWorkId: assignmentId, userId: studentId },
-        });
-
-        let grade;
-        if (existingGrade) {
-            grade = await prisma.grade.update({
-                where: { id: existingGrade.id },
-                data: {
+        const grade = await prisma.$transaction(async (tx) => {
+            await tx.submission.updateMany({
+                where: { assignedWorkId: assignmentId, userId: studentId },
+                data: { status: "GRADED" },
+            });
+            return tx.grade.upsert({
+                where: { userId_assignedWorkId: { userId: studentId, assignedWorkId: assignmentId } },
+                update: {
                     score: parsedScore,
                     maxScore: assignment.maxPoints,
                     feedback: feedback?.trim() || null,
                     gradedById: userId,
                     gradedAt: new Date(),
                 },
-            });
-        } else {
-            grade = await prisma.grade.create({
-                data: {
+                create: {
                     userId: studentId,
                     assignedWorkId: assignmentId,
                     score: parsedScore,
@@ -76,7 +65,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                     gradedAt: new Date(),
                 },
             });
-        }
+        });
 
         await notifyClassroomUser(studentId, {
             classroomId: id, actorId: userId, title: "Assignment graded",

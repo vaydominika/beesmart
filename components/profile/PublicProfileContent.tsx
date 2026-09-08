@@ -36,7 +36,7 @@ type ProfileActivity = {
 export type PublicProfileData = {
   id: string;
   name: string | null;
-  avatar: string | null;
+  image: string | null;
   bannerImageUrl: string | null;
   joinedAt: string;
   isOwner: boolean;
@@ -136,7 +136,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
               <div className="-mt-6 shrink-0">
                 <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--app-surface)] bg-[var(--app-surface)]">
                   <Image
-                    src={profile.avatar?.trim() || "/images/default_pfp.jpg"}
+                    src={profile.image?.trim() || "/images/default_pfp.jpg"}
                     alt={profile.name || "Profile"}
                     width={64}
                     height={64}

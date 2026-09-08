@@ -50,7 +50,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
             prisma.classroomPost.findMany({
                 where,
                 include: {
-                    author: { select: { id: true, name: true, avatar: true } },
+                    author: { select: { id: true, name: true, image: true } },
                     _count: { select: { comments: true, files: true } },
                     files: { include: attachmentInclude },
                     assignment: {
@@ -288,7 +288,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                         : undefined,
                 },
                 include: {
-                    author: { select: { id: true, name: true, avatar: true } },
+                    author: { select: { id: true, name: true, image: true } },
                     _count: { select: { comments: true, files: true } },
                     files: { include: attachmentInclude },
                     assignment: true,

@@ -28,7 +28,7 @@ export async function GET(_request: Request, ctx: RouteContext) {
         submission: { select: { userId: true, assignedWork: { select: { classroomId: true } } } },
         report: { select: { userId: true } },
       } },
-      avatarFor: { select: { id: true } },
+      imageFor: { select: { id: true } },
       bannerFor: { select: { id: true } },
     },
   });
@@ -37,7 +37,7 @@ export async function GET(_request: Request, ctx: RouteContext) {
   }
 
   let allowed = file.state === "PENDING" && file.ownerId === userId;
-  if (!allowed && file.state === "ATTACHED" && (file.avatarFor || file.bannerFor)) allowed = true;
+  if (!allowed && file.state === "ATTACHED" && (file.imageFor || file.bannerFor)) allowed = true;
   if (!allowed && file.courseCover) allowed = await canAccessCourse(file.courseCover.id, userId);
   if (!allowed && file.attachment && (file.attachment.courseId || file.attachment.lesson)) {
     const courseId = file.attachment.courseId ?? file.attachment.lesson?.module.courseId;

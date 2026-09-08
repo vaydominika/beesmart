@@ -38,6 +38,7 @@ including report attachments, so unavailable metadata is not left behind.
 
 Grades and submissions remain separate because grades can exist without submitted
 work. Course progress's course reference and calendar projection fields are retained
-for their existing query/scheduling roles. OAuth image fields and uploaded profile
-images also retain their separate behavior. This change does not flatten unrelated
-models merely to lower the count.
+for their existing query/scheduling roles. OAuth and uploaded profile-image fields
+were outside this migration's scope; they are consolidated by the later
+`20260908120000_consolidate_user_image_and_grades` migration. This change does not
+flatten unrelated models merely to lower the count.

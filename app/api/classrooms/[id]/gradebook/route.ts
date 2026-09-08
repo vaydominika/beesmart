@@ -58,7 +58,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 where: {
                     userId,
                     testId: { in: tests.map((t: any) => t.id) },
-                    isCompleted: true,
+                    submittedAt: { not: null },
                 },
                 include: {
                     test: { select: { title: true, type: true } },
@@ -92,7 +92,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             // Teacher sees all students' grades
             const students = await prisma.classroomMember.findMany({
                 where: { classroomId: id, role: "STUDENT" },
-                include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+                include: { user: { select: { id: true, name: true, email: true, image: true } } },
             });
 
             const [allGrades, allSubmissions, allAttempts] = await Promise.all([
@@ -106,7 +106,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 prisma.testAttempt.findMany({
                     where: {
                         testId: { in: tests.map((t: any) => t.id) },
-                        isCompleted: true,
+                        submittedAt: { not: null },
                     },
                 }),
             ]);

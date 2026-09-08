@@ -66,7 +66,7 @@ try {
       include: { post: { select: { authorId: true } }, submission: { select: { userId: true } } },
     }),
     prisma.course.findMany({ where: { coverStoredFileId: null, coverImageUrl: { startsWith: "/uploads/" } }, select: { id: true, coverImageUrl: true, createdById: true } }),
-    prisma.user.findMany({ where: { avatarFileId: null, avatar: { startsWith: "/uploads/avatars/" } }, select: { id: true, avatar: true } }),
+    prisma.user.findMany({ where: { imageFileId: null, image: { startsWith: "/uploads/avatars/" } }, select: { id: true, image: true } }),
     prisma.user.findMany({ where: { bannerFileId: null, bannerImageUrl: { startsWith: "/uploads/banners/" } }, select: { id: true, bannerImageUrl: true } }),
   ]);
 
@@ -91,7 +91,7 @@ try {
     });
   }
   for (const course of covers) await migrateOne({ fileUrl: course.coverImageUrl!, ownerId: course.createdById, purpose: "COURSE_COVER", originalName: path.basename(course.coverImageUrl!), fileType: "IMAGE", attach: (id) => prisma.course.update({ where: { id: course.id }, data: { coverStoredFileId: id } }) });
-  for (const user of avatars) await migrateOne({ fileUrl: user.avatar!, ownerId: user.id, purpose: "PROFILE_AVATAR", originalName: path.basename(user.avatar!), fileType: "IMAGE", attach: (id) => prisma.user.update({ where: { id: user.id }, data: { avatarFileId: id, avatar: `/api/files/${id}` } }) });
+  for (const user of avatars) await migrateOne({ fileUrl: user.image!, ownerId: user.id, purpose: "PROFILE_AVATAR", originalName: path.basename(user.image!), fileType: "IMAGE", attach: (id) => prisma.user.update({ where: { id: user.id }, data: { imageFileId: id, image: `/api/files/${id}` } }) });
   for (const user of banners) await migrateOne({ fileUrl: user.bannerImageUrl!, ownerId: user.id, purpose: "PROFILE_BANNER", originalName: path.basename(user.bannerImageUrl!), fileType: "IMAGE", attach: (id) => prisma.user.update({ where: { id: user.id }, data: { bannerFileId: id, bannerImageUrl: `/api/files/${id}` } }) });
   console.log(JSON.stringify({ event: "private_file_migration_complete", mode: apply ? "apply" : "dry-run", removePublic, migrated, skipped }));
 } finally {

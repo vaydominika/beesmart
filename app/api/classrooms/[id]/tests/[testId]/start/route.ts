@@ -12,7 +12,7 @@ function learnerTestPayload(test: any, attempt: any) {
             attemptNumber: attempt.attemptNumber,
             startedAt: attempt.startedAt,
             submittedAt: attempt.submittedAt,
-            isCompleted: attempt.isCompleted,
+            isCompleted: attempt.submittedAt !== null,
             score: attempt.score,
         },
         responses: attempt.responses.map((response: any) => ({
@@ -64,13 +64,13 @@ export async function POST(_request: Request, context: RouteContext) {
 
     const includeResponses = { responses: { orderBy: { createdAt: "asc" as const } } };
     const activeAttempt = await prisma.testAttempt.findFirst({
-        where: { testId, userId, isCompleted: false },
+        where: { testId, userId, submittedAt: null },
         include: includeResponses,
         orderBy: { attemptNumber: "desc" },
     });
     if (activeAttempt) return NextResponse.json(learnerTestPayload(test, activeAttempt));
 
-    const completedCount = await prisma.testAttempt.count({ where: { testId, userId, isCompleted: true } });
+    const completedCount = await prisma.testAttempt.count({ where: { testId, userId, submittedAt: { not: null } } });
     if (completedCount >= test.maxAttempts) {
         return NextResponse.json({ error: "No attempts remaining", code: "ATTEMPT_LIMIT_REACHED" }, { status: 409 });
     }
@@ -78,12 +78,12 @@ export async function POST(_request: Request, context: RouteContext) {
     try {
         const attempt = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const existing = await tx.testAttempt.findFirst({
-                where: { testId, userId, isCompleted: false },
+                where: { testId, userId, submittedAt: null },
                 include: includeResponses,
             });
             if (existing) return existing;
             const aggregate = await tx.testAttempt.aggregate({ where: { testId, userId }, _max: { attemptNumber: true } });
-            const submitted = await tx.testAttempt.count({ where: { testId, userId, isCompleted: true } });
+            const submitted = await tx.testAttempt.count({ where: { testId, userId, submittedAt: { not: null } } });
             if (submitted >= test.maxAttempts) throw new Error("ATTEMPT_LIMIT_REACHED");
             return tx.testAttempt.create({
                 data: { testId, userId, attemptNumber: (aggregate._max.attemptNumber ?? 0) + 1 },
@@ -97,7 +97,7 @@ export async function POST(_request: Request, context: RouteContext) {
         }
         if ((error as { code?: string }).code === "P2002") {
             const winningAttempt = await prisma.testAttempt.findFirst({
-                where: { testId, userId, isCompleted: false }, include: includeResponses,
+                where: { testId, userId, submittedAt: null }, include: includeResponses,
             });
             if (winningAttempt) return NextResponse.json(learnerTestPayload(test, winningAttempt));
         }

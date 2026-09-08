@@ -68,7 +68,7 @@ interface AttemptReviewItem {
 }
 
 interface TeacherTestAttempt extends TestAttempt {
-    user: { id: string; name: string; avatar?: string; email?: string };
+    user: { id: string; name: string; image?: string; email?: string };
     responses: Array<{
         id: string;
         questionId: string;

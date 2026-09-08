@@ -33,7 +33,7 @@ interface AssignmentDetails {
     isGraded: boolean;
     maxPoints?: number | null;
     createdAt: string;
-    assigner: { id: string; name: string; avatar?: string | null };
+    assigner: { id: string; name: string; image?: string | null };
     files: Array<{ id: string; fileName: string; fileUrl: string; fileType: string; fileSize: number }>;
 }
 
@@ -42,7 +42,7 @@ interface AssignmentSubmission {
     status: string;
     content?: string | null;
     submittedAt: string;
-    user: { id: string; name: string; avatar?: string | null; email?: string };
+    user: { id: string; name: string; image?: string | null; email?: string };
     files: Array<{ id: string; fileName: string; fileUrl: string; fileType: string; fileSize: number }>;
     _count: { comments: number };
     grade?: {
@@ -55,7 +55,7 @@ interface AssignmentSubmission {
 
 interface TeacherSubmissionsView {
     submissions: AssignmentSubmission[];
-    notSubmitted: Array<{ user: { id: string; name: string; avatar?: string; email?: string }; status: string }>;
+    notSubmitted: Array<{ user: { id: string; name: string; image?: string; email?: string }; status: string }>;
 }
 
 const statusLabel = (status?: string | null) => {
@@ -70,11 +70,11 @@ const statusTone = (status?: string | null) => {
     return "border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]";
 };
 
-function ProfileAvatar({ user, className }: { user: { name: string; avatar?: string | null }; className?: string }) {
+function ProfileAvatar({ user, className }: { user: { name: string; image?: string | null }; className?: string }) {
     return (
         <Avatar className={cn("h-9 w-9 border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]", className)}>
             <AvatarImage
-                src={user.avatar?.trim() || "/images/default_pfp.jpg"}
+                src={user.image?.trim() || "/images/default_pfp.jpg"}
                 alt={`${user.name}'s profile picture`}
                 className="object-cover object-center"
             />

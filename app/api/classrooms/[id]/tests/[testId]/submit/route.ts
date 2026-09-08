@@ -50,7 +50,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         }
 
         const attempt = await prisma.testAttempt.findFirst({
-            where: { id: body.attemptId, testId, userId, isCompleted: false, test: { classroomId } },
+            where: { id: body.attemptId, testId, userId, submittedAt: null, test: { classroomId } },
             select: { id: true, startedAt: true },
         });
         if (!attempt) return NextResponse.json({ error: "Active attempt not found" }, { status: 404 });
@@ -130,7 +130,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
             const updatedAttempt = await tx.testAttempt.update({
                 where: { id: attempt.id },
                 data: {
-                    isCompleted: true,
                     submittedAt,
                     score: needsManualGrading ? null : totals.percentage,
                 },

@@ -22,7 +22,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             prisma.classroomMember.findMany({
             where: { classroomId: id },
             include: {
-                user: { select: { id: true, name: true, email: true, avatar: true } },
+                user: { select: { id: true, name: true, email: true, image: true } },
             },
             orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
             }),
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             }),
             prisma.user.findUnique({
                 where: { email },
-                select: { id: true, name: true, email: true, avatar: true },
+                select: { id: true, name: true, email: true, image: true },
             }),
         ]);
         if (!classroom) return NextResponse.json({ error: "Classroom not found" }, { status: 404 });
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const member = await prisma.classroomMember.create({
             data: { userId: addedUser.id, classroomId: id, role },
-            include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+            include: { user: { select: { id: true, name: true, email: true, image: true } } },
         });
 
         if (classroom.courseLinks.length) {
@@ -165,7 +165,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             where: { id: memberId },
             data: { role: role as ClassroomRoleValue },
             include: {
-                user: { select: { id: true, name: true, email: true, avatar: true } },
+                user: { select: { id: true, name: true, email: true, image: true } },
             },
         });
 

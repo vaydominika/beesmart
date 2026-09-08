@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
                 ],
             },
             include: {
-                creator: { select: { id: true, name: true, avatar: true } },
+                creator: { select: { id: true, name: true, image: true } },
                 _count: { select: { modules: true, enrollments: true } },
                 modules: { include: { lessons: { select: { id: true } } } },
                 enrollments: { where: { userId }, select: { completedAt: true } },

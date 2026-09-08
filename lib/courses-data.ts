@@ -249,7 +249,7 @@ export async function getCurrentUserById(
     select: {
       id: true,
       name: true,
-      avatar: true,
+      image: true,
       bannerImageUrl: true,
     },
   });
@@ -257,7 +257,7 @@ export async function getCurrentUserById(
   return {
     id: user.id,
     name: user.name,
-    avatar: user.avatar ?? null,
+    image: user.image ?? null,
     bannerImageUrl: user.bannerImageUrl,
   };
 }

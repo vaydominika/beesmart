@@ -48,18 +48,18 @@ describe("course dashboard data", () => {
     vi.mocked(getActiveTicketCount).mockResolvedValue(0);
   });
 
-  it("leaves the avatar empty when only a provider placeholder exists", async () => {
+  it("returns the canonical profile image", async () => {
     vi.mocked(prisma.user.findUnique).mockResolvedValue({
       id: "user-1",
       name: "Ada",
-      avatar: null,
+      image: "/provider-image.png",
       bannerImageUrl: "/banner.png",
     } as never);
 
     await expect(getCurrentUserById("user-1")).resolves.toEqual({
       id: "user-1",
       name: "Ada",
-      avatar: null,
+      image: "/provider-image.png",
       bannerImageUrl: "/banner.png",
     });
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
@@ -67,7 +67,7 @@ describe("course dashboard data", () => {
       select: {
         id: true,
         name: true,
-        avatar: true,
+        image: true,
         bannerImageUrl: true,
       },
     });
@@ -161,7 +161,7 @@ describe("course dashboard data", () => {
       return [] as never;
     }) as never);
     vi.mocked(prisma.streak.findUnique).mockResolvedValue({ currentStreak: 7 } as never);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "user-1", name: "Ada", avatar: null, bannerImageUrl: null } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "user-1", name: "Ada", image: null, bannerImageUrl: null } as never);
     vi.mocked(getActiveTicketCount).mockResolvedValue(2);
 
     const result = await getDashboardData();

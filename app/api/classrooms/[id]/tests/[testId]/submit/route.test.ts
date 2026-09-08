@@ -47,7 +47,7 @@ describe("complete-set test submission", () => {
         expect(data.totalPoints).toBe(5);
         expect(data.totalScore).toBe(0);
         expect(data.needsManualGrading).toBe(false);
-        expect(prisma.testAttempt.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ score: 0, isCompleted: true }) }));
+        expect(prisma.testAttempt.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ score: 0, submittedAt: expect.any(Date) }) }));
     });
 
     it("rejects an option from a different question", async () => {

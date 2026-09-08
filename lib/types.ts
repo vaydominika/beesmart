@@ -10,7 +10,7 @@ export type CourseCard = {
 export type CurrentUser = {
   id: string;
   name: string;
-  avatar: string | null;
+  image: string | null;
   bannerImageUrl: string | null;
 };
 

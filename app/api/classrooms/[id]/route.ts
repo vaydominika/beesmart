@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const classroom = await prisma.classroom.findUnique({
             where: { id },
             include: {
-                creator: { select: { id: true, name: true, avatar: true } },
+                creator: { select: { id: true, name: true, image: true } },
                 _count: { select: { members: true, posts: true } },
             },
         });

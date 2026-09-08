@@ -65,7 +65,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         }
 
         const attempt = await prisma.testAttempt.findFirst({
-            where: { id: body.attemptId, testId, isCompleted: true, test: { classroomId } },
+            where: { id: body.attemptId, testId, submittedAt: { not: null }, test: { classroomId } },
             select: {
                 id: true,
                 userId: true,

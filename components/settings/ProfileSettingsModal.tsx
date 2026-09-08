@@ -66,7 +66,7 @@ export function ProfileSettingsModal() {
     if (!isProfileModalOpen || !user) return;
     setActiveSection("profile");
     setName(user.name);
-    setAvatarUrl(user.avatar ?? "");
+    setAvatarUrl(user.image ?? "");
     setBannerImageUrl(user.bannerImageUrl ?? "");
     setCurrentPassword("");
     setNewPassword("");

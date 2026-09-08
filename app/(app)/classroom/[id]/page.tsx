@@ -27,7 +27,7 @@ interface ClassroomDetail {
     code: string;
     subject?: string | null;
     role: string;
-    creator: { id: string; name: string; avatar?: string | null };
+    creator: { id: string; name: string; image?: string | null };
     _count: { members: number; posts: number };
 }
 

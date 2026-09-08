@@ -50,7 +50,7 @@ interface Post {
     isPinned: boolean;
     createdAt: string;
     editedAt?: string | null;
-    author: { id: string; name: string; avatar?: string | null };
+    author: { id: string; name: string; image?: string | null };
     isOwnPost: boolean;
     _count: { comments: number; files: number };
     files: PostFile[];
@@ -79,7 +79,7 @@ interface Comment {
     id: string;
     content: string;
     createdAt: string;
-    author: { id: string; name: string; avatar?: string | null };
+    author: { id: string; name: string; image?: string | null };
     replies?: Comment[];
 }
 
@@ -111,19 +111,19 @@ function AuthorAvatar({
     size,
     className,
 }: {
-    author: { name: string; avatar?: string | null };
+    author: { name: string; image?: string | null };
     size: number;
     className: string;
 }) {
     return (
         <div className={cn("relative shrink-0 overflow-hidden rounded-full bg-[var(--classroom-surface-muted)]", className)}>
             <Image
-                src={author.avatar?.trim() || "/images/default_pfp.jpg"}
+                src={author.image?.trim() || "/images/default_pfp.jpg"}
                 alt={`${author.name}'s profile picture`}
                 width={size}
                 height={size}
                 className="h-full w-full object-cover object-center"
-                unoptimized={author.avatar?.trim().startsWith("/api/files/") ?? false}
+                unoptimized={author.image?.trim().startsWith("/api/files/") ?? false}
             />
         </div>
     );

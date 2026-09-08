@@ -34,7 +34,7 @@ export interface CourseSummary {
   creator: {
     id: string;
     name: string | null;
-    avatar?: string | null;
+    image?: string | null;
   };
   _count: {
     modules: number;

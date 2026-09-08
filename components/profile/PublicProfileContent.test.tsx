@@ -6,7 +6,7 @@ function buildProfile(): PublicProfileData {
   return {
     id: "user-1",
     name: "Dominika Vay",
-    avatar: null,
+    image: null,
     bannerImageUrl: null,
     joinedAt: "2026-04-29T00:00:00.000Z",
     isOwner: true,

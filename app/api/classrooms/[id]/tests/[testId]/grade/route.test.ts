@@ -29,7 +29,7 @@ describe("strict test grading", () => {
     vi.mocked(getCurrentUserId).mockResolvedValue("teacher-1");
     vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "TEACHER" } as never);
     vi.mocked(prisma.testAttempt.findFirst).mockResolvedValue({
-      id: "attempt-1", userId: "student-1", isCompleted: true,
+      id: "attempt-1", userId: "student-1", submittedAt: new Date(),
       test: { questions: [{ id: "question-1", points: 2 }, { id: "question-2", points: 3 }] },
       responses: [{ id: "response-1", pointsAwarded: null, question: { id: "question-1", points: 2, questionType: "ESSAY" } }],
     } as never);

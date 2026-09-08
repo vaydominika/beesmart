@@ -57,7 +57,7 @@ describe("classroom members route", () => {
       id: "teacher-2",
       name: "Second Teacher",
       email: "teacher@example.com",
-      avatar: null,
+      image: null,
     });
     mocks.memberFindUnique.mockResolvedValueOnce({ role: "TEACHER" }).mockResolvedValueOnce(null);
     mocks.memberCreate.mockResolvedValue({ id: "member-2", role: "TEACHER" });

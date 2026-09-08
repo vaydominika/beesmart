@@ -21,10 +21,10 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const comments = await prisma.comment.findMany({
             where: { postId: post.id, parentId: null, isPrivate: false },
             include: {
-                author: { select: { id: true, name: true, avatar: true } },
+                author: { select: { id: true, name: true, image: true } },
                 replies: {
                     include: {
-                        author: { select: { id: true, name: true, avatar: true } },
+                        author: { select: { id: true, name: true, image: true } },
                     },
                     orderBy: { createdAt: "asc" },
                 },
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                 ...(parentId ? { parent: { connect: { id: parentId } } } : {}),
             },
             include: {
-                author: { select: { id: true, name: true, avatar: true } },
+                author: { select: { id: true, name: true, image: true } },
             },
         });
 

@@ -38,7 +38,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                         files: { include: attachmentInclude },
                         comments: {
                             where: { isPrivate: true },
-                            include: { author: { select: { id: true, name: true, avatar: true } } },
+                            include: { author: { select: { id: true, name: true, image: true } } },
                             orderBy: { createdAt: "asc" },
                         },
                     },
@@ -59,7 +59,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 prisma.submission.findMany({
                     where: { assignedWorkId: assignmentId },
                     include: {
-                        user: { select: { id: true, name: true, email: true, avatar: true } },
+                        user: { select: { id: true, name: true, email: true, image: true } },
                         files: { include: attachmentInclude },
                         _count: { select: { comments: true } },
                     },
@@ -67,7 +67,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 }),
                 prisma.classroomMember.findMany({
                     where: { classroomId: id, role: "STUDENT" },
-                    include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+                    include: { user: { select: { id: true, name: true, email: true, image: true } } },
                 }),
                 prisma.grade.findMany({
                     where: { assignedWorkId: assignmentId },

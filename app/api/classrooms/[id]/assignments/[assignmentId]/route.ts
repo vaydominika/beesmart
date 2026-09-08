@@ -35,7 +35,7 @@ export async function GET(_request: Request, context: RouteContext) {
       isGraded: true,
       maxPoints: true,
       createdAt: true,
-      assigner: { select: { id: true, name: true, avatar: true } },
+      assigner: { select: { id: true, name: true, image: true } },
       posts: {
         orderBy: { createdAt: "asc" },
         take: 1,

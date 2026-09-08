@@ -33,7 +33,7 @@ const record = {
   visibility: "PUBLIC",
   createdAt: new Date("2026-08-01T08:00:00.000Z"),
   updatedAt: new Date("2026-08-02T08:00:00.000Z"),
-  creator: { id: "teacher-1", name: "Ada", avatar: null },
+  creator: { id: "teacher-1", name: "Ada", image: null },
   _count: { modules: 1, enrollments: 4 },
   modules: [{ lessons: [{ id: "lesson-1" }, { id: "lesson-2" }] }],
   enrollments: [{ completedAt: null }],

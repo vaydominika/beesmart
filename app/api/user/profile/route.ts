@@ -65,7 +65,7 @@ export async function PATCH(request: Request) {
   }
   const nextAvatar = body.avatar === undefined ? undefined : body.avatar?.trim() || null;
   const nextBanner = body.bannerImageUrl === undefined ? undefined : body.bannerImageUrl?.trim() || null;
-  if (nextAvatar && nextAvatar !== user.avatar && !storedFileId(nextAvatar)) {
+  if (nextAvatar && nextAvatar !== user.image && !storedFileId(nextAvatar)) {
     return NextResponse.json({ error: "Avatar must come from an uploaded profile image" }, { status: 400 });
   }
   if (nextBanner && nextBanner !== user.bannerImageUrl && !storedFileId(nextBanner)) {
@@ -78,21 +78,21 @@ export async function PATCH(request: Request) {
     await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const updateData: {
         name?: string;
-        avatar?: string | null;
+        image?: string | null;
         bannerImageUrl?: string | null;
-        avatarFileId?: string | null;
+        imageFileId?: string | null;
         bannerFileId?: string | null;
         password?: string;
       } = {};
       if (name) updateData.name = name;
       if (password) updateData.password = password;
 
-      if (nextAvatar !== undefined && nextAvatar !== user.avatar) {
+      if (nextAvatar !== undefined && nextAvatar !== user.image) {
         const nextId = nextAvatar ? storedFileId(nextAvatar) : null;
         if (nextId) await claimUploads(tx, [nextId], userId, "PROFILE_AVATAR");
-        updateData.avatar = nextAvatar;
-        updateData.avatarFileId = nextId;
-        if (user.avatarFileId) replacedFileIds.push(user.avatarFileId);
+        updateData.image = nextAvatar;
+        updateData.imageFileId = nextId;
+        if (user.imageFileId) replacedFileIds.push(user.imageFileId);
       }
       if (nextBanner !== undefined && nextBanner !== user.bannerImageUrl) {
         const nextId = nextBanner ? storedFileId(nextBanner) : null;

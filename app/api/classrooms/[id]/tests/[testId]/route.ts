@@ -8,7 +8,7 @@ import { ScheduleValidationError, assertDeadlineNotPast, parseScheduleDate } fro
 import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
-type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; isCompleted: boolean; score: number | null };
+type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; score: number | null };
 type LearnerReviewResponse = {
     questionId: string;
     responseText: string | null;
@@ -46,14 +46,14 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     const attempts = await prisma.testAttempt.findMany({
         where: { testId, userId },
         orderBy: { attemptNumber: "asc" },
-        select: { id: true, attemptNumber: true, startedAt: true, submittedAt: true, isCompleted: true, score: true },
+        select: { id: true, attemptNumber: true, startedAt: true, submittedAt: true, score: true },
     }) as LearnerAttemptSummary[];
-    const activeAttempt = attempts.find((attempt) => !attempt.isCompleted) ?? null;
-    const completedAttempts = attempts.filter((attempt) => attempt.isCompleted).length;
+    const activeAttempt = attempts.find((attempt) => attempt.submittedAt === null) ?? null;
+    const completedAttempts = attempts.filter((attempt) => attempt.submittedAt !== null).length;
     const remainingAttempts = Math.max(0, test.maxAttempts - completedAttempts);
     const highestAttemptNumber = attempts.reduce((highest, attempt) => Math.max(highest, attempt.attemptNumber), 0);
     const bestAttempt = attempts
-        .filter((attempt) => attempt.isCompleted && attempt.score != null)
+        .filter((attempt) => attempt.submittedAt !== null && attempt.score != null)
         .sort((left, right) => (right.score ?? -1) - (left.score ?? -1))[0] ?? null;
     const reviewResponses = bestAttempt
         ? await prisma.testAttemptResponse.findMany({
@@ -105,7 +105,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             nextAttemptNumber: activeAttempt?.attemptNumber ?? (remainingAttempts > 0 ? highestAttemptNumber + 1 : null),
             canStart: available && Boolean(activeAttempt || remainingAttempts > 0),
         },
-        attemptHistory: attempts,
+        attemptHistory: attempts.map((attempt) => ({ ...attempt, isCompleted: attempt.submittedAt !== null })),
         bestAttempt,
         resultReview,
     });

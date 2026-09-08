@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         const course = await prisma.course.findUnique({
             where: { id: courseId },
             include: {
-                creator: { select: { id: true, name: true, avatar: true } },
+                creator: { select: { id: true, name: true, image: true } },
                 modules: {
                     include: {
                         lessons: {

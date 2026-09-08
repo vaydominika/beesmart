@@ -7,6 +7,7 @@ import { routeContext } from '@/test-utils/route-context';
 // Mock the dependencies
 vi.mock('@/lib/db', () => ({
   prisma: {
+    $transaction: vi.fn(),
     classroomMember: {
       findUnique: vi.fn(),
     },
@@ -14,9 +15,7 @@ vi.mock('@/lib/db', () => ({
       updateMany: vi.fn(),
     },
     grade: {
-      findFirst: vi.fn(),
-      update: vi.fn(),
-      create: vi.fn(),
+      upsert: vi.fn(),
     },
     assignedWork: {
       findFirst: vi.fn(),
@@ -37,6 +36,7 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.$transaction as any).mockImplementation((callback: any) => callback(prisma));
     (prisma.assignedWork.findFirst as any).mockResolvedValue({ title: 'Math Quiz', isGraded: true, maxPoints: 100 });
   });
 
@@ -74,8 +74,7 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
     (prisma.classroomMember.findUnique as any).mockResolvedValue({
       role: 'TEACHER',
     });
-    (prisma.grade.findFirst as any).mockResolvedValue(null);
-    (prisma.grade.create as any).mockResolvedValue({ id: 'g1', score: 85 });
+    (prisma.grade.upsert as any).mockResolvedValue({ id: 'g1', score: 85 });
 
     const req = new NextRequest('http://localhost/api/classrooms/c1/assignments/a1/grade', {
       method: 'POST',
@@ -106,7 +105,7 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'This assignment is not graded' });
-    expect(prisma.grade.create).not.toHaveBeenCalled();
+    expect(prisma.grade.upsert).not.toHaveBeenCalled();
   });
 
   it('should reject scores above the assignment maximum', async () => {
@@ -120,16 +119,15 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'Score must be between 0 and 100' });
-    expect(prisma.grade.create).not.toHaveBeenCalled();
+    expect(prisma.grade.upsert).not.toHaveBeenCalled();
   });
 
-  it('should update an existing grade if it already exists', async () => {
+  it('should upsert an existing grade', async () => {
     (getCurrentUserId as any).mockResolvedValue(userId);
     (prisma.classroomMember.findUnique as any).mockResolvedValue({
       role: 'TEACHER',
     });
-    (prisma.grade.findFirst as any).mockResolvedValue({ id: 'existing-g1', score: 70 });
-    (prisma.grade.update as any).mockResolvedValue({ id: 'existing-g1', score: 95 });
+    (prisma.grade.upsert as any).mockResolvedValue({ id: 'existing-g1', score: 95 });
 
     const req = new NextRequest('http://localhost/api/classrooms/c1/assignments/a1/grade', {
       method: 'POST',
@@ -141,7 +139,8 @@ describe('POST /api/classrooms/[id]/assignments/[assignmentId]/grade', () => {
 
     expect(response.status).toBe(200);
     expect(data.score).toBe(95);
-    expect(prisma.grade.update).toHaveBeenCalled();
-    expect(prisma.grade.create).not.toHaveBeenCalled();
+    expect(prisma.grade.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId_assignedWorkId: { userId: studentId, assignedWorkId: assignmentId } },
+    }));
   });
 });

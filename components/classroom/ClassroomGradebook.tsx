@@ -32,7 +32,7 @@ interface GradebookData {
         attempt?: { id: string; score: number | null; submittedAt: string } | null;
     }>;
     students?: Array<{
-        student: { id: string; name: string; email: string; avatar?: string | null };
+        student: { id: string; name: string; email: string; image?: string | null };
         assignmentGrades: Array<{
             assignmentId: string;
             score: number | null;

@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     if (!await isCreator(courseId, userId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const grants = await prisma.courseAccess.findMany({
         where: { courseId },
-        include: { user: { select: { id: true, name: true, email: true, avatar: true } } },
+        include: { user: { select: { id: true, name: true, email: true, image: true } } },
         orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(grants);
@@ -53,4 +53,3 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
     await prisma.courseAccess.deleteMany({ where: { courseId, userId: targetUserId } });
     return NextResponse.json({ success: true });
 }
-

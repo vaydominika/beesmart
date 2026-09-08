@@ -33,8 +33,8 @@ describe("PATCH /api/user/profile", () => {
       id: "user-1",
       name: "Ada",
       password: "hash",
-      avatar: "/api/files/old-avatar",
-      avatarFileId: "old-avatar",
+      image: "/api/files/old-avatar",
+      imageFileId: "old-avatar",
       bannerImageUrl: null,
       bannerFileId: null,
     } as never);
@@ -54,7 +54,7 @@ describe("PATCH /api/user/profile", () => {
     expect(response.status).toBe(200);
     expect(claimUploads).toHaveBeenCalledWith(transactionClient, ["new-avatar"], "user-1", "PROFILE_AVATAR");
     expect(transactionClient.user.update).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ avatar: "/api/files/new-avatar", avatarFileId: "new-avatar" }),
+      data: expect.objectContaining({ image: "/api/files/new-avatar", imageFileId: "new-avatar" }),
     }));
     expect(markFilesForDeletion).toHaveBeenCalledWith(transactionClient, ["old-avatar"]);
     expect(purgeStoredFiles).toHaveBeenCalledWith(["old-avatar"]);

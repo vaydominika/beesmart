@@ -146,9 +146,8 @@ model User {
   password       String?
   emailVerified  DateTime?
   image          String?
-  avatar         String?
   bannerImageUrl String?
-  avatarFileId   String?   @unique
+  imageFileId    String?   @unique
   bannerFileId   String?   @unique
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -157,7 +156,7 @@ model User {
   accounts    Account[]
   sessions    Session[]
   storedFiles StoredFile[] @relation("StoredFileOwner")
-  avatarFile  StoredFile?  @relation("UserAvatar", fields: [avatarFileId], references: [id], onDelete: SetNull)
+  imageFile   StoredFile?  @relation("UserImage", fields: [imageFileId], references: [id], onDelete: SetNull)
   bannerFile  StoredFile?  @relation("UserBanner", fields: [bannerFileId], references: [id], onDelete: SetNull)
 
   // Relationships
@@ -447,7 +446,6 @@ model TestAttempt {
   startedAt     DateTime  @default(now())
   submittedAt   DateTime?
   score         Float?
-  isCompleted   Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -659,7 +657,7 @@ model Grade {
   assignedWork AssignedWork @relation(fields: [assignedWorkId], references: [id], onDelete: Cascade)
   grader       User?        @relation("Grader", fields: [gradedById], references: [id], onDelete: SetNull)
 
-  @@index([userId])
+  @@unique([userId, assignedWorkId])
   @@index([assignedWorkId])
 }
 
@@ -909,7 +907,7 @@ model StoredFile {
   updatedAt    DateTime        @updatedAt
 
   owner       User        @relation("StoredFileOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  avatarFor   User?       @relation("UserAvatar")
+  imageFor    User?       @relation("UserImage")
   bannerFor   User?       @relation("UserBanner")
   attachment  Attachment?
   courseCover Course?     @relation("CourseCover")

@@ -6,7 +6,7 @@ import { WelcomeBanner } from "./WelcomeBanner";
 const dashboardMock = vi.hoisted(() => ({
   state: {
     data: {
-      user: { id: "user-1", name: "Dominika", avatar: null, bannerImageUrl: null },
+      user: { id: "user-1", name: "Dominika", image: null, bannerImageUrl: null },
     },
     loading: false,
   },

@@ -8,7 +8,7 @@ const dashboardMock = vi.hoisted(() => ({
     user: {
       id: "user-1",
       name: "Ada",
-      avatar: null,
+      image: null,
       bannerImageUrl: null,
       role: "Legacy global role",
     },

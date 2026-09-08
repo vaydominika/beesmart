@@ -3,7 +3,7 @@ import { prisma, getCurrentUserId } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type DashboardResponse = { pointsAwarded: number | null; question: { questionType: string } } & Record<string, unknown>;
-type DashboardAttempt = { id: string; userId: string; attemptNumber: number; isCompleted: boolean; responses: DashboardResponse[] } & Record<string, unknown>;
+type DashboardAttempt = { id: string; userId: string; attemptNumber: number; submittedAt: Date | null; responses: DashboardResponse[] } & Record<string, unknown>;
 type StudentMembership = { userId: string; user: { id: string; name: string } };
 
 export async function GET(_req: Request, ctx: RouteContext) {
@@ -20,7 +20,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
             attempts: {
                 orderBy: { startedAt: "desc" },
                 include: {
-                    user: { select: { id: true, name: true, email: true, avatar: true } },
+                    user: { select: { id: true, name: true, email: true, image: true } },
                     responses: { include: { question: { include: { options: true, answers: true } } } },
                 },
             },
@@ -41,7 +41,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
         return {
             ...attempt,
             manualResponsesRemaining,
-            gradingStatus: !attempt.isCompleted
+            isCompleted: attempt.submittedAt !== null,
+            gradingStatus: attempt.submittedAt === null
                 ? "IN_PROGRESS"
                 : manualResponsesRemaining > 0
                     ? "NEEDS_REVIEW"
@@ -51,8 +52,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
     return NextResponse.json({
         test: testDetails,
         dashboard: {
-            completed: attempts.filter((attempt) => attempt.isCompleted).map(decorateAttempt),
-            inProgress: attempts.filter((attempt) => !attempt.isCompleted).map(decorateAttempt),
+            completed: attempts.filter((attempt) => attempt.submittedAt !== null).map(decorateAttempt),
+            inProgress: attempts.filter((attempt) => attempt.submittedAt === null).map(decorateAttempt),
             notStarted: studentMemberships.filter((student) => !attemptedIds.has(student.userId)).map((student) => ({ user: student.user })),
         },
     });

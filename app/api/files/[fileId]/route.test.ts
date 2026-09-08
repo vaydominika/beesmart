@@ -18,7 +18,7 @@ const context = routeContext({ fileId: "stored-1" });
 const base = {
   id: "stored-1", ownerId: "owner-1", state: "ATTACHED", scanStatus: "CLEAN",
   storageKey: "aa/00000000-0000-0000-0000-000000000000", detectedMime: "application/pdf",
-  originalName: "lesson.pdf", fileType: "PDF", courseCover: null, attachment: null, avatarFor: null, bannerFor: null,
+  originalName: "lesson.pdf", fileType: "PDF", courseCover: null, attachment: null, imageFor: null, bannerFor: null,
 };
 
 describe("protected file delivery", () => {
@@ -76,7 +76,7 @@ describe("protected file delivery", () => {
   });
 
   it("streams an attached profile image to authenticated users", async () => {
-    vi.mocked(prisma.storedFile.findUnique).mockResolvedValue({ ...base, fileType: "IMAGE", detectedMime: "image/png", avatarFor: { id: "owner-1" } } as never);
+    vi.mocked(prisma.storedFile.findUnique).mockResolvedValue({ ...base, fileType: "IMAGE", detectedMime: "image/png", imageFor: { id: "owner-1" } } as never);
     expect((await GET(new Request("http://localhost/file"), context)).status).toBe(200);
   });
 });

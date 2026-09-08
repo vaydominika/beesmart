@@ -27,7 +27,7 @@ interface Member {
     joinedAt: string;
     isOwner: boolean;
     isCurrentUser: boolean;
-    user: { id: string; name: string; email: string; avatar?: string | null };
+    user: { id: string; name: string; email: string; image?: string | null };
 }
 
 interface Props {

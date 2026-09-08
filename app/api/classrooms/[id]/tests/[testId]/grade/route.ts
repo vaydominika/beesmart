@@ -15,7 +15,7 @@ type GradingResponse = {
 type GradingAttempt = {
     id: string;
     userId: string;
-    isCompleted: boolean;
+    submittedAt: Date | null;
     responses: GradingResponse[];
     test: { questions: Array<{ id: string; points: number }> };
 };
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         });
         if (!attemptBefore) return NextResponse.json({ error: "Attempt not found" }, { status: 404 });
         const gradingAttempt = attemptBefore as unknown as GradingAttempt;
-        if (!gradingAttempt.isCompleted) return NextResponse.json({ error: "Only completed attempts can be graded" }, { status: 400 });
+        if (!gradingAttempt.submittedAt) return NextResponse.json({ error: "Only completed attempts can be graded" }, { status: 400 });
 
         const responseById = new Map(gradingAttempt.responses.map((response) => [response.id, response]));
         const parsedGrades = grades.map((grade) => {

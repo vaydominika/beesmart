@@ -10,7 +10,7 @@ vi.mock("@/lib/DashboardContext", () => ({
       user: {
         id: "user-1",
         name: "Ada",
-        avatar: "/api/files/avatar-1",
+        image: "/api/files/avatar-1",
         bannerImageUrl: null,
         role: "Legacy global role",
       },
