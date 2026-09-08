@@ -33,6 +33,15 @@ describe("PATCH /api/courses/[courseId]/files/[fileId]", () => {
     vi.mocked(prisma.attachment.findUnique).mockResolvedValue({
       id: "file-1",
       courseId: "course-1",
+      lessonId: null,
+      postId: null,
+      submissionId: null,
+      reportId: null,
+      storedFileId: null,
+      legacyFileName: "diagram.png",
+      legacyFileUrl: "/uploads/diagram.png",
+      legacyFileSize: 1200,
+      legacyFileType: "IMAGE",
       lesson: null,
     } as never);
     vi.mocked(prisma.attachment.update).mockResolvedValue({

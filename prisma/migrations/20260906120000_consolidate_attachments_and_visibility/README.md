@@ -17,9 +17,9 @@ Seven exact duplicate indexes are removed; their unique indexes remain.
 Stop application writes, back up the database, apply this migration with
 `npm run db:migrate:deploy`, and start the matching application build. Old and new
 application versions cannot share this schema during a rolling deployment. Use
-Prisma migrations, not `db push`: insert/update triggers enforce one attachment
-destination, matching course/lesson links, and exclusive managed versus legacy
-metadata. Migration credentials need permission to create triggers.
+Prisma migrations, not `db push`. The matching application build validates one
+attachment destination, matching course/lesson links, and exclusive managed versus
+legacy metadata before attachment creates and updates.
 
 The metadata preflight deliberately fails if existing managed attachment metadata
 differs from `StoredFile`. Resolve the disagreement before retrying. Conflicting

@@ -4,6 +4,7 @@ import { canManageCourse } from "@/lib/course-access";
 import type { Prisma } from "@/lib/generated/prisma";
 import { markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
+import { validateAttachmentUpdate } from "@/lib/files/attachment-validation";
 
 type RouteContext = { params: Promise<{ courseId: string; fileId: string }> };
 
@@ -42,6 +43,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
+    await validateAttachmentUpdate(prisma, file, { isVisible: data.isVisible });
     const updated = await prisma.attachment.update({
       where: { id: fileId },
       data: { isVisible: data.isVisible },

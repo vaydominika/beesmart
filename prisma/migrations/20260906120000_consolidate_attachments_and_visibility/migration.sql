@@ -63,59 +63,6 @@ ALTER TABLE `Attachment` ADD CONSTRAINT `Attachment_uploadedById_fkey` FOREIGN K
 -- AddForeignKey
 ALTER TABLE `Attachment` ADD CONSTRAINT `Attachment_storedFileId_fkey` FOREIGN KEY (`storedFileId`) REFERENCES `StoredFile`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
--- CHECK constraints on cascading foreign-key columns are restricted in MySQL.
--- Enforce attachment shape before both inserts and updates.
-
-CREATE TRIGGER `Attachment_validate_insert` BEFORE INSERT ON `Attachment`
-FOR EACH ROW
-BEGIN
-  IF ((NEW.`courseId` IS NOT NULL OR NEW.`lessonId` IS NOT NULL)
-      + (NEW.`postId` IS NOT NULL) + (NEW.`submissionId` IS NOT NULL)
-      + (NEW.`reportId` IS NOT NULL)) <> 1 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment requires exactly one destination';
-  END IF;
-  IF NEW.`courseId` IS NOT NULL AND NEW.`lessonId` IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM `CourseLesson` l JOIN `CourseModule` m ON m.`id` = l.`moduleId`
-    WHERE l.`id` = NEW.`lessonId` AND m.`courseId` = NEW.`courseId`
-  ) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment course must match its lesson';
-  END IF;
-  IF NEW.`storedFileId` IS NOT NULL AND (NEW.`legacyFileName` IS NOT NULL
-      OR NEW.`legacyFileUrl` IS NOT NULL OR NEW.`legacyFileType` IS NOT NULL
-      OR NEW.`legacyFileSize` IS NOT NULL) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Managed attachment metadata belongs on StoredFile';
-  END IF;
-  IF NEW.`storedFileId` IS NULL AND (NEW.`reportId` IS NOT NULL
-      OR NEW.`legacyFileName` IS NULL OR NEW.`legacyFileType` IS NULL OR NEW.`legacyFileSize` IS NULL) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment requires stored file or legacy metadata';
-  END IF;
-END;
-
-CREATE TRIGGER `Attachment_validate_update` BEFORE UPDATE ON `Attachment`
-FOR EACH ROW
-BEGIN
-  IF ((NEW.`courseId` IS NOT NULL OR NEW.`lessonId` IS NOT NULL)
-      + (NEW.`postId` IS NOT NULL) + (NEW.`submissionId` IS NOT NULL)
-      + (NEW.`reportId` IS NOT NULL)) <> 1 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment requires exactly one destination';
-  END IF;
-  IF NEW.`courseId` IS NOT NULL AND NEW.`lessonId` IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM `CourseLesson` l JOIN `CourseModule` m ON m.`id` = l.`moduleId`
-    WHERE l.`id` = NEW.`lessonId` AND m.`courseId` = NEW.`courseId`
-  ) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment course must match its lesson';
-  END IF;
-  IF NEW.`storedFileId` IS NOT NULL AND (NEW.`legacyFileName` IS NOT NULL
-      OR NEW.`legacyFileUrl` IS NOT NULL OR NEW.`legacyFileType` IS NOT NULL
-      OR NEW.`legacyFileSize` IS NOT NULL) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Managed attachment metadata belongs on StoredFile';
-  END IF;
-  IF NEW.`storedFileId` IS NULL AND (NEW.`reportId` IS NOT NULL
-      OR NEW.`legacyFileName` IS NULL OR NEW.`legacyFileType` IS NULL OR NEW.`legacyFileSize` IS NULL) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Attachment requires stored file or legacy metadata';
-  END IF;
-END;
-
 INSERT INTO `Attachment` (`id`,`courseId`,`lessonId`,`uploadedById`,`isVisible`,`storedFileId`,`createdAt`,`legacyFileName`,`legacyFileUrl`,`legacyFileType`,`legacyFileSize`)
 SELECT f.`id`,f.`courseId`,f.`lessonId`,f.`uploadedById`,f.`isVisible`,f.`storedFileId`,f.`createdAt`,
   IF(f.`storedFileId` IS NULL,f.`fileName`,NULL),

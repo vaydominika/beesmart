@@ -930,8 +930,8 @@ model RateLimitBucket {
 
 // A file's metadata lives on StoredFile. Legacy fields only describe uploads
 // that have not yet been imported into private storage.
-// Migration triggers enforce one destination (course/lesson, post, submission,
-// or report) and prevent managed files from retaining copied metadata.
+// Application validation enforces one destination (course/lesson, post,
+// submission, or report) and prevents managed files from retaining copied metadata.
 model Attachment {
   id             String    @id @default(cuid())
   courseId       String?

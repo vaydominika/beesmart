@@ -3,6 +3,7 @@ import type { Prisma } from "@/lib/generated/prisma";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { earlyAccessFeedbackEnabled, ticketReceivedNotification } from "@/lib/tickets";
+import { validateAttachment } from "@/lib/files/attachment-validation";
 
 const MAX_TICKET_IMAGES = 5;
 const MAX_DESCRIPTION_LENGTH = 10_000;
@@ -25,6 +26,10 @@ export async function POST(request: Request) {
 
     const ticket = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const files = await claimUploads(tx, uploadIds, userId, "TICKET_ATTACHMENT");
+      await Promise.all(files.map((file) => validateAttachment(tx, {
+        nestedDestination: "report",
+        storedFileId: file.id,
+      })));
       const created = await tx.report.create({
         data: {
           userId,

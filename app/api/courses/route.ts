@@ -8,6 +8,7 @@ import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
 import { COURSE_TITLE_MAX_LENGTH, normalizeCourseTitle } from "@/lib/course-title";
 import { courseTagDefinition, MAX_COURSE_TAGS, parseCourseTagSlugs } from "@/lib/course-tags";
+import { validateAttachment } from "@/lib/files/attachment-validation";
 
 type CourseQueryRecord = {
     id: string;
@@ -161,6 +162,10 @@ export async function POST(req: NextRequest) {
         const course = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const attachments = await claimUploads(tx, uploadIds, userId, "COURSE_ATTACHMENT");
             const covers = await claimUploads(tx, coverUploadIds, userId, "COURSE_COVER");
+            await Promise.all(attachments.map((file) => validateAttachment(tx, {
+                nestedDestination: "course",
+                storedFileId: file.id,
+            })));
             return tx.course.create({ data: {
                 title: normalizedTitle,
                 description: description?.trim() || null,

@@ -11,6 +11,7 @@ import { richTextToPlainText, sanitizeRichTextHtml } from "@/lib/security/rich-t
 import { claimUploads, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl, serializeAttachment, attachmentInclude } from "@/lib/files/types";
 import { ScheduleValidationError, assertDeadlineNotPast, parseNewTestSchedule } from "@/lib/schedule-validation";
+import { validateAttachment } from "@/lib/files/attachment-validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -187,6 +188,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const post = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
             const claimedFiles = await claimUploads(tx, allUploadIds, userId, "POST_ATTACHMENT");
+            await Promise.all(claimedFiles.map((file) => validateAttachment(tx, {
+                nestedDestination: "post",
+                storedFileId: file.id,
+            })));
             let assignmentId = typeof data.assignmentId === "string" ? data.assignmentId : null;
             let testId = typeof data.testId === "string" ? data.testId : null;
 

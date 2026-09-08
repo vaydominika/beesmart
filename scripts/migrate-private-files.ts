@@ -6,6 +6,7 @@ import type { FileType, UploadPurpose } from "../lib/generated/prisma";
 import { prisma } from "../lib/db";
 import { scanForMalware } from "../lib/files/scanner";
 import { deletePrivateFile, writePrivateFile } from "../lib/files/storage";
+import { validateAttachmentUpdate } from "../lib/files/attachment-validation";
 
 const apply = process.argv.includes("--apply");
 const removePublic = apply && process.argv.includes("--remove-public");
@@ -76,9 +77,17 @@ try {
       fileUrl: file.legacyFileUrl!, ownerId,
       purpose: file.postId ? "POST_ATTACHMENT" : file.submissionId ? "SUBMISSION_ATTACHMENT" : "COURSE_ATTACHMENT",
       originalName: file.legacyFileName, fileType: file.legacyFileType,
-      attach: (id) => prisma.attachment.update({ where: { id: file.id }, data: {
-        storedFileId: id, legacyFileName: null, legacyFileUrl: null, legacyFileType: null, legacyFileSize: null,
-      } }),
+      attach: async (id) => {
+        const changes = {
+          storedFileId: id,
+          legacyFileName: null,
+          legacyFileUrl: null,
+          legacyFileType: null,
+          legacyFileSize: null,
+        };
+        await validateAttachmentUpdate(prisma, file, changes);
+        return prisma.attachment.update({ where: { id: file.id }, data: changes });
+      },
     });
   }
   for (const course of covers) await migrateOne({ fileUrl: course.coverImageUrl!, ownerId: course.createdById, purpose: "COURSE_COVER", originalName: path.basename(course.coverImageUrl!), fileType: "IMAGE", attach: (id) => prisma.course.update({ where: { id: course.id }, data: { coverStoredFileId: id } }) });

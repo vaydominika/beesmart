@@ -10,6 +10,7 @@ import { UploadValidationError, validateUpload } from "@/lib/files/validation";
 import { normalizeGeneratedRichText, richTextToPlainText } from "@/lib/security/rich-text";
 import { AI_LESSON_PROMPT_CHARACTER_LIMIT, AI_SOURCE_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
 import { AiDailyLimitError, aiLimitResponse, aiUsageHeaders, reserveAiAttempt, withAiUsage } from "@/lib/ai/usage";
+import { validateAttachment } from "@/lib/files/attachment-validation";
 
 type RouteContext = { params: Promise<{ courseId: string; lessonId: string }> };
 
@@ -93,6 +94,11 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
             const storageKey = `${checksum.slice(0, 2)}/${randomUUID()}`;
             await writePrivateFile(storageKey, pendingFile.buffer);
             try {
+                await validateAttachment(prisma, {
+                    courseId,
+                    lessonId,
+                    hasStoredFile: true,
+                });
                 await prisma.storedFile.create({
                     data: {
                         ownerId: userId, purpose: "COURSE_ATTACHMENT", storageKey,

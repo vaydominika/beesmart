@@ -4,6 +4,7 @@ import { recordMeaningfulActivity } from "@/lib/activity";
 import type { Prisma } from "@/lib/generated/prisma";
 import { claimUploads, markFilesForDeletion, purgeStoredFiles, UploadClaimError } from "@/lib/files/lifecycle";
 import { serializeAttachment, attachmentInclude } from "@/lib/files/types";
+import { validateAttachment } from "@/lib/files/attachment-validation";
 
 type RouteContext = { params: Promise<{ id: string; assignmentId: string }> };
 
@@ -133,6 +134,10 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const submission = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
           const files = await claimUploads(tx, uploadIds, userId, "SUBMISSION_ATTACHMENT");
+          await Promise.all(files.map((file) => validateAttachment(tx, {
+            nestedDestination: "submission",
+            storedFileId: file.id,
+          })));
           await markFilesForDeletion(tx, oldStoredFileIds);
           return tx.submission.upsert({
             where: { assignedWorkId_userId: { assignedWorkId: assignmentId, userId } },

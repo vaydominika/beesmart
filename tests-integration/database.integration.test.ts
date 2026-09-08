@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "@/lib/db";
 import { TEST_IDENTITIES } from "@/test-utils/factories";
+import { validateAttachmentUpdate } from "@/lib/files/attachment-validation";
 
 const fixtureUserIds = Object.values(TEST_IDENTITIES).map(({ id }) => id);
 
@@ -57,7 +58,7 @@ describe("MariaDB integration", () => {
     expect(await prisma.course.findUnique({ where: { id: "integration-course" } })).toBeNull();
   });
 
-  it("stores attachment metadata once and enforces attachment destinations", async () => {
+  it("stores attachment metadata once and validates attachment updates", async () => {
     const userId = TEST_IDENTITIES.teacher.id;
     const course = await prisma.course.create({
       data: { title: "Attachment course", createdById: userId },
@@ -78,11 +79,11 @@ describe("MariaDB integration", () => {
     await expect(prisma.attachment.create({
       data: { courseId: course.id, storedFileId: file.id },
     })).rejects.toMatchObject({ code: "P2002" });
-    await expect(prisma.attachment.update({
-      where: { id: file.attachment!.id }, data: { legacyFileName: "duplicate.pdf" },
+    await expect(validateAttachmentUpdate(prisma, file.attachment!, {
+      legacyFileName: "duplicate.pdf",
     })).rejects.toThrow(/metadata belongs on StoredFile/);
-    await expect(prisma.attachment.update({
-      where: { id: file.attachment!.id }, data: { courseId: null },
+    await expect(validateAttachmentUpdate(prisma, file.attachment!, {
+      courseId: null,
     })).rejects.toThrow(/exactly one destination/);
 
     await prisma.course.delete({ where: { id: course.id } });
