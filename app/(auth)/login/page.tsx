@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { AuthDivider, AuthShell, AuthSubmitButton, GoogleAuthButton, authFieldClass, authLabelClass } from "@/components/auth/AuthShell";
+import { CheckEmailView } from "@/components/auth/CheckEmailView";
 import { WorkspaceField } from "@/components/ui/workspace-field";
 
 function LoginForm() {
@@ -17,6 +18,8 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const error = searchParams.get("error");
@@ -28,6 +31,12 @@ function LoginForm() {
       toast.error("Invalid email or password.");
     } else if (error) {
       toast.error("Sign-in failed. Please try again.");
+    }
+    const verification = searchParams.get("verification");
+    if (verification === "verified") {
+      toast.success("Email verified. You can now sign in.", { id: "email-verification-result" });
+    } else if (verification === "invalid") {
+      toast.error("This verification link is invalid or has expired.", { id: "email-verification-result" });
     }
   }, [searchParams]);
 
@@ -45,6 +54,24 @@ function LoginForm() {
         redirect: false,
       });
       if (res?.error) {
+        let pendingVerification = res.code === "email_not_verified";
+        if (!pendingVerification) {
+          try {
+            const statusResponse = await fetch("/api/auth/pending-verification", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+            });
+            const status = await statusResponse.json();
+            pendingVerification = statusResponse.ok && status.pending === true;
+          } catch {
+            pendingVerification = false;
+          }
+        }
+        if (pendingVerification) {
+          setVerificationEmail(email.trim().toLowerCase());
+          return;
+        }
         toast.error("Invalid email or password.");
         return;
       }
@@ -61,6 +88,35 @@ function LoginForm() {
     signIn("google", { callbackUrl });
   };
 
+  const handleResendVerification = async () => {
+    if (!email.trim()) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    setResending(true);
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(data.error ?? "Unable to resend verification email.");
+        return;
+      }
+      toast.success(data.message);
+    } catch {
+      toast.error("Something went wrong.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  if (verificationEmail) {
+    return <CheckEmailView email={verificationEmail} />;
+  }
+
   return (
     <AuthShell
       title="Welcome back"
@@ -70,7 +126,13 @@ function LoginForm() {
       <AuthDivider />
       <form onSubmit={handleCredentialsSubmit} className="space-y-4">
         <WorkspaceField id="login-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
-        <WorkspaceField id="login-password" label="Password" labelClassName={authLabelClass}><Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" /></WorkspaceField>
+        <div>
+          <WorkspaceField id="login-password" label="Password" labelClassName={authLabelClass}><Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} placeholder="Enter your password" /></WorkspaceField>
+          <div className="mt-1.5 flex flex-wrap justify-between gap-2 text-xs font-medium text-[var(--app-accent-text)]">
+            <button type="button" onClick={handleResendVerification} disabled={loading || resending} className="hover:underline disabled:opacity-50">{resending ? "Sending…" : "Resend verification email"}</button>
+            <Link href="/forgot-password" className="hover:underline">Forgot password?</Link>
+          </div>
+        </div>
         <AuthSubmitButton loading={loading} idleLabel="Sign in" loadingLabel="Signing in…" />
       </form>
     </AuthShell>

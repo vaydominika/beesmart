@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import path from "node:path";
-import { productionEnvironmentErrors } from "./env";
+import { productionEnvironmentErrors, RESEND_EMAIL_FROM } from "./env";
 
 const validEnvironment = {
   DATABASE_URL: "mysql://user:pass@db:3306/beesmart",
   AUTH_SECRET: "a-long-random-secret-at-least-32-characters",
   AUTH_URL: "https://beesmart.example",
   DEEPSEEK_API_KEY: "deepseek-key",
+  RESEND_API_KEY: "re_test",
+  EMAIL_FROM: RESEND_EMAIL_FROM,
   UPLOAD_STORAGE_DIR: path.resolve("beesmart-uploads"),
   MALWARE_SCAN_MODE: "clamav",
   CLAMAV_HOST: "clamav",
@@ -38,5 +40,10 @@ describe("production environment validation", () => {
   it("rejects a weak authentication secret", () => {
     expect(productionEnvironmentErrors({ ...validEnvironment, AUTH_SECRET: "too-short" }))
       .toContain("AUTH_SECRET must be at least 32 characters");
+  });
+
+  it("requires the sender to use the verified Resend domain", () => {
+    expect(productionEnvironmentErrors({ ...validEnvironment, EMAIL_FROM: "BeeSmart <noreply@example.com>" }))
+      .toContain(`EMAIL_FROM must be ${RESEND_EMAIL_FROM}`);
   });
 });
