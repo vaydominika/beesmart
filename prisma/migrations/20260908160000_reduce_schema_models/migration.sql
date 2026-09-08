@@ -146,8 +146,9 @@ ALTER TABLE `CourseProgress`
     DROP COLUMN `courseId`;
 
 CREATE INDEX `Test_classroomId_idx` ON `Test`(`classroomId`);
+-- InnoDB can automatically drop the implicit foreign-key index when the
+-- explicit replacement above is created. The foreign-key constraint remains.
 ALTER TABLE `Test`
-    DROP INDEX `Test_classroomId_fkey`,
     MODIFY `classroomId` VARCHAR(191) NOT NULL;
 
 ALTER TABLE `AssignedWork` MODIFY `classroomId` VARCHAR(191) NOT NULL;
