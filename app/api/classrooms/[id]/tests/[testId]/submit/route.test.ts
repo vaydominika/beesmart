@@ -27,8 +27,8 @@ describe("complete-set test submission", () => {
         vi.mocked(prisma.test.findFirst).mockResolvedValue({
             id: "test-1", classroomId: "class-1", timeLimit: null,
             questions: [
-                { id: "q1", questionType: "MULTIPLE_CHOICE", points: 2, options: [{ id: "o1", isCorrect: true }], answers: [] },
-                { id: "q2", questionType: "ESSAY", points: 3, options: [], answers: [] },
+                { id: "q1", questionType: "MULTIPLE_CHOICE", points: 2, options: [{ id: "o1", isCorrect: true }], acceptedAnswers: [] },
+                { id: "q2", questionType: "ESSAY", points: 3, options: [], acceptedAnswers: [] },
             ],
         } as never);
         vi.mocked(prisma.testAttemptResponse.findMany).mockResolvedValue([]);

@@ -119,13 +119,13 @@ async function loadEligibleCourse(userId: string, courseId: string) {
 function completedCourseContext(course: {
   title: string;
   description: string | null;
-  tags: Array<{ tag: { name: string } }>;
+  tags: Array<{ name: string }>;
   modules: Array<{ title: string; lessons: Array<{ title: string }> }>;
 }) {
   return {
     title: course.title,
     description: plainTextExcerpt(course.description).slice(0, 500),
-    tags: course.tags.map(({ tag }) => tag.name),
+    tags: course.tags.map((tag) => tag.name),
     modules: course.modules.map((courseModule) => ({
       title: courseModule.title,
       lessons: courseModule.lessons.map((lesson) => lesson.title),
@@ -137,13 +137,13 @@ function candidateContext(course: {
   id: string;
   title: string;
   description: string | null;
-  tags: Array<{ tag: { name: string } }>;
+  tags: Array<{ name: string }>;
 }) {
   return {
     id: course.id,
     title: course.title,
     description: plainTextExcerpt(course.description).slice(0, 500),
-    tags: course.tags.map(({ tag }) => tag.name),
+    tags: course.tags.map((tag) => tag.name),
   };
 }
 
@@ -197,7 +197,7 @@ export async function getDailyCourseRecommendation(
           select: {
             title: true,
             description: true,
-            tags: { select: { tag: { select: { name: true } } } },
+            tags: { select: { name: true } },
             modules: {
               orderBy: { order: "asc" },
               take: 12,
@@ -225,7 +225,7 @@ export async function getDailyCourseRecommendation(
         id: true,
         title: true,
         description: true,
-        tags: { select: { tag: { select: { name: true } } } },
+        tags: { select: { name: true } },
       },
     });
 

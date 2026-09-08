@@ -26,7 +26,7 @@ type CourseQueryRecord = {
     modules: Array<{ lessons: Array<{ id: string }> }>;
     enrollments: Array<{ completedAt: Date | null }>;
     classroomLinks: Array<{ classroom: { id: string; name: string } }>;
-    tags: Array<{ tag: { slug: string; name: string } }>;
+    tags: Array<{ slug: string; name: string }>;
 };
 
 // GET /api/courses — Get all courses for the current user
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
                         { title: { contains: search } },
                         { description: { contains: search } },
                         { creator: { name: { contains: search } } },
-                        { tags: { some: { tag: { name: { contains: search } } } } },
+                        { tags: { some: { name: { contains: search } } } },
                     ] }] : []),
                 ],
             },
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
                 modules: { include: { lessons: { select: { id: true } } } },
                 enrollments: { where: { userId }, select: { completedAt: true } },
                 classroomLinks: { select: { classroom: { select: { id: true, name: true } } } },
-                tags: { select: { tag: { select: { slug: true, name: true } } }, orderBy: { tag: { name: "asc" } } },
+                tags: { select: { slug: true, name: true }, orderBy: { name: "asc" } },
             },
             orderBy: { createdAt: "desc" },
         });
@@ -74,16 +74,22 @@ export async function GET(req: NextRequest) {
         const courseRecords = courses as CourseQueryRecord[];
         const courseIds = courseRecords.map((course) => course.id);
         const userProgress = await prisma.courseProgress.findMany({
-            where: { userId, courseId: { in: courseIds } },
-            select: { lessonId: true, completedAt: true, courseId: true, lastAccessedAt: true }
+            where: { userId, lesson: { module: { courseId: { in: courseIds } } } },
+            select: {
+                lessonId: true,
+                completedAt: true,
+                lastAccessedAt: true,
+                lesson: { select: { module: { select: { courseId: true } } } },
+            }
         });
 
         const progressByCourse = new Map<string, { completedLessonIds: Set<string>; lastAccessedAt: Date | null }>();
         for (const item of userProgress) {
-            const current = progressByCourse.get(item.courseId) ?? { completedLessonIds: new Set<string>(), lastAccessedAt: null };
+            const courseId = item.lesson.module.courseId;
+            const current = progressByCourse.get(courseId) ?? { completedLessonIds: new Set<string>(), lastAccessedAt: null };
             if (item.completedAt) current.completedLessonIds.add(item.lessonId);
             if (!current.lastAccessedAt || item.lastAccessedAt > current.lastAccessedAt) current.lastAccessedAt = item.lastAccessedAt;
-            progressByCourse.set(item.courseId, current);
+            progressByCourse.set(courseId, current);
         }
 
         const summaries: CourseSummary[] = courseRecords.map((course) => {
@@ -109,7 +115,7 @@ export async function GET(req: NextRequest) {
                 lastAccessedAt: courseProgress?.lastAccessedAt?.toISOString() ?? null,
                 lessonCount,
                 classrooms,
-                tags: course.tags.map(({ tag }) => tag),
+                tags: course.tags,
                 creator: course.creator,
                 _count: course._count,
             };
@@ -128,8 +134,8 @@ export async function POST(req: NextRequest) {
         const userId = await getCurrentUserId();
         if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const settings = await prisma.userSettings.findUnique({
-            where: { userId },
+        const settings = await prisma.user.findUnique({
+            where: { id: userId },
             select: { courseCreationTutorialCompleted: true },
         });
         if (!settings?.courseCreationTutorialCompleted) {
@@ -175,15 +181,11 @@ export async function POST(req: NextRequest) {
                 createdById: userId,
                 ...(tagSlugs.length > 0 && {
                     tags: {
-                        create: tagSlugs.map((slug) => {
+                        connectOrCreate: tagSlugs.map((slug) => {
                             const tag = courseTagDefinition(slug);
                             return {
-                                tag: {
-                                    connectOrCreate: {
-                                        where: { slug: tag.value },
-                                        create: { slug: tag.value, name: tag.label },
-                                    },
-                                },
+                                where: { slug: tag.value },
+                                create: { slug: tag.value, name: tag.label },
                             };
                         }),
                     },

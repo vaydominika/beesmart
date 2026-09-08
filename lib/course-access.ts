@@ -82,7 +82,7 @@ export async function getLessonAccess({
     const prerequisiteIds = lessons.slice(0, targetIndex).filter((candidate: { isLocked: boolean }) => candidate.isLocked).map((candidate: { id: string }) => candidate.id);
     if (prerequisiteIds.length === 0) return { allowed: true, lessonId, isCreator: false };
     const completed = await prisma.courseProgress.findMany({
-        where: { userId, courseId, lessonId: { in: prerequisiteIds }, completedAt: { not: null } },
+        where: { userId, lessonId: { in: prerequisiteIds }, completedAt: { not: null } },
         select: { lessonId: true },
     });
     const completedIds = new Set((completed as Array<{ lessonId: string }>).map((progress) => progress.lessonId));

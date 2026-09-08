@@ -7,8 +7,14 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const settings = await prisma.userSettings.findUnique({
-        where: { userId },
+    const settings = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            theme: true, courseCreationTutorialCompleted: true,
+            defaultActiveMinutes: true, defaultBreakMinutes: true, defaultAutoBreak: true,
+            reminderNotifications: true, classroomNotifications: true,
+            profileVisibility: true, activitySharing: true,
+        },
     });
 
     if (!settings) {
@@ -48,8 +54,8 @@ export async function PATCH(req: Request) {
     const body = await req.json();
 
     if (body.reminderNotifications === true) {
-        const current = await prisma.userSettings.findUnique({
-            where: { userId },
+        const current = await prisma.user.findUnique({
+            where: { id: userId },
             select: { reminderNotifications: true },
         });
         if (current?.reminderNotifications === false) {
@@ -83,10 +89,9 @@ export async function PATCH(req: Request) {
     if (body.activitySharing !== undefined)
         data.activitySharing = Boolean(body.activitySharing);
 
-    const settings = await prisma.userSettings.upsert({
-        where: { userId },
-        create: { userId, ...data },
-        update: data,
+    const settings = await prisma.user.update({
+        where: { id: userId },
+        data,
     });
 
     return NextResponse.json({

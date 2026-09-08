@@ -26,12 +26,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             },
             update: {
                 completedAt: completed ? new Date() : null,
-                courseId, // Ensure it's linked to the correct course
                 lastAccessedAt: new Date()
             },
             create: {
                 userId,
-                courseId,
                 lessonId,
                 completedAt: completed ? new Date() : null,
                 lastAccessedAt: new Date()
@@ -56,7 +54,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
             const completedProgress = await prisma.courseProgress.findMany({
                 where: {
                     userId,
-                    courseId,
+                    lesson: { module: { courseId } },
                     completedAt: { not: null }
                 },
                 select: { lessonId: true }

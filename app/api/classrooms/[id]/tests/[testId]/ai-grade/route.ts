@@ -14,7 +14,7 @@ import type { AiUsageState } from "@/lib/ai/usage-shared";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma";
 import { notifyClassroomUser } from "@/lib/notifications";
-import { calculateAttemptTotals } from "@/lib/test-scoring";
+import { calculateAttemptTotals, readAcceptedAnswers } from "@/lib/test-scoring";
 import {
     AI_GRADING_MAX_ESSAYS_PER_ATTEMPT,
     AI_GRADING_QUESTION_CHARACTER_LIMIT,
@@ -33,7 +33,7 @@ type EssayResponse = {
         questionText: string;
         questionType: string;
         points: number;
-        answers: Array<{ answerText: string | null }>;
+        acceptedAnswers: unknown;
     };
 };
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
                     },
                 },
                 responses: {
-                    include: { question: { include: { answers: { select: { answerText: true } } } } },
+                    include: { question: true },
                 },
             },
         });
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         const contextLength = essays.reduce((total, response) => total
             + response.question.questionText.length
             + (response.responseText?.length ?? 0)
-            + response.question.answers.reduce((answerTotal, answer) => answerTotal + (answer.answerText?.length ?? 0), 0), 0);
+            + readAcceptedAnswers(response.question.acceptedAnswers).reduce((answerTotal, answer) => answerTotal + answer.length, 0), 0);
         if (contextLength > AI_GRADING_TOTAL_CONTEXT_CHARACTER_LIMIT) {
             return NextResponse.json({
                 error: `AI grading context must total ${AI_GRADING_TOTAL_CONTEXT_CHARACTER_LIMIT.toLocaleString()} characters or fewer per attempt`,
@@ -142,7 +142,7 @@ Award a numeric score between zero and the available points. Return every respon
 ${essays.map((response) => `[ID: ${response.id}]
 Question: ${response.question.questionText}
 Points available: ${response.question.points}
-Expected answer: ${response.question.answers.map((answer) => answer.answerText).filter(Boolean).join(" / ") || "Not supplied"}
+Expected answer: ${readAcceptedAnswers(response.question.acceptedAnswers).join(" / ") || "Not supplied"}
 Learner answer: ${response.responseText}`).join("\n\n")}`,
         });
 

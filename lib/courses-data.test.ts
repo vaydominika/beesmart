@@ -20,7 +20,6 @@ vi.mock("@/lib/db", () => ({
     course: { findMany: vi.fn() },
     courseEnrollment: { findMany: vi.fn() },
     courseProgress: { findMany: vi.fn() },
-    streak: { findUnique: vi.fn() },
   },
 }));
 
@@ -43,7 +42,6 @@ describe("course dashboard data", () => {
     vi.mocked(prisma.courseEnrollment.findMany).mockResolvedValue([]);
     vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([]);
     vi.mocked(prisma.course.findMany).mockResolvedValue([]);
-    vi.mocked(prisma.streak.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
     vi.mocked(getActiveTicketCount).mockResolvedValue(0);
   });
@@ -76,7 +74,7 @@ describe("course dashboard data", () => {
   it("returns null for a missing user and zero for a missing streak", async () => {
     await expect(getCurrentUserById("missing")).resolves.toBeNull();
     await expect(getStreakForUser("user-1")).resolves.toBe(0);
-    expect(prisma.streak.findUnique).toHaveBeenCalledWith({ where: { userId: "user-1" }, select: { currentStreak: true } });
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: "user-1" }, select: { currentStreak: true } });
   });
 
   it("calculates enrollment progress, rating, and private cover URLs", async () => {
@@ -126,7 +124,7 @@ describe("course dashboard data", () => {
       if (args.where?.id?.in) return [{ id: "enrolled-1", modules: [{ lessons: [{ id: "lesson-1" }] }] }] as never;
       return [course({ id: "new-course", ratings: [{ rating: 4 }], enrollments: [] })] as never;
     }) as never);
-    vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([{ lessonId: "lesson-1", completedAt: new Date(), courseId: "enrolled-1" }] as never);
+    vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([{ lessonId: "lesson-1", completedAt: new Date() }] as never);
 
     await getPopularCourses();
     expect(prisma.course.findMany).toHaveBeenCalledWith(expect.objectContaining({
@@ -160,8 +158,9 @@ describe("course dashboard data", () => {
       if (args.where?.createdById === "user-1") return [course({ id: "complete" }), course({ id: "draft" })] as never;
       return [] as never;
     }) as never);
-    vi.mocked(prisma.streak.findUnique).mockResolvedValue({ currentStreak: 7 } as never);
-    vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: "user-1", name: "Ada", image: null, bannerImageUrl: null } as never);
+    vi.mocked(prisma.user.findUnique).mockImplementation((async (args: any) => args.select?.currentStreak
+      ? { currentStreak: 7 }
+      : { id: "user-1", name: "Ada", image: null, bannerImageUrl: null }) as never);
     vi.mocked(getActiveTicketCount).mockResolvedValue(2);
 
     const result = await getDashboardData();

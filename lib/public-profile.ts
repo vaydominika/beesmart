@@ -46,13 +46,14 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
       image: true,
       bannerImageUrl: true,
       createdAt: true,
-      settings: { select: { profileVisibility: true, activitySharing: true } },
+      profileVisibility: true,
+      activitySharing: true,
     },
   });
   if (!user) return { status: "not_found" as const };
 
   const isOwner = targetUserId === viewerUserId;
-  const isPrivate = (user.settings?.profileVisibility ?? "PRIVATE") === "PRIVATE";
+  const isPrivate = user.profileVisibility === "PRIVATE";
   if (isPrivate && !isOwner) {
     return { status: "private" as const, user: { id: user.id, name: user.name } };
   }
@@ -64,7 +65,7 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
   });
 
   let activity: Array<{ id: string; text: string; createdAt: string; actionUrl: string | null }> = [];
-  if (user.settings?.activitySharing !== false) {
+  if (user.activitySharing) {
     const records = await prisma.activityRecord.findMany({
       where: { userId: targetUserId },
       orderBy: { createdAt: "desc" },
@@ -149,7 +150,7 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
       joinedAt: user.createdAt.toISOString(),
       isOwner,
       isPrivate,
-      activitySharing: user.settings?.activitySharing !== false,
+      activitySharing: user.activitySharing,
       courses: courses.map((course: { id: string; title: string; description: string | null; coverImageUrl: string | null; coverStoredFileId: string | null; updatedAt: Date }) => ({
         ...course, coverImageUrl: storedFileUrl(course.coverStoredFileId, course.coverImageUrl) || null, updatedAt: course.updatedAt.toISOString(),
       })),

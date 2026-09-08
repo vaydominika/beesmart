@@ -249,7 +249,9 @@ describe("event mutations", () => {
     }));
     expect(response.status).toBe(200);
     expect(prisma.event.update).toHaveBeenCalledWith({ where: { id: "event-1" }, data: { title: "New", description: null, color: null, order: 2 } });
-    expect(prisma.reminder.updateMany).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ task: "New" }) }));
+    expect(prisma.reminder.deleteMany).toHaveBeenCalledWith({
+      where: { eventId: "event-1", notifyAt: { gt: expect.any(Date) } },
+    });
   });
 
   it("rejects invalid patches before writing", async () => {

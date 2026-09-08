@@ -17,7 +17,7 @@ type LoadedQuestion = {
     questionType: string;
     points: number;
     options: Array<{ id: string; isCorrect: boolean }>;
-    answers: Array<{ answerText: string | null }>;
+    acceptedAnswers: unknown;
 };
 type StoredResponse = ScoringResponse & { id: string; responseText: string | null; selectedOptionId: string | null };
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         if (!attempt) return NextResponse.json({ error: "Active attempt not found" }, { status: 404 });
         const test = await prisma.test.findFirst({
             where: { id: testId, classroomId },
-            include: { questions: { orderBy: { order: "asc" }, include: { options: true, answers: true } } },
+            include: { questions: { orderBy: { order: "asc" }, include: { options: true } } },
         });
         if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
         if (test.timeLimit) {

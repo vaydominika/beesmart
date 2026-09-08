@@ -6,6 +6,7 @@ import { recordMeaningfulActivity } from "@/lib/activity";
 import { createHash } from "crypto";
 import { ScheduleValidationError, assertDeadlineNotPast, parseScheduleDate } from "@/lib/schedule-validation";
 import { sanitizeRichTextHtml } from "@/lib/security/rich-text";
+import { readAcceptedAnswers } from "@/lib/test-scoring";
 
 type RouteContext = { params: Promise<{ id: string; testId: string }> };
 type LearnerAttemptSummary = { id: string; attemptNumber: number; startedAt: Date; submittedAt: Date | null; score: number | null };
@@ -18,7 +19,7 @@ type LearnerReviewResponse = {
         questionText: string;
         points: number;
         options: Array<{ optionText: string }>;
-        answers: Array<{ answerText: string | null }>;
+        acceptedAnswers: unknown;
     };
 };
 
@@ -69,7 +70,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                         questionText: true,
                         points: true,
                         options: { where: { isCorrect: true }, select: { optionText: true } },
-                        answers: { where: { isCorrect: true }, select: { answerText: true } },
+                        acceptedAnswers: true,
                     },
                 },
             },
@@ -81,7 +82,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
             ? null
             : [
                 ...response.question.options.map((option) => option.optionText),
-                ...response.question.answers.flatMap((answer) => answer.answerText ? [answer.answerText] : []),
+                ...readAcceptedAnswers(response.question.acceptedAnswers),
             ].join(" / ") || null;
         return {
             questionId: response.questionId,

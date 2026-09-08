@@ -11,7 +11,7 @@ vi.mock("@/lib/db", () => ({
     course: { findMany: vi.fn(), create: vi.fn() },
     courseProgress: { findMany: vi.fn() },
     notification: { create: vi.fn() },
-    userSettings: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
 }));
@@ -38,7 +38,7 @@ const record = {
   modules: [{ lessons: [{ id: "lesson-1" }, { id: "lesson-2" }] }],
   enrollments: [{ completedAt: null }],
   classroomLinks: [{ classroom: { id: "classroom-1", name: "Matematika" } }],
-  tags: [{ tag: { slug: "biology", name: "Biology" } }],
+  tags: [{ slug: "biology", name: "Biology" }],
 };
 
 describe("GET /api/courses", () => {
@@ -47,7 +47,7 @@ describe("GET /api/courses", () => {
     vi.mocked(getCurrentUserId).mockResolvedValue("learner-1");
     vi.mocked(prisma.course.findMany).mockResolvedValue([record] as never);
     vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([
-      { courseId: "course-1", lessonId: "lesson-1", completedAt: new Date(), lastAccessedAt: new Date("2026-08-04T10:00:00.000Z") },
+      { lessonId: "lesson-1", completedAt: new Date(), lastAccessedAt: new Date("2026-08-04T10:00:00.000Z"), lesson: { module: { courseId: "course-1" } } },
     ] as never);
   });
 
@@ -102,8 +102,8 @@ describe("GET /api/courses", () => {
 
   it("keeps the most recent progress timestamp", async () => {
     vi.mocked(prisma.courseProgress.findMany).mockResolvedValue([
-      { courseId: "course-1", lessonId: "lesson-1", completedAt: null, lastAccessedAt: new Date("2026-08-01") },
-      { courseId: "course-1", lessonId: "lesson-2", completedAt: new Date(), lastAccessedAt: new Date("2026-08-05") },
+      { lessonId: "lesson-1", completedAt: null, lastAccessedAt: new Date("2026-08-01"), lesson: { module: { courseId: "course-1" } } },
+      { lessonId: "lesson-2", completedAt: new Date(), lastAccessedAt: new Date("2026-08-05"), lesson: { module: { courseId: "course-1" } } },
     ] as never);
     const body = await (await GET(new NextRequest("http://localhost/api/courses"))).json();
     expect(body[0].progress).toBe(50);
@@ -125,11 +125,11 @@ describe("POST /api/courses tutorial prerequisite", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUserId).mockResolvedValue("user-1");
-    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ courseCreationTutorialCompleted: true } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ courseCreationTutorialCompleted: true } as never);
   });
 
   it("rejects course creation until the tutorial is completed", async () => {
-    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
     const response = await POST(new NextRequest("http://localhost/api/courses", {
       method: "POST",
@@ -140,14 +140,14 @@ describe("POST /api/courses tutorial prerequisite", () => {
 
     expect(response.status).toBe(403);
     expect(data).toMatchObject({ code: "COURSE_TUTORIAL_REQUIRED" });
-    expect(prisma.userSettings.findUnique).toHaveBeenCalledWith({
-      where: { userId: "user-1" },
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { id: "user-1" },
       select: { courseCreationTutorialCompleted: true },
     });
   });
 
   it("rejects course titles longer than 150 characters", async () => {
-    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ courseCreationTutorialCompleted: true } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ courseCreationTutorialCompleted: true } as never);
 
     const response = await POST(new NextRequest("http://localhost/api/courses", {
       method: "POST",
@@ -201,12 +201,10 @@ describe("POST /api/courses tutorial prerequisite", () => {
       title: "Biology", description: "Cells", visibility: "PUBLIC",
       published: true, coverStoredFileId: "cover-1", createdById: "user-1",
       files: { create: [{ storedFileId: "attachment-1", uploadedById: "user-1" }] },
-      tags: {
-        create: [
-          { tag: { connectOrCreate: { where: { slug: "biology" }, create: { slug: "biology", name: "Biology" } } } },
-          { tag: { connectOrCreate: { where: { slug: "chemistry" }, create: { slug: "chemistry", name: "Chemistry" } } } },
-        ],
-      },
+      tags: { connectOrCreate: [
+        { where: { slug: "biology" }, create: { slug: "biology", name: "Biology" } },
+        { where: { slug: "chemistry" }, create: { slug: "chemistry", name: "Chemistry" } },
+      ] },
     }) });
     expect(recordMeaningfulActivity).toHaveBeenCalledWith(expect.objectContaining({ activityType: "COURSE_CREATED" }));
     expect(prisma.notification.create).toHaveBeenCalledWith({ data: expect.objectContaining({ title: "Course created", relatedId: "course-1" }) });

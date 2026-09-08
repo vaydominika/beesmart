@@ -6,7 +6,7 @@ const shortQuestion: ScoringQuestion = {
     questionType: "SHORT_ANSWER",
     points: 3,
     options: [],
-    answers: [{ answerText: "Honey bee" }, { answerText: "Apis mellifera" }],
+    acceptedAnswers: ["Honey bee", "Apis mellifera"],
 };
 
 describe("test scoring", () => {

@@ -18,6 +18,19 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  theme                           String            @default("bee")
+  courseCreationTutorialCompleted Boolean           @default(false)
+  defaultActiveMinutes            Int               @default(45)
+  defaultBreakMinutes             Int               @default(15)
+  defaultAutoBreak                Boolean           @default(true)
+  reminderNotifications           Boolean           @default(true)
+  classroomNotifications          Boolean           @default(true)
+  profileVisibility               ProfileVisibility @default(PRIVATE)
+  activitySharing                 Boolean           @default(true)
+  currentStreak                   Int               @default(0)
+  longestStreak                   Int               @default(0)
+  lastActivityDate                DateTime?
+
   accounts    Account[]
   sessions    Session[]
   storedFiles StoredFile[] @relation("StoredFileOwner")
@@ -36,11 +49,9 @@ model User {
   notifications              Notification[]
   gradesAsStudent            Grade[]                     @relation("StudentGrade")
   gradesAsGrader             Grade[]                     @relation("Grader")
-  streak                     Streak?
   focusSessions              FocusSession[]
   uploadedFiles              Attachment[]
   testAttempts               TestAttempt[]
-  settings                   UserSettings?
   courseRatings              CourseRating[]
   reports                    Report[]                    @relation("ReportReporter")
   reviewedReports            Report[]                    @relation("ReportReviewer")
@@ -58,10 +69,10 @@ model User {
 `User` represents a registered person and is the central identity entity of the application. It stores authentication, profile, preference, learning, teaching, and activity associations.
 
 **Fields:**
-`email` is the unique sign-in address, while `name` is the displayed name. `password` is optional because an account may use an external authentication provider. `emailVerified` records verification. `image` is the single profile-image URL used for both provider images and uploaded BeeSmart profile images, while `bannerImageUrl` stores the banner reference. `imageFileId` and `bannerFileId` are unique optional foreign keys when these images are backed by managed `StoredFile` records.
+`email` is the unique sign-in address, while `name` is the displayed name. `password` is optional because an account may use an external authentication provider. `emailVerified` records verification. `image` is the single profile-image URL used for both provider images and uploaded BeeSmart profile images, while `bannerImageUrl` stores the banner reference. `imageFileId` and `bannerFileId` are unique optional foreign keys when these images are backed by managed `StoredFile` records. Theme, focus defaults, notification controls, profile visibility, activity sharing, tutorial completion, and cached streak values are stored directly on the user because they have the same lifecycle and identity.
 
 **Relationships:**
-A user can have many authentication accounts and sessions, own many stored files, and optionally select one file as a profile image and one as a banner. The remaining collection fields express one-to-many relationships with courses, classrooms, memberships, enrollments, progress records, tests, events, assigned work, reminders, notifications, grades, focus sessions, uploads, attempts, ratings, reports, posts, comments, submissions, access grants, activities, AI quotas, and recommendations. `streak` and `settings` are optional one-to-one relationships. Named relations distinguish multiple links to the same model, such as grades received versus grades awarded. Most dependent records are deleted when the user is deleted; image, banner, grader, and reviewer references are set to null where declared by the related model.
+A user can have many authentication accounts and sessions, own many stored files, and optionally select one file as a profile image and one as a banner. The remaining collection fields express one-to-many relationships with courses, classrooms, memberships, enrollments, progress records, tests, events, assigned work, reminders, notifications, grades, focus sessions, uploads, attempts, ratings, reports, posts, comments, submissions, access grants, activities, AI quotas, and recommendations. Named relations distinguish multiple links to the same model, such as grades received versus grades awarded. Most dependent records are deleted when the user is deleted; image, banner, grader, and reviewer references are set to null where declared by the related model.
 
 ### Account
 
@@ -222,9 +233,8 @@ model Course {
   coverStoredFile      StoredFile?                 @relation("CourseCover", fields: [coverStoredFileId], references: [id], onDelete: SetNull)
   modules              CourseModule[]
   enrollments          CourseEnrollment[]
-  progress             CourseProgress[]
   files                Attachment[]
-  tags                 CourseTag[]
+  tags                 Tag[]                       @relation("CourseTags")
   ratings              CourseRating[]
   reports              Report[]
   classroomPosts       ClassroomPost[]
@@ -243,7 +253,7 @@ model Course {
 `title` and `description` describe the course. `coverImageUrl` can hold an image reference, while `coverStoredFileId` uniquely links to a managed cover file. `visibility` controls the intended access category, and `published` records whether the course is released. `createdById` identifies the creator.
 
 **Relationships:**
-Each course has one creator (`createdById` → `User.id`) and optionally one managed cover file (`coverStoredFileId` → `StoredFile.id`). It has many modules, enrollments, progress records, attachments, tag links, ratings, reports, classroom posts, classroom links, access grants, and daily recommendations. `CourseTag` and `ClassroomCourse` implement many-to-many associations with tags and classrooms. If the cover file is deleted, its foreign key is set to null.
+Each course has one creator (`createdById` → `User.id`) and optionally one managed cover file (`coverStoredFileId` → `StoredFile.id`). It has many modules, enrollments, attachments, tags, ratings, reports, classroom posts, classroom links, access grants, and daily recommendations. Tags use Prisma's implicit many-to-many association, while `ClassroomCourse` stores the metadata-bearing classroom association explicitly. Progress is reached through the course's modules and lessons. If the cover file is deleted, its foreign key is set to null.
 
 ### CourseModule
 
@@ -339,37 +349,34 @@ Each enrollment belongs to one `User` and one `Course`, with `userId` and `cours
 model CourseProgress {
   id             String    @id @default(cuid())
   userId         String
-  courseId       String
   lessonId       String
   completedAt    DateTime?
   lastAccessedAt DateTime  @default(now())
 
   user   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lesson CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
-  @@index([userId])
-  @@index([courseId])
   @@index([lessonId])
+  @@index([userId, lastAccessedAt])
 }
 ```
 
 **Purpose:**
-`CourseProgress` stores a user’s progress for a particular lesson within a course.
+`CourseProgress` stores a user’s progress for a particular lesson. The course is derived through `lesson.module.course`.
 
 **Fields:**
 `completedAt` marks completion when present, and `lastAccessedAt` records the most recent access. The unique pair of `userId` and `lessonId` permits one progress record per user and lesson.
 
 **Relationships:**
-Each progress record belongs to one `User`, one `Course`, and one `CourseLesson`; all three identifiers are foreign keys. Users, courses, and lessons can each have many progress records. Deleting any referenced record removes the associated progress record.
+Each progress record belongs to one `User` and one `CourseLesson`; both identifiers are foreign keys. Users and lessons can each have many progress records. Deleting either referenced record removes the associated progress record, while deleting a course cascades through its modules and lessons.
 
 ### Test
 
 ```prisma
 model Test {
   id           String    @id @default(cuid())
-  classroomId  String?
+  classroomId  String
   title        String
   description  String?
   type         TestType
@@ -382,25 +389,26 @@ model Test {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  classroom     Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroom     Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   creator       User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
   questions     TestQuestion[]
   attempts      TestAttempt[]
   posts         ClassroomPost[]
   calendarEvent Event?
 
+  @@index([classroomId])
   @@index([createdById])
 }
 ```
 
 **Purpose:**
-`Test` represents an assessment created by a user, classified as either a test or an exam and optionally assigned to a classroom.
+`Test` represents a classroom assessment created by a user and classified as either a test or an exam.
 
 **Fields:**
-`title` and optional `description` identify the assessment. `type` distinguishes a test from an exam. `timeLimit`, `passingScore`, `opensAt`, `closesAt`, and `maxAttempts` define its assessment constraints. `createdById` identifies the author, while `classroomId` optionally places it in a classroom.
+`title` and optional `description` identify the assessment. `type` distinguishes a test from an exam. `timeLimit`, `passingScore`, `opensAt`, `closesAt`, and `maxAttempts` define its assessment constraints. `createdById` identifies the author, while required `classroomId` places it in its classroom.
 
 **Relationships:**
-Each test has one creator through `createdById` and may belong to one `Classroom` through `classroomId`. It has many questions, attempts, and classroom posts, and may be linked to one calendar `Event`. A creator or classroom can have many tests. The declared foreign-key deletions cascade.
+Each test has one creator through `createdById` and belongs to one `Classroom` through `classroomId`. It has many questions, attempts, and classroom posts, and may be linked to one calendar `Event`. A creator or classroom can have many tests. The declared foreign-key deletions cascade.
 
 ### TestQuestion
 
@@ -412,12 +420,12 @@ model TestQuestion {
   questionType QuestionType
   order        Int          @default(0)
   points       Float        @default(1)
+  acceptedAnswers Json?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
   options   TestQuestionOption[]
-  answers   TestAnswer[]
   responses TestAttemptResponse[]
 
   @@index([testId])
@@ -428,10 +436,10 @@ model TestQuestion {
 `TestQuestion` stores one ordered question within an assessment and defines how it should be answered and scored.
 
 **Fields:**
-`questionText` contains the prompt. `questionType` identifies the response format, such as multiple choice, true/false, short answer, or essay. `order` determines position, and `points` gives the question’s score value.
+`questionText` contains the prompt. `questionType` identifies the response format, such as multiple choice, true/false, short answer, or essay. `order` determines position, `points` gives the question’s score value, and `acceptedAnswers` stores the accepted textual answers as a JSON string array when applicable.
 
 **Relationships:**
-Each question belongs to one `Test` through the `testId` foreign key. A question may have many answer options, accepted-answer records, and attempt responses. Deleting the test cascades to its questions.
+Each question belongs to one `Test` through the `testId` foreign key. A question may have many answer options and attempt responses. Deleting the test cascades to its questions.
 
 ### TestQuestionOption
 
@@ -458,30 +466,6 @@ model TestQuestionOption {
 
 **Relationships:**
 Each option belongs to one `TestQuestion` through `questionId`, and a question may have many options. An option may be selected by many `TestAttemptResponse` records. Deleting the question deletes its options; deleting an option sets existing `selectedOptionId` references to null.
-
-### TestAnswer
-
-```prisma
-model TestAnswer {
-  id         String   @id @default(cuid())
-  questionId String
-  answerText String?  @db.Text
-  isCorrect  Boolean?
-
-  question TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@index([questionId])
-}
-```
-
-**Purpose:**
-`TestAnswer` stores an answer definition associated with a test question, including optional text and an optional correctness value.
-
-**Fields:**
-`answerText` contains the answer content when a textual answer is applicable. `isCorrect` can explicitly classify the answer, while a null value leaves that classification unspecified.
-
-**Relationships:**
-Each answer belongs to one `TestQuestion` through the `questionId` foreign key, and a question may have many answer records. Answers are deleted when their question is deleted.
 
 ### TestAttempt
 
@@ -601,7 +585,7 @@ model AssignedWork {
   title            String
   description      String?  @db.Text
   assignedById     String
-  classroomId      String?
+  classroomId      String
   deadlineAt       DateTime
   deadlineTimeZone String
   deadlineHasTime  Boolean  @default(false)
@@ -611,7 +595,7 @@ model AssignedWork {
   updatedAt        DateTime @updatedAt
 
   assigner      User            @relation("WorkAssigner", fields: [assignedById], references: [id], onDelete: Cascade)
-  classroom     Classroom?      @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  classroom     Classroom       @relation(fields: [classroomId], references: [id], onDelete: Cascade)
   grades        Grade[]
   submissions   Submission[]
   posts         ClassroomPost[]
@@ -624,13 +608,13 @@ model AssignedWork {
 ```
 
 **Purpose:**
-`AssignedWork` represents a task assigned by a user, optionally within a classroom, with a defined deadline and grading configuration.
+`AssignedWork` represents a classroom assignment with a defined deadline and grading configuration.
 
 **Fields:**
 `title` and `description` describe the work. `deadlineAt`, `deadlineTimeZone`, and `deadlineHasTime` preserve the due moment and whether an exact time applies. `isGraded` states whether grading is expected, and `maxPoints` optionally defines the maximum score. `assignedById` identifies the assigning user.
 
 **Relationships:**
-Each record has one assigning `User` through `assignedById` and may belong to one `Classroom` through `classroomId`. It can have many grades, submissions, and classroom posts, plus an optional one-to-one calendar event. The required and optional owner identifiers are foreign keys with cascade deletion.
+Each record has one assigning `User` through `assignedById` and belongs to one `Classroom` through `classroomId`. It can have many grades, submissions, and classroom posts, plus an optional one-to-one calendar event. Both owner identifiers are required foreign keys with cascade deletion.
 
 ### Reminder
 
@@ -638,11 +622,6 @@ Each record has one assigning `User` through `assignedById` and may belong to on
 model Reminder {
   id                      String    @id @default(cuid())
   userId                  String
-  task                    String
-  date                    DateTime
-  time                    String?
-  timeZone                String?
-  dueAt                   DateTime?
   notifyAt                DateTime?
   notificationProcessedAt DateTime?
   eventId                 String
@@ -653,11 +632,8 @@ model Reminder {
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
-  @@index([userId])
   @@index([eventId])
-  @@index([date])
-  @@index([dueAt])
-  @@index([notifyAt])
+  @@index([userId, notificationProcessedAt, notifyAt])
 }
 ```
 
@@ -665,7 +641,7 @@ model Reminder {
 `Reminder` stores a user-specific reminder associated with a calendar event and tracks when a notification should be processed.
 
 **Fields:**
-`task` stores the reminder text. `date`, optional `time`, and optional `timeZone` preserve the user-facing schedule; `dueAt` and `notifyAt` can store calculated moments. `notificationProcessedAt` records that notification handling has occurred. The unique user-event pair allows one reminder per user for an event.
+`notifyAt` stores the calculated notification moment, while `notificationProcessedAt` records that notification handling has occurred. Display text and event schedule data are read from the related `Event`, avoiding duplicated values. The unique user-event pair allows one reminder per user for an event.
 
 **Relationships:**
 Each reminder belongs to one `User` and one `Event`, with `userId` and `eventId` as foreign keys. Users and events may each have many reminders. Deleting either referenced entity removes the reminder.
@@ -829,31 +805,6 @@ model Grade {
 **Relationships:**
 Each grade belongs to one student (`userId` → `User.id`) and one `AssignedWork` item (`assignedWorkId` → `AssignedWork.id`). The composite uniqueness constraint permits one grade per student and assigned work item. A grade may also reference one grader through `gradedById` → `User.id`. A user can receive many grades and award many grades, while an assigned work item can have many grades for different students. Deleting the student or work deletes the grade; deleting the grader sets `gradedById` to null.
 
-### Streak
-
-```prisma
-model Streak {
-  id               String    @id @default(cuid())
-  userId           String    @unique
-  currentStreak    Int       @default(0)
-  longestStreak    Int       @default(0)
-  lastActivityDate DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-```
-
-**Purpose:**
-`Streak` stores a user’s current and historical activity streak statistics.
-
-**Fields:**
-`currentStreak` contains the active streak length, `longestStreak` preserves the best recorded length, and `lastActivityDate` stores the most recent qualifying activity date.
-
-**Relationships:**
-Each streak belongs to exactly one `User` through the unique `userId` foreign key. The uniqueness constraint creates a one-to-one relationship: a user can have at most one streak record. Deleting the user deletes the streak.
-
 ### FocusSession
 
 ```prisma
@@ -893,7 +844,7 @@ model Tag {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  courses CourseTag[]
+  courses Course[] @relation("CourseTags")
 }
 ```
 
@@ -904,33 +855,7 @@ model Tag {
 `name` stores the human-readable label, while the unique `slug` provides a stable, URL-friendly identifier.
 
 **Relationships:**
-A tag may appear in many `CourseTag` link records. Through those records, tags and courses have a many-to-many relationship. This model contains no direct foreign key.
-
-### CourseTag
-
-```prisma
-model CourseTag {
-  id       String @id @default(cuid())
-  courseId String
-  tagId    String
-
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([courseId, tagId])
-  @@index([courseId])
-  @@index([tagId])
-}
-```
-
-**Purpose:**
-`CourseTag` assigns a tag to a course and serves as the junction entity for course categorisation.
-
-**Fields:**
-`courseId` and `tagId` identify the linked course and tag. Their unique combination prevents the same tag from being assigned to a course more than once.
-
-**Relationships:**
-Each link belongs to one `Course` and one `Tag`, with both fields acting as foreign keys. The model implements a many-to-many relationship because a course can have many tags and a tag can classify many courses. Deleting either side removes the link.
+A tag can classify many courses and a course can have many tags through Prisma's implicit `CourseTags` many-to-many relation. This model contains no direct foreign key.
 
 ### CourseRating
 
@@ -999,37 +924,6 @@ model Report {
 
 **Relationships:**
 Each report has one reporter through `userId` → `User.id`, may concern one `Course` through `courseId`, and may have one reviewer through `reviewedById` → `User.id`. Named relations separate reporter and reviewer roles. A report can have many attachments. Deleting the reporter deletes the report, whereas deleting the course or reviewer sets the relevant foreign key to null.
-
-### UserSettings
-
-```prisma
-model UserSettings {
-  id                              String            @id @default(cuid())
-  userId                          String            @unique
-  theme                           String            @default("bee")
-  courseCreationTutorialCompleted Boolean           @default(false)
-  defaultActiveMinutes            Int               @default(45)
-  defaultBreakMinutes             Int               @default(15)
-  defaultAutoBreak                Boolean           @default(true)
-  reminderNotifications           Boolean           @default(true)
-  classroomNotifications          Boolean           @default(true)
-  profileVisibility               ProfileVisibility @default(PRIVATE)
-  activitySharing                 Boolean           @default(true)
-  createdAt                       DateTime          @default(now())
-  updatedAt                       DateTime          @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-```
-
-**Purpose:**
-`UserSettings` stores one user’s personal application preferences.
-
-**Fields:**
-`theme` selects the visual theme, and `courseCreationTutorialCompleted` records tutorial completion. The active-minute, break-minute, and auto-break fields define default focus-session settings. The notification flags control reminder and classroom notifications. `profileVisibility` sets the profile’s public or private state, and `activitySharing` controls whether activity may be shared.
-
-**Relationships:**
-Each settings record belongs to one `User` through the unique `userId` foreign key. This creates a one-to-one relationship in which a user can have at most one settings record. Deleting the user deletes the settings.
 
 ### AiUsageQuota
 

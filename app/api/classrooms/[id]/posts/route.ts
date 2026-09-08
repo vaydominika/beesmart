@@ -253,14 +253,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
                                         })),
                                     }
                                     : undefined,
-                                answers: (question.acceptedAnswers?.length || question.correctAnswer)
-                                    ? {
-                                        create: (question.acceptedAnswers?.length ? question.acceptedAnswers : [question.correctAnswer!]).map((answer) => ({
-                                            answerText: answer.trim(),
-                                            isCorrect: true,
-                                        })),
-                                    }
-                                    : undefined,
+                                acceptedAnswers: (question.acceptedAnswers?.length ? question.acceptedAnswers : [question.correctAnswer])
+                                    .filter((answer): answer is string => typeof answer === "string" && Boolean(answer.trim()))
+                                    .map((answer) => answer.trim()),
                             })),
                         },
                     },

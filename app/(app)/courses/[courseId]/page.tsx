@@ -76,7 +76,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
   const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
   const completedProgress = isEnrolled
     ? await prisma.courseProgress.findMany({
-        where: { userId, courseId, completedAt: { not: null } },
+        where: { userId, lesson: { module: { courseId } }, completedAt: { not: null } },
         select: { lessonId: true },
       }) as Array<{ lessonId: string }>
     : [];

@@ -16,31 +16,30 @@ type ClassroomNotificationInput = {
 
 type ClassroomMemberRecipient = { userId: string };
 type OptionalNotificationDb = {
-    userSettings?: {
-        findMany?: (args: unknown) => Promise<Array<{ userId: string }>>;
+    classroom?: { findUnique?: (args: unknown) => Promise<unknown> };
+    user?: {
+        findMany?: (args: unknown) => Promise<Array<{ id: string }>>;
         findUnique?: (args: unknown) => Promise<{ classroomNotifications?: boolean } | null>;
     };
-    classroom?: { findUnique?: (args: unknown) => Promise<unknown> };
-    user?: { findUnique?: (args: unknown) => Promise<unknown> };
     notification: { create: (args: unknown) => Promise<unknown> };
 };
 
 async function disabledClassroomRecipientIds(userIds: string[]) {
     if (!userIds.length) return new Set<string>();
     const db = prisma as unknown as OptionalNotificationDb;
-    if (!db.userSettings?.findMany) return new Set<string>();
-    const disabled = await db.userSettings.findMany({
-        where: { userId: { in: userIds }, classroomNotifications: false },
-        select: { userId: true },
+    if (!db.user?.findMany) return new Set<string>();
+    const disabled = await db.user.findMany({
+        where: { id: { in: userIds }, classroomNotifications: false },
+        select: { id: true },
     });
-    return new Set<string>(disabled.map((settings: { userId: string }) => settings.userId));
+    return new Set<string>(disabled.map((user: { id: string }) => user.id));
 }
 
 async function classroomNotificationsEnabled(userId: string) {
     const db = prisma as unknown as OptionalNotificationDb;
-    if (!db.userSettings?.findUnique) return true;
-    const settings = await db.userSettings.findUnique({
-        where: { userId },
+    if (!db.user?.findUnique) return true;
+    const settings = await db.user.findUnique({
+        where: { id: userId },
         select: { classroomNotifications: true },
     });
     return settings?.classroomNotifications !== false;
@@ -122,8 +121,8 @@ export async function notifyClassroomUser(userId: string, input: ClassroomNotifi
 
 export async function materializeDueReminderNotifications(userId: string) {
     const now = new Date();
-    const settings = await prisma.userSettings.findUnique({
-        where: { userId },
+    const settings = await prisma.user.findUnique({
+        where: { id: userId },
         select: { reminderNotifications: true },
     });
     const due = await prisma.reminder.findMany({
@@ -133,6 +132,7 @@ export async function materializeDueReminderNotifications(userId: string) {
             notificationProcessedAt: null,
         },
         orderBy: { notifyAt: "asc" },
+        include: { event: { select: { title: true } } },
     });
     if (!due.length) return [];
 
@@ -156,7 +156,7 @@ export async function materializeDueReminderNotifications(userId: string) {
                 data: {
                     userId,
                     title: "Reminder",
-                    body: reminder.task,
+                    body: reminder.event.title,
                     type: "REMINDER",
                     category: "GENERAL",
                     relatedId: reminder.eventId,
@@ -166,7 +166,7 @@ export async function materializeDueReminderNotifications(userId: string) {
             });
             return true;
         });
-        if (created) triggered.push({ id: reminder.id, task: reminder.task });
+        if (created) triggered.push({ id: reminder.id, task: reminder.event.title });
     }
     return triggered;
 }

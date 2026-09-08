@@ -41,7 +41,7 @@ const essayResponse = (overrides: Record<string, unknown> = {}) => ({
         questionText: "Explain the main idea.",
         questionType: "ESSAY",
         points: 5,
-        answers: [{ answerText: "A reference answer." }],
+        acceptedAnswers: ["A reference answer."],
     },
     ...overrides,
 });
@@ -66,7 +66,7 @@ describe("direct AI essay grading", () => {
                     questionId: "choice-1",
                     responseText: null,
                     pointsAwarded: 5,
-                    question: { questionText: "Choose", questionType: "MULTIPLE_CHOICE", points: 5, answers: [] },
+                    question: { questionText: "Choose", questionType: "MULTIPLE_CHOICE", points: 5, acceptedAnswers: [] },
                 },
             ],
         } as never);

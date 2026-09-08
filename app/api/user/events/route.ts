@@ -108,10 +108,6 @@ async function syncEventReminders(event: { id: string; title: string; startDate:
     const boundary = dateWithTime(event.startDate, event.isAllDay ? null : event.startTime);
     if (event.isAllDay) boundary.setHours(23, 59, 0, 0);
     await prisma.reminder.deleteMany({ where: { eventId: event.id, notifyAt: { gt: boundary } } });
-    await prisma.reminder.updateMany({
-        where: { eventId: event.id },
-        data: { task: event.title, date: event.startDate, time: event.startTime, dueAt: boundary },
-    });
 }
 
 export async function GET(req: NextRequest) {

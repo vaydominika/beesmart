@@ -14,7 +14,7 @@ export async function GET(
     prisma.courseRating.findUnique({ where: { userId_courseId: { userId, courseId } } }),
     prisma.courseRating.aggregate({ where: { courseId }, _avg: { rating: true }, _count: { rating: true } }),
     prisma.courseEnrollment.findUnique({ where: { userId_courseId: { userId, courseId } }, select: { completedAt: true } }),
-    prisma.courseProgress.findFirst({ where: { userId, courseId }, select: { id: true } }),
+    prisma.courseProgress.findFirst({ where: { userId, lesson: { module: { courseId } } }, select: { id: true } }),
   ]);
   if (!course) return NextResponse.json({ error: "Course not found" }, { status: 404 });
 
@@ -75,7 +75,7 @@ export async function POST(
         select: { id: true },
       }),
       prisma.courseProgress.findFirst({
-        where: { userId: uid, courseId },
+        where: { userId: uid, lesson: { module: { courseId } } },
         select: { id: true },
       }),
     ]);

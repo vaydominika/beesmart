@@ -38,7 +38,7 @@ export async function PUT(request: Request, context: RouteContext) {
   const id = baseEventId(requestedId);
   const [event, settings] = await Promise.all([
     getAccessibleEvent(id, userId),
-    prisma.userSettings.findUnique({ where: { userId }, select: { reminderNotifications: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { reminderNotifications: true } }),
   ]);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   if (event.recurrencePattern) {
@@ -55,20 +55,10 @@ export async function PUT(request: Request, context: RouteContext) {
     create: {
       userId,
       eventId: id,
-      task: event.title,
-      date: event.startDate,
-      time: event.startTime,
-      timeZone: parsed.data.timeZone,
-      dueAt: parsed.data.eventStartsAt,
       notifyAt: parsed.data.notifyAt,
       notificationProcessedAt: null,
     },
     update: {
-      task: event.title,
-      date: event.startDate,
-      time: event.startTime,
-      timeZone: parsed.data.timeZone,
-      dueAt: parsed.data.eventStartsAt,
       notifyAt: parsed.data.notifyAt,
       notificationProcessedAt: null,
     },

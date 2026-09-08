@@ -155,9 +155,6 @@ export async function seedTestData() {
     },
   });
 
-  await prisma.userSettings.createMany({
-    data: identities.map(({ id }) => ({ userId: id, theme: "bee" })),
-  });
 }
 
 const isDirectExecution = process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/seed-test-data.ts");

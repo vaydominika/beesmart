@@ -3,7 +3,7 @@ export type ScoringQuestion = {
     questionType: string;
     points: number;
     options: Array<{ id: string; isCorrect: boolean }>;
-    answers: Array<{ answerText: string | null }>;
+    acceptedAnswers: unknown;
 };
 
 export type ScoringResponse = {
@@ -17,6 +17,14 @@ export function normalizeShortAnswer(value: string) {
     return value.normalize("NFKC").trim().replace(/\s+/gu, " ").toLowerCase();
 }
 
+export function readAcceptedAnswers(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    return value
+        .filter((answer): answer is string => typeof answer === "string")
+        .map((answer) => answer.trim())
+        .filter(Boolean);
+}
+
 export function scoreAutomaticResponse(question: ScoringQuestion, response?: ScoringResponse) {
     if (!response) return { isCorrect: false, pointsAwarded: 0, needsManualGrading: false };
 
@@ -28,9 +36,7 @@ export function scoreAutomaticResponse(question: ScoringQuestion, response?: Sco
 
     if (question.questionType === "SHORT_ANSWER") {
         const learnerAnswer = normalizeShortAnswer(response.responseText ?? "");
-        const acceptedAnswers = question.answers
-            .map((answer) => answer.answerText ? normalizeShortAnswer(answer.answerText) : "")
-            .filter(Boolean);
+        const acceptedAnswers = readAcceptedAnswers(question.acceptedAnswers).map(normalizeShortAnswer);
         const isCorrect = learnerAnswer.length > 0 && acceptedAnswers.includes(learnerAnswer);
         return { isCorrect, pointsAwarded: isCorrect ? question.points : 0, needsManualGrading: false };
     }

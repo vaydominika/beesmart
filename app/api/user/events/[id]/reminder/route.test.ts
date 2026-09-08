@@ -7,7 +7,7 @@ vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
   prisma: {
     event: { findFirst: vi.fn() },
-    userSettings: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn() },
     reminder: { findUnique: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn() },
   },
 }));
@@ -20,7 +20,7 @@ describe("event reminder API", () => {
     vi.clearAllMocks();
     vi.mocked(getCurrentUserId).mockResolvedValue("user-1");
     vi.mocked(prisma.event.findFirst).mockResolvedValue(event as never);
-    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ reminderNotifications: true } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ reminderNotifications: true } as never);
   });
 
   it("requires authentication", async () => {
@@ -35,7 +35,7 @@ describe("event reminder API", () => {
     expect(response.status).toBe(200);
     expect(prisma.reminder.upsert).toHaveBeenCalledWith(expect.objectContaining({
       where: { userId_eventId: { userId: "user-1", eventId: "event-1" } },
-      create: expect.objectContaining({ eventId: "event-1", task: "Biology test" }),
+      create: { userId: "user-1", eventId: "event-1", notifyAt: new Date("2099-08-09T10:00:00.000Z"), notificationProcessedAt: null },
     }));
     const upsert = vi.mocked(prisma.reminder.upsert).mock.calls[0][0];
     expect(upsert.create).not.toHaveProperty("completed");

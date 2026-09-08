@@ -86,8 +86,8 @@ async function getProgressForCourses(userId: string, courseIds: string[]): Promi
   }) as ProgressCourse[];
 
   const userProgress = await prisma.courseProgress.findMany({
-    where: { userId, courseId: { in: courseIds } },
-    select: { lessonId: true, completedAt: true, courseId: true }
+    where: { userId, lesson: { module: { courseId: { in: courseIds } } } },
+    select: { lessonId: true, completedAt: true }
   }) as LessonProgress[];
 
   const completedLessonIds = new Set(
@@ -234,8 +234,8 @@ export async function getMyCoursesForUser(userId: string): Promise<CourseCard[]>
 }
 
 export async function getStreakForUser(userId: string): Promise<number> {
-  const row = await prisma.streak.findUnique({
-    where: { userId },
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
     select: { currentStreak: true },
   });
   return row?.currentStreak ?? 0;

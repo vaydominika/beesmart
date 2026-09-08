@@ -12,25 +12,17 @@ export async function updateUserStreak(userId: string) {
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
 
-    const streak = await prisma.streak.findUnique({
-        where: { userId },
+    const streak = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { currentStreak: true, longestStreak: true, lastActivityDate: true },
     });
 
-    if (!streak) {
-        return await prisma.streak.create({
-            data: {
-                userId,
-                currentStreak: 1,
-                longestStreak: 1,
-                lastActivityDate: now,
-            },
-        });
-    }
+    if (!streak) return null;
 
     const lastActivity = streak.lastActivityDate;
     if (!lastActivity) {
-        return await prisma.streak.update({
-            where: { userId },
+        return await prisma.user.update({
+            where: { id: userId },
             data: {
                 currentStreak: 1,
                 longestStreak: Math.max(1, streak.longestStreak),
@@ -58,8 +50,8 @@ export async function updateUserStreak(userId: string) {
 
     const newLongest = Math.max(newStreak, streak.longestStreak);
 
-    return await prisma.streak.update({
-        where: { userId },
+    return await prisma.user.update({
+        where: { id: userId },
         data: {
             currentStreak: newStreak,
             longestStreak: newLongest,

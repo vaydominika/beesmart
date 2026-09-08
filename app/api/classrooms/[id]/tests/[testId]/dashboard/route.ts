@@ -16,12 +16,12 @@ export async function GET(_req: Request, ctx: RouteContext) {
     const test = await prisma.test.findFirst({
         where: { id: testId, classroomId: id },
         include: {
-            questions: { orderBy: { order: "asc" }, include: { options: { orderBy: { order: "asc" } }, answers: true } },
+            questions: { orderBy: { order: "asc" }, include: { options: { orderBy: { order: "asc" } } } },
             attempts: {
                 orderBy: { startedAt: "desc" },
                 include: {
                     user: { select: { id: true, name: true, email: true, image: true } },
-                    responses: { include: { question: { include: { options: true, answers: true } } } },
+                    responses: { include: { question: { include: { options: true } } } },
                 },
             },
         },

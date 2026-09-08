@@ -126,14 +126,14 @@ describe("test detail lifecycle", () => {
         responseText: "Wrong answer",
         pointsAwarded: 1,
         selectedOption: null,
-        question: { questionText: "Explain it", points: 4, options: [], answers: [{ answerText: "Expected answer" }] },
+        question: { questionText: "Explain it", points: 4, options: [], acceptedAnswers: ["Expected answer"] },
       },
       {
         questionId: "correct",
         responseText: "Correct answer",
         pointsAwarded: 2,
         selectedOption: null,
-        question: { questionText: "Name it", points: 2, options: [], answers: [{ answerText: "Correct answer" }] },
+        question: { questionText: "Name it", points: 2, options: [], acceptedAnswers: ["Correct answer"] },
       },
     ] as never);
 

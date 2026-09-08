@@ -3,14 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getCurrentUserId: vi.fn(),
   settingsFind: vi.fn(),
-  settingsUpsert: vi.fn(),
+  settingsUpdate: vi.fn(),
   reminderUpdateMany: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: mocks.getCurrentUserId,
   prisma: {
-    userSettings: { findUnique: mocks.settingsFind, upsert: mocks.settingsUpsert },
+    user: { findUnique: mocks.settingsFind, update: mocks.settingsUpdate },
     reminder: { updateMany: mocks.reminderUpdateMany },
   },
 }));
@@ -46,7 +46,7 @@ describe("user settings route", () => {
 
   it("updates only supported fields and keeps tutorial completion one-way", async () => {
     mocks.settingsFind.mockResolvedValue({ reminderNotifications: false });
-    mocks.settingsUpsert.mockResolvedValue(savedSettings);
+    mocks.settingsUpdate.mockResolvedValue(savedSettings);
     const response = await PATCH(new Request("http://localhost/api/user/settings", {
       method: "PATCH",
       body: JSON.stringify({
@@ -64,9 +64,11 @@ describe("user settings route", () => {
     }));
     expect(response.status).toBe(200);
     expect(mocks.reminderUpdateMany).toHaveBeenCalledOnce();
-    expect(mocks.settingsUpsert).toHaveBeenCalledWith(expect.objectContaining({
-      create: expect.not.objectContaining({ courseCreationTutorialCompleted: expect.anything(), ignored: expect.anything() }),
-      update: expect.objectContaining({ theme: "dark", defaultActiveMinutes: 30, profileVisibility: "PUBLIC" }),
-    }));
+    expect(mocks.settingsUpdate).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: expect.objectContaining({ theme: "dark", defaultActiveMinutes: 30, profileVisibility: "PUBLIC" }),
+    });
+    expect(mocks.settingsUpdate.mock.calls[0][0].data).not.toHaveProperty("courseCreationTutorialCompleted");
+    expect(mocks.settingsUpdate.mock.calls[0][0].data).not.toHaveProperty("ignored");
   });
 });

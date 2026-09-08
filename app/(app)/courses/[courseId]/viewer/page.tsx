@@ -51,7 +51,7 @@ export default async function CourseViewerPage({ params }: ViewerPageProps) {
     if (!course) redirect("/courses");
 
     const progress = await prisma.courseProgress.findMany({
-        where: { userId, courseId },
+        where: { userId, lesson: { module: { courseId } } },
         select: { lessonId: true, completedAt: true, lastAccessedAt: true }
     });
 

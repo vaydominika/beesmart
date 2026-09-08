@@ -3,8 +3,8 @@ import { materializeDueReminderNotifications, notifyClassroomMembers } from "./n
 import { prisma } from "@/lib/db";
 
 vi.mock("@/lib/db", () => ({ prisma: {
-  classroom: { findUnique: vi.fn() }, user: { findUnique: vi.fn() }, classroomMember: { findMany: vi.fn() },
-  userSettings: { findMany: vi.fn(), findUnique: vi.fn() }, notification: { createMany: vi.fn(), create: vi.fn() },
+  classroom: { findUnique: vi.fn() }, user: { findMany: vi.fn(), findUnique: vi.fn() }, classroomMember: { findMany: vi.fn() },
+  notification: { createMany: vi.fn(), create: vi.fn() },
   reminder: { findMany: vi.fn(), updateMany: vi.fn() }, $transaction: vi.fn(),
 } }));
 
@@ -15,7 +15,7 @@ describe("notification preferences", () => {
     vi.mocked(prisma.classroom.findUnique).mockResolvedValue({ name: "Biology" } as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ name: "Teacher" } as never);
     vi.mocked(prisma.classroomMember.findMany).mockResolvedValue([{ userId: "teacher" }, { userId: "student-a" }, { userId: "student-b" }] as never);
-    vi.mocked(prisma.userSettings.findMany).mockResolvedValue([{ userId: "student-b" }] as never);
+    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "student-b" }] as never);
     await notifyClassroomMembers({ classroomId: "class-1", actorId: "teacher", title: "New test", body: "Chapter 2" });
     const call = vi.mocked(prisma.notification.createMany).mock.calls[0][0] as { data: Array<{ userId: string }> };
     expect(call.data.map((item) => item.userId)).toEqual(["student-a"]);
@@ -25,7 +25,7 @@ describe("notification preferences", () => {
     vi.mocked(prisma.classroom.findUnique).mockResolvedValue({ name: "Biology" } as never);
     vi.mocked(prisma.user.findUnique).mockResolvedValue({ name: "Teacher" } as never);
     vi.mocked(prisma.classroomMember.findMany).mockResolvedValue([{ userId: "student-a" }] as never);
-    vi.mocked(prisma.userSettings.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.user.findMany).mockResolvedValue([] as never);
 
     await notifyClassroomMembers({
       classroomId: "class-1", actorId: "teacher", title: "Assignment updated", body: "Essay changed",
@@ -39,8 +39,8 @@ describe("notification preferences", () => {
   });
 
   it("suppresses and marks due reminder alerts while the preference is off", async () => {
-    vi.mocked(prisma.userSettings.findUnique).mockResolvedValue({ reminderNotifications: false } as never);
-    vi.mocked(prisma.reminder.findMany).mockResolvedValue([{ id: "reminder-1", task: "Read" }] as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValue({ reminderNotifications: false } as never);
+    vi.mocked(prisma.reminder.findMany).mockResolvedValue([{ id: "reminder-1", event: { title: "Read" } }] as never);
     const result = await materializeDueReminderNotifications("user-1");
     expect(result).toEqual([]);
     expect(prisma.reminder.findMany).toHaveBeenCalledWith(expect.objectContaining({
