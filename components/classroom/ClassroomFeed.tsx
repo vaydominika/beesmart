@@ -15,7 +15,7 @@ import { CoursePostModal, type PostCourse } from "@/components/classroom/CourseP
 import {
     Search, SlidersHorizontal, Pin, MessageCircle,
     FileText, Image as ImageIcon, ClipboardList, GraduationCap,
-    BookOpen, Paperclip, Send, Upload, X, ArrowRight,
+    BookOpen, Paperclip, Reply, Send, Upload, X, ArrowRight,
     MoreHorizontal, Pencil, Trash2
 } from "lucide-react";
 import Link from "next/link";
@@ -183,6 +183,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [comments, setComments] = useState<Record<string, Comment[]>>({});
     const [commentText, setCommentText] = useState("");
     const [postingComment, setPostingComment] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<{
+        postId: string;
+        commentId: string;
+        authorName: string;
+    } | null>(null);
+    const commentInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
@@ -382,6 +388,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     };
 
     const handleToggleComments = (postId: string) => {
+        setReplyingTo(null);
         if (expandedPost === postId) {
             setExpandedPost(null);
         } else {
@@ -390,20 +397,27 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         }
     };
 
+    const handleStartReply = (postId: string, comment: Comment) => {
+        setReplyingTo({ postId, commentId: comment.id, authorName: comment.author.name });
+        commentInputRef.current?.focus();
+    };
+
     const handleAddComment = async (postId: string) => {
         if (!commentText.trim()) return;
+        const parentId = replyingTo?.postId === postId ? replyingTo.commentId : undefined;
         setPostingComment(true);
         try {
             const res = await fetch(`/api/classrooms/${classroomId}/posts/${postId}/comments`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: commentText.trim() }),
+                body: JSON.stringify({ content: commentText.trim(), ...(parentId ? { parentId } : {}) }),
             });
             if (!res.ok) {
-                toast.error("Failed to add comment.");
+                toast.error(parentId ? "Failed to add reply." : "Failed to add comment.");
                 return;
             }
             setCommentText("");
+            setReplyingTo(null);
             fetchComments(postId);
             // Update comment count
             setPosts((prev) =>
@@ -412,7 +426,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )
             );
         } catch {
-            toast.error("Failed to add comment.");
+            toast.error(parentId ? "Failed to add reply." : "Failed to add comment.");
         } finally {
             setPostingComment(false);
         }
@@ -955,6 +969,15 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                     <span className="text-xs font-bold text-(--theme-text)">{comment.author.name}</span>
                                                     <span className="text-[10px] text-(--theme-text) opacity-40 ml-1.5">{formatDate(comment.createdAt)}</span>
                                                     <p className="text-xs text-(--theme-text) opacity-70 mt-0.5">{comment.content}</p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleStartReply(post.id, comment)}
+                                                        aria-label={`Reply to ${comment.author.name}`}
+                                                        className="mt-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[10px] font-semibold text-[var(--classroom-text-faint)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                                    >
+                                                        <Reply className="h-3 w-3" aria-hidden="true" />
+                                                        Reply
+                                                    </button>
                                                 </div>
                                             </div>
                                             {/* Replies */}
@@ -972,26 +995,47 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     ))}
 
                                     {/* Add Comment */}
-                                    <div className="flex gap-2 ml-4 mt-2">
-                                        <input
-                                            value={commentText}
-                                            onChange={(e) => setCommentText(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" && !e.shiftKey) {
-                                                    e.preventDefault();
-                                                    handleAddComment(post.id);
-                                                }
-                                            }}
-                                            placeholder="Write a comment..."
-                                            className="h-9 flex-1 rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-xs font-normal text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
-                                        />
-                                        <button
-                                            onClick={() => handleAddComment(post.id)}
-                                            disabled={postingComment}
-                                            className="text-(--theme-text) opacity-60 hover:opacity-100 p-1"
-                                        >
-                                            <Send className="h-4 w-4" />
-                                        </button>
+                                    <div className="ml-4 mt-3">
+                                        {replyingTo?.postId === post.id && (
+                                            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-[var(--classroom-text-muted)]">
+                                                <Reply className="h-3 w-3" aria-hidden="true" />
+                                                <span>Replying to <strong className="font-semibold text-[var(--classroom-text)]">{replyingTo.authorName}</strong></span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReplyingTo(null)}
+                                                    aria-label="Cancel reply"
+                                                    className="rounded p-0.5 transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                                >
+                                                    <X className="h-3 w-3" aria-hidden="true" />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <input
+                                                ref={commentInputRef}
+                                                value={commentText}
+                                                maxLength={5000}
+                                                onChange={(e) => setCommentText(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter" && !e.shiftKey) {
+                                                        e.preventDefault();
+                                                        handleAddComment(post.id);
+                                                    }
+                                                }}
+                                                aria-label={replyingTo?.postId === post.id ? `Reply to ${replyingTo.authorName}` : "Write a comment"}
+                                                placeholder={replyingTo?.postId === post.id ? `Reply to ${replyingTo.authorName}...` : "Write a comment..."}
+                                                className="h-9 flex-1 rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-xs font-normal text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddComment(post.id)}
+                                                disabled={postingComment || !commentText.trim()}
+                                                aria-label={replyingTo?.postId === post.id ? "Send reply" : "Send comment"}
+                                                className="rounded-md p-1 text-(--theme-text) opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-30"
+                                            >
+                                                <Send className="h-4 w-4" aria-hidden="true" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
