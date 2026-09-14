@@ -17,7 +17,6 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const { courseId } = await ctx.params;
         const body = await req.json();
         const title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
-        const description = typeof body.description === "string" ? body.description.trim().slice(0, 1000) : "";
         const classroomId = typeof body.classroomId === "string" ? body.classroomId : "";
         const difficulty = typeof body.difficulty === "string" ? body.difficulty : "Intermediate";
         const questionCount = Number.parseInt(String(body.questionCount ?? 5), 10);
@@ -76,7 +75,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         const boundedCourseContent = allContent.slice(0, AI_SOURCE_CHARACTER_LIMIT);
 
         const prompt = `You are an expert educator. Based on the following course content, generate a comprehensive test with ${questionCount} questions.
-The test should have a title: "${title || course.title + ' Quiz'}" and description: "${description || 'A test to check your understanding of ' + course.title}".
+The test should have the title: "${title || course.title + ' Quiz'}".
 Difficulty Level: ${difficulty}
 
 Course Content:
@@ -91,7 +90,6 @@ Return a JSON structure suitable for the Test model. Each question should have o
             maxOutputTokens: 4000,
             schema: z.object({
                 title: z.string(),
-                description: z.string(),
                 questions: z.array(z.object({
                     text: z.string().describe("The question text"),
                     type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER", "ESSAY"]),

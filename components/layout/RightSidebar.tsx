@@ -16,6 +16,7 @@ import { isClassroomWorkEvent } from "@/components/calendar/ClassroomWorkEditMod
 import { useEventSync } from "@/hooks/use-event-sync";
 import { NotificationCenter } from "./NotificationCenter";
 import type { ScheduleEvent } from "@/lib/schedule";
+import { profileImageUrl } from "@/lib/profile-image";
 
 interface RightSidebarProps {
   variant?: "inline" | "overlay";
@@ -195,7 +196,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
             <div className="relative mb-3 md:mb-2">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
                 <Image
-                  src={userAvatar?.trim() || "/images/default_pfp.jpg"}
+                  src={profileImageUrl(userAvatar)}
                   alt={userName || "Profile"}
                   width={64}
                   height={64}

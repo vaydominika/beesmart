@@ -37,7 +37,6 @@ describe("POST generated test from text", () => {
     vi.mocked(generateObject).mockResolvedValue({
       object: {
         title: "Photosynthesis quiz",
-        description: "Generated from notes",
         questions: [{ text: "What is converted?", type: "SHORT_ANSWER", points: 1, correctAnswer: "Light energy" }],
       },
     } as never);
@@ -67,6 +66,9 @@ describe("POST generated test from text", () => {
     expect(data).not.toHaveProperty("courseId");
     expect(checkContentSafety).toHaveBeenCalledTimes(2);
     expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 4000 }));
+    expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: expect.not.stringContaining("Description:"),
+    }));
   });
 
   it("rejects unsafe source text before generation", async () => {

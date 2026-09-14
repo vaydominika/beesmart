@@ -3,6 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClassroomGradebook } from "./ClassroomGradebook";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+vi.mock("@/components/classroom/TestPreviewModal", () => ({
+    TestPreviewModal: ({ open, testId }: { open: boolean; testId: string | null }) => open ? <div>Assessment preview {testId}</div> : null,
+}));
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ClassroomGradebook work links", () => {
@@ -42,13 +46,31 @@ describe("ClassroomGradebook work links", () => {
         render(<ClassroomGradebook classroomId="class-1" />, { wrapper: TooltipProvider });
 
         expect(await screen.findByRole("link", { name: "Open assignment" })).toHaveAttribute("href", "/classroom/class-1/assignments/assignment-1");
+        expect(screen.getByRole("button", { name: /EssayAssignment/i })).toHaveClass("cursor-pointer");
+        expect(screen.getByRole("button", { name: /EssayAssignment/i })).not.toHaveClass("hover:bg-(--classroom-surface-hover)");
         expect(screen.queryByRole("link", { name: "Open" })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Edit assignment Essay" })).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Delete assignment Essay" }));
+        fireEvent.pointerDown(screen.getByRole("button", { name: "Actions for assignment Essay" }), { button: 0, ctrlKey: false });
+        expect(screen.getByRole("menuitem", { name: "Edit assignment Essay" })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("menuitem", { name: "Delete assignment Essay" }));
         expect(screen.getByRole("heading", { name: "Delete assignment?" })).toBeInTheDocument();
         expect(screen.getByText(/all of its submissions and grades/i)).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Delete" }));
         await waitFor(() => expect(eventUpdate).toHaveBeenCalledOnce());
         window.removeEventListener("calendar-events-updated", eventUpdate);
+    });
+
+    it("lets a teacher preview an exam or open its full details", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+            role: "TEACHER",
+            assignments: [],
+            tests: [{ id: "exam-1", title: "Final", type: "EXAM" }],
+            students: [],
+        }), { status: 200, headers: { "Content-Type": "application/json" } })));
+
+        render(<ClassroomGradebook classroomId="class-1" />, { wrapper: TooltipProvider });
+
+        expect(await screen.findByRole("link", { name: "Open exam" })).toHaveAttribute("href", "/classroom/class-1/tests/exam-1");
+        fireEvent.click(screen.getByRole("button", { name: "Preview exam Final" }));
+        expect(screen.getByText("Assessment preview exam-1")).toBeInTheDocument();
     });
 });

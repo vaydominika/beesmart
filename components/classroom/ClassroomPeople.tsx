@@ -18,6 +18,8 @@ import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Crown, MoreVertical, Trash2, UserCircle, UserPlus, X } from "lucide-react";
+import Image from "next/image";
+import { profileImageUrl } from "@/lib/profile-image";
 
 type ClassroomRole = "TEACHER" | "TEACHING_ASSISTANT" | "STUDENT";
 
@@ -145,8 +147,15 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
         return (
             <div key={member.id} className="flex items-center justify-between rounded-xl border border-(--classroom-line) bg-(--classroom-surface) p-3.5">
                 <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--classroom-surface-muted) text-sm font-semibold text-(--classroom-text-muted)">
-                        {member.user.name?.[0]?.toUpperCase() || "?"}
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-(--classroom-surface-muted)">
+                        <Image
+                            src={profileImageUrl(member.user.image)}
+                            alt={`${member.user.name}'s profile picture`}
+                            width={40}
+                            height={40}
+                            className="h-full w-full object-cover object-center"
+                            unoptimized={member.user.image?.trim().startsWith("/api/files/") ?? false}
+                        />
                     </div>
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">

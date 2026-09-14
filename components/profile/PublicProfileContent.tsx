@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkspacePageFrame } from "@/components/ui/workspace-page";
+import { profileImageUrl } from "@/lib/profile-image";
 
 const COURSE_PREVIEW_LIMIT = 12;
 const ACTIVITY_PREVIEW_LIMIT = 9;
@@ -136,7 +137,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
               <div className="-mt-6 shrink-0">
                 <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--app-surface)] bg-[var(--app-surface)]">
                   <Image
-                    src={profile.image?.trim() || "/images/default_pfp.jpg"}
+                    src={profileImageUrl(profile.image)}
                     alt={profile.name || "Profile"}
                     width={64}
                     height={64}

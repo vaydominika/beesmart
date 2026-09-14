@@ -46,7 +46,6 @@ export function parseScheduleDate(value: unknown, label: string) {
 }
 
 export function parseNewTestSchedule(opensAt: unknown, closesAt: unknown, now = new Date()) {
-  if (closesAt && !opensAt) throw new ScheduleValidationError("Opening date required");
   const opening = parseScheduleDate(opensAt, "Opening time");
   const closing = parseScheduleDate(closesAt, "Closing time");
   if (opening) assertDeadlineNotPast(opening, "Opening time", now);

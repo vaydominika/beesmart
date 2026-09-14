@@ -108,14 +108,25 @@ DROP TABLE `Streak`;
 -- Collapse accepted short/essay answers into the question.
 ALTER TABLE `TestQuestion` ADD COLUMN `acceptedAnswers` JSON NULL;
 
+SET @previous_group_concat_max_len = @@SESSION.group_concat_max_len;
+SET SESSION group_concat_max_len = 16777216;
+
 UPDATE `TestQuestion` AS `question`
 INNER JOIN (
-    SELECT `questionId`, JSON_ARRAYAGG(`answerText`) AS `acceptedAnswers`
+    SELECT
+        `questionId`,
+        CONCAT(
+            '[',
+            GROUP_CONCAT(JSON_QUOTE(`answerText`) ORDER BY `id` SEPARATOR ','),
+            ']'
+        ) AS `acceptedAnswers`
     FROM `TestAnswer`
     WHERE `answerText` IS NOT NULL AND TRIM(`answerText`) <> ''
     GROUP BY `questionId`
 ) AS `answers` ON `answers`.`questionId` = `question`.`id`
 SET `question`.`acceptedAnswers` = `answers`.`acceptedAnswers`;
+
+SET SESSION group_concat_max_len = @previous_group_concat_max_len;
 
 DROP TABLE `TestAnswer`;
 

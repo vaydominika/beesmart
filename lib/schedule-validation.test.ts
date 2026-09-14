@@ -38,4 +38,12 @@ describe("schedule validation", () => {
     expect(schedule.opensAt).toEqual(new Date("2026-08-24T10:00"));
     expect(schedule.closesAt).toEqual(new Date("2026-08-24T11:00"));
   });
+
+  it("accepts independently optional schedule bounds", () => {
+    expect(parseNewTestSchedule(null, null, now)).toEqual({ opensAt: null, closesAt: null });
+    expect(parseNewTestSchedule(null, "2026-08-24T11:00", now)).toEqual({
+      opensAt: null,
+      closesAt: new Date("2026-08-24T11:00"),
+    });
+  });
 });

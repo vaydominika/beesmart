@@ -24,6 +24,7 @@ import { useSettings } from "./SettingsProvider";
 import { SettingsSectionNav, type SettingsSectionItem } from "./SettingsSectionNav";
 import { WorkspaceSwitchRow } from "@/components/ui/workspace-switch-row";
 import { WorkspaceFormMessage } from "@/components/ui/workspace-form-message";
+import { profileImageUrl } from "@/lib/profile-image";
 
 type ProfileSection = "profile" | "images" | "privacy" | "password";
 const sections: Array<SettingsSectionItem<ProfileSection>> = [
@@ -194,7 +195,7 @@ export function ProfileSettingsModal() {
                   <div className="flex items-center gap-4">
                     <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
                       <Image
-                        src={avatarUrl?.trim() || "/images/default_pfp.jpg"}
+                        src={profileImageUrl(avatarUrl)}
                         alt="Profile avatar"
                         width={64}
                         height={64}

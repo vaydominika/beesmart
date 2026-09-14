@@ -39,7 +39,17 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
     if (!membership) return NextResponse.json({ error: "Not a member" }, { status: 403 });
     const test = await prisma.test.findFirst({
         where: { id: testId, classroomId: id },
-        select: { id: true, title: true, description: true, type: true, timeLimit: true, passingScore: true, opensAt: true, closesAt: true, maxAttempts: true },
+        select: {
+            id: true, title: true, description: true, type: true, timeLimit: true,
+            passingScore: true, opensAt: true, closesAt: true, maxAttempts: true,
+            questions: {
+                orderBy: { order: "asc" },
+                select: {
+                    id: true, questionText: true, questionType: true, points: true, acceptedAnswers: true,
+                    options: { orderBy: { order: "asc" }, select: { id: true, optionText: true, isCorrect: true } },
+                },
+            },
+        },
     });
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 });
     if (membership.role !== "STUDENT") return NextResponse.json(test);
@@ -171,7 +181,6 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         }
         data.maxAttempts = maxAttempts;
     }
-    if (nextClosesAt && !nextOpensAt) return NextResponse.json({ error: "Opening date required" }, { status: 400 });
     if (nextOpensAt && nextClosesAt && nextClosesAt < nextOpensAt) {
         return NextResponse.json({ error: "Closing time must be after opening time" }, { status: 400 });
     }

@@ -84,11 +84,45 @@ describe("ClassroomWorkEditModal", () => {
     />);
 
     expect(await screen.findByRole("heading", { name: "Edit exam" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Opens")).toBeInTheDocument();
-    expect(screen.getByLabelText("Closes")).toBeInTheDocument();
+    expect(screen.getByLabelText("Opens (optional)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Closes (optional)")).toBeInTheDocument();
     expect(screen.getByLabelText("Time limit (min)")).toHaveValue(90);
     expect(screen.getByLabelText("Passing score (%)")).toHaveValue(60);
     expect(screen.getByLabelText("Attempts allowed")).toHaveValue(1);
+  });
+
+  it("allows an assessment to be saved without opening or closing times", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => new Response(JSON.stringify(
+      init?.method === "PATCH"
+        ? { id: "test-1" }
+        : {
+          title: "Always available quiz",
+          description: null,
+          type: "TEST",
+          timeLimit: null,
+          passingScore: null,
+          opensAt: null,
+          closesAt: null,
+          maxAttempts: 1,
+        },
+    ), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<ClassroomWorkEditModal
+      open
+      event={{ classroomId: "class-1", testId: "test-1" }}
+      onClose={vi.fn()}
+    />);
+
+    await screen.findByRole("textbox", { name: "Title" });
+    fireEvent.click(screen.getByRole("button", { name: "Save test" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/classrooms/class-1/tests/test-1",
+      expect.objectContaining({ method: "PATCH" }),
+    ));
+    const patchCall = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH");
+    expect(JSON.parse(String(patchCall?.[1]?.body))).toMatchObject({ opensAt: null, closesAt: null });
   });
 
   it("saves from a classroom page without requiring a calendar event id", async () => {

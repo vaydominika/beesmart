@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PostAttachmentFile } from "@/lib/classroom-post-drafts";
+import { profileImageUrl } from "@/lib/profile-image";
 
 interface Props {
     classroomId: string;
@@ -74,7 +75,7 @@ function ProfileAvatar({ user, className }: { user: { name: string; image?: stri
     return (
         <Avatar className={cn("h-9 w-9 border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]", className)}>
             <AvatarImage
-                src={user.image?.trim() || "/images/default_pfp.jpg"}
+                src={profileImageUrl(user.image)}
                 alt={`${user.name}'s profile picture`}
                 className="object-cover object-center"
             />
@@ -181,7 +182,8 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 formData.append("purpose", "SUBMISSION_ATTACHMENT");
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
-                    toast.error(`Failed to upload ${file.name}`);
+                    const result = await res.json().catch(() => ({})) as { error?: string };
+                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
                     continue;
                 }
                 const uploaded = await res.json();

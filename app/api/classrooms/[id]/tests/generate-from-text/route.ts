@@ -4,14 +4,13 @@ import { deepseek } from "@ai-sdk/deepseek";
 import { z } from "zod";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { checkContentSafety } from "@/lib/ai/moderation";
-import { AI_SOURCE_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
+import { AI_SOURCE_CHARACTER_LIMIT, AI_SOURCE_MIN_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
 import { AiDailyLimitError, aiLimitResponse, reserveAiAttempt, withAiUsage } from "@/lib/ai/usage";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const generatedTestSchema = (questionCount: number) => z.object({
   title: z.string().min(1).max(200),
-  description: z.string().max(1000),
   questions: z.array(z.object({
     text: z.string().min(1),
     type: z.enum(["MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_ANSWER", "ESSAY"]),
@@ -38,12 +37,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const body = await request.json();
     const sourceText = typeof body.sourceText === "string" ? body.sourceText.trim() : "";
     const title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
-    const description = typeof body.description === "string" ? body.description.trim().slice(0, 1000) : "";
     const difficulty = typeof body.difficulty === "string" ? body.difficulty : "Intermediate";
     const questionCount = Number.parseInt(String(body.questionCount ?? 5), 10);
 
-    if (sourceText.length < 50 || sourceText.length > AI_SOURCE_CHARACTER_LIMIT) {
-      return NextResponse.json({ error: `Source text must be between 50 and ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters` }, { status: 400 });
+    if (sourceText.length < AI_SOURCE_MIN_CHARACTER_LIMIT || sourceText.length > AI_SOURCE_CHARACTER_LIMIT) {
+      return NextResponse.json({ error: `Source text must be between ${AI_SOURCE_MIN_CHARACTER_LIMIT} and ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters` }, { status: 400 });
     }
     if (!Number.isFinite(questionCount) || questionCount < 1 || questionCount > 20) {
       return NextResponse.json({ error: "Question count must be between 1 and 20" }, { status: 400 });
@@ -66,7 +64,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       prompt: `Create an editable educational assessment from the supplied source text.
 Generate exactly ${questionCount} questions at ${difficulty} difficulty.
 Title: ${title || "Generated assessment"}
-Description: ${description || "An assessment generated from provided lesson material."}
 Use multiple choice, true/false, short-answer, and essay questions where appropriate. Multiple-choice questions must include one correct option. True/false and short-answer questions must include a correct answer.
 
 Source text:

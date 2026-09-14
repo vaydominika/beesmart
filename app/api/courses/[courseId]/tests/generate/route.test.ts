@@ -91,7 +91,7 @@ describe('POST /api/courses/[courseId]/tests/generate', () => {
     });
     (prisma.classroomMember.findUnique as any).mockResolvedValue({ role: 'TEACHER' });
     (generateObject as any).mockResolvedValue({
-      object: { title: 'Generated Quiz', description: 'Test description', questions: [{ text: 'Question 1', type: 'MULTIPLE_CHOICE', points: 1 }] },
+      object: { title: 'Generated Quiz', questions: [{ text: 'Question 1', type: 'MULTIPLE_CHOICE', points: 1 }] },
     });
     const { checkContentSafety } = await import('@/lib/ai/moderation');
     (checkContentSafety as any).mockResolvedValue({ safe: true });
@@ -139,7 +139,6 @@ describe('POST /api/courses/[courseId]/tests/generate', () => {
 
     const mockGeneratedTest = {
       title: 'Generated Quiz',
-      description: 'Test description',
       questions: [{ text: 'Question 1', type: 'MULTIPLE_CHOICE', points: 1 }],
     };
 
@@ -159,6 +158,9 @@ describe('POST /api/courses/[courseId]/tests/generate', () => {
     expect(data.test).toEqual(mockGeneratedTest);
     expect(data).not.toHaveProperty('courseId');
     expect(generateObject).toHaveBeenCalled();
+    expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: expect.not.stringContaining('description:'),
+    }));
   });
 
   it('should return 400 and flag content if AI generates unsafe test', async () => {

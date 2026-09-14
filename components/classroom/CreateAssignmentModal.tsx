@@ -57,7 +57,8 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                     body: formData,
                 });
                 if (!res.ok) {
-                    toast.error(`Failed to upload ${file.name}`);
+                    const result = await res.json().catch(() => ({})) as { error?: string };
+                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
                     continue;
                 }
                 const uploaded = await res.json();

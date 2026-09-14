@@ -76,6 +76,7 @@ describe("test detail lifecycle", () => {
     vi.mocked(prisma.test.findFirst).mockResolvedValue({
       id: "test-1", classroomId: "class-1", title: "Quiz", description: null, type: "TEST",
       timeLimit: null, passingScore: 50, opensAt: null, closesAt: null, maxAttempts: 2,
+      questions: [{ id: "question-1", questionText: "What is a hive?", questionType: "SHORT_ANSWER", points: 1, acceptedAnswers: ["A bee home"], options: [] }],
     } as never);
     vi.mocked(prisma.testAttempt.findMany).mockResolvedValue([]);
     vi.mocked(prisma.testAttemptResponse.findMany).mockResolvedValue([]);
@@ -93,8 +94,12 @@ describe("test detail lifecycle", () => {
     vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "TEACHER" } as never);
     const body = await (await GET(new NextRequest("http://localhost"), context)).json();
     expect(body).toMatchObject({ id: "test-1", title: "Quiz" });
+    expect(body.questions).toEqual([expect.objectContaining({ id: "question-1", questionText: "What is a hive?" })]);
     expect(body.attemptPolicy).toBeUndefined();
     expect(prisma.testAttempt.findMany).not.toHaveBeenCalled();
+    expect(prisma.test.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      select: expect.objectContaining({ questions: expect.any(Object) }),
+    }));
   });
 
   it("builds learner attempt policy and selects the best completed attempt", async () => {
@@ -170,12 +175,15 @@ describe("test detail lifecycle", () => {
     expect((await patch({ maxAttempts: 0 })).status).toBe(400);
   });
 
-  it("validates schedule ordering and required opening time", async () => {
+  it("accepts an optional closing time and validates schedule ordering", async () => {
     vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "TEACHER" } as never);
     vi.mocked(prisma.test.findFirst).mockResolvedValue({
       id: "test-1", title: "Quiz", type: "TEST", opensAt: null, closesAt: null,
     } as never);
-    expect((await patch({ closesAt: "2099-08-26T10:00:00" })).status).toBe(400);
+    expect((await patch({ closesAt: "2099-08-26T10:00:00" })).status).toBe(200);
+    expect(prisma.test.update).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ closesAt: expect.any(Date) }),
+    }));
     expect((await patch({ opensAt: "2099-08-26T11:00:00", closesAt: "2099-08-26T10:00:00" })).status).toBe(400);
     expect((await patch({ opensAt: "invalid" })).status).toBe(400);
   });

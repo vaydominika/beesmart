@@ -16,7 +16,7 @@ import {
     Search, SlidersHorizontal, Pin, MessageCircle,
     FileText, Image as ImageIcon, ClipboardList, GraduationCap,
     BookOpen, Paperclip, Reply, Send, Upload, X, ArrowRight,
-    MoreHorizontal, Pencil, Trash2
+    MoreHorizontal, Pencil, Trash2, Eye
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -33,6 +33,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { profileImageUrl } from "@/lib/profile-image";
+import { TestPreviewModal } from "@/components/classroom/TestPreviewModal";
 
 interface PostFile {
     id: string;
@@ -118,7 +120,7 @@ function AuthorAvatar({
     return (
         <div className={cn("relative shrink-0 overflow-hidden rounded-full bg-[var(--classroom-surface-muted)]", className)}>
             <Image
-                src={author.image?.trim() || "/images/default_pfp.jpg"}
+                src={profileImageUrl(author.image)}
                 alt={`${author.name}'s profile picture`}
                 width={size}
                 height={size}
@@ -138,6 +140,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState("");
+    const [previewTestId, setPreviewTestId] = useState<string | null>(null);
     const [sort, setSort] = useState("newest");
     const [showFilters, setShowFilters] = useState(false);
     const [page, setPage] = useState(1);
@@ -362,7 +365,8 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 formData.append("purpose", "POST_ATTACHMENT");
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
-                    toast.error(`Failed to upload ${file.name}`);
+                    const result = await res.json().catch(() => ({})) as { error?: string };
+                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
                     continue;
                 }
                 const uploaded = await res.json();
@@ -624,6 +628,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postTest.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
                                 {postTest.type === "EXAM" ? "Exam" : "Test"} · {postTest.questions.length} question{postTest.questions.length === 1 ? "" : "s"}
+                                {postTest.files.length > 0 && ` · ${postTest.files.length} file${postTest.files.length === 1 ? "" : "s"}`}
                             </p>
                         </div>
                         <button
@@ -897,7 +902,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
 
                             {/* Test Badge */}
                             {post.test && (
-                                <div className="mb-3 flex items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3">
+                                <div className="mb-3 flex w-full items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3 text-left">
                                         <GraduationCap className="h-5 w-5 text-(--theme-text) opacity-60" />
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
@@ -906,6 +911,23 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             )}
                                         </div>
                                         <span className="mr-1 text-xs font-bold uppercase text-(--theme-text) opacity-50">{post.test.type}</span>
+                                        {isTeacher ? (
+                                            <Tooltip><TooltipTrigger asChild><button
+                                                type="button"
+                                                onClick={() => setPreviewTestId(post.test!.id)}
+                                                aria-label={`Preview ${post.test.type === "EXAM" ? "exam" : "test"} ${post.test.title}`}
+                                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                            >
+                                                <Eye className="h-4 w-4" aria-hidden="true" />
+                                            </button></TooltipTrigger><TooltipContent>Preview {post.test.type === "EXAM" ? "exam" : "test"}</TooltipContent></Tooltip>
+                                        ) : null}
+                                        <Tooltip><TooltipTrigger asChild><Link
+                                            href={`/classroom/${classroomId}/tests/${post.test.id}`}
+                                            aria-label={`Open ${post.test.type === "EXAM" ? "exam" : "test"} ${post.test.title}`}
+                                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
+                                        >
+                                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                        </Link></TooltipTrigger><TooltipContent>Open {post.test.type === "EXAM" ? "exam" : "test"}</TooltipContent></Tooltip>
                                 </div>
                             )}
 
@@ -1046,6 +1068,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     </div>
                 </div>
             )}
+
+            <TestPreviewModal
+                open={previewTestId !== null}
+                onClose={() => setPreviewTestId(null)}
+                classroomId={classroomId}
+                testId={previewTestId}
+            />
 
             {/* Modals */}
             {editingPost && (editingPost.assignment || editingPost.test) && (

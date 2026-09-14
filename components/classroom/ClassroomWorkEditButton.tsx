@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { ClassroomWorkEditModal } from "@/components/calendar/ClassroomWorkEditModal";
 import { DeleteConfirmationModal } from "@/components/calendar/DeleteConfirmationModal";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { toast } from "@/components/ui/sonner";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ClassroomWorkEditButtonProps {
     classroomId: string;
@@ -65,33 +65,38 @@ export function ClassroomWorkEditButton({
 
     return (
         <>
-            <span className={cn("inline-flex items-center gap-0.5", className)}>
-                <Tooltip><TooltipTrigger asChild><WorkspaceButton
-                    type="button"
-                    variant="ghost"
-                    size="icon-compact"
-                    aria-label={label}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        setOpen(true);
-                    }}
-                    className="h-7 w-7 rounded-lg text-[var(--classroom-text-muted)]"
-                >
-                    <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-                </WorkspaceButton></TooltipTrigger><TooltipContent>{`Edit ${workType}`}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild><WorkspaceButton
-                    type="button"
-                    variant="ghost"
-                    size="icon-compact"
-                    aria-label={deleteLabel}
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        setDeleteOpen(true);
-                    }}
-                    className="h-7 w-7 rounded-lg text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)]"
-                >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                </WorkspaceButton></TooltipTrigger><TooltipContent>{`Delete ${workType}`}</TooltipContent></Tooltip>
+            <span className={cn("inline-flex items-center", className)}>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <WorkspaceButton
+                            type="button"
+                            variant="ghost"
+                            size="icon-compact"
+                            aria-label={`Actions for ${workType} ${title}`}
+                            title="More actions"
+                            onClick={(event) => event.stopPropagation()}
+                            className="h-8 w-8 rounded-lg text-[var(--classroom-text-muted)]"
+                        >
+                            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                        </WorkspaceButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="end"
+                        sideOffset={6}
+                        onClick={(event) => event.stopPropagation()}
+                        className="classroom-dialog min-w-40 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-1 shadow-lg"
+                    >
+                        <DropdownMenuItem onSelect={() => setOpen(true)} className="rounded-lg px-2.5 py-2 text-sm text-[var(--classroom-text-muted)] focus:bg-[var(--classroom-surface-muted)]">
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                            <span>{label}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-[var(--classroom-line)]" />
+                        <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)} className="rounded-lg px-2.5 py-2 text-sm focus:bg-[var(--app-danger-soft)]">
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                            <span>{deleteLabel}</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </span>
             {open && (
                 <ClassroomWorkEditModal

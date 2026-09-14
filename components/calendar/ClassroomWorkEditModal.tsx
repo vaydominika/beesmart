@@ -202,8 +202,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
       endpoint = `/api/classrooms/${event.classroomId}/assignments/${event.assignmentId}`;
       body = { title: title.trim(), description: description.trim() || null, dueDate, dueTime: dueTime || null, timeZone, isGraded, maxPoints: isGraded ? points : null };
     } else {
-      if (!opensAt) return toast.error("Opening date and time are required.");
-      if (opensAt !== originalOpensAt && opensAt < minimumLocalDateTimeInputValue()) return toast.error("Opening time cannot be in the past.");
+      if (opensAt && opensAt !== originalOpensAt && opensAt < minimumLocalDateTimeInputValue()) return toast.error("Opening time cannot be in the past.");
       if (closesAt !== originalClosesAt && closesAt && closesAt < minimumLocalDateTimeInputValue()) return toast.error("Closing time cannot be in the past.");
       if (closesAt && closesAt < opensAt) return toast.error("Closing time must be after opening time.");
       const attempts = Number(maxAttempts);
@@ -213,7 +212,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
       if (minutes != null && (!Number.isFinite(minutes) || minutes < 1)) return toast.error("Time limit must be at least one minute.");
       if (passing != null && (!Number.isFinite(passing) || passing < 0 || passing > 100)) return toast.error("Passing score must be between 0 and 100.");
       endpoint = `/api/classrooms/${event.classroomId}/tests/${event.testId}`;
-      body = { title: title.trim(), description: description.trim() || null, type: workType, opensAt: new Date(opensAt).toISOString(), closesAt: closesAt ? new Date(closesAt).toISOString() : null, timeLimit: minutes, passingScore: passing, maxAttempts: attempts };
+      body = { title: title.trim(), description: description.trim() || null, type: workType, opensAt: opensAt ? new Date(opensAt).toISOString() : null, closesAt: closesAt ? new Date(closesAt).toISOString() : null, timeLimit: minutes, passingScore: passing, maxAttempts: attempts };
     }
 
     setSaving(true);
@@ -273,9 +272,10 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
               ) : (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Opens" type="datetime-local" min={originalOpensAt < minimumLocalDateTimeInputValue() ? originalOpensAt : minimumLocalDateTimeInputValue()} value={opensAt} onChange={setOpensAt} />
-                    <Field label="Closes" type="datetime-local" min={opensAt || minimumLocalDateTimeInputValue()} value={closesAt} onChange={setClosesAt} />
+                    <Field label="Opens (optional)" type="datetime-local" min={originalOpensAt && originalOpensAt < minimumLocalDateTimeInputValue() ? originalOpensAt : minimumLocalDateTimeInputValue()} value={opensAt} onChange={setOpensAt} />
+                    <Field label="Closes (optional)" type="datetime-local" min={opensAt || minimumLocalDateTimeInputValue()} value={closesAt} onChange={setClosesAt} />
                   </div>
+                  <p className="-mt-2 text-xs text-[var(--app-text-faint)]">Leave these blank to make the assessment available immediately with no closing deadline.</p>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <Field label="Time limit (min)" type="number" min="1" value={timeLimit} onChange={setTimeLimit} placeholder="None" />
                     <Field label="Passing score (%)" type="number" min="0" max="100" value={passingScore} onChange={setPassingScore} placeholder="None" />

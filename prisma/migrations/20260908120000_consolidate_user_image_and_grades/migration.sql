@@ -8,7 +8,7 @@ ALTER TABLE `User` DROP COLUMN `avatar`;
 
 ALTER TABLE `User` DROP FOREIGN KEY `User_avatarFileId_fkey`;
 ALTER TABLE `User` DROP INDEX `User_avatarFileId_key`;
-ALTER TABLE `User` RENAME COLUMN `avatarFileId` TO `imageFileId`;
+ALTER TABLE `User` CHANGE COLUMN `avatarFileId` `imageFileId` VARCHAR(191) NULL;
 CREATE UNIQUE INDEX `User_imageFileId_key` ON `User`(`imageFileId`);
 ALTER TABLE `User`
 ADD CONSTRAINT `User_imageFileId_fkey`

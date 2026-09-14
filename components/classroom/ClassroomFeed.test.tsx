@@ -2,6 +2,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClassroomFeed } from "./ClassroomFeed";
 
+const mocks = vi.hoisted(() => ({ toastError: vi.fn() }));
+
+vi.mock("@/components/ui/sonner", () => ({
+  toast: { error: mocks.toastError, success: vi.fn() },
+}));
+
 vi.mock("next/image", () => ({
   default: ({ alt }: React.ImgHTMLAttributes<HTMLImageElement>) => <span role="img" aria-label={alt} />,
 }));
@@ -12,6 +18,9 @@ vi.mock("@/components/ui/editor", () => ({
 
 vi.mock("@/components/classroom/CreateAssignmentModal", () => ({ CreateAssignmentModal: () => null }));
 vi.mock("@/components/classroom/CreateTestModal", () => ({ CreateTestModal: () => null }));
+vi.mock("@/components/classroom/TestPreviewModal", () => ({
+  TestPreviewModal: ({ open, testId }: { open: boolean; testId: string | null }) => open ? <div>Assessment preview {testId}</div> : null,
+}));
 vi.mock("@/components/calendar/ClassroomWorkEditModal", () => ({ ClassroomWorkEditModal: () => null }));
 vi.mock("@/components/calendar/DeleteConfirmationModal", () => ({ DeleteConfirmationModal: () => null }));
 vi.mock("@/components/classroom/CoursePostModal", () => ({ CoursePostModal: () => null }));
@@ -96,5 +105,57 @@ describe("ClassroomFeed comment replies", () => {
 
     expect(screen.getByRole("textbox", { name: "Write a comment" })).toBeInTheDocument();
     expect(screen.queryByText(/Replying to/)).not.toBeInTheDocument();
+  });
+
+  it("shows the server reason when a classroom file upload is rejected", async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/posts?") && !init?.method) {
+        return new Response(JSON.stringify({ posts: [], page: 1, total: 0, hasMore: false }));
+      }
+      if (url === "/api/uploads" && init?.method === "POST") {
+        return new Response(JSON.stringify({ error: "Malware scanner unavailable" }), { status: 503 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const { container } = render(<ClassroomFeed classroomId="class-1" isTeacher />);
+    const input = container.querySelector('input[type="file"]');
+    expect(input).not.toBeNull();
+
+    fireEvent.change(input!, {
+      target: { files: [new File(["lesson notes"], "notes.txt", { type: "text/plain" })] },
+    });
+
+    await waitFor(() => {
+      expect(mocks.toastError).toHaveBeenCalledWith("notes.txt: Malware scanner unavailable");
+    });
+  });
+
+  it("opens a test preview from the feed for classroom staff", async () => {
+    vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/posts?")) {
+        return new Response(JSON.stringify({
+          posts: [{
+            ...post,
+            id: "post-test",
+            type: "TEST",
+            content: null,
+            test: { id: "test-1", title: "Generated assessment", type: "EXAM", timeLimit: 30 },
+          }],
+          page: 1,
+          total: 1,
+          hasMore: false,
+        }));
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    render(<ClassroomFeed classroomId="class-1" isTeacher />);
+    expect(await screen.findByRole("link", { name: "Open exam Generated assessment" })).toHaveAttribute("href", "/classroom/class-1/tests/test-1");
+    fireEvent.click(await screen.findByRole("button", { name: "Preview exam Generated assessment" }));
+
+    expect(screen.getByText("Assessment preview test-1")).toBeInTheDocument();
   });
 });

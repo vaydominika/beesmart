@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { formatDateYmd } from "@/lib/date";
-import { ArrowRight, ChevronDown, ClipboardList, GraduationCap } from "lucide-react";
+import { ArrowRight, ChevronDown, ClipboardList, Eye, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { ClassroomWorkEditButton } from "@/components/classroom/ClassroomWorkEditButton";
+import { TestPreviewModal } from "@/components/classroom/TestPreviewModal";
 
 interface Props {
     classroomId: string;
@@ -64,7 +65,7 @@ function GradeSection({ title, type, detail, isOpen, onToggle, headerAction, chi
                     type="button"
                     onClick={onToggle}
                     aria-expanded={isOpen}
-                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-(--classroom-surface-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)"
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--classroom-focus-ring)"
                 >
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-(--classroom-accent)">
                         <WorkIcon className="h-4 w-4 text-(--classroom-text-muted)" />
@@ -78,7 +79,7 @@ function GradeSection({ title, type, detail, isOpen, onToggle, headerAction, chi
                     </span>
                     <ChevronDown className={cn("h-4 w-4 shrink-0 text-(--classroom-text-muted) transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-180")} />
                 </button>
-                {headerAction && <div className="pr-3">{headerAction}</div>}
+                {headerAction && <div className="mr-2 flex shrink-0 items-center border-l border-(--classroom-line) pl-2">{headerAction}</div>}
             </div>
             {isOpen && <div className="border-t border-(--classroom-line)">{children}</div>}
         </section>
@@ -102,6 +103,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
     const [data, setData] = useState<GradebookData | null>(null);
     const [loading, setLoading] = useState(true);
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+    const [previewTestId, setPreviewTestId] = useState<string | null>(null);
 
     const fetchGradebook = useCallback(async () => {
         try {
@@ -331,13 +333,14 @@ export function ClassroomGradebook({ classroomId }: Props) {
                             />
                         }
                     >
-                        {rows.length === 0 ? (
-                            <div className="px-5 py-9 text-center">
-                                <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-[620px] text-sm">
+                        <div>
+                            {rows.length === 0 ? (
+                                <div className="px-5 py-9 text-center">
+                                    <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[620px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
                                             <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
@@ -363,12 +366,33 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                             </tr>
                                         ))}
                                     </tbody>
-                                </table>
+                                    </table>
+                                </div>
+                            )}
+                            <div className="flex justify-end gap-1 border-t border-(--classroom-line) px-3 py-2">
+                                <WorkspaceButton
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-compact"
+                                    onClick={() => setPreviewTestId(test.id)}
+                                    aria-label={`Preview ${test.type === "EXAM" ? "exam" : "test"} ${test.title}`}
+                                    title={`Preview ${test.type === "EXAM" ? "exam" : "test"}`}
+                                >
+                                    <Eye aria-hidden="true" />
+                                </WorkspaceButton>
+                                <WorkLink href={`/classroom/${classroomId}/tests/${test.id}`} label={`Open ${test.type === "EXAM" ? "exam" : "test"}`} />
                             </div>
-                        )}
+                        </div>
                     </GradeSection>
                 );
             })}
+
+            <TestPreviewModal
+                open={previewTestId !== null}
+                onClose={() => setPreviewTestId(null)}
+                classroomId={classroomId}
+                testId={previewTestId}
+            />
         </div>
     );
 }
