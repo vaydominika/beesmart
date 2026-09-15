@@ -46,10 +46,10 @@ describe("CreateTestModal", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Text" }));
     const source = screen.getByRole("textbox", { name: "Source text" });
-    const generate = screen.getByRole("button", { name: "Generate" });
+    const generate = screen.getByRole("button", { name: "Create questions" });
 
     expect(generate).toBeDisabled();
-    expect(screen.getByText("50 more characters required")).toBeInTheDocument();
+    expect(screen.getByText("Paste at least 50 characters.")).toBeInTheDocument();
 
     fireEvent.change(source, { target: { value: "Short source" } });
     expect(generate).toBeEnabled();
@@ -57,24 +57,20 @@ describe("CreateTestModal", () => {
     expect(mocks.toastError).toHaveBeenCalledWith("Paste at least 50 characters of source text.");
 
     fireEvent.change(source, { target: { value: "x".repeat(50) } });
-    expect(screen.getByText("Ready to generate")).toBeInTheDocument();
+    expect(screen.getByText("Ready")).toBeInTheDocument();
   });
 
-  it("uploads files and includes them in a valid exam draft", async () => {
+  it("uses attached files in text AI generation without adding them to the exam", async () => {
     const onAdd = vi.fn();
     const onClose = vi.fn();
-    const uploadedFile = {
-      uploadId: "upload-1",
-      fileName: "reference.pdf",
-      detectedMime: "application/pdf",
-      fileType: "DOCUMENT",
-      fileSize: 2048,
-      scanStatus: "CLEAN",
-      previewUrl: "/api/files/upload-1",
-    };
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/uploads" && init?.method === "POST") {
-        return new Response(JSON.stringify(uploadedFile), { status: 200, headers: { "Content-Type": "application/json" } });
+      if (String(input).endsWith("/tests/generate-from-text") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          test: {
+            title: "Generated biology exam",
+            questions: [{ text: "What does photosynthesis produce?", type: "SHORT_ANSWER", points: 1, correctAnswer: "Chemical energy" }],
+          },
+        }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
       return new Response(JSON.stringify([]), { status: 200 });
     });
@@ -89,35 +85,34 @@ describe("CreateTestModal", () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText("e.g. Midterm Exam"), {
-      target: { value: "Biology exam" },
-    });
     fireEvent.click(screen.getByRole("tab", { name: "Exam" }));
-    fireEvent.change(screen.getByLabelText("Add files"), {
-      target: { files: [new File(["reference"], "reference.pdf", { type: "application/pdf" })] },
+    fireEvent.click(screen.getByRole("tab", { name: "Text" }));
+    expect(screen.getByRole("button", { name: "Attach files" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Choose source files"), {
+      target: { files: [
+        new File(["photosynthesis source material"], "reference.txt", { type: "text/plain" }),
+        new File(["plant cell notes"], "notes.txt", { type: "text/plain" }),
+      ] },
     });
-    expect(await screen.findByText("reference.pdf")).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText("Enter your question..."), {
-      target: { value: "What does photosynthesis produce?" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Option 1"), {
-      target: { value: "Chemical energy" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("Option 2"), {
-      target: { value: "Sound" },
-    });
+    expect(screen.getByText("reference.txt")).toBeInTheDocument();
+    expect(screen.getByText("notes.txt")).toBeInTheDocument();
+    expect(screen.getByText(/used only to create questions/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Create questions" }));
+    await waitFor(() => expect(screen.getByPlaceholderText("e.g. Midterm Exam")).toHaveValue("Generated biology exam"));
 
     fireEvent.click(screen.getByRole("button", { name: "Attach exam to post" }));
 
     expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({
-      title: "Biology exam",
+      title: "Generated biology exam",
       type: "EXAM",
-      files: [uploadedFile],
       questions: [expect.objectContaining({ questionText: "What does photosynthesis produce?" })],
     }));
-    const uploadCall = fetchMock.mock.calls.find(([input]) => String(input) === "/api/uploads");
-    expect(uploadCall?.[1]?.body).toBeInstanceOf(FormData);
-    expect((uploadCall?.[1]?.body as FormData).get("purpose")).toBe("POST_ATTACHMENT");
+    expect(onAdd.mock.calls[0][0]).not.toHaveProperty("files");
+    expect(fetchMock).not.toHaveBeenCalledWith("/api/uploads", expect.anything());
+    const generationCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/tests/generate-from-text"));
+    expect(generationCall?.[1]?.body).toBeInstanceOf(FormData);
+    expect((generationCall?.[1]?.body as FormData).getAll("files").map((entry) => (entry as File).name)).toEqual(["reference.txt", "notes.txt"]);
     expect(mocks.toastSuccess).toHaveBeenCalledWith("Exam attached. Publish the post to create it.");
     expect(onClose).toHaveBeenCalled();
   });
@@ -153,11 +148,12 @@ describe("CreateTestModal", () => {
     fireEvent.change(description, { target: { value: "Review chapters one and two." } });
     fireEvent.click(screen.getByRole("tab", { name: "Text" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Source text" }), { target: { value: "x".repeat(50) } });
-    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create questions" }));
 
     await waitFor(() => expect(screen.getByPlaceholderText("e.g. Midterm Exam")).toHaveValue("Generated biology quiz"));
     expect(description).toHaveValue("Review chapters one and two.");
     const generationCall = fetchMock.mock.calls.find(([input]) => String(input).endsWith("/tests/generate-from-text"));
-    expect(JSON.parse(String(generationCall?.[1]?.body))).not.toHaveProperty("description");
+    expect(generationCall?.[1]?.body).toBeInstanceOf(FormData);
+    expect((generationCall?.[1]?.body as FormData).has("description")).toBe(false);
   });
 });

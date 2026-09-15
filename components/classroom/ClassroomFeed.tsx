@@ -628,7 +628,6 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postTest.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
                                 {postTest.type === "EXAM" ? "Exam" : "Test"} · {postTest.questions.length} question{postTest.questions.length === 1 ? "" : "s"}
-                                {postTest.files.length > 0 && ` · ${postTest.files.length} file${postTest.files.length === 1 ? "" : "s"}`}
                             </p>
                         </div>
                         <button

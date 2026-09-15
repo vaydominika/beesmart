@@ -6,13 +6,13 @@ import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, GripVertical, CheckCircle2, X, Sparkles, Loader2, Paperclip, Upload } from "lucide-react";
+import { Plus, Trash2, GripVertical, CheckCircle2, X, Sparkles, Loader2, FileText, Upload } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import { WorkspaceTabs } from "@/components/ui/workspace-tabs";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
-import type { PostAttachmentFile, TestDraft } from "@/lib/classroom-post-drafts";
+import type { TestDraft } from "@/lib/classroom-post-drafts";
 import { AiUsageStatus, useAiUsage } from "@/components/ai/ai-usage";
 import { AI_SOURCE_CHARACTER_LIMIT, AI_SOURCE_MIN_CHARACTER_LIMIT } from "@/lib/ai/usage-shared";
 import { isLocalDateTimePast, minimumLocalDateTimeInputValue } from "@/lib/schedule-validation";
@@ -60,6 +60,7 @@ type SourceCourse = { id: string; title: string; relationship?: string; classroo
 
 export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
     const nextQuestionId = useRef(2);
+    const sourceFilesInputRef = useRef<HTMLInputElement>(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [testType, setTestType] = useState<"TEST" | "EXAM">("TEST");
@@ -75,8 +76,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
     const [difficulty, setDifficulty] = useState<Difficulty>("Intermediate");
     const [questionCount, setQuestionCount] = useState(5);
     const [generating, setGenerating] = useState(false);
-    const [files, setFiles] = useState<PostAttachmentFile[]>([]);
-    const [uploading, setUploading] = useState(false);
+    const [sourceFiles, setSourceFiles] = useState<File[]>([]);
     const [questions, setQuestions] = useState<Question[]>([
         {
             id: "question-1",
@@ -92,33 +92,6 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         },
     ]);
     const { usage: aiUsage, exhausted: aiExhausted, refresh: refreshAiUsage, syncFromResponse: syncAiUsage } = useAiUsage("TEST_EXAM", open);
-
-    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const fileList = event.target.files;
-        if (!fileList?.length) return;
-
-        setUploading(true);
-        try {
-            for (const file of Array.from(fileList)) {
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("purpose", "POST_ATTACHMENT");
-                const response = await fetch("/api/uploads", { method: "POST", body: formData });
-                if (!response.ok) {
-                    const result = await response.json().catch(() => ({})) as { error?: string };
-                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
-                    continue;
-                }
-                const uploaded = await response.json() as PostAttachmentFile;
-                setFiles((current) => [...current, uploaded]);
-            }
-        } catch {
-            toast.error("Upload failed.");
-        } finally {
-            setUploading(false);
-            event.target.value = "";
-        }
-    };
 
     useEffect(() => {
         if (!open) return;
@@ -141,7 +114,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             toast.error("Choose a source course first.");
             return;
         }
-        if (sourceMode === "text" && sourceText.trim().length < AI_SOURCE_MIN_CHARACTER_LIMIT) {
+        if (sourceMode === "text" && sourceFiles.length === 0 && sourceText.trim().length < AI_SOURCE_MIN_CHARACTER_LIMIT) {
             toast.error(`Paste at least ${AI_SOURCE_MIN_CHARACTER_LIMIT} characters of source text.`);
             return;
         }
@@ -150,17 +123,27 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             const endpoint = sourceMode === "course"
                 ? `/api/courses/${courseId}/tests/generate`
                 : `/api/classrooms/${classroomId}/tests/generate-from-text`;
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    title: title.trim() || undefined,
-                    classroomId,
-                    difficulty,
-                    questionCount,
-                    sourceText: sourceMode === "text" ? sourceText.trim() : undefined,
-                }),
-            });
+            const generationOptions: RequestInit = sourceMode === "course"
+                ? {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        title: title.trim() || undefined,
+                        classroomId,
+                        difficulty,
+                        questionCount,
+                    }),
+                }
+                : (() => {
+                    const formData = new FormData();
+                    if (title.trim()) formData.append("title", title.trim());
+                    formData.append("difficulty", difficulty);
+                    formData.append("questionCount", String(questionCount));
+                    if (sourceText.trim()) formData.append("sourceText", sourceText.trim());
+                    sourceFiles.forEach((file) => formData.append("files", file));
+                    return { method: "POST", body: formData };
+                })();
+            const response = await fetch(endpoint, generationOptions);
             syncAiUsage(response);
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Test generation failed");
@@ -178,7 +161,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     : (question.options ?? []).map((option) => ({ optionText: option.text, isCorrect: option.isCorrect })),
                 correctAnswer: question.correctAnswer,
             })));
-            toast.success("Generated draft loaded. Review every question before adding it.");
+            toast.success("Questions created. Review and edit them below.");
         } catch (error) {
             void refreshAiUsage();
             toast.error(error instanceof Error ? error.message : "Test generation failed");
@@ -340,7 +323,6 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                 opensAt: opensAt ? new Date(opensAt).toISOString() : null,
                 closesAt: closesAt ? new Date(closesAt).toISOString() : null,
                 maxAttempts: Number(maxAttempts),
-                files,
                 questions: questions.map((q) => ({
                     questionText: q.questionText.trim(),
                     questionType: q.questionType,
@@ -370,7 +352,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         setTimeLimit("");
         setPassingScore("");
         setMaxAttempts("1");
-        setFiles([]);
+        setSourceFiles([]);
         setOpensAt("");
         setClosesAt("");
         setCourseId("");
@@ -428,12 +410,13 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                 <div className="flex items-start gap-3">
                                     <Sparkles className="mt-0.5 h-5 w-5 text-[var(--classroom-text-muted)]" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="font-semibold text-[var(--classroom-text)]">Generate an editable draft</p>
-                                        <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Questions stay local to this post until you review, add, and publish them.</p>
+                                        <p className="font-semibold text-[var(--classroom-text)]">Create questions with AI</p>
+                                        <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Choose what the questions should be based on.</p>
                                         <AiUsageStatus usage={aiUsage} className="mt-1.5 text-[var(--classroom-text-muted)]" />
                                     </div>
                                 </div>
-                                <WorkspaceTabs ariaLabel="Generation source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="mt-3 bg-[var(--app-surface)]!" />
+                                <p className="mb-1.5 mt-3 text-xs font-semibold text-[var(--classroom-text)]">Use content from</p>
+                                <WorkspaceTabs ariaLabel="Question source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="bg-[var(--app-surface)]!" />
                                 {sourceMode === "course" ? (
                                     <WorkspaceSelect
                                         ariaLabel="Source course"
@@ -444,33 +427,73 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         className="mt-3 h-10 w-full rounded-xl border-0 bg-[var(--app-surface)]!"
                                     />
                                 ) : (
-                                    <label className="mt-3 block">
-                                        <span className="sr-only">Source text</span>
-                                        <textarea aria-label="Source text" value={sourceText} maxLength={AI_SOURCE_CHARACTER_LIMIT} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste notes, a lesson, an article, or any source material..." className="min-h-32 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
-                                        <span className="mt-1 flex flex-wrap justify-between gap-2 text-[10px] text-[var(--classroom-text-muted)]">
-                                            <span>
-                                                {sourceText.trim().length < AI_SOURCE_MIN_CHARACTER_LIMIT
-                                                    ? `${AI_SOURCE_MIN_CHARACTER_LIMIT - sourceText.trim().length} more characters required`
-                                                    : "Ready to generate"}
-                                            </span>
-                                            <span>{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
-                                        </span>
-                                    </label>
+                                    <div className="mt-3">
+                                        <label className="block">
+                                            <span className="sr-only">Source text</span>
+                                            <textarea aria-label="Source text" value={sourceText} maxLength={AI_SOURCE_CHARACTER_LIMIT} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste the material here..." className="min-h-28 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                        </label>
+                                        <p className="mt-1 text-[10px] text-[var(--classroom-text-muted)]">
+                                            {sourceText.trim().length >= AI_SOURCE_MIN_CHARACTER_LIMIT || sourceFiles.length > 0
+                                                ? "Ready"
+                                                : `Paste at least ${AI_SOURCE_MIN_CHARACTER_LIMIT} characters.`}
+                                        </p>
+                                        <input
+                                            ref={sourceFilesInputRef}
+                                            aria-label="Choose source files"
+                                            type="file"
+                                            accept=".pdf,.docx,.txt,.csv"
+                                            multiple
+                                            className="sr-only"
+                                            onChange={(event) => {
+                                                const selected = Array.from(event.target.files ?? []);
+                                                if (selected.length > 5) {
+                                                    toast.error("Choose up to 5 source files.");
+                                                    event.target.value = "";
+                                                    return;
+                                                }
+                                                setSourceFiles(selected);
+                                            }}
+                                        />
+                                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                                            <WorkspaceButton type="button" variant="secondary" size="compact" className="border-dashed" onClick={() => sourceFilesInputRef.current?.click()}>
+                                                <Upload className="h-4 w-4" /> Attach files
+                                            </WorkspaceButton>
+                                            <span className="text-[10px] text-[var(--classroom-text-muted)]">Optional · up to 5 PDF, DOCX, TXT, or CSV files</span>
+                                        </div>
+                                        {sourceFiles.length > 0 && (
+                                            <div className="mt-2 space-y-1.5">
+                                                {sourceFiles.map((file, index) => (
+                                                    <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-2 rounded-lg bg-[var(--app-surface)] px-2.5 py-2 text-xs text-[var(--classroom-text)]">
+                                                        <FileText className="h-4 w-4 shrink-0 text-[var(--classroom-text-muted)]" />
+                                                        <span className="min-w-0 flex-1 truncate">{file.name}</span>
+                                                        <button type="button" aria-label={`Remove ${file.name}`} onClick={() => setSourceFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} className="rounded-md p-1 text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]">
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {sourceFiles.length > 0 && <p className="mt-1.5 text-[10px] text-[var(--classroom-text-muted)]">These files are used only to create questions.</p>}
+                                    </div>
                                 )}
-                                {sourceMode === "course" && <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] text-[var(--classroom-text-muted)]">AI uses up to the first 12,000 characters of course content.</p>}
-                                <div className="mt-3 grid items-end gap-3 sm:grid-cols-3">
-                                    <label>
-                                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Difficulty</span>
-                                        <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border-0 bg-[var(--app-surface)]" />
-                                    </label>
-                                    <label>
-                                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[var(--classroom-text-muted)]">Question count</span>
-                                        <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border-0 bg-[var(--app-surface)]! shadow-none" />
-                                    </label>
-                                    <WorkspaceButton type="button" variant="secondary" className="h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || aiExhausted || (sourceMode === "course" ? !courseId : !sourceText.trim())}>
-                                        {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate
-                                    </WorkspaceButton>
-                                </div>
+                                <details className="mt-3 rounded-xl bg-[var(--app-surface)] px-3 py-2">
+                                    <summary className="cursor-pointer text-xs font-semibold text-[var(--classroom-text-muted)]">
+                                        Optional settings · {questionCount} questions · {difficulty.toLowerCase()}
+                                    </summary>
+                                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                        <label>
+                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">Difficulty</span>
+                                            <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]" />
+                                        </label>
+                                        <label>
+                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">Number of questions</span>
+                                            <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]! shadow-none" />
+                                        </label>
+                                    </div>
+                                </details>
+                                <WorkspaceButton type="button" variant="primary" className="mt-3 h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || aiExhausted || (sourceMode === "course" ? !courseId : !sourceText.trim() && sourceFiles.length === 0)}>
+                                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {generating ? "Creating..." : "Create questions"}
+                                </WorkspaceButton>
                             </div>
                             {/* Basic Info */}
                             <div className="grid gap-3 sm:grid-cols-3">
@@ -565,33 +588,6 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full cursor-pointer"
                                     />
                                 </div>
-                            </div>
-
-                            <div>
-                                <span className="mb-1.5 block text-xs font-bold uppercase text-(--theme-text)">Attachments</span>
-                                {files.length > 0 && (
-                                    <div className="mb-2 space-y-2">
-                                        {files.map((file, index) => (
-                                            <div key={`${file.uploadId}-${index}`} className="flex items-center gap-2 rounded-xl bg-(--theme-sidebar) px-3 py-2 text-sm text-(--theme-text)">
-                                                <Paperclip className="h-4 w-4 shrink-0 opacity-50" />
-                                                <span className="min-w-0 flex-1 truncate">{file.fileName}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}
-                                                    aria-label={`Remove ${file.fileName}`}
-                                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg opacity-50 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-card)"
-                                                >
-                                                    <X className="h-3.5 w-3.5" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl bg-(--theme-sidebar) px-3 text-sm font-bold text-(--theme-text) transition-opacity hover:opacity-80 focus-within:ring-2 focus-within:ring-(--theme-card)">
-                                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                                    {uploading ? "Uploading..." : "Add files"}
-                                    <input aria-label="Add files" type="file" multiple onChange={handleFileUpload} className="hidden" disabled={uploading} />
-                                </label>
                             </div>
 
                             {/* Questions */}
@@ -769,7 +765,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                         <WorkspaceButton type="button" variant="secondary" className="h-10 rounded-xl" onClick={onClose}>
                             Cancel
                         </WorkspaceButton>
-                        <WorkspaceButton type="button" variant="primary" className="h-10 rounded-xl" onClick={handleSave} disabled={uploading}>
+                        <WorkspaceButton type="button" variant="primary" className="h-10 rounded-xl" onClick={handleSave}>
                             Attach {testType === "EXAM" ? "exam" : "test"} to post
                         </WorkspaceButton>
                     </div>

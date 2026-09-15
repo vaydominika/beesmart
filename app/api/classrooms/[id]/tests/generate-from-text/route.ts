@@ -6,8 +6,12 @@ import { getCurrentUserId, prisma } from "@/lib/db";
 import { checkContentSafety } from "@/lib/ai/moderation";
 import { AI_SOURCE_CHARACTER_LIMIT, AI_SOURCE_MIN_CHARACTER_LIMIT, type AiUsageState } from "@/lib/ai/usage-shared";
 import { AiDailyLimitError, aiLimitResponse, reserveAiAttempt, withAiUsage } from "@/lib/ai/usage";
+import { MalwareScanError, scanForMalware } from "@/lib/files/scanner";
+import { UploadValidationError, validateUpload } from "@/lib/files/validation";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+export const runtime = "nodejs";
 
 const generatedTestSchema = (questionCount: number) => z.object({
   title: z.string().min(1).max(200),
@@ -34,14 +38,42 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Only teachers/TAs can generate tests" }, { status: 403 });
     }
 
-    const body = await request.json();
-    const sourceText = typeof body.sourceText === "string" ? body.sourceText.trim() : "";
-    const title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
-    const difficulty = typeof body.difficulty === "string" ? body.difficulty : "Intermediate";
-    const questionCount = Number.parseInt(String(body.questionCount ?? 5), 10);
+    const contentType = request.headers.get("content-type") ?? "";
+    let sourceText = "";
+    let title = "";
+    let difficulty = "Intermediate";
+    let rawQuestionCount: FormDataEntryValue | number = 5;
+    let sourceFiles: File[] = [];
 
-    if (sourceText.length < AI_SOURCE_MIN_CHARACTER_LIMIT || sourceText.length > AI_SOURCE_CHARACTER_LIMIT) {
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      sourceText = String(formData.get("sourceText") ?? "").trim();
+      title = String(formData.get("title") ?? "").trim().slice(0, 200);
+      difficulty = String(formData.get("difficulty") ?? "Intermediate");
+      rawQuestionCount = formData.get("questionCount") ?? 5;
+      sourceFiles = formData.getAll("files")
+        .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+      const legacyFileEntry = formData.get("file");
+      if (sourceFiles.length === 0 && legacyFileEntry instanceof File && legacyFileEntry.size > 0) {
+        sourceFiles = [legacyFileEntry];
+      }
+    } else {
+      const body = await request.json();
+      sourceText = typeof body.sourceText === "string" ? body.sourceText.trim() : "";
+      title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
+      difficulty = typeof body.difficulty === "string" ? body.difficulty : "Intermediate";
+      rawQuestionCount = body.questionCount ?? 5;
+    }
+    const questionCount = Number.parseInt(String(rawQuestionCount), 10);
+
+    if (sourceFiles.length === 0 && (sourceText.length < AI_SOURCE_MIN_CHARACTER_LIMIT || sourceText.length > AI_SOURCE_CHARACTER_LIMIT)) {
       return NextResponse.json({ error: `Source text must be between ${AI_SOURCE_MIN_CHARACTER_LIMIT} and ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters` }, { status: 400 });
+    }
+    if (sourceFiles.length > 5) {
+      return NextResponse.json({ error: "Choose up to 5 source files" }, { status: 400 });
+    }
+    if (sourceText.length > AI_SOURCE_CHARACTER_LIMIT) {
+      return NextResponse.json({ error: `Source text must be ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters or fewer` }, { status: 400 });
     }
     if (!Number.isFinite(questionCount) || questionCount < 1 || questionCount > 20) {
       return NextResponse.json({ error: "Question count must be between 1 and 20" }, { status: 400 });
@@ -50,9 +82,44 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: "Invalid difficulty" }, { status: 400 });
     }
 
+    const extractedSources: string[] = [];
+    const supportedSourceTypes = new Set([
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "text/plain",
+      "text/csv",
+    ]);
+    for (const sourceFile of sourceFiles) {
+      const validated = await validateUpload(sourceFile, "COURSE_ATTACHMENT");
+      if (!supportedSourceTypes.has(validated.detectedMime)) {
+        return NextResponse.json({ error: "Source files must be PDF, DOCX, TXT, or CSV" }, { status: 400 });
+      }
+      await scanForMalware(validated.buffer);
+      const { extractTextFromFile } = await import("@/lib/ai/file-utils");
+      const extractedText = (await extractTextFromFile(new File(
+        [new Uint8Array(validated.buffer)],
+        validated.originalName,
+        { type: validated.detectedMime },
+      ))).trim();
+      if (extractedText.length > AI_SOURCE_CHARACTER_LIMIT) {
+        return NextResponse.json({ error: `${validated.originalName} contains more than ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters. Shorten or split the file and try again.` }, { status: 400 });
+      }
+      if (extractedText) extractedSources.push(extractedText);
+    }
+
+    const sourceParts = [sourceText, ...extractedSources].filter(Boolean);
+    const sourceCharacterCount = sourceParts.reduce((total, part) => total + part.length, 0);
+    if (sourceCharacterCount < AI_SOURCE_MIN_CHARACTER_LIMIT) {
+      return NextResponse.json({ error: `Source material must contain at least ${AI_SOURCE_MIN_CHARACTER_LIMIT} characters` }, { status: 400 });
+    }
+    if (sourceCharacterCount > AI_SOURCE_CHARACTER_LIMIT) {
+      return NextResponse.json({ error: `Combined source material must be ${AI_SOURCE_CHARACTER_LIMIT.toLocaleString()} characters or fewer` }, { status: 400 });
+    }
+    const generationSource = sourceParts.join("\n\n--- SOURCE FILE ---\n\n");
+
     usage = await reserveAiAttempt(userId, "TEST_EXAM");
 
-    const inputSafety = await checkContentSafety(sourceText);
+    const inputSafety = await checkContentSafety(generationSource);
     if (!inputSafety.safe) {
       return withAiUsage(NextResponse.json({ error: "The source text is not appropriate for test generation" }, { status: 400 }), usage);
     }
@@ -67,7 +134,7 @@ Title: ${title || "Generated assessment"}
 Use multiple choice, true/false, short-answer, and essay questions where appropriate. Multiple-choice questions must include one correct option. True/false and short-answer questions must include a correct answer.
 
 Source text:
-${sourceText}`,
+${generationSource}`,
     });
 
     const outputSafety = await checkContentSafety(JSON.stringify(object));
@@ -78,6 +145,8 @@ ${sourceText}`,
     return withAiUsage(NextResponse.json({ test: object }), usage);
   } catch (error) {
     if (error instanceof AiDailyLimitError) return aiLimitResponse(error);
+    if (error instanceof UploadValidationError) return NextResponse.json({ error: error.message }, { status: error.status });
+    if (error instanceof MalwareScanError) return NextResponse.json({ error: error.message }, { status: error.infected ? 400 : 503 });
     console.error("POST generated test from text", error);
     return withAiUsage(NextResponse.json({ error: "Server error during test generation" }, { status: 500 }), usage);
   }

@@ -178,8 +178,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
         const postUploadIds = Array.isArray(data.uploadIds) ? data.uploadIds : [];
         const assignmentUploadIds = assignment?.files?.map((file) => file.uploadId) ?? [];
-        const testUploadIds = test?.files?.map((file) => file.uploadId) ?? [];
-        const allUploadIds = [...new Set([...postUploadIds, ...assignmentUploadIds, ...testUploadIds])];
+        const allUploadIds = [...new Set([...postUploadIds, ...assignmentUploadIds])];
         const sanitizedContent = sanitizeRichTextHtml(content);
         const plainText = richTextToPlainText(sanitizedContent);
         const hasFiles = allUploadIds.length > 0;

@@ -50,6 +50,5 @@ export interface TestDraft {
     opensAt: string | null;
     closesAt: string | null;
     maxAttempts: number;
-    files: PostAttachmentFile[];
     questions: TestQuestionDraft[];
 }

@@ -6,6 +6,8 @@ import { generateObject } from "ai";
 import { getCurrentUserId, prisma } from "@/lib/db";
 import { checkContentSafety } from "@/lib/ai/moderation";
 import { reserveAiAttempt } from "@/lib/ai/usage";
+import { extractTextFromFile } from "@/lib/ai/file-utils";
+import { validateUpload } from "@/lib/files/validation";
 
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
@@ -14,6 +16,17 @@ vi.mock("@/lib/db", () => ({
 vi.mock("ai", () => ({ generateObject: vi.fn() }));
 vi.mock("@ai-sdk/deepseek", () => ({ deepseek: vi.fn() }));
 vi.mock("@/lib/ai/moderation", () => ({ checkContentSafety: vi.fn() }));
+vi.mock("@/lib/ai/file-utils", () => ({ extractTextFromFile: vi.fn() }));
+vi.mock("@/lib/files/scanner", () => ({
+  MalwareScanError: class MalwareScanError extends Error {},
+  scanForMalware: vi.fn().mockResolvedValue("CLEAN"),
+}));
+vi.mock("@/lib/files/validation", () => ({
+  UploadValidationError: class UploadValidationError extends Error {
+    status = 400;
+  },
+  validateUpload: vi.fn(),
+}));
 vi.mock("@/lib/ai/usage", () => ({
   AiDailyLimitError: class AiDailyLimitError extends Error {},
   reserveAiAttempt: vi.fn().mockResolvedValue({ category: "TEST_EXAM", used: 1, remaining: 2, limit: 3, resetsAt: "2026-08-16T00:00:00.000Z" }),
@@ -34,6 +47,15 @@ describe("POST generated test from text", () => {
     vi.mocked(getCurrentUserId).mockResolvedValue("teacher-1");
     vi.mocked(prisma.classroomMember.findUnique).mockResolvedValue({ role: "TEACHER" } as never);
     vi.mocked(checkContentSafety).mockResolvedValue({ safe: true });
+    vi.mocked(extractTextFromFile).mockResolvedValue("Photosynthesis stores light energy as chemical energy in plant cells.");
+    vi.mocked(validateUpload).mockResolvedValue({
+      originalName: "biology.txt",
+      detectedMime: "text/plain",
+      extension: "txt",
+      fileType: "OTHER",
+      size: 15,
+      buffer: Buffer.from("source material"),
+    });
     vi.mocked(generateObject).mockResolvedValue({
       object: {
         title: "Photosynthesis quiz",
@@ -68,6 +90,29 @@ describe("POST generated test from text", () => {
     expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({ maxOutputTokens: 4000 }));
     expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({
       prompt: expect.not.stringContaining("Description:"),
+    }));
+  });
+
+  it("extracts ephemeral source files for generation", async () => {
+    const formData = new FormData();
+    formData.append("files", new File(["source material"], "biology.txt", { type: "text/plain" }));
+    formData.append("files", new File(["more source material"], "plants.txt", { type: "text/plain" }));
+    formData.append("difficulty", "Advanced");
+    formData.append("questionCount", "3");
+
+    const multipartRequest = {
+      headers: new Headers({ "content-type": "multipart/form-data; boundary=test" }),
+      formData: vi.fn().mockResolvedValue(formData),
+    } as unknown as NextRequest;
+    const response = await POST(multipartRequest, context);
+
+    expect(response.status).toBe(200);
+    expect(validateUpload).toHaveBeenCalledTimes(2);
+    expect(extractTextFromFile).toHaveBeenCalledTimes(2);
+    expect(extractTextFromFile).toHaveBeenCalledWith(expect.objectContaining({ name: "biology.txt" }));
+    expect(checkContentSafety).toHaveBeenNthCalledWith(1, expect.stringContaining("chemical energy"));
+    expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: expect.stringContaining("chemical energy"),
     }));
   });
 
