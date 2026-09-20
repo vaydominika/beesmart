@@ -32,7 +32,7 @@ interface FocusContextType {
   resumeTimer: () => void;
   stopSession: () => void;
   switchMode: () => void;
-  undo: () => void;
+  restart: () => void;
   next: () => void;
   toggleMinimize: () => void;
   widgetPosition: { x: number; y: number };
@@ -40,6 +40,13 @@ interface FocusContextType {
 }
 
 const FocusContext = createContext<FocusContextType | undefined>(undefined);
+
+function formatTimerTitle(seconds: number, mode: TimerMode) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  const counter = `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return `${counter} · ${mode === "active" ? "Focus" : "Break"} | BeeSmart`;
+}
 
 export function useFocus() {
   const context = useContext(FocusContext);
@@ -68,7 +75,6 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   const [isRunning, setIsRunning] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [widgetPosition, setWidgetPosition] = useState({ x: 20, y: 600 });
-  const previousStateRef = useRef<{ timeRemaining: number; mode: TimerMode; isRunning: boolean } | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const phaseRef = useRef<PhaseRecord | null>(null);
 
@@ -127,6 +133,16 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    document.title = isSessionActive
+      ? formatTimerTitle(timeRemaining, currentMode)
+      : "BeeSmart";
+  }, [currentMode, isSessionActive, timeRemaining]);
+
+  useEffect(() => () => {
+    document.title = "BeeSmart";
+  }, []);
+
+  useEffect(() => {
     if (isRunning && isSessionActive) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining((previous) => {
@@ -176,10 +192,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     closeModal();
   };
 
-  const pauseTimer = () => {
-    previousStateRef.current = { timeRemaining, mode: currentMode, isRunning: true };
-    setIsRunning(false);
-  };
+  const pauseTimer = () => setIsRunning(false);
   const resumeTimer = () => setIsRunning(true);
   const stopSession = () => {
     phaseRef.current = null;
@@ -199,12 +212,12 @@ export function FocusProvider({ children }: { children: ReactNode }) {
   };
   const switchMode = () => moveToMode(currentMode === "active" ? "break" : "active");
   const next = switchMode;
-  const undo = () => {
-    if (!previousStateRef.current) return;
-    setTimeRemaining(previousStateRef.current.timeRemaining);
-    setCurrentMode(previousStateRef.current.mode);
-    setIsRunning(previousStateRef.current.isRunning);
-    previousStateRef.current = null;
+  const restart = () => {
+    const minutes = currentMode === "active" ? activeMinutes : breakMinutes;
+    phaseRef.current = null;
+    setTimeRemaining(minutes * 60);
+    setIsRunning(true);
+    beginPhase(currentMode, minutes);
   };
 
   return (
@@ -213,7 +226,7 @@ export function FocusProvider({ children }: { children: ReactNode }) {
       activeMinutes, breakMinutes, autoBreak, setActiveMinutes, setBreakMinutes, setAutoBreak,
       stats, isStatsLoading, statsError, loadStats,
       isSessionActive, currentMode, timeRemaining, isRunning, isMinimized,
-      startSession, pauseTimer, resumeTimer, stopSession, switchMode, undo, next,
+      startSession, pauseTimer, resumeTimer, stopSession, switchMode, restart, next,
       toggleMinimize: () => setIsMinimized((value) => !value),
       widgetPosition, setWidgetPosition,
     }}>

@@ -28,13 +28,17 @@ function Probe() {
       <button onClick={() => focus.startSession({ activeMinutes: 1, breakMinutes: 1, autoBreak: false })}>Start</button>
       <button onClick={focus.pauseTimer}>Pause</button>
       <button onClick={focus.resumeTimer}>Resume</button>
+      <button onClick={focus.restart}>Restart</button>
       <button onClick={focus.stopSession}>Stop</button>
     </div>
   );
 }
 
 describe("FocusProvider", () => {
-  beforeEach(() => vi.stubGlobal("fetch", vi.fn()));
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+    document.title = "BeeSmart";
+  });
 
   it("loads statistics when opened and exposes loading failures", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ focusCount: 3, breakCount: 2 }), { status: 200 }));
@@ -53,8 +57,16 @@ describe("FocusProvider", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Start" }));
     expect(screen.getByTestId("focus")).toHaveTextContent('"remaining":60');
+    expect(document.title).toBe("01:00 · Focus | BeeSmart");
     act(() => vi.advanceTimersByTime(1_000));
     expect(screen.getByTestId("focus")).toHaveTextContent('"remaining":59');
+    expect(document.title).toBe("00:59 · Focus | BeeSmart");
+
+    fireEvent.click(screen.getByRole("button", { name: "Restart" }));
+    expect(screen.getByTestId("focus")).toHaveTextContent('"remaining":60');
+    expect(screen.getByTestId("focus")).toHaveTextContent('"running":true');
+    expect(document.title).toBe("01:00 · Focus | BeeSmart");
+    act(() => vi.advanceTimersByTime(1_000));
 
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
     act(() => vi.advanceTimersByTime(5_000));
@@ -65,6 +77,7 @@ describe("FocusProvider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Stop" }));
     expect(screen.getByTestId("focus")).toHaveTextContent('"active":false');
     expect(screen.getByTestId("focus")).toHaveTextContent('"remaining":0');
+    expect(document.title).toBe("BeeSmart");
   });
 
   it("retries a failed completed-session write once and reports the failure", async () => {

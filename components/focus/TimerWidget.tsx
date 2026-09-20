@@ -3,26 +3,27 @@
 import { useRef, useEffect } from "react";
 import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
 import { useFocus } from "./FocusProvider";
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  UndoIcon,
-  PauseIcon,
-  PlayIcon,
-  NextIcon,
-  Minimize01Icon,
-  Cancel01Icon,
-} from "@hugeicons/core-free-icons";
+  ChevronUp,
+  Minus,
+  Pause,
+  Play,
+  RotateCcw,
+  SkipForward,
+  X,
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TimerWidget() {
   const {
     isSessionActive,
+    currentMode,
     timeRemaining,
     isRunning,
     isMinimized,
     pauseTimer,
     resumeTimer,
-    undo,
+    restart,
     next,
     stopSession,
     toggleMinimize,
@@ -68,21 +69,26 @@ export function TimerWidget() {
       >
         <div
           ref={nodeRef}
-          className="fixed z-9999 bg-(--theme-sidebar) p-2 shadow-lg cursor-move"
+          className="fixed z-9999 flex min-w-[174px] items-center overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] font-[var(--font-geist-sans)] text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]"
         >
-          <div className="flex items-center gap-1.5">
-            <div className="drag-handle cursor-move">
-              <div className="w-1.5 h-1.5 bg-(--theme-text) rounded-full"></div>
+          <div className="drag-handle flex min-w-0 flex-1 cursor-grab items-center px-3 py-2.5 active:cursor-grabbing">
+            <div className="flex min-w-0 items-baseline gap-2">
+              <span className="truncate text-xs font-semibold text-[var(--app-text-muted)]">
+                {currentMode === "active" ? "Focus" : "Break"}
+              </span>
+              <span className="text-sm font-semibold tabular-nums tracking-tight">
+                {formatTime(timeRemaining)}
+              </span>
             </div>
-            <button
-              type="button"
-              onClick={toggleMinimize}
-              aria-label="Restore focus timer"
-              className="text-(--theme-text) hover:text-(--theme-secondary)"
-            >
-              <HugeiconsIcon icon={Minimize01Icon} className="rotate-180" size={14} />
-            </button>
           </div>
+          <button
+            type="button"
+            onClick={toggleMinimize}
+            aria-label="Restore focus timer"
+            className="mr-1.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
         </div>
       </Draggable>
     );
@@ -97,40 +103,63 @@ export function TimerWidget() {
     >
       <div
         ref={nodeRef}
-        className="fixed z-9999 bg-(--theme-sidebar) p-3 shadow-lg min-w-[160px]"
+        role="region"
+        aria-labelledby="focus-timer-title"
+        className="fixed z-9999 w-[252px] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] font-[var(--font-geist-sans)] text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]"
       >
-        {/* Window controls */}
-        <div className="flex items-center justify-end gap-1.5 mb-1.5">
-          <button
-            type="button"
-            onClick={toggleMinimize}
-            aria-label="Minimize focus timer"
-            className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
-          >
-            <HugeiconsIcon icon={Minimize01Icon} size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={stopSession}
-            aria-label="Stop focus session"
-            className="text-(--theme-text) hover:text-(--theme-secondary) transition-colors"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} size={16} />
-          </button>
-        </div>
-
-        {/* Timer display */}
-        <div className="text-center mb-2">
-          <div className="text-[32px] font-bold text-(--theme-text) drag-handle cursor-move">
-            {formatTime(timeRemaining)}
+        <div className="flex min-h-14 items-center border-b border-[var(--app-border)] bg-[var(--app-surface-muted)]/70">
+          <div className="drag-handle flex min-w-0 flex-1 cursor-grab items-center px-4 py-3 active:cursor-grabbing">
+            <h2 id="focus-timer-title" className="min-w-0 text-sm font-semibold tracking-tight">
+              <span>{currentMode === "active" ? "Focus" : "Break"}</span>
+              <span aria-hidden="true" className="px-1.5 text-[var(--app-text-faint)]">·</span>
+              <span className="tabular-nums">{formatTime(timeRemaining)}</span>
+            </h2>
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 pr-2">
+            <button
+              type="button"
+              onClick={toggleMinimize}
+              aria-label="Minimize focus timer"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={stopSession}
+              aria-label="Stop focus session"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        {/* Control buttons */}
-        <div className="flex items-center justify-center gap-2.5">
-          <Tooltip><TooltipTrigger asChild><button type="button" onClick={undo} aria-label="Undo focus timer action" className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={UndoIcon} size={20} /></button></TooltipTrigger><TooltipContent>Undo</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><button type="button" onClick={isRunning ? pauseTimer : resumeTimer} aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"} className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={isRunning ? PauseIcon : PlayIcon} size={20} /></button></TooltipTrigger><TooltipContent>{isRunning ? "Pause" : "Play"}</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><button type="button" onClick={next} aria-label="Skip to next focus timer interval" className="p-1.5 text-(--theme-text) hover:text-(--theme-secondary) transition-colors"><HugeiconsIcon icon={NextIcon} size={20} /></button></TooltipTrigger><TooltipContent>Next</TooltipContent></Tooltip>
+        <div className="flex items-center justify-between px-4 py-3">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" onClick={restart} aria-label="Restart focus timer" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+                <RotateCcw className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Restart</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" onClick={isRunning ? pauseTimer : resumeTimer} aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"} className="inline-flex h-10 w-16 items-center justify-center rounded-xl border border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] text-[var(--app-text)] transition-colors hover:bg-[var(--app-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+                {isRunning ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{isRunning ? "Pause" : "Play"}</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" onClick={next} aria-label="Skip to next focus timer interval" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+                <SkipForward className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Next</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </Draggable>

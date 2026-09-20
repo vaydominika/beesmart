@@ -14,11 +14,6 @@ export function Header() {
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
   const isCourseWorkspace = pathname === "/courses" || /^\/courses\/[^/]+\/builder$/.test(pathname);
-  const quietHeaderClass = isClassroom
-    ? "classroom-ui classroom-surface border-(--classroom-line)"
-    : isCourseWorkspace
-      ? "course-ui course-surface border-(--course-line)"
-      : "bg-(--theme-card) border-(--theme-text)/10";
   const quietHoverClass = isClassroom
     ? "hover:bg-(--classroom-surface-muted)"
     : isCourseWorkspace
@@ -80,22 +75,5 @@ export function Header() {
     );
   }
 
-  if (!isSessionActive) {
-    return null;
-  }
-
-  return (
-    <div className={cn("px-6 py-4 border-b", quietHeaderClass)}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="text-[24px] font-bold text-(--theme-text) uppercase">
-            {currentMode === "active" ? "FOCUS" : "BREAK"}
-          </div>
-          <div className="text-[32px] font-bold text-(--theme-text)">
-            {formatTime(timeRemaining)}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 }

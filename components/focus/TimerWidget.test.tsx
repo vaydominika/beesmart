@@ -3,8 +3,8 @@ import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
-  isSessionActive: true, timeRemaining: 65, isRunning: true, isMinimized: false,
-  pauseTimer: vi.fn(), resumeTimer: vi.fn(), undo: vi.fn(), next: vi.fn(), stopSession: vi.fn(), toggleMinimize: vi.fn(),
+  isSessionActive: true, currentMode: "active", timeRemaining: 65, isRunning: true, isMinimized: false,
+  pauseTimer: vi.fn(), resumeTimer: vi.fn(), restart: vi.fn(), next: vi.fn(), stopSession: vi.fn(), toggleMinimize: vi.fn(),
   widgetPosition: { x: 20, y: 100 }, setWidgetPosition: vi.fn(),
 }));
 vi.mock("./FocusProvider", () => ({ useFocus: () => state }));
@@ -32,10 +32,10 @@ describe("TimerWidget", () => {
   it("formats time and connects every timer control", () => {
     render(<TimerWidget />);
     expect(screen.getByText("01:05")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: "Undo focus timer action" }));
+    fireEvent.click(screen.getByRole("button", { name: "Restart focus timer" }));
     fireEvent.click(screen.getByRole("button", { name: "Pause focus timer" }));
     fireEvent.click(screen.getByRole("button", { name: "Skip to next focus timer interval" }));
-    expect(state.undo).toHaveBeenCalled();
+    expect(state.restart).toHaveBeenCalled();
     expect(state.pauseTimer).toHaveBeenCalled();
     expect(state.next).toHaveBeenCalled();
   });
@@ -47,6 +47,8 @@ describe("TimerWidget", () => {
     expect(state.resumeTimer).toHaveBeenCalled();
     state.isMinimized = true;
     rerender(<TimerWidget />);
-    expect(screen.queryByText("01:05")).not.toBeInTheDocument();
+    expect(screen.getByText("01:05")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Restore focus timer" }));
+    expect(state.toggleMinimize).toHaveBeenCalled();
   });
 });
