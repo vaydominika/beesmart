@@ -37,7 +37,7 @@ function classroomPostKey(classroomId: string, relatedId: string) {
   return `${classroomId}:${relatedId}`;
 }
 
-export async function getPublicProfile(targetUserId: string, viewerUserId: string) {
+export async function getPublicProfile(targetUserId: string, viewerUserId: string, translate?: (source: string) => string) {
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
     select: {
@@ -114,7 +114,8 @@ export async function getPublicProfile(targetUserId: string, viewerUserId: strin
     activity = records.flatMap((record: ProfileActivityRecord) => {
       if (record.courseId && !courseMap.has(record.courseId)) return [];
       if (record.classroomId && !classroomMap.has(record.classroomId)) return [];
-      const verb = ACTIVITY_COPY[record.activityType];
+      const sourceVerb = ACTIVITY_COPY[record.activityType];
+      const verb = sourceVerb ? (translate ? translate(record.activityType) : sourceVerb) : null;
       if (!verb) return [];
       if (record.classroomId && DIRECT_POST_ACTIVITY_TYPES.has(record.activityType) && !record.relatedId) return [];
       const resource = record.courseId ? courseMap.get(record.courseId) : record.classroomId ? classroomMap.get(record.classroomId) : null;

@@ -1,3 +1,4 @@
+import { LanguageStateProvider } from "@/components/i18n/LanguageProvider";
 import { fireEvent, render, screen, waitFor } from "@/test-utils/render";
 import { describe, expect, it, vi } from "vitest";
 import { CourseCreationTutorial } from "./CourseCreationTutorial";
@@ -44,5 +45,22 @@ describe("CourseCreationTutorial", () => {
 
     rerender(<CourseCreationTutorial open intent="review" onClose={onClose} onFinish={vi.fn()} />);
     expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
+  });
+
+  it("translates all three steps, instructions, and screenshot sources into Hungarian", () => {
+    render(<LanguageStateProvider initialLocale="hu"><CourseCreationTutorial open intent="review" onClose={vi.fn()} onFinish={vi.fn()} /></LanguageStateProvider>);
+    expect(screen.getAllByText("A vázlat létrehozása")).toHaveLength(2);
+    expect(screen.getByText("Add meg a kurzus címét, válaszd ki a láthatóságát, és ha szeretnél, adj hozzá borítóképet.")).toBeVisible();
+    expect(screen.getAllByRole("img").every(image => image.getAttribute("src")?.includes("-hu.png"))).toBe(true);
+    expect(screen.queryByText("Create the draft")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Következő" }));
+    expect(screen.getAllByText("Felépítés és szerkesztés")).toHaveLength(2);
+    expect(screen.getByText("Adj hozzá modulokat és leckéket a Tematika résznél.")).toBeVisible();
+    expect(screen.getAllByRole("img").every(image => image.getAttribute("src")?.includes("-hu.png"))).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Következő" }));
+    expect(screen.getAllByText("Előnézet és közzététel")).toHaveLength(2);
+    expect(screen.getByText("A Mentés gombbal mentsd el a legutóbbi módosításokat.")).toBeVisible();
+    expect(screen.getAllByRole("img").every(image => image.getAttribute("src")?.includes("-hu.png"))).toBe(true);
+    expect(screen.queryByText("Select Publish. The audit runs automatically before the course goes live.")).not.toBeInTheDocument();
   });
 });

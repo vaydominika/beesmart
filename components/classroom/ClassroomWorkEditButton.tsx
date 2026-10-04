@@ -38,8 +38,9 @@ export function ClassroomWorkEditButton({
     const [open, setOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const label = `Edit ${workType} ${title}`;
-    const deleteLabel = `Delete ${workType} ${title}`;
+    const workLabel = workType === "assignment" ? t("assignment") : workType === "exam" ? t("exam") : t("test");
+    const label = t("Edit {kind} {title}", { kind: workLabel, title });
+    const deleteLabel = t("Delete {kind} {title}", { kind: workLabel, title });
 
     const handleSaved = async () => {
         triggerUpdate();
@@ -54,13 +55,13 @@ export function ClassroomWorkEditButton({
                 : `/api/classrooms/${classroomId}/tests/${testId}`;
             const response = await fetch(endpoint, { method: "DELETE" });
             const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || `Could not delete the ${workType}.`);
+            if (!response.ok) throw new Error(data.error || t("Could not delete the {kind}.", { kind: workLabel }));
             setDeleteOpen(false);
             triggerUpdate();
-            toast.success(t("{v0} deleted.", { v0: workType === t("exam") ? t("Exam") : workType === t("test") ? t("Test") : t("Assignment") }));
+            toast.success(t("{v0} deleted.", { v0: workType === "exam" ? t("Exam") : workType === "test" ? t("Test") : t("Assignment") }));
             await (onDeleted ?? onSaved)?.();
         } catch (error) {
-            toast.error(t(error instanceof Error ? error.message : `Could not delete the ${workType}.`));
+            toast.error(t(error instanceof Error ? error.message : t("Could not delete the {kind}.", { kind: workLabel })));
         } finally {
             setDeleting(false);
         }
@@ -75,7 +76,7 @@ export function ClassroomWorkEditButton({
                             type="button"
                             variant="ghost"
                             size="icon-compact"
-                            aria-label={t("Actions for {v0} {v1}", { v0: workType, v1: title })}
+                            aria-label={t("Actions for {v0} {v1}", { v0: workLabel, v1: title })}
                             title={t("More actions")}
                             onClick={(event) => event.stopPropagation()}
                             className="h-8 w-8 rounded-lg text-[var(--classroom-text-muted)]"
@@ -114,7 +115,7 @@ export function ClassroomWorkEditButton({
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={remove}
                 isDeleting={deleting}
-                title={t("Delete {v0}?", { v0: workType })}
+                title={t("Delete {v0}?", { v0: workLabel })}
                 description={t("Delete “{v0}” and all of its submissions and grades? This action cannot be undone.", { v0: title })}
             />
         </>

@@ -1,6 +1,7 @@
 import { getLocale } from "next-intl/server";
 import { resolveLocale } from "@/i18n/config";
 import { LanguageProvider } from "@/components/i18n/LanguageProvider";
+import { getText } from "@/i18n/server";
 import type { Metadata } from "next";
 import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -24,10 +25,10 @@ const barlowCondensed = Barlow_Condensed({
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
-export const metadata: Metadata = {
-  title: "BeeSmart",
-  description: "BeeSmart Learning Platform",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getText();
+  return { title: "BeeSmart", description: t("BeeSmart Learning Platform") };
+}
 
 export default async function RootLayout({
   children,

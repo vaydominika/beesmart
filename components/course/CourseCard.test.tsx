@@ -1,3 +1,4 @@
+import { LanguageStateProvider } from "@/components/i18n/LanguageProvider";
 import { fireEvent, render, screen } from "@/test-utils/render";
 import { describe, expect, it, vi } from "vitest";
 import { CourseCard } from "./CourseCard";
@@ -60,5 +61,14 @@ describe("CourseCard", () => {
     expect(screen.getByLabelText("2 modules")).toBeInTheDocument();
     expect(screen.getByLabelText("6 lessons")).toBeInTheDocument();
     expect(screen.getByLabelText("5 enrollments")).toBeInTheDocument();
+  });
+
+  it("localizes predefined course metadata and preserves authored titles and descriptions", () => {
+    render(<LanguageStateProvider initialLocale="hu"><CourseCard course={{ ...learnerCourse, relationship: "owner", tags: [{ slug: "biology", name: "Biology" }] }} onClick={vi.fn()} /></LanguageStateProvider>);
+    expect(screen.getByText("Nyilvános")).toBeVisible();
+    expect(screen.getByText("Biológia")).toBeVisible();
+    expect(screen.getByText("Biology")).toBeVisible();
+    expect(screen.getByText("Cells without unsafe markup")).toBeVisible();
+    expect(screen.queryByText("Public")).not.toBeInTheDocument();
   });
 });

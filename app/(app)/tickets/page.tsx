@@ -40,7 +40,7 @@ export default async function TicketsPage() {
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-[var(--app-text-muted)]">{t(reportTypeLabel(ticket.type))}</p>
                     <h2 className="mt-1 text-lg font-semibold text-[var(--app-text)]">
-                      {ticket.type === "EARLY_ACCESS_FEEDBACK" ? t("Early Access feedback") : ticket.reason}
+                      {ticket.type === "EARLY_ACCESS_FEEDBACK" ? t("Early Access feedback") : t(ticket.reason)}
                     </h2>
                     {ticket.course ? (
                       <Link href={`/courses/${ticket.course.id}`} className="mt-1 inline-flex text-xs font-medium text-[var(--app-info)] hover:underline">

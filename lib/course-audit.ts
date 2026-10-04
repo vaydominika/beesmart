@@ -73,7 +73,7 @@ export function findStructuralPublishBlockers(course: PublishAuditCourse): Cours
   return issues;
 }
 
-export async function auditCourseForPublishing(course: PublishAuditCourse): Promise<CoursePublishAudit> {
+export async function auditCourseForPublishing(course: PublishAuditCourse, locale: "en" | "hu" = "en"): Promise<CoursePublishAudit> {
   const structuralIssues = findStructuralPublishBlockers(course);
   if (structuralIssues.length > 0) return { publishable: false, blockingIssues: structuralIssues };
 
@@ -96,6 +96,7 @@ export async function auditCourseForPublishing(course: PublishAuditCourse): Prom
         "Also block content that is fundamentally unreadable or inaccessible, but do not grade teaching quality.",
         "Return only genuine publication blockers. Never provide scores, praise, tips, recommendations, rewrites, or optional improvements.",
         "When a blocker belongs to one lesson, copy its exact lesson ID. Use null for a course-wide blocker.",
+        locale === "hu" ? "Write every blocking issue reason in natural Hungarian." : "Write every blocking issue reason in English.",
       ].join(" "),
       prompt: `Course title: ${course.title}\nCourse description: ${course.description ?? ""}\n\n${courseText.substring(0, 30_000)}`,
     });

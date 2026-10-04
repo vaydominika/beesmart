@@ -39,9 +39,9 @@ function ResetPasswordForm() {
 
   return (
     <AuthShell title={message ? t("Password updated") : t("Choose a new password")} footer={<p><Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">{t("Back to sign in")}</Link></p>}>
-      {message ? <AuthStatusMessage><p>{message}</p></AuthStatusMessage> : (
+      {message ? <AuthStatusMessage><p>{t(message)}</p></AuthStatusMessage> : (
         <form onSubmit={submit} className="space-y-4">
-          <WorkspaceField id="reset-password" label={t("New password")} labelClassName={authLabelClass} hint="Use at least 12 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} /></WorkspaceField>
+          <WorkspaceField id="reset-password" label={t("New password")} labelClassName={authLabelClass} hint={t("Use at least 12 characters.")}><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} /></WorkspaceField>
           <WorkspaceField id="reset-confirmation" label={t("Confirm new password")} labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authFieldClass} /></WorkspaceField>
           {error ? <p role="alert" className="text-sm text-[var(--app-danger)]">{t(error)}</p> : null}
           <AuthSubmitButton loading={loading} idleLabel={t("Update password")} loadingLabel={t("Updating…")} />

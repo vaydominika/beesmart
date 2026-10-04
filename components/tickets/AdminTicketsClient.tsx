@@ -162,12 +162,12 @@ export function AdminTicketsClient({
               {
                 value: "reports",
                 label: <span>{t("Course reports")} <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.reports}</span></span>,
-                ariaLabel: `Course reports, ${queueCounts.reports} ${queueCounts.reports === 1 ? "submission" : "submissions"}`,
+                ariaLabel: t("Course reports, {count} {kind}", { count: queueCounts.reports, kind: queueCounts.reports === 1 ? t("submission") : t("submissions") }),
               },
               {
                 value: "feedback",
                 label: <span>{t("Feedback")} <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.feedback}</span></span>,
-                ariaLabel: `Feedback, ${queueCounts.feedback} ${queueCounts.feedback === 1 ? "submission" : "submissions"}`,
+                ariaLabel: t("Feedback, {count} {kind}", { count: queueCounts.feedback, kind: queueCounts.feedback === 1 ? t("submission") : t("submissions") }),
               },
             ]}
             className="order-3 w-full bg-[var(--app-surface)] md:order-none md:w-auto"
@@ -181,7 +181,7 @@ export function AdminTicketsClient({
               size="icon"
               onClick={toggleTheme}
               className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"
-              aria-label={t("Switch to {v0} mode", { v0: theme === "light" ? "dark" : "light" })}
+              aria-label={t("Switch to {v0} mode", { v0: theme === "light" ? t("dark") : t("light") })}
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </WorkspaceButton>
@@ -195,10 +195,10 @@ export function AdminTicketsClient({
 
       <main className="w-full p-4 md:p-6">
         <section aria-labelledby="admin-queue-heading">
-          <h2 id="admin-queue-heading" className="sr-only">{queueTitle}</h2>
+          <h2 id="admin-queue-heading" className="sr-only">{t(queueTitle)}</h2>
           <div className="flex justify-end">
             <WorkspaceTabs
-              ariaLabel={t("{v0} view", { v0: queueTitle })}
+              ariaLabel={t("{v0} view", { v0: t(queueTitle) })}
               value={view}
               onValueChange={setView}
               size="compact"
@@ -221,7 +221,7 @@ export function AdminTicketsClient({
                           <span className="text-xs text-[var(--app-text-muted)]">{t(reportTypeLabel(ticket.type))}</span>
                           {ticket.type === "AUTOMATED_COURSE_FLAG" ? <Bot className="h-3.5 w-3.5 text-[var(--app-text-faint)]" aria-label={t("Automated")} /> : null}
                         </div>
-                        <h3 className="mt-2 text-lg font-semibold tracking-[-0.015em] text-[var(--app-text)]">{ticket.reason}</h3>
+                        <h3 className="mt-2 text-lg font-semibold tracking-[-0.015em] text-[var(--app-text)]">{t(ticket.reason)}</h3>
                         {ticket.description ? <p className="mt-1.5 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">{ticket.description}</p> : null}
                       </div>
                       <div className="w-full shrink-0 lg:w-40">
@@ -250,7 +250,7 @@ export function AdminTicketsClient({
               ))}
             </div>
           ) : (
-            <WorkspaceEmptyState key={`${queue}-${view}`} className="mt-5 min-h-56 animate-in fade-in-0 duration-200 motion-reduce:animate-none" dashed title={view === "active" ? t("No active {v0}.", { v0: queue === "reports" ? "reports" : "feedback" }) : t("No {v0}.", { v0: queue === "reports" ? "reports" : "feedback" })} />
+            <WorkspaceEmptyState key={`${queue}-${view}`} className="mt-5 min-h-56 animate-in fade-in-0 duration-200 motion-reduce:animate-none" dashed title={view === "active" ? t("No active {v0}.", { v0: queue === "reports" ? t("reports") : t("feedback") }) : t("No {v0}.", { v0: queue === "reports" ? t("reports") : t("feedback") })} />
           )}
         </section>
       </main>

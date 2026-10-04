@@ -276,7 +276,7 @@ export default function SchedulePage() {
             setSelectedEvent(eventWithReminder);
             setSelectedDate(parseDateKey(input.date));
             setEditor(null);
-            toast.success(t(input.reminder ? `Event updated. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString(locale)}.` : selectedEvent.reminder ? "Event updated. Reminder removed." : "Event updated."));
+            toast.success(t(input.reminder ? t("Event updated. Reminder set for {v0}.", { v0: new Date(input.reminder.notifyAt).toLocaleString(locale) }) : selectedEvent.reminder ? "Event updated. Reminder removed." : "Event updated."));
             triggerUpdate();
           } catch (reminderError) {
             toast.error(t("Event updated, but {v0}.", { v0: reminderError instanceof Error ? reminderError.message : t("the reminder could not be saved") }));
@@ -336,8 +336,8 @@ export default function SchedulePage() {
     try {
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `The ${workKind ?? "event"} could not be deleted.`);
-      toast.success(t("{v0} deleted.", { v0: workKind ? workKind[0].toUpperCase() + workKind.slice(1) : t("Event") }));
+      if (!response.ok) throw new Error(data.error || t("The {kind} could not be deleted.", { kind: t(workKind ?? "event") }));
+      toast.success(t("{v0} deleted.", { v0: workKind ? t(workKind[0].toUpperCase() + workKind.slice(1)) : t("Event") }));
       setDeleteTarget(null);
       setSelectedEvent(null);
       setEditor(null);
@@ -354,12 +354,12 @@ export default function SchedulePage() {
   const moveEvent = (event: ScheduleEvent, date: Date, startTime: string, endTime: string) => {
     if (event.recurrencePattern) return;
     const startDate = `${dateKey(date)}T00:00:00.000Z`;
-    void updateEventOptimistically(event, { startDate, endDate: startDate, startTime, endTime }, "Event moved.");
+    void updateEventOptimistically(event, { startDate, endDate: startDate, startTime, endTime }, t("Event moved."));
   };
 
   const resizeEvent = (event: ScheduleEvent, endTime: string) => {
     if (event.recurrencePattern) return;
-    void updateEventOptimistically(event, { endTime }, "Event duration updated.");
+    void updateEventOptimistically(event, { endTime }, t("Event duration updated."));
   };
 
   const startEdit = (event: ScheduleEvent) => {
@@ -460,11 +460,11 @@ export default function SchedulePage() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close delete confirmation")} className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
-          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">{t("Delete")} {deleteTarget ? classroomWorkKind(deleteTarget) ?? t("event") : t("event")}?</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">{t("Delete")} {deleteTarget ? t(classroomWorkKind(deleteTarget) ?? "event") : t("event")}?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? t("“{v0}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.", { v0: deleteTarget.title }) : deleteTarget?.recurrencePattern ? t("The entire “{v0}” series will be removed from your schedule. This action cannot be undone.", { v0: deleteTarget.title }) : t("“{v0}” will be removed from your schedule. This action cannot be undone.", { v0: deleteTarget?.title })}</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">
             <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>{t("Cancel")}</WorkspaceButton>
-            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? t("Deleting…") : t("Delete {v0}", { v0: deleteTarget ? classroomWorkKind(deleteTarget) ?? t("event") : t("event") })}</WorkspaceButton>
+            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? t("Deleting…") : t("Delete {v0}", { v0: deleteTarget ? t(classroomWorkKind(deleteTarget) ?? "event") : t("event") })}</WorkspaceButton>
           </div>
         </WorkspaceDialogContent>
       </Dialog>

@@ -22,8 +22,8 @@ export function DeleteConfirmationModal({ open, onClose, onConfirm, isDeleting, 
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !isDeleting) onClose(); }}>
       <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
         <DialogHeader className="pr-10">
-          <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">{title}</DialogTitle>
-          <DialogDescription className="mt-2 text-sm leading-6 text-[var(--classroom-text-muted)]">{description}</DialogDescription>
+          <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">{t(title)}</DialogTitle>
+          <DialogDescription className="mt-2 text-sm leading-6 text-[var(--classroom-text-muted)]">{t(description)}</DialogDescription>
         </DialogHeader>
         <DialogClose asChild>
           <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close delete confirmation")} disabled={isDeleting} className="absolute right-4 top-4">

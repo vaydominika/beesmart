@@ -32,13 +32,13 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
     <EntityCardButton
       onClick={onClick}
       className="hover:border-[var(--course-line-strong)] hover:bg-[var(--course-surface-hover)] focus-visible:ring-[var(--course-focus-border)]"
-      aria-label={t("{v0}, {v1}", { v0: course.title, v1: isOwner ? "created course" : statusLabel })}
+      aria-label={t("{v0}, {v1}", { v0: course.title, v1: t(isOwner ? "created course" : statusLabel) })}
     >
       <div className="mb-2 flex min-h-6 items-center justify-between gap-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--course-text-muted)]">{t(cardStatus)}</span>
         {isOwner && (
           <span className="rounded-full bg-[var(--course-surface-muted)] px-2.5 py-1 text-[10px] font-medium text-[var(--course-text-muted)]">
-            {VISIBILITY_LABELS[course.visibility]}
+            {t(VISIBILITY_LABELS[course.visibility])}
           </span>
         )}
       </div>
@@ -47,7 +47,7 @@ export function CourseCard({ course, onClick }: CourseCardProps) {
       {course.tags && course.tags.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5" aria-label={t("Course subjects")}>
           {course.tags.slice(0, 3).map((tag) => (
-            <span key={tag.slug} className="rounded-full border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--course-text-muted)]">{tag.name}</span>
+            <span key={tag.slug} className="rounded-full border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--course-text-muted)]">{t(tag.name)}</span>
           ))}
         </div>
       )}

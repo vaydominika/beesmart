@@ -373,7 +373,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     const result = await res.json().catch(() => ({})) as { error?: string };
-                    toast.error(t(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`));
+                    toast.error(t(result.error ? `${file.name}: ${result.error}` : t("Failed to upload {v0}", { v0: file.name })));
                     continue;
                 }
                 const uploaded = await res.json();
@@ -501,7 +501,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             const response = await fetch(deletion.endpoint, { method: "DELETE" });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                toast.error(t(data.error || `Could not delete the ${deletion.kind}.`));
+                toast.error(t(data.error || t("Could not delete the {v0}.", { v0: deletion.kind })));
                 return;
             }
             setPosts((current) => current.filter((post) => post.id !== postToDelete.id));
@@ -612,7 +612,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postAssignment.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
                                  {t("Assignment · Due")} {formatDateYmd(postAssignment.dueDate)}
-                                {postAssignment.files.length > 0 && ` · ${postAssignment.files.length} file${postAssignment.files.length === 1 ? "" : t("s")}`}
+                                {postAssignment.files.length > 0 && ` · ${postAssignment.files.length} ${t("file")}${postAssignment.files.length === 1 ? "" : t("s")}`}
                             </p>
                         </div>
                         <button
@@ -751,7 +751,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             )}
                         >
                             {POST_TYPE_ICONS[key]}
-                            {label}
+                            {t(label)}
                         </button>
                     ))}
                     <div className="ml-auto flex gap-2">
@@ -800,7 +800,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     {post.type !== "TEXT" && (
                                         <span className="flex items-center gap-1 rounded-md bg-(--classroom-accent) px-2 py-1 text-xs font-medium text-[var(--classroom-text-muted)]">
                                             {POST_TYPE_ICONS[post.type]}
-                                            {POST_TYPE_LABELS[post.type]}
+                                            {t(POST_TYPE_LABELS[post.type])}
                                         </span>
                                     )}
                                     {isTeacher ? (
@@ -907,7 +907,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit}  {t("min")}</span>
                                             )}
                                         </div>
-                                        <span className="mr-1 text-xs font-bold uppercase text-(--theme-text) opacity-50">{post.test.type}</span>
+                                        <span className="mr-1 text-xs font-bold uppercase text-(--theme-text) opacity-50">{t(post.test.type === "EXAM" ? "Exam" : "Test")}</span>
                                         {isTeacher ? (
                                             <Tooltip><TooltipTrigger asChild><button
                                                 type="button"
@@ -920,11 +920,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         ) : null}
                                         <Tooltip><TooltipTrigger asChild><Link
                                             href={`/classroom/${classroomId}/tests/${post.test.id}`}
-                                            aria-label={t("Open {v0} {v1}", { v0: post.test.type === "EXAM" ? t("exam") : t("test"), v1: post.test.title })}
+                                            aria-label={post.test.type === "EXAM" ? t("Open exam {title}", { title: post.test.title }) : t("Open test {title}", { title: post.test.title })}
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                         >
                                             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                        </Link></TooltipTrigger><TooltipContent>{t("Open")} {post.test.type === "EXAM" ? t("exam") : t("test")}</TooltipContent></Tooltip>
+                                        </Link></TooltipTrigger><TooltipContent>{post.test.type === "EXAM" ? t("Open exam") : t("Open test")}</TooltipContent></Tooltip>
                                 </div>
                             )}
 
@@ -1133,9 +1133,9 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 onClose={() => setPostToDelete(null)}
                 onConfirm={handleDeletePost}
                 isDeleting={deletingPost}
-                title={t("Delete {v0}?", { v0: postToDelete ? classroomPostDeleteDetails(classroomId, postToDelete).kind : "post" })}
+                title={t("Delete {v0}?", { v0: postToDelete ? t(classroomPostDeleteDetails(classroomId, postToDelete).kind) : t("post") })}
                 description={postToDelete && (postToDelete.assignment || postToDelete.test)
-                    ? t("This removes the {v0}, its classroom post, submissions, grades, and calendar event. This action cannot be undone.", { v0: classroomPostDeleteDetails(classroomId, postToDelete).kind })
+                    ? t("This removes the {v0}, its classroom post, submissions, grades, and calendar event. This action cannot be undone.", { v0: t(classroomPostDeleteDetails(classroomId, postToDelete).kind) })
                     : t("This removes the post and its comments. This action cannot be undone.")}
             />
 

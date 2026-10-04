@@ -33,10 +33,16 @@ Pass dynamic values separately using ICU placeholders, for example `t("Hello, {n
 
 Translate only interface text. Do not pass user-authored content to `t`. `WorkspaceSelect` preserves option labels by default; enable `translateLabels` only for predefined interface options.
 
+Public profile activity verbs use the `Activity` namespace so activity wording can differ from status labels. The tutorial selects English or Hungarian screenshots alongside its translated instructions.
+
+Known system notification templates and validation errors are translated at display time, preserving resource names, filenames, and limits. Register dynamic validation patterns in `i18n/error-messages.ts`; notification templates live in `i18n/system-text.ts`. User-authored notification bodies remain unchanged.
+
+Registration saves the language selected on the authentication page. Verification and password-reset emails use the account language and the `Email` namespace. True/False options are translated at display time without changing stored answers or grading.
+
 Run the catalog and language-switch checks with:
 
 ```sh
-npm run test:unit -- i18n/text.test.ts components/i18n/LanguageProvider.test.tsx
+npm run test:unit -- i18n components/i18n/LanguageProvider.test.tsx components/course/CourseCreationTutorial.test.tsx
 ```
 
 ## Dependency compatibility

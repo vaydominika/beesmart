@@ -171,7 +171,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                         ? "bg-(--classroom-surface-muted) text-(--classroom-text-muted)"
                                         : "border border-(--classroom-line) bg-(--classroom-surface) text-(--classroom-text-muted)",
                             )}>
-                                {member.isOwner ? t("Owner") : roleLabel(member.role)}
+                                {member.isOwner ? t("Owner") : t(roleLabel(member.role))}
                             </span>
                         </div>
                         <p className="truncate text-xs text-(--classroom-text-muted)">{member.user.email}</p>
@@ -197,7 +197,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                         onSelect={() => void handleChangeRole(member.id, option.value)}
                                         className="rounded-lg px-3 py-2 text-xs font-medium text-(--classroom-text-muted) focus:bg-(--classroom-surface-muted) focus:text-(--classroom-text)"
                                     >
-                                         {t("Make")} {option.label.toLowerCase()}
+                                         {t("Make")} {t(option.label)}
                                     </DropdownMenuItem>
                                 ))}
                                 <DropdownMenuSeparator className="bg-(--classroom-line)" />

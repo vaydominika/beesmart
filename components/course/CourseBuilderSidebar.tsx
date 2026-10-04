@@ -268,7 +268,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
     const text = sourceText.trim();
     if (!selectedFile && !text) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Building a syllabus from your source...");
+    const toastId = toast.loading(t("Building a syllabus from your source..."));
     try {
       const formData = new FormData();
       if (selectedFile) formData.append("file", selectedFile);
@@ -467,7 +467,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                               >
                                 <GripVertical className="h-3.5 w-3.5" />
                               </span>
-                              <button type="button" onClick={() => toggleModule(module.id)} aria-label={t("{v0} {v1}", { v0: collapsed ? "Expand" : "Collapse", v1: module.title })} className="flex h-8 w-7 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)]">
+                              <button type="button" onClick={() => toggleModule(module.id)} aria-label={t("{v0} {v1}", { v0: collapsed ? t("Expand") : t("Collapse"), v1: module.title })} className="flex h-8 w-7 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)]">
                                 {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </button>
                               <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-[var(--course-surface-muted)] px-1.5 font-mono text-[10px] font-semibold text-[var(--course-text-muted)]">{String(moduleIndex + 1).padStart(2, "0")}</span>
@@ -491,7 +491,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                     <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
                                       <DropdownMenuItem aria-label={t("Edit module {v0}", { v0: module.title })} onSelect={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
                                         <Pencil />{t("Edit")} </DropdownMenuItem>
-                                      <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: moduleIsPrerequisite ? t("Remove") : "Set", v1: module.title, v2: moduleIsPrerequisite ? "prerequisite" : "as prerequisite" })} disabled={module.lessons.length === 0} onSelect={() => void toggleModulePrerequisite(module)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                      <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: moduleIsPrerequisite ? t("Remove") : t("Set"), v1: module.title, v2: moduleIsPrerequisite ? t("prerequisite") : t("as prerequisite") })} disabled={module.lessons.length === 0} onSelect={() => void toggleModulePrerequisite(module)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
                                         {moduleIsPrerequisite ? <LockOpen /> : <Lock />}{moduleIsPrerequisite ? t("Remove prerequisite") : t("Set as prerequisite")}
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="bg-[var(--course-line)]" />
@@ -535,7 +535,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                           <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
                                             <DropdownMenuItem aria-label={t("Edit lesson {v0}", { v0: lesson.title })} onSelect={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
                                               <Pencil />{t("Edit")} </DropdownMenuItem>
-                                            <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: lesson.isLocked ? t("Remove") : "Set", v1: lesson.title, v2: lesson.isLocked ? "prerequisite" : "as prerequisite" })} onSelect={() => void toggleLessonPrerequisite(lesson, module.id)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                            <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: lesson.isLocked ? t("Remove") : t("Set"), v1: lesson.title, v2: lesson.isLocked ? t("prerequisite") : t("as prerequisite") })} onSelect={() => void toggleLessonPrerequisite(lesson, module.id)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
                                               {lesson.isLocked ? <LockOpen /> : <Lock />}{lesson.isLocked ? t("Remove prerequisite") : t("Set as prerequisite")}
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator className="bg-[var(--course-line)]" />
@@ -583,7 +583,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         <WorkspaceDialogContent mobileSheet={false} className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
           <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close delete confirmation")} className="absolute right-4 top-4 z-20" disabled={isMutating}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
-            <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">{t("Delete")} {deleteTarget?.type}?</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">{t("Delete")} {t(deleteTarget?.type ?? "item")}?</DialogTitle>
             <DialogDescription className="mt-1 text-sm leading-6 text-[var(--course-text-muted)]">
               {deleteTarget?.type === "module"
                 ? t("This will permanently delete “{v0}” and every lesson inside it.", { v0: deleteTarget.title })
@@ -592,7 +592,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           <div className="flex justify-end gap-2 px-5 py-4">
             <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isMutating}>{t("Cancel")}</WorkspaceButton>
             <WorkspaceButton type="button" variant="danger" onClick={() => void deleteSyllabusItem()} disabled={isMutating}>
-              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? t("Deleting...") : t("Delete {v0}", { v0: deleteTarget?.type ?? "item" })}
+              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? t("Deleting...") : t("Delete {v0}", { v0: t(deleteTarget?.type ?? "item") })}
             </WorkspaceButton>
           </div>
         </WorkspaceDialogContent>

@@ -1,5 +1,6 @@
 "use client";
 
+import { translateAuditReason } from "@/i18n/system-text";
 import { useText } from "@/i18n/use-text";
 
 import { useCallback, useRef, useState } from "react";
@@ -401,10 +402,10 @@ function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: 
           ) : blocked ? (
             <div>
               <div className="flex gap-3 rounded-xl border border-[var(--app-warning-border)] bg-[var(--app-warning-soft)] p-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><div><p className="text-sm font-semibold">{t("Course not published")}</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{t("The safety check found")} {issues.length}  {t("publication")} {issues.length === 1 ? t("blocker") : t("blockers")}.</p></div></div>
-              <ul className="mt-4 space-y-2">{issues.map((issue, index) => <li key={`${issue.category}-${index}`} className="rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--course-text-faint)]">{issue.category.replaceAll("_", " ")}</span><p className="mt-1 text-sm leading-5 text-[var(--course-text)]">{issue.reason}</p></li>)}</ul>
+              <ul className="mt-4 space-y-2">{issues.map((issue, index) => <li key={`${issue.category}-${index}`} className="rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--course-text-faint)]">{t(issue.category.replaceAll("_", " "))}</span><p className="mt-1 text-sm leading-5 text-[var(--course-text)]">{translateAuditReason(issue.reason, t)}</p></li>)}</ul>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-3"><p className="text-sm font-semibold text-[var(--course-danger)]">{t("Course not published")}</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{error ?? t("The publishing safety check could not be completed.")}</p></div>
+            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-3"><p className="text-sm font-semibold text-[var(--course-danger)]">{t("Course not published")}</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{error ? t(error) : t("The publishing safety check could not be completed.")}</p></div>
           )}
         </div>
         {!checking && <div className="flex justify-end border-t border-[var(--course-line)] px-5 py-4"><WorkspaceButton type="button" variant="secondary" onClick={onClose}>{t("Close")}</WorkspaceButton></div>}

@@ -1,3 +1,4 @@
+import { LanguageStateProvider } from "@/components/i18n/LanguageProvider";
 import { fireEvent, render, screen, waitFor } from "@/test-utils/render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BasedOnYourCoursesCard } from "./BasedOnYourCoursesCard";
@@ -77,5 +78,15 @@ describe("daily course recommendation cards", () => {
       { method: "POST" },
     ));
     expect(await screen.findByText("Chosen to take you into a different subject.")).toBeInTheDocument();
+  });
+
+  it("localizes the recommendation dialog while preserving the recommended course", async () => {
+    vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify(recommendation), { status: 200 }));
+    render(<LanguageStateProvider initialLocale="hu"><BasedOnYourCoursesCard /></LanguageStateProvider>);
+    fireEvent.click(screen.getByRole("button", { name: "A mai ajánlat megtekintése" }));
+    expect(await screen.findByRole("heading", { name: "Genetics" })).toBeVisible();
+    expect(screen.queryByText("Today's hive pick")).not.toBeInTheDocument();
+    expect(screen.queryByText("Chosen to build on courses you've already completed.")).not.toBeInTheDocument();
+    expect(screen.getByText("Genes and inheritance")).toBeVisible();
   });
 });

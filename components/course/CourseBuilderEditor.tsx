@@ -140,7 +140,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
   const handleGenerate = async () => {
     if (isGenerating) return;
     setIsGenerating(true);
-    const toastId = toast.loading("Creating lesson content...");
+    const toastId = toast.loading(t("Creating lesson content..."));
     try {
       const formData = new FormData();
       if (generationPrompt.trim()) formData.append("prompt", generationPrompt.trim());
@@ -209,7 +209,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       if (!response.ok) throw new Error();
       const updatedFile = await response.json() as CourseBuilderFile;
       applyFileVisibility(file.id, updatedFile.isVisible, updatedFile);
-      toast.success(t(nextVisibility ? `${file.fileName} is visible to learners.` : `${file.fileName} is hidden from learners.`));
+      toast.success(t(nextVisibility ? t("{v0} is visible to learners.", { v0: file.fileName }) : t("{v0} is hidden from learners.", { v0: file.fileName })));
     } catch {
       applyFileVisibility(file.id, file.isVisible);
       toast.error(t("{v0} visibility could not be updated.", { v0: file.fileName }));

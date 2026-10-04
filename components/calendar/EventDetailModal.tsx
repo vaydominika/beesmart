@@ -104,7 +104,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
       const endpoint = classroomWorkDeleteEndpoint(displayEvent) ?? `/api/user/events?id=${eventRecordId(displayEvent)}`;
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) return toast.error(t(data.error || `Failed to delete ${linkedWork ? "assessment" : "event"}.`));
+      if (!response.ok) return toast.error(t(data.error || t("Failed to delete {v0}.", { v0: linkedWork ? t("assessment") : t("event") })));
       toast.success(t("{v0} deleted", { v0: linkedWork ? t("Assessment") : t("Event") }));
       setShowDeleteModal(false);
       onClose();
@@ -155,7 +155,8 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   }
 
   const classroomWork = isClassroomWorkEvent(displayEvent);
-  const classroomWorkLabel = classroomWorkKind(displayEvent);
+  const workKind = classroomWorkKind(displayEvent);
+  const classroomWorkLabel = workKind ? t(workKind) : null;
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
@@ -178,7 +179,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
           ) : (
             <>
               <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-text)]"><Clock className="h-4 w-4 text-[var(--app-text-muted)]" />{displayEvent.isAllDay ? t("All day") : t("{v0}{v1}", { v0: displayEvent.startTime || "No start time", v1: displayEvent.endTime ? ` – ${displayEvent.endTime}` : "" })}</div>
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-text)]"><Clock className="h-4 w-4 text-[var(--app-text-muted)]" />{displayEvent.isAllDay ? t("All day") : t("{v0}{v1}", { v0: displayEvent.startTime || t("No start time"), v1: displayEvent.endTime ? ` – ${displayEvent.endTime}` : "" })}</div>
                 {displayEvent.recurrencePattern ? <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--app-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{t(recurrenceLabel(displayEvent.recurrencePattern))}</p> : null}
                 {displayEvent.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-text-muted)]">{displayEvent.description}</p> : null}
                 {displayEvent.isProtected ? <p className="mt-3 flex items-center gap-2 text-xs text-[var(--app-text-faint)]"><LockKeyhole className="h-3.5 w-3.5" />{displayEvent.canEdit === false ? t("Managed by your teacher") : t("Synchronized with Classroom")}</p> : null}

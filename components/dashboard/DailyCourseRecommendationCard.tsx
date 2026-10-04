@@ -109,7 +109,7 @@ export function DailyCourseRecommendationCard({
           <WorkspaceDialogHeader>
             <WorkspaceDialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" aria-hidden="true" />
-              {modalTitle}
+              {t(modalTitle)}
             </WorkspaceDialogTitle>
           </WorkspaceDialogHeader>
 
@@ -138,7 +138,7 @@ export function DailyCourseRecommendationCard({
                   </p>
                 )}
                 <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-(--app-text-muted)">
-                  <span>{matchText}</span>
+                  <span>{t(matchText)}</span>
                   {recommendation.course.averageRating != null && recommendation.course.averageRating > 0 && (
                     <span className="flex items-center gap-1">
                       <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
@@ -155,7 +155,7 @@ export function DailyCourseRecommendationCard({
                 <h3 className="mt-4 text-lg font-semibold text-(--app-text)">
                   {error.code === "COURSE_COMPLETION_REQUIRED" ? t("Complete your first course") : error.code === "NO_ELIGIBLE_COURSES" ? t("Nothing new is available") : t("Pick unavailable")}
                 </h3>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-(--app-text-muted)">{error.message}</p>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-(--app-text-muted)">{t(error.message)}</p>
               </div>
             ) : null}
           </WorkspaceDialogBody>

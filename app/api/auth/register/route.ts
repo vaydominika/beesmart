@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { sendEmailVerificationEmail } from "@/lib/email";
+import { requestLocale } from "@/i18n/config";
 import {
   createEmailVerificationToken,
   EMAIL_VERIFICATION_TTL_MS,
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     );
   }
   const { name, email, password } = parsed.data;
+  const locale = requestLocale(request.headers);
 
   const addressLimit = await consumeRateLimit(
     "auth-register-address",
@@ -70,7 +72,7 @@ export async function POST(request: Request) {
   try {
     userId = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
-        data: { name, email, password: hashedPassword },
+        data: { name, email, password: hashedPassword, locale },
         select: { id: true },
       });
       await tx.verificationToken.create({
@@ -94,6 +96,7 @@ export async function POST(request: Request) {
       to: email,
       verificationUrl,
       idempotencyKey: verificationTokenHash,
+      locale,
     });
   } catch (error) {
     await prisma.$transaction([

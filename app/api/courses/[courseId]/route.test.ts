@@ -8,6 +8,7 @@ import { routeContext } from "@/test-utils/route-context";
 import { recordMeaningfulActivity } from "@/lib/activity";
 import { claimUploads, markFilesForDeletion, purgeStoredFiles } from "@/lib/files/lifecycle";
 
+vi.mock("next-intl/server", () => ({ getLocale: vi.fn().mockResolvedValue("en") }));
 vi.mock("@/lib/db", () => ({
   getCurrentUserId: vi.fn(),
   prisma: {

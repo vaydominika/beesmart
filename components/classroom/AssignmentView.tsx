@@ -190,7 +190,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     const result = await res.json().catch(() => ({})) as { error?: string };
-                    toast.error(t(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`));
+                    toast.error(t(result.error ? `${file.name}: ${result.error}` : t("Failed to upload {v0}", { v0: file.name })));
                     continue;
                 }
                 const uploaded = await res.json();
@@ -277,7 +277,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
                 <XCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" />
                 <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">{t("Assignment unavailable")}</h1>
-                <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? t("Assignment details could not be loaded.")}</p>
+                <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ? t(assignmentError) : t("Assignment details could not be loaded.")}</p>
                 <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">{t("Try again")}</WorkspaceButton>
             </div>
         );
@@ -365,7 +365,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
             {submissionsError && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger)]">
-                    <span>{submissionsError}</span>
+                    <span>{t(submissionsError)}</span>
                     <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchAssignmentAndSubmissions()}>{t("Retry")}</WorkspaceButton>
                 </div>
             )}
@@ -506,7 +506,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-sm font-semibold text-[var(--classroom-text)]">{submission.user.name}</span>
                                             <span className={cn("mt-0.5 block text-[11px] font-medium", submission.grade ? "text-[var(--app-success)]" : submission.status === "LATE" ? "text-[var(--app-warning)]" : "text-[var(--classroom-text-muted)]")}>
-                                                {submission.grade ? t("Graded · {v0}{v1}", { v0: submission.grade.score, v1: submission.grade.maxScore != null ? ` / ${submission.grade.maxScore}` : "" }) : statusLabel(submission.status)}
+                                                {submission.grade ? t("Graded · {v0}{v1}", { v0: submission.grade.score, v1: submission.grade.maxScore != null ? ` / ${submission.grade.maxScore}` : "" }) : t(statusLabel(submission.status))}
                                             </span>
                                         </span>
                                     </WorkspaceButton>
@@ -541,7 +541,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     <span className={cn("inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold", statusTone(selectedSubmission.grade ? "GRADED" : selectedSubmission.status))}>
                                         {selectedSubmission.grade
                                             ? t("Graded · {v0}{v1}", { v0: selectedSubmission.grade.score, v1: selectedSubmission.grade.maxScore != null ? ` / ${selectedSubmission.grade.maxScore}` : "" })
-                                            : statusLabel(selectedSubmission.status)}
+                                            : t(statusLabel(selectedSubmission.status))}
                                     </span>
                                 </div>
 

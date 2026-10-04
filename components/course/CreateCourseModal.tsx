@@ -197,7 +197,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                   }))}
                   onValueChange={updateTag}
                   ariaLabel={t("Course subjects")}
-                  label={tagSlugs.size > 0 ? t("{v0} {v1} selected", { v0: tagSlugs.size, v1: tagSlugs.size === 1 ? "subject" : "subjects" }) : t("Choose subjects")}
+                  label={tagSlugs.size > 0 ? t("{v0} {v1} selected", { v0: tagSlugs.size, v1: tagSlugs.size === 1 ? t("subject") : t("subjects") }) : t("Choose subjects")}
                   triggerIcon={Tags}
                   className="h-11 w-full border-[var(--course-line)] bg-[var(--course-surface-muted)] focus-visible:border-[var(--course-focus-border)] focus-visible:ring-[var(--course-focus-ring)]"
                   contentClassName="max-h-72 overflow-y-auto"
@@ -209,7 +209,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                         key={option.value}
                         type="button"
                         onClick={() => updateTag(option.value, false)}
-                        aria-label={t("Remove {v0}", { v0: option.label })}
+                        aria-label={t("Remove {v0}", { v0: t(option.label) })}
                         className="inline-flex h-7 items-center gap-1.5 rounded-full border border-[var(--course-line-strong)] bg-[var(--course-accent)] px-2.5 text-[11px] font-semibold text-[var(--course-text)] transition-colors hover:bg-[var(--course-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]"
                       >
                         {t(option.label)}<X className="h-3 w-3" aria-hidden="true" />
@@ -224,7 +224,7 @@ export function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModa
                 <div className="grid gap-2 sm:grid-cols-3">
                   {VISIBILITY_OPTIONS.map(({ value, label, hint, icon: Icon }) => (
                     <button key={value} type="button" onClick={() => setVisibility(value)} aria-pressed={visibility === value} className={cn("flex min-h-16 items-center gap-3 rounded-xl border p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", visibility === value ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-[var(--app-surface)] hover:bg-[var(--course-surface-muted)]")}>
-                      <Icon className="h-4 w-4 shrink-0" /><span><span className="block text-sm font-semibold text-[var(--course-text)]">{label}</span><span className="mt-0.5 block text-[11px] text-[var(--course-text-muted)]">{hint}</span></span>
+                      <Icon className="h-4 w-4 shrink-0" /><span><span className="block text-sm font-semibold text-[var(--course-text)]">{t(label)}</span><span className="mt-0.5 block text-[11px] text-[var(--course-text-muted)]">{t(hint)}</span></span>
                     </button>
                   ))}
                 </div>

@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
     <AuthShell title={message ? t("Check your email") : t("Reset your password")} footer={<p>{t("Remembered it?")} <Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">{t("Back to sign in")}</Link></p>}>
       {message ? (
         <AuthStatusMessage>
-          <p>{message}</p>
+          <p>{t(message)}</p>
           <p>{t("The reset link expires in one hour.")}</p>
         </AuthStatusMessage>
       ) : (

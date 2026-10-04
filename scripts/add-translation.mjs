@@ -15,7 +15,6 @@ const existing = catalogs[0].messages.UI[key];
 if (existing && existing !== source) throw new Error(`Translation key collision: ${key}`);
 for (const {locale, path, messages} of catalogs) {
   messages.UI[key] = locale === 'en' ? source : hungarian;
-  messages.UI = Object.fromEntries(Object.entries(messages.UI).sort(([a], [b]) => a.localeCompare(b)));
   await writeFile(path, JSON.stringify(messages, null, 2) + '\n');
 }
 console.log(`Saved ${key} in both catalogs.`);

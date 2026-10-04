@@ -179,7 +179,7 @@ export function CoursePostModal({ open, selectedCourseId, onClose, onSelect }: C
                                                     <span className="truncate">{course.creator.name}</span>
                                                     <span>{course._count?.modules ?? 0}  {t("modules")}</span>
                                                     <span className="rounded-md bg-(--classroom-surface-muted) px-1.5 py-0.5 text-[10px] font-medium capitalize text-(--classroom-text-muted)">
-                                                        {course.visibility.replaceAll("_", " ").toLowerCase()}
+                                                        {t(course.visibility === "INVITATION_ONLY" ? "Invitation only" : course.visibility === "PUBLIC" ? "Public" : "Private")}
                                                     </span>
                                                 </span>
                                             </span>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email";
+import { requestLocale, resolveLocale } from "@/i18n/config";
 import {
   createEmailVerificationToken,
   EMAIL_VERIFICATION_TTL_MS,
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, email: true, password: true, emailVerified: true },
+    select: { id: true, email: true, password: true, emailVerified: true, locale: true },
   });
   if (!user?.password || user.emailVerified) return NextResponse.json({ message: genericMessage });
 
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
       to: user.email,
       verificationUrl: emailVerificationUrl(token),
       idempotencyKey: tokenHash,
+      locale: resolveLocale(user.locale ?? requestLocale(request.headers)),
     });
   } catch (error) {
     await prisma.verificationToken.deleteMany({ where: { identifier, token: tokenHash } });

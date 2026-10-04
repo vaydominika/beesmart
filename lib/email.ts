@@ -1,16 +1,22 @@
 import { Resend } from "resend";
+import { createTranslator } from "next-intl";
+import en from "@/messages/en.json";
+import hu from "@/messages/hu.json";
+import type { Locale } from "@/i18n/config";
 import { RESEND_EMAIL_FROM } from "@/lib/env";
 
 type PasswordResetEmail = {
   to: string;
   resetUrl: string;
   idempotencyKey: string;
+  locale?: Locale;
 };
 
 type EmailVerificationEmail = {
   to: string;
   verificationUrl: string;
   idempotencyKey: string;
+  locale?: Locale;
 };
 
 type TransactionalEmail = {
@@ -40,13 +46,14 @@ async function sendTransactionalEmail({ to, subject, text, html, idempotencyKey 
   if (error) throw new Error(`Resend rejected email: ${error.message}`);
 }
 
-export async function sendPasswordResetEmail({ to, resetUrl, idempotencyKey }: PasswordResetEmail) {
+export async function sendPasswordResetEmail({ to, resetUrl, idempotencyKey, locale = "en" }: PasswordResetEmail) {
+  const t = createTranslator({ locale, messages: locale === "hu" ? hu : en, namespace: "Email" });
   try {
     await sendTransactionalEmail({
       to,
-      subject: "Reset your BeeSmart password",
-      text: `Use this link to reset your BeeSmart password. It expires in one hour:\n\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
-      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#202020"><h1 style="font-size:24px">Reset your BeeSmart password</h1><p>Use the button below to choose a new password. This link expires in one hour.</p><p><a href="${resetUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#f4c542;color:#202020;font-weight:700;text-decoration:none">Reset password</a></p><p style="font-size:13px;color:#666">If you did not request this, you can ignore this email.</p></div>`,
+      subject: t("passwordSubject"),
+      text: t("passwordText", { url: resetUrl }),
+      html: emailHtml(locale, t("passwordSubject"), t("passwordInstructions"), t("passwordButton"), t("passwordIgnore"), resetUrl),
       idempotencyKey,
     });
   } catch (error) {
@@ -57,13 +64,14 @@ export async function sendPasswordResetEmail({ to, resetUrl, idempotencyKey }: P
   }
 }
 
-export async function sendEmailVerificationEmail({ to, verificationUrl, idempotencyKey }: EmailVerificationEmail) {
+export async function sendEmailVerificationEmail({ to, verificationUrl, idempotencyKey, locale = "en" }: EmailVerificationEmail) {
+  const t = createTranslator({ locale, messages: locale === "hu" ? hu : en, namespace: "Email" });
   try {
     await sendTransactionalEmail({
       to,
-      subject: "Verify your BeeSmart email",
-      text: `Verify your BeeSmart email address using this link. It expires in 24 hours:\n\n${verificationUrl}\n\nIf you did not create this account, you can ignore this email.`,
-      html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#202020"><h1 style="font-size:24px">Verify your BeeSmart email</h1><p>Confirm your email address to finish creating your account. This link expires in 24 hours.</p><p><a href="${verificationUrl}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#f4c542;color:#202020;font-weight:700;text-decoration:none">Verify email</a></p><p style="font-size:13px;color:#666">If you did not create this account, you can ignore this email.</p></div>`,
+      subject: t("verificationSubject"),
+      text: t("verificationText", { url: verificationUrl }),
+      html: emailHtml(locale, t("verificationSubject"), t("verificationInstructions"), t("verificationButton"), t("verificationIgnore"), verificationUrl),
       idempotencyKey,
     });
   } catch (error) {
@@ -72,4 +80,8 @@ export async function sendEmailVerificationEmail({ to, verificationUrl, idempote
     }
     throw error;
   }
+}
+
+function emailHtml(locale: Locale, subject: string, instructions: string, button: string, ignore: string, url: string) {
+  return `<div lang="${locale}" style="font-family:Arial,sans-serif;line-height:1.6;color:#202020"><h1 style="font-size:24px">${subject}</h1><p>${instructions}</p><p><a href="${url}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#f4c542;color:#202020;font-weight:700;text-decoration:none">${button}</a></p><p style="font-size:13px;color:#666">${ignore}</p></div>`;
 }

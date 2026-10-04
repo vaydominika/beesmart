@@ -3,6 +3,7 @@
 import { useLocale } from "next-intl";
 
 import { useText } from "@/i18n/use-text";
+import { assessmentOptionText } from "@/i18n/assessment-text";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -69,6 +70,8 @@ interface AttemptReviewItem {
     pointsAwarded: number;
     maxPoints: number;
     expectedAnswer: string | null;
+    questionType?: string;
+    answerMissing?: boolean;
 }
 
 interface TeacherTestAttempt extends TestAttempt {
@@ -358,7 +361,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         setAiGrading(true);
         try {
             const gradedCount = await requestAiGrade(selectedAttempt.id);
-            toast.success(t(gradedCount ? `${gradedCount} ${gradedCount === 1 ? "essay" : "essays"} graded.` : "No ungraded essays found."));
+            toast.success(t(gradedCount ? t("{v0} {v1} graded.", { v0: gradedCount, v1: gradedCount === 1 ? t("essay") : t("essays") }) : "No ungraded essays found."));
             await fetchInitialData();
         } catch (error) {
             toast.error(t(error instanceof Error ? error.message : "AI grading could not be completed."));
@@ -441,7 +444,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         return <WorkspaceLoadingState className="py-20" label={t("Loading assessment")} />;
     }
 
-    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">{t("Assessment unavailable")}</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || t("Assessment details could not be loaded.")}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">{t("Try again")}</WorkspaceButton></div>;
+    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">{t("Assessment unavailable")}</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError ? t(loadError) : t("Assessment details could not be loaded.")}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">{t("Try again")}</WorkspaceButton></div>;
 
     // =========================================================================
     // STUDENT VIEW
@@ -455,7 +458,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         <div>
                             <h1 className="text-2xl font-bold text-(--theme-text) mb-1">{test.title}</h1>
                             <div className="flex items-center gap-3 text-xs font-bold text-(--theme-text) opacity-60">
-                                <span className="uppercase">{test.type}</span>
+                                <span className="uppercase">{t(test.type === "EXAM" ? "Exam" : "Test")}</span>
                                 {test.timeLimit && (
                                     <>
                                         <span>•</span>
@@ -552,7 +555,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                                             <div className="w-2.5 h-2.5 rounded-full bg-(--theme-text)"></div>
                                                         )}
                                                     </div>
-                                                    <span className="text-sm font-bold text-(--theme-text)">{opt.optionText}</span>
+                                                    <span className="text-sm font-bold text-(--theme-text)">{assessmentOptionText(q.questionType, opt.optionText, t)}</span>
                                                 </label>
                                             ))}
                                         </div>
@@ -613,9 +616,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                             <p className="text-sm font-semibold text-[var(--classroom-text)]">{index + 1}. {item.questionText}</p>
                                             <span className="shrink-0 text-sm font-semibold text-[var(--classroom-text)]">{item.pointsAwarded}/{item.maxPoints}</span>
                                         </div>
-                                        <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">{t("Your answer:")} {item.learnerAnswer}</p>
+                                        <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">{t("Your answer:")} {item.answerMissing ? t("No answer") : assessmentOptionText(item.questionType, item.learnerAnswer, t)}</p>
                                         {item.expectedAnswer && (
-                                            <p className="mt-1 text-xs font-medium text-[var(--app-warning)]">{t("Expected answer:")} {item.expectedAnswer}</p>
+                                            <p className="mt-1 text-xs font-medium text-[var(--app-warning)]">{t("Expected answer:")} {assessmentOptionText(item.questionType, item.expectedAnswer, t)}</p>
                                         )}
                                     </div>
                                 ))}
@@ -746,8 +749,8 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
                                 return (
                                     <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
-                                        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">{t("Question")} {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points}  {t("pts")}</span></div>
-                                        <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">{t("Learner answer")}</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || t("No answer")}</p></div>
+                                        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">{t("Question")} {index + 1} · {t(response.question.questionType.replaceAll("_", " "))}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points}  {t("pts")}</span></div>
+                                        <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">{t("Learner answer")}</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || (selectedOption ? assessmentOptionText(response.question.questionType, selectedOption.optionText, t) : t("No answer"))}</p></div>
                                         {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">{t("Expected:")} {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
                                         {manual ? (
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">

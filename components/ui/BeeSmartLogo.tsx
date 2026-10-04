@@ -1,4 +1,7 @@
+"use client";
+
 import type { SVGProps } from "react";
+import { useText } from "@/i18n/use-text";
 import { cn } from "@/lib/utils";
 
 interface BeeSmartLogoProps extends SVGProps<SVGSVGElement> {
@@ -37,6 +40,7 @@ const logoPaths = [
 ] as const;
 
 export function BeeSmartLogo({ className, priority: _priority, ...props }: BeeSmartLogoProps) {
+  const t = useText();
   void _priority;
 
   return (
@@ -44,7 +48,7 @@ export function BeeSmartLogo({ className, priority: _priority, ...props }: BeeSm
       viewBox="1 89.5 140 60"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("inline-block h-auto w-auto max-w-full", className)}
-      aria-label="BeeSmart Logo"
+      aria-label={t("BeeSmart Logo")}
       role="img"
       {...props}
     >

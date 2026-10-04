@@ -2,7 +2,8 @@
 
 import { useText } from "@/i18n/use-text";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
+import { useLocale } from "next-intl";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -105,11 +106,11 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
 
             <ol className="mt-10 space-y-2" aria-label={t("Tutorial progress")}>
               {STEPS.map((item, index) => (
-                <li key={item.eyebrow} className={cn("flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2.5 text-sm", index === step ? "border-[var(--course-accent-hover)] bg-[var(--app-surface)] font-semibold text-[var(--course-text)] shadow-sm" : "border-transparent text-[var(--course-text-muted)]")}>
+                <li key={t(item.eyebrow)} className={cn("flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2.5 text-sm", index === step ? "border-[var(--course-accent-hover)] bg-[var(--app-surface)] font-semibold text-[var(--course-text)] shadow-sm" : "border-transparent text-[var(--course-text-muted)]")}>
                   <span className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold", index < step ? "border-[var(--course-success)] bg-[var(--course-success-soft)] text-[var(--course-success)]" : "border-[var(--course-line-strong)] bg-[var(--course-surface-muted)]")}>
                     {index < step ? <Check className="h-3.5 w-3.5" /> : index + 1}
                   </span>
-                  {item.eyebrow}
+                  {t(item.eyebrow)}
                 </li>
               ))}
             </ol>
@@ -127,12 +128,12 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
             <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4 md:px-9">
               <div className="mx-auto w-full max-w-[760px]">
                 <div className="mb-5 flex gap-1 md:hidden" aria-hidden="true">
-                  {STEPS.map((item, index) => <span key={item.eyebrow} className={cn("h-1.5 flex-1 rounded-full", index <= step ? "bg-[var(--course-focus-border)]" : "bg-[var(--course-surface-muted)]")} />)}
+                  {STEPS.map((item, index) => <span key={t(item.eyebrow)} className={cn("h-1.5 flex-1 rounded-full", index <= step ? "bg-[var(--course-focus-border)]" : "bg-[var(--course-surface-muted)]")} />)}
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-[var(--course-text-muted)]">
-                  <span className="rounded-md border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--course-text)]">{t("Step")} {step + 1}  {t("of")} {STEPS.length}</span>
-                  <span>{current.eyebrow}</span>
+                  <span className="rounded-md border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-1 text-xs font-semibold text-[var(--course-text)]">{t("Step {step} of {total}", { step: step + 1, total: STEPS.length })}</span>
+                  <span>{t(current.eyebrow)}</span>
                 </div>
                 <h3 className="mt-3 max-w-2xl text-[30px] font-semibold leading-[1.15] tracking-[-0.035em] text-[var(--course-text)] md:text-[34px]">{t(current.title)}</h3>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--course-text-muted)]">{t(current.description)}</p>
@@ -144,9 +145,9 @@ export function CourseCreationTutorial({ open, intent, onClose, onFinish }: Cour
                 <p className="mt-4 text-xs font-semibold text-[var(--course-text-muted)]">{t("What you will do")}</p>
                 <ol className="mt-1.5 divide-y divide-[var(--course-line)] overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)]">
                   {current.actions.map((action, index) => (
-                    <li key={action} className="flex items-start gap-3 px-4 py-2">
+                    <li key={t(action)} className="flex items-start gap-3 px-4 py-2">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--course-line-strong)] bg-[var(--app-surface)] font-mono text-[10px] font-semibold text-[var(--course-text)]">{index + 1}</span>
-                      <p className="pt-0.5 text-xs leading-5 text-[var(--course-text-muted)]">{action}</p>
+                      <p className="pt-0.5 text-xs leading-5 text-[var(--course-text-muted)]">{t(action)}</p>
                     </li>
                   ))}
                 </ol>
@@ -177,7 +178,7 @@ function CourseSetupScreenshots() {
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2" aria-label={t("The two course setup screens")}>
       <figure className="relative overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-sm">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-setup-basics.png"
           alt={t("Course setup basics screen with title, visibility, and cover image fields")}
           width={877}
@@ -189,7 +190,7 @@ function CourseSetupScreenshots() {
         <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">{t("1 · Basics")}</figcaption>
       </figure>
       <figure className="relative overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-sm">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-setup-details.png"
           alt={t("Course setup details screen with description and course materials fields")}
           width={873}
@@ -209,7 +210,7 @@ function CourseBuilderScreenshots() {
   return (
     <div className="mt-4 grid gap-3" aria-label={t("Course syllabus and lesson editor screens")}>
       <figure className="relative flex h-[420px] items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm md:h-[460px]">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-builder-syllabus.png"
           alt={t("Syllabus builder with outline generation, modules, and lessons")}
           width={287}
@@ -221,7 +222,7 @@ function CourseBuilderScreenshots() {
         <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">{t("1 · Build the syllabus")}</figcaption>
       </figure>
       <figure className="relative overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-sm">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-builder-lesson-content.png"
           alt={t("Lesson editor with options to create content from a prompt or source, or write the lesson manually")}
           width={1569}
@@ -241,7 +242,7 @@ function PublishingPath() {
   return (
     <div className="mt-4 grid gap-3 sm:grid-cols-2" aria-label={t("Publishing workflow")}>
       <figure className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-publish-saving.png"
           alt={t("Course builder saving changes before publishing")}
           width={229}
@@ -253,7 +254,7 @@ function PublishingPath() {
         <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">{t("1 · Save changes")}</figcaption>
       </figure>
       <figure className="relative flex min-h-56 items-center justify-center overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3 shadow-sm">
-        <Image
+        <TutorialImage
           src="/images/tutorial/course-publish-audit.png"
           alt={t("Publication safety check running before the course is published")}
           width={483}
@@ -265,5 +266,27 @@ function PublishingPath() {
         <figcaption className="absolute right-2 top-2 rounded-md border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_92%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--course-text)] shadow-sm">{t("2 · Publication safety check")}</figcaption>
       </figure>
     </div>
+  );
+}
+
+const hungarianScreenshotSizes: Record<string, readonly [number, number]> = {
+  "/images/tutorial/course-builder-lesson-content.png": [1054, 700],
+  "/images/tutorial/course-builder-syllabus.png": [298, 620],
+  "/images/tutorial/course-publish-audit.png": [448, 232],
+  "/images/tutorial/course-publish-saving.png": [228, 40],
+  "/images/tutorial/course-setup-basics.png": [894, 414],
+  "/images/tutorial/course-setup-details.png": [894, 420],
+};
+
+function TutorialImage({ src, width, height, ...props }: Omit<ComponentProps<typeof Image>, "src"> & { src: string }) {
+  const locale = useLocale();
+  const dimensions = locale === "hu" ? hungarianScreenshotSizes[src] : undefined;
+  return (
+    <Image
+      {...props}
+      src={locale === "hu" ? src.replace(".png", "-hu.png") : src}
+      width={dimensions?.[0] ?? width}
+      height={dimensions?.[1] ?? height}
+    />
   );
 }

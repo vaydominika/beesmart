@@ -94,6 +94,7 @@ export default function ClassroomDetailPage() {
 
     const isTeacher = isClassroomStaffRole(classroom.role);
     const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? t("Teaching assistant") : classroom.role === "TEACHER" ? t("Teacher") : t("Student");
+    const tabLabels: Record<Tab, string> = { Feed: t("Feed"), People: t("People"), Grades: t("Grades") };
     const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom?join=${encodeURIComponent(classroom.code)}` : "";
 
     return (
@@ -172,7 +173,7 @@ export default function ClassroomDetailPage() {
                                     activeTab === tab ? "text-[var(--classroom-text)]" : "text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)]",
                                 )}
                             >
-                                {tab}
+                                {tabLabels[tab]}
                                 {activeTab === tab && (
                                     <motion.span
                                         layoutId="classroom-tab-indicator"

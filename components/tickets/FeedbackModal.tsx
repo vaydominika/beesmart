@@ -78,7 +78,7 @@ export function FeedbackModal({
         const response = await fetch("/api/uploads", { method: "POST", body: formData });
         const result = await response.json();
         if (!response.ok) {
-          toast.error(t(result.error ?? `${file.name} could not be uploaded.`));
+          toast.error(t(result.error ?? t("{v0} could not be uploaded.", { v0: file.name })));
           continue;
         }
         setImages((current) => [...current, result]);

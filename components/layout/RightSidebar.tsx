@@ -50,7 +50,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   const { data } = useDashboard();
   const isOverlay = variant === "overlay";
   const user = data?.user;
-  const userName = user?.name ?? "Guest";
+  const userName = user?.name ?? t("Guest");
   const userAvatar = user?.image ?? null;
   const bannerImageUrl = user?.bannerImageUrl ?? null;
   const activeTicketCount = data?.activeTicketCount ?? 0;

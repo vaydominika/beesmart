@@ -58,6 +58,7 @@ interface GradeSectionProps {
 }
 
 function GradeSection({ title, type, detail, isOpen, onToggle, headerAction, children }: GradeSectionProps) {
+    const t = useText();
     const WorkIcon = type === "Assignment" ? ClipboardList : GraduationCap;
 
     return (
@@ -75,8 +76,8 @@ function GradeSection({ title, type, detail, isOpen, onToggle, headerAction, chi
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-(--classroom-text)">{title}</span>
                         <span className="mt-0.5 flex items-center gap-2 text-xs text-(--classroom-text-muted)">
-                            <span>{type}</span>
-                            <span>{detail}</span>
+                            <span>{t(type)}</span>
+                            <span>{t(detail)}</span>
                         </span>
                     </span>
                     <ChevronDown className={cn("h-4 w-4 shrink-0 text-(--classroom-text-muted) transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-180")} />
@@ -170,7 +171,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                             key={sectionId}
                             title={assignment.title}
                             type="Assignment"
-                            detail={assignment.grade ? "Graded" : statusLabel(assignment.submission?.status)}
+                            detail={assignment.grade ? "Graded" : t(statusLabel(assignment.submission?.status))}
                             isOpen={openSections.has(sectionId)}
                             onToggle={() => toggleSection(sectionId)}
                         >
@@ -185,7 +186,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td className="px-4 py-3 text-(--classroom-text)">{assignment.grade ? t("Graded") : statusLabel(assignment.submission?.status)}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{assignment.grade ? t("Graded") : t(statusLabel(assignment.submission?.status))}</td>
                                             <td className="px-4 py-3 text-(--classroom-text-muted)">{assignment.submission?.submittedAt ? formatDateYmd(assignment.submission.submittedAt) : "—"}</td>
                                             <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">
                                                 {assignment.grade ? t("{v0}{v1}", { v0: assignment.grade.score, v1: assignment.grade.maxScore ? `/${assignment.grade.maxScore}` : "" }) : "—"}
@@ -231,7 +232,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                     </tbody>
                                 </table>
                                 <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
-                                    <WorkLink href={`/classroom/${classroomId}/tests/${test.id}${test.attempt ? `?attempt=${test.attempt.id}` : ""}`} label={t("Open {v0}", { v0: test.type === "EXAM" ? t("exam") : t("test") })} />
+                                    <WorkLink href={`/classroom/${classroomId}/tests/${test.id}${test.attempt ? `?attempt=${test.attempt.id}` : ""}`} label={test.type === "EXAM" ? t("Open exam") : t("Open test")} />
                                 </div>
                             </div>
                         </GradeSection>
@@ -256,7 +257,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         key={sectionId}
                         title={assignment.title}
                         type="Assignment"
-                        detail={`${submissionCount} submission${submissionCount === 1 ? "" : "s"}`}
+                        detail={t("{count} submissions", { count: submissionCount })}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
                         headerAction={
@@ -294,7 +295,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
-                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.score !== null ? t("Graded") : statusLabel(result.submissionStatus)}</td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.score !== null ? t("Graded") : t(statusLabel(result.submissionStatus))}</td>
                                                 <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? t("{v0}{v1}", { v0: result.score, v1: result.maxScore ? `/${result.maxScore}` : "" }) : "—"}</td>
                                             </tr>
                                         ))}
@@ -323,7 +324,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         key={sectionId}
                         title={test.title}
                         type={test.type === "EXAM" ? "Exam" : "Test"}
-                        detail={`${completedCount} completed`}
+                        detail={t("{count} completed", { count: completedCount })}
                         isOpen={openSections.has(sectionId)}
                         onToggle={() => toggleSection(sectionId)}
                         headerAction={
@@ -383,7 +384,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                 >
                                     <Eye aria-hidden="true" />
                                 </WorkspaceButton>
-                                <WorkLink href={`/classroom/${classroomId}/tests/${test.id}`} label={t("Open {v0}", { v0: test.type === "EXAM" ? t("exam") : t("test") })} />
+                                <WorkLink href={`/classroom/${classroomId}/tests/${test.id}`} label={test.type === "EXAM" ? t("Open exam") : t("Open test")} />
                             </div>
                         </div>
                     </GradeSection>

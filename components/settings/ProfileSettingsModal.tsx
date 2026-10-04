@@ -241,7 +241,7 @@ export function ProfileSettingsModal() {
               </section>
             ) : null}
 
-            {error || uploadError ? <WorkspaceFormMessage className="mt-5">{error ?? uploadError}</WorkspaceFormMessage> : null}
+            {error || uploadError ? <WorkspaceFormMessage className="mt-5">{t(error ?? uploadError ?? "")}</WorkspaceFormMessage> : null}
           </WorkspaceDialogBody>
         </div>
 

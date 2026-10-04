@@ -74,7 +74,7 @@ describe("POST /api/auth/register", () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({ ok: true, verificationRequired: true });
     expect(tx.user.create).toHaveBeenCalledWith({
-      data: { name: "Ada", email: "ada@example.com", password: "hashed-password" },
+      data: { name: "Ada", email: "ada@example.com", password: "hashed-password", locale: "en" },
       select: { id: true },
     });
     expect(tx.verificationToken.create).toHaveBeenCalledWith({ data: expect.objectContaining({
@@ -100,5 +100,12 @@ describe("POST /api/auth/register", () => {
     });
     expect(prisma.user.deleteMany).toHaveBeenCalledWith({ where: { id: "user-1", emailVerified: null } });
     consoleError.mockRestore();
+  });
+  it("saves Hungarian and requests a Hungarian verification email", async () => {
+    const request = registration({ name: "Ada", email: "ada@example.com", password: "correct-horse-battery" });
+    request.headers.set("cookie", "beesmart-locale=hu");
+    expect((await POST(request)).status).toBe(201);
+    expect(tx.user.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ locale: "hu" }) }));
+    expect(sendEmailVerificationEmail).toHaveBeenCalledWith(expect.objectContaining({ locale: "hu" }));
   });
 });

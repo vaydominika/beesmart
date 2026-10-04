@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { useText } from "@/i18n/use-text";
+import { assessmentOptionText } from "@/i18n/assessment-text";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -142,7 +143,7 @@ export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) 
                                 {question.options.map((option) => (
                                   <li key={option.id} className={cn("flex items-center gap-2 rounded-lg border px-3 py-2 text-xs", option.isCorrect ? "border-[var(--app-success-border)] bg-[var(--app-success-soft)] text-[var(--app-success)]" : "border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text-muted)]")}>
                                     {option.isCorrect ? <Check className="h-3.5 w-3.5 shrink-0" /> : <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-40" />}
-                                    {option.optionText}
+                                    {assessmentOptionText(question.questionType, option.optionText, t)}
                                   </li>
                                 ))}
                               </ul>

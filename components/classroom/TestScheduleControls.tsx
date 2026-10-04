@@ -2,10 +2,12 @@
 
 import { useText } from "@/i18n/use-text";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { CalendarClock, Trash2 } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 import { Input } from "@/components/ui/input";
+import { WorkspaceField } from "@/components/ui/workspace-field";
+import { workspaceFieldClass } from "@/components/ui/workspace-dialog";
 import { toast } from "@/components/ui/sonner";
 import { useEventSync } from "@/hooks/use-event-sync";
 import { isLocalDateTimePast, minimumLocalDateTimeInputValue } from "@/lib/schedule-validation";
@@ -21,6 +23,7 @@ function toLocalInput(value?: string | null) {
 
 export function TestScheduleControls({ classroomId, testId, onDeleted }: { classroomId: string; testId: string; onDeleted: () => void }) {
   const t = useText();
+    const fieldId = useId();
     const { triggerUpdate } = useEventSync();
     const [title, setTitle] = useState("");
     const [opensAt, setOpensAt] = useState("");
@@ -84,7 +87,7 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
     };
 
     const remove = async () => {
-        if (!window.confirm("Remove this test and its calendar event?")) return;
+        if (!window.confirm(t("Remove this test and its calendar event?"))) return;
         const res = await fetch(`/api/classrooms/${classroomId}/tests/${testId}`, { method: "DELETE" });
         if (!res.ok) return toast.error(t("Could not remove the test."));
         triggerUpdate();
@@ -98,12 +101,20 @@ export function TestScheduleControls({ classroomId, testId, onDeleted }: { class
                 <CalendarClock className="h-4 w-4" />
                 <h3 className="text-sm font-bold uppercase text-(--theme-text)">{t("Schedule & sync")}</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_150px_190px_190px_auto] gap-2 items-end">
-                <div><label className="text-[10px] font-bold uppercase opacity-50">{t("Title")}</label><Input value={title} onChange={(e) => setTitle(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
-                <div><label className="text-[10px] font-bold uppercase opacity-50">{t("Attempts allowed")}</label><Input type="number" min="1" step="1" value={maxAttempts} onChange={(e) => setMaxAttempts(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
-                <div><label className="text-[10px] font-bold uppercase opacity-50">{t("Opens (optional)")}</label><Input type="datetime-local" min={minimumLocalDateTimeInputValue()} value={opensAt} onChange={(e) => handleOpensAtChange(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
-                <div><label className="text-[10px] font-bold uppercase opacity-50">{t("Closes (optional)")}</label><Input type="datetime-local" min={opensAt && opensAt > minimumLocalDateTimeInputValue() ? opensAt : minimumLocalDateTimeInputValue()} value={closesAt} onChange={(e) => handleClosesAtChange(e.target.value)} className="bg-(--theme-sidebar) border-0 h-10" /></div>
-                <div className="flex gap-2">
+            <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_150px_210px_210px_auto]">
+                <WorkspaceField id={`${fieldId}-title`} label={t("Title")} className="min-w-0 sm:col-span-2 xl:col-span-1">
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} className={workspaceFieldClass} />
+                </WorkspaceField>
+                <WorkspaceField id={`${fieldId}-attempts`} label={t("Attempts allowed")} className="min-w-0">
+                    <Input type="number" min="1" step="1" value={maxAttempts} onChange={(e) => setMaxAttempts(e.target.value)} className={workspaceFieldClass} />
+                </WorkspaceField>
+                <WorkspaceField id={`${fieldId}-opens`} label={t("Opens (optional)")} className="min-w-0">
+                    <Input type="datetime-local" min={minimumLocalDateTimeInputValue()} value={opensAt} onChange={(e) => handleOpensAtChange(e.target.value)} className={workspaceFieldClass} />
+                </WorkspaceField>
+                <WorkspaceField id={`${fieldId}-closes`} label={t("Closes (optional)")} className="min-w-0">
+                    <Input type="datetime-local" min={opensAt && opensAt > minimumLocalDateTimeInputValue() ? opensAt : minimumLocalDateTimeInputValue()} value={closesAt} onChange={(e) => handleClosesAtChange(e.target.value)} className={workspaceFieldClass} />
+                </WorkspaceField>
+                <div className="flex h-10 items-center gap-2">
                     <WorkspaceButton type="button" variant="primary" onClick={save} disabled={saving}>{saving ? t("Saving…") : t("Save")}</WorkspaceButton>
                     <WorkspaceButton type="button" variant="danger" size="icon" onClick={remove} aria-label={t("Delete test")}><Trash2 className="h-4 w-4" /></WorkspaceButton>
                 </div>

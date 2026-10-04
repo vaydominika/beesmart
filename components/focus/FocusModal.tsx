@@ -65,7 +65,7 @@ export function FocusModal() {
             </div>
           </div>
 
-          {statsError ? <WorkspaceFormMessage tone="status" className="border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] text-[var(--app-danger)]">{statsError}</WorkspaceFormMessage> : null}
+          {statsError ? <WorkspaceFormMessage tone="status" className="border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] text-[var(--app-danger)]">{t(statsError)}</WorkspaceFormMessage> : null}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

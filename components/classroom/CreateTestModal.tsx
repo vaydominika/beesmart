@@ -1,6 +1,7 @@
 "use client";
 
 import { useText } from "@/i18n/use-text";
+import { assessmentOptionText } from "@/i18n/assessment-text";
 
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -480,7 +481,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                 )}
                                 <details className="mt-3 rounded-xl bg-[var(--app-surface)] px-3 py-2">
                                     <summary className="cursor-pointer text-xs font-semibold text-[var(--classroom-text-muted)]">
-                                         {t("Optional settings ·")} {questionCount}  {t("questions ·")} {difficulty.toLowerCase()}
+                                         {t("Optional settings ·")} {questionCount}  {t("questions ·")} {t(difficulty)}
                                     </summary>
                                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                         <label>
@@ -690,7 +691,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                                 <CheckCircle2 className="h-5 w-5" />
                                                             </button></TooltipTrigger><TooltipContent>{opt.isCorrect ? t("Correct answer") : t("Mark as correct")}</TooltipContent></Tooltip>
                                                             <Input
-                                                                value={opt.optionText}
+                                                                value={assessmentOptionText(q.questionType, opt.optionText, t)}
                                                                 onChange={(e) =>
                                                                     updateOption(qIndex, oIndex, "optionText", e.target.value)
                                                                 }

@@ -222,10 +222,10 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
     try {
       const response = await fetch(endpoint, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `${workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} could not be updated`);
+      if (!response.ok) throw new Error(data.error || t("{kind} could not be updated", { kind: workType === "ASSIGNMENT" ? t("Assignment") : workType === "EXAM" ? t("Exam") : t("Test") }));
       await refreshEvent();
       await onSaved?.();
-      toast.success(t(post ? "Post updated." : `${workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} updated.`));
+      toast.success(t(post ? "Post updated." : t("{v0} updated.", { v0: workType === "ASSIGNMENT" ? t("Assignment") : workType === "EXAM" ? t("Exam") : t("Test") })));
       onClose();
     } catch (error) {
       toast.error(t(error instanceof Error ? error.message : "Changes could not be saved."));
@@ -242,7 +242,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
         <WorkspaceDialogHeader className="border-b border-[var(--app-border)] px-5 py-4 pr-14">
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <WorkIcon className="h-5 w-5" aria-hidden="true" />
-            {post ? t("Edit post") : t("Edit {v0}", { v0: label })}
+            {post ? t("Edit post") : workType === "ASSIGNMENT" ? t("Edit assignment") : workType === "EXAM" ? t("Edit exam") : t("Edit test")}
           </WorkspaceDialogTitle>
         </WorkspaceDialogHeader>
 
@@ -250,7 +250,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
           {loading ? (
             <div className="flex min-h-64 items-center justify-center"><Spinner /></div>
           ) : loadError ? (
-            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-4 text-sm text-[var(--app-danger)]">{loadError}</div>
+            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-4 text-sm text-[var(--app-danger)]">{t(loadError)}</div>
           ) : (
             <div className="space-y-4">
               {post && <p className="text-xs font-semibold text-[var(--app-text-muted)]">{workType === "ASSIGNMENT" ? t("Assignment") : workType === "EXAM" ? t("Exam") : t("Test")}  {t("details")}</p>}
@@ -274,12 +274,12 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
                 </>
               ) : (
                 <>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid items-end gap-3 sm:grid-cols-2">
                     <Field label={t("Opens (optional)")} type="datetime-local" min={originalOpensAt && originalOpensAt < minimumLocalDateTimeInputValue() ? originalOpensAt : minimumLocalDateTimeInputValue()} value={opensAt} onChange={setOpensAt} />
                     <Field label={t("Closes (optional)")} type="datetime-local" min={opensAt || minimumLocalDateTimeInputValue()} value={closesAt} onChange={setClosesAt} />
                   </div>
                   <p className="-mt-2 text-xs text-[var(--app-text-faint)]">{t("Leave these blank to make the assessment available immediately with no closing deadline.")}</p>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid items-end gap-3 sm:grid-cols-3">
                     <Field label={t("Time limit (min)")} type="number" min="1" value={timeLimit} onChange={setTimeLimit} placeholder={t("None")} />
                     <Field label={t("Passing score (%)")} type="number" min="0" max="100" value={passingScore} onChange={setPassingScore} placeholder={t("None")} />
                     <Field label={t("Attempts allowed")} type="number" min="1" value={maxAttempts} onChange={setMaxAttempts} />
@@ -293,7 +293,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
         <WorkspaceDialogFooter className="border-t border-[var(--app-border)] px-5 py-3">
           <WorkspaceButton type="button" variant="secondary" onClick={onClose} disabled={saving}>{t("Cancel")}</WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" onClick={() => void save()} disabled={loading || Boolean(loadError) || saving}>
-            {saving ? <><Spinner className="h-4 w-4" />{t("Saving…")}</> : post ? t("Save post") : t("Save {v0}", { v0: label })}
+            {saving ? <><Spinner className="h-4 w-4" />{t("Saving…")}</> : post ? t("Save post") : t("Save {v0}", { v0: t(label) })}
           </WorkspaceButton>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>

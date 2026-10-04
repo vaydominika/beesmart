@@ -16,6 +16,7 @@ type LearnerReviewResponse = {
     pointsAwarded: number | null;
     selectedOption: { optionText: string } | null;
     question: {
+        questionType: string;
         questionText: string;
         points: number;
         options: Array<{ optionText: string }>;
@@ -78,6 +79,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
                 question: {
                     select: {
                         questionText: true,
+                        questionType: true,
                         points: true,
                         options: { where: { isCorrect: true }, select: { optionText: true } },
                         acceptedAnswers: true,
@@ -97,6 +99,8 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
         return {
             questionId: response.questionId,
             questionText: response.question.questionText,
+            questionType: response.question.questionType,
+            answerMissing: !response.responseText && !response.selectedOption?.optionText,
             learnerAnswer: response.responseText || response.selectedOption?.optionText || "No answer",
             pointsAwarded: response.pointsAwarded ?? 0,
             maxPoints: response.question.points,

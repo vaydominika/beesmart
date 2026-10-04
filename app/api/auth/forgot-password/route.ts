@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { requestLocale, resolveLocale } from "@/i18n/config";
 import {
   createPasswordResetToken,
   hashPasswordResetToken,
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Too many reset requests. Try again later." }, { status: 429, headers: rateLimitHeaders(limit) });
   }
 
-  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true } });
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true, email: true, locale: true } });
   if (!user) return NextResponse.json({ message: genericMessage });
 
   const token = createPasswordResetToken();
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   ]);
 
   try {
-    await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(token), idempotencyKey: tokenHash });
+    await sendPasswordResetEmail({ to: user.email, resetUrl: passwordResetUrl(token), idempotencyKey: tokenHash, locale: resolveLocale(user.locale ?? requestLocale(request.headers)) });
   } catch (error) {
     await prisma.verificationToken.deleteMany({ where: { identifier, token: tokenHash } });
     console.error("Password reset email delivery failed", error);

@@ -243,7 +243,7 @@ function ScheduleContextPanelContent({
       <div className="flex items-start justify-between border-b border-[var(--schedule-line)] px-5 py-4">
         <div>
           <h2 className="text-base font-semibold text-[var(--schedule-text)]">{selectedDate.toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</h2>
-          <p className="mt-0.5 text-xs text-[var(--schedule-text-muted)]">{dayEvents.length ? t("{v0} {v1}", { v0: dayEvents.length, v1: dayEvents.length === 1 ? t("event") : "events" }) : t("No events yet")}</p>
+          <p className="mt-0.5 text-xs text-[var(--schedule-text-muted)]">{dayEvents.length ? t("{v0} {v1}", { v0: dayEvents.length, v1: dayEvents.length === 1 ? t("event") : t("events") }) : t("No events yet")}</p>
         </div>
         <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => onStartCreate(selectedDate)} aria-label={t("New event")}><CalendarPlus className="h-4 w-4" /></WorkspaceButton>
       </div>

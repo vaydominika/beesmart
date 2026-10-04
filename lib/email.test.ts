@@ -79,4 +79,20 @@ describe("sendPasswordResetEmail", () => {
       html: expect.stringContaining("Verify email"),
     }), { idempotencyKey: "verification-token-hash" });
   });
+  it("sends Hungarian reset and verification messages without changing their links", async () => {
+    const resetUrl = "https://beesmart.vay.hu/reset-password?token=secret";
+    await sendPasswordResetEmail({ to: "ada@example.com", resetUrl, idempotencyKey: "hu-reset", locale: "hu" });
+    expect(resendMocks.send).toHaveBeenLastCalledWith(expect.objectContaining({
+      subject: "BeeSmart-jelszó visszaállítása",
+      text: expect.stringContaining(resetUrl),
+      html: expect.stringContaining('lang="hu"'),
+    }), { idempotencyKey: "hu-reset" });
+    const verificationUrl = "https://beesmart.vay.hu/api/auth/verify-email?token=secret";
+    await sendEmailVerificationEmail({ to: "ada@example.com", verificationUrl, idempotencyKey: "hu-verify", locale: "hu" });
+    expect(resendMocks.send).toHaveBeenLastCalledWith(expect.objectContaining({
+      subject: "BeeSmart-e-mail-cím megerősítése",
+      text: expect.stringContaining(verificationUrl),
+      html: expect.stringContaining("E-mail-cím megerősítése"),
+    }), { idempotencyKey: "hu-verify" });
+  });
 });

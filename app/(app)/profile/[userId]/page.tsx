@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 
 import { getText } from "@/i18n/server";
 import Link from "next/link";
@@ -9,10 +10,11 @@ import { getPublicProfile } from "@/lib/public-profile";
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ userId: string }> }) {
   const t = await getText();
+  const activityText = await getTranslations("Activity");
   const viewerUserId = await getCurrentUserId();
   const { userId } = await params;
   if (!viewerUserId) return null;
-  const result = await getPublicProfile(userId, viewerUserId);
+  const result = await getPublicProfile(userId, viewerUserId, activityText);
 
   if (result.status === "not_found" || result.status === "private") {
     return (

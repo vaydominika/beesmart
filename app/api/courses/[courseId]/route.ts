@@ -6,6 +6,8 @@ import { createHash } from "crypto";
 import type { Prisma } from "@/lib/generated/prisma";
 import { claimUploads, markFilesForDeletion, purgeStoredFiles, UploadClaimError } from "@/lib/files/lifecycle";
 import { storedFileUrl } from "@/lib/files/types";
+import { getLocale } from "next-intl/server";
+import { resolveLocale } from "@/i18n/config";
 import { auditCourseForPublishing, CoursePublishAuditUnavailableError } from "@/lib/course-audit";
 import { COURSE_TITLE_MAX_LENGTH, normalizeCourseTitle } from "@/lib/course-title";
 
@@ -119,7 +121,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         if (data.coverImageUrl !== undefined) return NextResponse.json({ error: "Use coverUploadId for local cover images" }, { status: 400 });
 
         if (isPublishRequest) {
-            const audit = await auditCourseForPublishing(course);
+            const audit = await auditCourseForPublishing(course, resolveLocale(await getLocale()));
             if (!audit.publishable) {
                 return NextResponse.json({
                     error: "The course cannot be published.",

@@ -67,4 +67,9 @@ describe("course publication audit", () => {
 
     await expect(auditCourseForPublishing(completeCourse)).rejects.toBeInstanceOf(CoursePublishAuditUnavailableError);
   });
+  it("requests Hungarian audit reasons when Hungarian is selected", async () => {
+    vi.mocked(generateObject).mockResolvedValue({ object: { publishable: true, blockingIssues: [] } } as never);
+    await auditCourseForPublishing(completeCourse, "hu");
+    expect(generateObject).toHaveBeenCalledWith(expect.objectContaining({ system: expect.stringContaining("natural Hungarian") }));
+  });
 });

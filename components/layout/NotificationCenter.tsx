@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 
+import { translateNotificationBody } from "@/i18n/system-text";
 import { useText } from "@/i18n/use-text";
 
 import { useCallback, useEffect, useState } from "react";
@@ -112,7 +113,7 @@ export function NotificationCenter() {
             <div key={notification.id} data-unread={!notification.readAt ? "true" : undefined} className={cn("rounded-xl border border-transparent transition-colors hover:bg-[var(--app-surface-hover)]", !notification.readAt && "bg-[var(--app-surface)]")}>
               <button type="button" onClick={() => void openNotification(notification)} className="flex w-full gap-3 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus-ring)]">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--app-surface-muted)] text-[var(--app-text-muted)]">{activeTab === "CLASSROOM" ? <GraduationCap className="h-4 w-4" /> : <Info className="h-4 w-4" />}</span>
-                <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><span className="line-clamp-1 text-xs font-semibold text-[var(--app-text)]">{notification.title}</span><span className="shrink-0 text-[10px] text-[var(--app-text-faint)]">{formatTime(notification.createdAt)}</span></span>{notification.category === "CLASSROOM" ? <span className="mt-0.5 block text-[10px] font-medium text-[var(--app-text-faint)]">{notification.classroomName ?? t("Classroom")} · {notification.actorName ?? t("BeeSmart")}</span> : null}<span className="mt-1 block line-clamp-2 text-xs leading-4 text-[var(--app-text-muted)]">{notification.body}</span></span>
+                <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><span className="line-clamp-1 text-xs font-semibold text-[var(--app-text)]">{t(notification.title)}</span><span className="shrink-0 text-[10px] text-[var(--app-text-faint)]">{formatTime(notification.createdAt)}</span></span>{notification.category === "CLASSROOM" ? <span className="mt-0.5 block text-[10px] font-medium text-[var(--app-text-faint)]">{notification.classroomName ?? t("Classroom")} · {notification.actorName ?? t("BeeSmart")}</span> : null}<span className="mt-1 block line-clamp-2 text-xs leading-4 text-[var(--app-text-muted)]">{translateNotificationBody(notification.title, notification.body, t)}</span></span>
               </button>
               <button type="button" onClick={() => void setRead(notification, !Boolean(notification.readAt))} className="mb-2 ml-[60px] text-[10px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)]">{notification.readAt ? t("Mark unread") : t("Mark read")}</button>
             </div>

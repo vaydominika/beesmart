@@ -39,9 +39,6 @@ type CourseOverviewData = {
   _count: { enrollments: number };
 };
 
-function countLabel(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
 
 export default async function CourseOverviewPage({ params }: CoursePageProps) {
   const t = await getText();
@@ -118,8 +115,8 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
           </h1>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--course-text-muted)]">
             <span className="inline-flex items-center gap-2"><UserRound className="h-4 w-4" />{course.creator.name || t("Course creator")}</span>
-            <span className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" />{countLabel(course.modules.length, "module")}</span>
-            <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" />{countLabel(totalLessons, "lesson")}</span>
+            <span className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" />{t("{v0} modules", { v0: course.modules.length })}</span>
+            <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" />{t("{v0} lessons", { v0: totalLessons })}</span>
           </div>
         </header>
 
@@ -141,7 +138,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--course-line)] px-5 py-4 md:px-6">
                 <div>
                   <h2 className="text-lg font-semibold text-[var(--course-text)]">{t("Syllabus")}</h2>
-                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">{countLabel(course.modules.length, "module")} · {countLabel(totalLessons, "lesson")}</p>
+                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">{t("{v0} modules", { v0: course.modules.length })} · {t("{v0} lessons", { v0: totalLessons })}</p>
                 </div>
                 {isEnrolled && !isCreator ? (
                   <span className="text-xs font-medium text-[var(--course-text-muted)]">{completedLessons}  {t("of")} {totalLessons}  {t("completed")}</span>
@@ -164,7 +161,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <h3 className="font-semibold text-[var(--course-text)]">{module.title}</h3>
-                          <span className="text-xs text-[var(--course-text-muted)]">{countLabel(module.lessons.length, "lesson")}</span>
+                          <span className="text-xs text-[var(--course-text-muted)]">{t("{v0} lessons", { v0: module.lessons.length })}</span>
                         </div>
                         {module.lessons.length > 0 ? (
                           <ol className="mt-3 space-y-1.5">
