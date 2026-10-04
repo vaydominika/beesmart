@@ -1,3 +1,5 @@
+"use client";
+import { useText } from "@/i18n/use-text";
 import {
     Check,
     CheckSquare,
@@ -87,6 +89,7 @@ interface NodeSelectorProps {
 }
 
 export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
+  const t = useText();
     const { editor } = useEditor();
     if (!editor) return null;
     const activeItem = items.filter((item) => item.isActive(editor)).pop() ?? {
@@ -97,7 +100,7 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
         <Popover modal={false} open={open} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild className="gap-2 rounded-none border-none hover:bg-accent focus:ring-0">
                 <Button size="sm" variant="ghost" className="gap-2">
-                    <span className="whitespace-nowrap text-sm">{activeItem.name}</span>
+                    <span className="whitespace-nowrap text-sm">{t(activeItem.name)}</span>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
@@ -115,7 +118,7 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
                             <div className="rounded-sm border p-1">
                                 <item.icon className="h-3 w-3" />
                             </div>
-                            <span>{item.name}</span>
+                            <span>{t(item.name)}</span>
                         </div>
                         {activeItem.name === item.name && <Check className="h-4 w-4" />}
                     </EditorBubbleItem>

@@ -1,3 +1,5 @@
+
+import { getText } from "@/i18n/server";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -42,6 +44,7 @@ function countLabel(count: number, singular: string, plural = `${singular}s`) {
 }
 
 export default async function CourseOverviewPage({ params }: CoursePageProps) {
+  const t = await getText();
   const userId = await getCurrentUserId();
   if (!userId) redirect("/login");
 
@@ -94,15 +97,14 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
     <WorkspacePageFrame className="course-ui overflow-y-auto bg-[var(--course-canvas)]" contentClassName="space-y-5">
         <WorkspaceButton asChild variant="secondary" size="compact">
           <Link href="/courses">
-            <ArrowLeft />Back to courses
-          </Link>
+            <ArrowLeft />{t("Back to courses")} </Link>
         </WorkspaceButton>
 
         <header className="max-w-4xl">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--course-text-muted)]">
             {isCreator || !isEnrolled ? (
               <span className="rounded-lg bg-[var(--course-accent)] px-2.5 py-1 text-[var(--course-text)]">
-                {isCreator ? "Created by you" : "Available course"}
+                {isCreator ? t("Created by you") : t("Available course")}
               </span>
             ) : null}
             {classrooms.map((classroom) => (
@@ -115,7 +117,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
             {course.title}
           </h1>
           <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[var(--course-text-muted)]">
-            <span className="inline-flex items-center gap-2"><UserRound className="h-4 w-4" />{course.creator.name || "Course creator"}</span>
+            <span className="inline-flex items-center gap-2"><UserRound className="h-4 w-4" />{course.creator.name || t("Course creator")}</span>
             <span className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" />{countLabel(course.modules.length, "module")}</span>
             <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4" />{countLabel(totalLessons, "lesson")}</span>
           </div>
@@ -128,29 +130,29 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--course-accent)] text-[var(--course-text)]">
                   <BookOpen className="h-4 w-4" />
                 </span>
-                <h2 className="text-lg font-semibold text-[var(--course-text)]">About this course</h2>
+                <h2 className="text-lg font-semibold text-[var(--course-text)]">{t("About this course")}</h2>
               </div>
               <p className="mt-5 max-w-3xl whitespace-pre-line text-sm leading-6 text-[var(--course-text-muted)] md:text-[15px]">
-                {description || "The creator has not added a course description yet. Review the syllabus below to see what is included."}
+                {description || t("The creator has not added a course description yet. Review the syllabus below to see what is included.")}
               </p>
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-[var(--course-line)] bg-[var(--app-surface)]">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--course-line)] px-5 py-4 md:px-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-[var(--course-text)]">Syllabus</h2>
+                  <h2 className="text-lg font-semibold text-[var(--course-text)]">{t("Syllabus")}</h2>
                   <p className="mt-1 text-xs text-[var(--course-text-muted)]">{countLabel(course.modules.length, "module")} · {countLabel(totalLessons, "lesson")}</p>
                 </div>
                 {isEnrolled && !isCreator ? (
-                  <span className="text-xs font-medium text-[var(--course-text-muted)]">{completedLessons} of {totalLessons} completed</span>
+                  <span className="text-xs font-medium text-[var(--course-text-muted)]">{completedLessons}  {t("of")} {totalLessons}  {t("completed")}</span>
                 ) : null}
               </div>
 
               {course.modules.length === 0 ? (
                 <div className="flex min-h-48 flex-col items-center justify-center px-6 text-center">
                   <Layers3 className="h-5 w-5 text-[var(--course-text-faint)]" />
-                  <p className="mt-3 text-sm font-medium text-[var(--course-text)]">The syllabus is still being prepared</p>
-                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">Modules and lessons will appear here when they are ready.</p>
+                  <p className="mt-3 text-sm font-medium text-[var(--course-text)]">{t("The syllabus is still being prepared")}</p>
+                  <p className="mt-1 text-xs text-[var(--course-text-muted)]">{t("Modules and lessons will appear here when they are ready.")}</p>
                 </div>
               ) : (
                 <ol className="divide-y divide-[var(--course-line)]">
@@ -180,7 +182,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                                   {completed ? (
                                     <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium">
                                       <CheckCircle2 className="h-4 w-4" />
-                                      <span className="hidden sm:inline">Completed</span>
+                                      <span className="hidden sm:inline">{t("Completed")}</span>
                                     </span>
                                   ) : null}
                                 </li>
@@ -188,7 +190,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                             })}
                           </ol>
                         ) : (
-                          <p className="mt-2 text-xs text-[var(--course-text-muted)]">Lessons have not been added yet.</p>
+                          <p className="mt-2 text-xs text-[var(--course-text-muted)]">{t("Lessons have not been added yet.")}</p>
                         )}
                       </div>
                     </li>
@@ -212,10 +214,10 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
 
               <div className="px-1 pb-1 pt-4">
                 <p className="text-sm font-semibold text-[var(--course-text)]">
-                  {isCreator ? "Continue building your course" : isEnrolled ? (progress > 0 ? "Continue where you left off" : "Your course is ready") : "Ready to start learning?"}
+                  {isCreator ? t("Continue building your course") : isEnrolled ? (progress > 0 ? t("Continue where you left off") : t("Your course is ready")) : t("Ready to start learning?")}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">
-                  {isCreator ? "Open the builder to manage lessons and publishing." : isEnrolled ? "Open the course to view lessons and track your progress." : "Enroll once to unlock the learner view and progress tracking."}
+                  {isCreator ? t("Open the builder to manage lessons and publishing.") : isEnrolled ? t("Open the course to view lessons and track your progress.") : t("Enroll once to unlock the learner view and progress tracking.")}
                 </p>
 
                 {isEnrolled && !isCreator ? (
@@ -225,7 +227,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
                 <div className="mt-4">
                   {isEnrolled || isCreator ? (
                     <WorkspaceButton asChild variant="primary" className="w-full">
-                      <Link href={destination}><Play />{actionLabel}</Link>
+                      <Link href={destination}><Play />{t(actionLabel)}</Link>
                     </WorkspaceButton>
                   ) : (
                     <EnrollButton courseId={courseId} />
@@ -238,28 +240,28 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
               <dl className="divide-y divide-[var(--course-line)] text-sm">
                 <div className="flex items-center gap-3 py-3">
                   <UserRound className="h-4 w-4 text-[var(--course-text-faint)]" />
-                  <dt className="text-[var(--course-text-muted)]">Created by</dt>
-                  <dd className="ml-auto max-w-36 truncate font-medium text-[var(--course-text)]">{course.creator.name || "Course creator"}</dd>
+                  <dt className="text-[var(--course-text-muted)]">{t("Created by")}</dt>
+                  <dd className="ml-auto max-w-36 truncate font-medium text-[var(--course-text)]">{course.creator.name || t("Course creator")}</dd>
                 </div>
                 <div className="flex items-center gap-3 py-3">
                   <Layers3 className="h-4 w-4 text-[var(--course-text-faint)]" />
-                  <dt className="text-[var(--course-text-muted)]">Modules</dt>
+                  <dt className="text-[var(--course-text-muted)]">{t("Modules")}</dt>
                   <dd className="ml-auto font-medium text-[var(--course-text)]">{course.modules.length}</dd>
                 </div>
                 <div className="flex items-center gap-3 py-3">
                   <BookOpen className="h-4 w-4 text-[var(--course-text-faint)]" />
-                  <dt className="text-[var(--course-text-muted)]">Lessons</dt>
+                  <dt className="text-[var(--course-text-muted)]">{t("Lessons")}</dt>
                   <dd className="ml-auto font-medium text-[var(--course-text)]">{totalLessons}</dd>
                 </div>
                 <div className="flex items-center gap-3 py-3">
                   <UsersRound className="h-4 w-4 text-[var(--course-text-faint)]" />
-                  <dt className="text-[var(--course-text-muted)]">Learners</dt>
+                  <dt className="text-[var(--course-text-muted)]">{t("Learners")}</dt>
                   <dd className="ml-auto font-medium text-[var(--course-text)]">{course._count.enrollments}</dd>
                 </div>
                 {classrooms.length > 0 ? (
                   <div className="flex items-start gap-3 py-3">
                     <School className="mt-0.5 h-4 w-4 text-[var(--course-text-faint)]" />
-                    <dt className="text-[var(--course-text-muted)]">Classroom</dt>
+                    <dt className="text-[var(--course-text-muted)]">{t("Classroom")}</dt>
                     <dd className="ml-auto max-w-40 text-right font-medium text-[var(--course-text)]">{classrooms.map((classroom) => classroom.name).join(", ")}</dd>
                   </div>
                 ) : null}
@@ -269,7 +271,7 @@ export default async function CourseOverviewPage({ params }: CoursePageProps) {
             {isEnrolled && progress === 100 ? (
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--course-line)] bg-[var(--course-accent)] p-4 text-sm text-[var(--course-text)]">
                 <CheckCircle2 className="h-5 w-5 shrink-0" />
-                <span className="min-w-0 flex-1"><strong className="font-semibold">Course completed.</strong> You can revisit any lesson at any time.</span>
+                <span className="min-w-0 flex-1"><strong className="font-semibold">{t("Course completed.")}</strong>  {t("You can revisit any lesson at any time.")}</span>
                 <CourseRatingButton courseId={courseId} />
               </div>
             ) : null}

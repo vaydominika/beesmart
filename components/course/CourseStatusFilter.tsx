@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { CircleCheck, CircleDashed, Clock3, CloudUpload, FilePenLine, ListFilter, SlidersHorizontal } from "lucide-react";
 import { WorkspaceSelect } from "@/components/ui/workspace-select";
 import type { CourseTab, CreatedStatus, LearningStatus } from "@/lib/course-summary";
@@ -26,6 +28,7 @@ const CREATED_OPTIONS = [
 ] satisfies Array<{ value: CreatedStatus; label: string; icon: typeof ListFilter }>;
 
 export function CourseStatusFilter({ activeTab, learningFilter, createdFilter, onLearningChange, onCreatedChange }: CourseStatusFilterProps) {
+  const t = useText();
   const isLearning = activeTab === "learning";
   const options = isLearning ? LEARNING_OPTIONS : CREATED_OPTIONS;
   const value = isLearning ? learningFilter : createdFilter;
@@ -37,9 +40,9 @@ export function CourseStatusFilter({ activeTab, learningFilter, createdFilter, o
 
   return (
     <WorkspaceSelect
-      ariaLabel={isLearning ? "Learning status" : "Publishing status"}
+      ariaLabel={isLearning ? t("Learning status") : t("Publishing status")}
       value={value}
-      options={options}
+      options={options} translateLabels
       onValueChange={changeValue}
       triggerIcon={SlidersHorizontal}
       align="end"

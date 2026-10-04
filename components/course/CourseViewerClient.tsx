@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -55,6 +57,7 @@ interface CourseViewerProps {
 }
 
 export default function CourseViewerClient({ course, initialLessonId, initialCompletedLessonIds = [] }: CourseViewerProps) {
+  const t = useText();
     const router = useRouter();
     const allLessons = useMemo(() =>
         course.modules.flatMap((module) => module.lessons),
@@ -148,7 +151,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                 body: JSON.stringify({ completed })
             });
 
-            if (!res.ok) throw new Error("Failed to update progress");
+            if (!res.ok) throw new Error(t("Failed to update progress"));
             const result: { newlyCompleted?: boolean } = await res.json();
 
             const newCompleted = new Set(completedLessonIds);
@@ -187,14 +190,14 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-[var(--course-line)] px-4">
                 <div className="flex min-w-0 items-center gap-2.5">
                     <WorkspaceButton asChild variant="secondary" size="icon-compact">
-                        <Link href={`/courses/${course.id}`} aria-label="Back to course overview"><ArrowLeft className="h-4 w-4" /></Link>
+                        <Link href={`/courses/${course.id}`} aria-label={t("Back to course overview")}><ArrowLeft className="h-4 w-4" /></Link>
                     </WorkspaceButton>
                     <div className="min-w-0">
-                        <h2 className="text-sm font-semibold text-[var(--course-text)]">Syllabus</h2>
-                        <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length} modules · {allLessons.length} lessons</p>
+                        <h2 className="text-sm font-semibold text-[var(--course-text)]">{t("Syllabus")}</h2>
+                        <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length}  {t("modules ·")} {allLessons.length}  {t("lessons")}</p>
                     </div>
                 </div>
-                <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobileSyllabusOpen(false)} aria-label="Close syllabus" className="lg:hidden">
+                <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobileSyllabusOpen(false)} aria-label={t("Close syllabus")} className="lg:hidden">
                     <X className="h-4 w-4" />
                 </WorkspaceButton>
             </div>
@@ -208,7 +211,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                             </span>
                             <div className="min-w-0 flex-1">
                                 <Tooltip><TooltipTrigger asChild><h3 className="truncate text-xs font-semibold text-[var(--course-text)]">{courseModule.title}</h3></TooltipTrigger><TooltipContent>{courseModule.title}</TooltipContent></Tooltip>
-                                <p className="mt-0.5 text-[9px] text-[var(--course-text-faint)]">{courseModule.lessons.length} {courseModule.lessons.length === 1 ? "lesson" : "lessons"}</p>
+                                <p className="mt-0.5 text-[9px] text-[var(--course-text-faint)]">{courseModule.lessons.length} {courseModule.lessons.length === 1 ? t("lesson") : t("lessons")}</p>
                             </div>
                         </div>
 
@@ -239,7 +242,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                                         ? "border-[var(--course-line-strong)] bg-[var(--app-surface)] text-[var(--course-text)]"
                                                         : "border-[var(--course-line)] bg-[var(--app-surface)] text-[var(--course-text-faint)]",
                                             )}>
-                                                {locked ? <LockKeyhole className="h-3.5 w-3.5" /> : completed ? <Check className="h-3.5 w-3.5" /> : isActive ? <Play className="h-3 w-3 fill-current" /> : `${moduleIndex + 1}.${lessonIndex + 1}`}
+                                                {locked ? <LockKeyhole className="h-3.5 w-3.5" /> : completed ? <Check className="h-3.5 w-3.5" /> : isActive ? <Play className="h-3 w-3 fill-current" /> : t("{v0}.{v1}", { v0: moduleIndex + 1, v1: lessonIndex + 1 })}
                                             </span>
                                             <span className="min-w-0 flex-1 truncate text-xs font-medium">{lesson.title}</span>
                                         </button>
@@ -258,9 +261,9 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             <div className="course-ui flex h-full flex-1 items-center justify-center bg-[var(--course-canvas)] px-6">
                 <div className="rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] px-8 py-10 text-center shadow-none">
                     <BookOpen className="mx-auto h-6 w-6 text-[var(--course-text-faint)]" />
-                    <h1 className="mt-4 text-lg font-semibold text-[var(--course-text)]">This course has no lessons yet</h1>
-                    <p className="mt-2 text-sm text-[var(--course-text-muted)]">Return to the course overview to check again later.</p>
-                    <WorkspaceButton asChild variant="secondary" className="mt-5"><Link href={`/courses/${course.id}`}>Back to course</Link></WorkspaceButton>
+                    <h1 className="mt-4 text-lg font-semibold text-[var(--course-text)]">{t("This course has no lessons yet")}</h1>
+                    <p className="mt-2 text-sm text-[var(--course-text-muted)]">{t("Return to the course overview to check again later.")}</p>
+                    <WorkspaceButton asChild variant="secondary" className="mt-5"><Link href={`/courses/${course.id}`}>{t("Back to course")}</Link></WorkspaceButton>
                 </div>
             </div>
         );
@@ -273,7 +276,7 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
 
             {mobileSyllabusOpen && (
                 <>
-                    <button type="button" aria-label="Dismiss syllabus" onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
+                    <button type="button" aria-label={t("Dismiss syllabus")} onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
                     <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-[var(--app-surface)] shadow-none lg:hidden">{syllabus}</aside>
                 </>
             )}
@@ -281,19 +284,19 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
             <section className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <header className="h-[76px] shrink-0 border-b border-[var(--course-line)] bg-[var(--app-surface)]">
                     <div className="flex h-full items-center gap-2 px-3 md:px-5">
-                        <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label="Open syllabus" className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
+                        <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label={t("Open syllabus")} className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
 
                         <div className="min-w-0 flex-1 px-1">
                             <h1 className="truncate text-sm font-semibold tracking-[-0.015em] text-[var(--course-text)] md:text-base">{course.title}</h1>
                             <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--course-text-muted)]">
-                                <span>{completedCount} of {allLessons.length} complete</span>
+                                <span>{completedCount}  {t("of")} {allLessons.length}  {t("complete")}</span>
                                 <span aria-hidden="true">·</span>
                                 <span>{Math.round(progressValue)}%</span>
                             </div>
                         </div>
 
                         <div className="hidden w-40 items-center gap-3 sm:flex lg:w-52">
-                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--course-surface-muted)]" role="progressbar" aria-label="Course progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressValue)}>
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--course-surface-muted)]" role="progressbar" aria-label={t("Course progress")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progressValue)}>
                                 <div className="h-full rounded-full bg-[var(--course-success)] transition-[width]" style={{ width: `${progressValue}%` }} />
                             </div>
                             <span className="w-8 text-right text-[10px] font-semibold text-[var(--course-text-muted)]">{Math.round(progressValue)}%</span>
@@ -306,9 +309,9 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                         <article className="overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-none">
                             <header className="border-b border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-6 sm:px-7 md:px-10 md:py-8">
                                 <div className="flex flex-wrap items-center gap-2 text-[10px] font-semibold text-[var(--course-text-muted)]">
-                                    <span className="rounded-md border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-1">Module {activeModuleIndex + 1}</span>
-                                    <span>Lesson {currentIndex + 1} of {allLessons.length}</span>
-                                    {activeCompleted && <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--course-success)]"><CheckCircle2 className="h-3.5 w-3.5" />Completed</span>}
+                                    <span className="rounded-md border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2 py-1">{t("Module")} {activeModuleIndex + 1}</span>
+                                    <span>{t("Lesson")} {currentIndex + 1}  {t("of")} {allLessons.length}</span>
+                                    {activeCompleted && <span className="ml-auto inline-flex items-center gap-1.5 text-[var(--course-success)]"><CheckCircle2 className="h-3.5 w-3.5" />{t("Completed")}</span>}
                                 </div>
                                 <h2 className="mt-4 max-w-3xl text-2xl font-semibold leading-tight tracking-[-0.035em] text-[var(--course-text)] sm:text-3xl md:text-[38px]">{activeLesson.title}</h2>
                             </header>
@@ -317,17 +320,17 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                 {isLessonLocked(activeLesson) ? (
                                     <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--course-line-strong)] bg-[var(--course-surface-muted)] px-6 text-center">
                                         <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)]"><LockKeyhole className="h-5 w-5 text-[var(--course-text-muted)]" /></span>
-                                        <h3 className="mt-4 text-lg font-semibold text-[var(--course-text)]">Complete the earlier prerequisites</h3>
-                                        <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--course-text-muted)]">This lesson opens after the required lessons before it are complete.</p>
+                                        <h3 className="mt-4 text-lg font-semibold text-[var(--course-text)]">{t("Complete the earlier prerequisites")}</h3>
+                                        <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--course-text-muted)]">{t("This lesson opens after the required lessons before it are complete.")}</p>
                                     </div>
                                 ) : contentState === "LOADING" ? (
-                                    <div role="status" className="flex min-h-72 flex-col items-center justify-center text-sm text-[var(--course-text-muted)]"><BookOpen className="mb-3 h-5 w-5 animate-pulse" />Loading lesson…</div>
+                                    <div role="status" className="flex min-h-72 flex-col items-center justify-center text-sm text-[var(--course-text-muted)]"><BookOpen className="mb-3 h-5 w-5 animate-pulse" />{t("Loading lesson…")}</div>
                                 ) : contentState === "ERROR" ? (
-                                    <div className="flex min-h-72 flex-col items-center justify-center text-center"><p className="text-sm font-semibold text-[var(--course-danger)]">Lesson content could not be loaded</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">Check your connection and try again.</p><WorkspaceButton type="button" variant="secondary" onClick={() => setContentRetry((value) => value + 1)} className="mt-4">Try again</WorkspaceButton></div>
+                                    <div className="flex min-h-72 flex-col items-center justify-center text-center"><p className="text-sm font-semibold text-[var(--course-danger)]">{t("Lesson content could not be loaded")}</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">{t("Check your connection and try again.")}</p><WorkspaceButton type="button" variant="secondary" onClick={() => setContentRetry((value) => value + 1)} className="mt-4">{t("Try again")}</WorkspaceButton></div>
                                 ) : activeLesson.content ? (
                                     <div className="prose prose-slate max-w-none text-[15px] leading-7 text-[var(--course-text-muted)] dark:prose-invert prose-headings:text-[var(--course-text)] prose-headings:font-semibold prose-headings:tracking-[-0.025em] prose-h2:mt-10 prose-h2:text-2xl prose-h3:mt-8 prose-h3:text-xl prose-p:my-4 prose-strong:text-[var(--course-text)] prose-a:text-[var(--course-accent-text)] prose-li:my-1 prose-blockquote:border-[var(--course-focus-border)] prose-blockquote:text-[var(--course-text-muted)] prose-code:text-[var(--course-text)] prose-img:rounded-2xl" dangerouslySetInnerHTML={{ __html: activeLesson.content }} />
                                 ) : (
-                                    <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] px-6 text-center"><BookOpen className="h-5 w-5 text-[var(--course-text-faint)]" /><p className="mt-3 text-sm font-medium text-[var(--course-text-muted)]">This lesson does not have content yet.</p></div>
+                                    <div className="flex min-h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--course-line)] bg-[var(--course-surface-muted)] px-6 text-center"><BookOpen className="h-5 w-5 text-[var(--course-text-faint)]" /><p className="mt-3 text-sm font-medium text-[var(--course-text-muted)]">{t("This lesson does not have content yet.")}</p></div>
                                 )}
                             </div>
 
@@ -335,13 +338,13 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                 <section className="border-t border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 py-6 sm:px-7 md:px-10" aria-labelledby="lesson-resources-heading">
                                     <div className="flex items-center gap-2">
                                         <Layers3 className="h-4 w-4 text-[var(--course-text-muted)]" />
-                                        <h3 id="lesson-resources-heading" className="text-sm font-semibold text-[var(--course-text)]">Lesson resources</h3>
+                                        <h3 id="lesson-resources-heading" className="text-sm font-semibold text-[var(--course-text)]">{t("Lesson resources")}</h3>
                                     </div>
                                     <div className="mt-4 grid gap-2 sm:grid-cols-2">
                                         {visibleFiles.map((file) => (
                                             <a key={file.id} href={file.fileUrl} download={file.fileName} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 items-center gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-3 transition-colors hover:border-[var(--course-line-strong)] hover:bg-[var(--course-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
                                                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--course-accent)]"><FileText className="h-4 w-4 text-[var(--course-text-muted)]" /></span>
-                                                <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--course-text)]">{file.fileName}</span><span className="mt-0.5 block text-[9px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)} KB</span></span>
+                                                <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--course-text)]">{file.fileName}</span><span className="mt-0.5 block text-[9px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)}  {t("KB")}</span></span>
                                             </a>
                                         ))}
                                     </div>
@@ -349,8 +352,8 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                             )}
                         </article>
 
-                        <nav aria-label="Lesson navigation" className="mt-3 flex flex-col gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
-                            <WorkspaceButton type="button" variant="secondary" onClick={() => prevLesson && selectLesson(prevLesson.id)} disabled={!prevLesson} className="w-full sm:w-auto"><ChevronLeft className="h-4 w-4" />Previous lesson</WorkspaceButton>
+                        <nav aria-label={t("Lesson navigation")} className="mt-3 flex flex-col gap-3 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                            <WorkspaceButton type="button" variant="secondary" onClick={() => prevLesson && selectLesson(prevLesson.id)} disabled={!prevLesson} className="w-full sm:w-auto"><ChevronLeft className="h-4 w-4" />{t("Previous lesson")}</WorkspaceButton>
                             <span className="order-first text-center text-[10px] font-semibold text-[var(--course-text-muted)] sm:order-none">{String(currentIndex + 1).padStart(2, "0")} / {String(allLessons.length).padStart(2, "0")}</span>
                             {nextLesson ? (
                                 <WorkspaceButton
@@ -363,11 +366,11 @@ export default function CourseViewerClient({ course, initialLessonId, initialCom
                                     }}
                                     className="w-full sm:w-auto"
                                 >
-                                    {activeCompleted ? "Next lesson" : "Complete & continue"}<ChevronRight className="h-4 w-4" />
+                                    {activeCompleted ? t("Next lesson") : t("Complete & continue")}<ChevronRight className="h-4 w-4" />
                                 </WorkspaceButton>
                             ) : (
                                 <WorkspaceButton type="button" variant={activeCompleted ? "secondary" : "primary"} onClick={() => void toggleComplete(activeLesson.id, !activeCompleted)} disabled={isUpdatingProgress || isLessonLocked(activeLesson)} className="w-full sm:w-auto">
-                                    <Check className="h-4 w-4" />{activeCompleted ? "Mark incomplete" : "Complete course"}
+                                    <Check className="h-4 w-4" />{activeCompleted ? t("Mark incomplete") : t("Complete course")}
                                 </WorkspaceButton>
                             )}
                         </nav>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import {
     Dialog,
@@ -28,6 +30,7 @@ interface Props {
 }
 
 export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
+  const t = useText();
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
@@ -58,14 +61,14 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                 });
                 if (!res.ok) {
                     const result = await res.json().catch(() => ({})) as { error?: string };
-                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
+                    toast.error(t(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`));
                     continue;
                 }
                 const uploaded = await res.json();
                 setFiles((prev) => [...prev, uploaded]);
             }
         } catch {
-            toast.error("Upload failed.");
+            toast.error(t("Upload failed."));
         } finally {
             setUploading(false);
             e.target.value = "";
@@ -90,20 +93,20 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
     const handleSave = () => {
         if (!title.trim()) {
-            toast.error("Please enter a title.");
+            toast.error(t("Please enter a title."));
             return;
         }
         if (!dueDate) {
-            toast.error("Please set a due date.");
+            toast.error(t("Please set a due date."));
             return;
         }
         try {
             if (parseAssignmentDeadline({ dueDate, dueTime, timeZone }).deadlineAt < new Date()) {
-                toast.error("The assignment deadline cannot be in the past.");
+                toast.error(t("The assignment deadline cannot be in the past."));
                 return;
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "The assignment deadline is invalid.");
+            toast.error(t(error instanceof Error ? error.message : "The assignment deadline is invalid."));
             return;
         }
         onAdd({
@@ -116,7 +119,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
             maxPoints: isGraded ? maxPoints : null,
             files,
         });
-        toast.success("Assignment added to post.");
+        toast.success(t("Assignment added to post."));
         setTitle("");
         setDescription("");
         setDueDate("");
@@ -131,7 +134,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
         <Dialog open={open} onOpenChange={onClose}>
             <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-h-[calc(100dvh-1.5rem)] w-[calc(100%-1.5rem)] max-w-xl gap-0 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
                 <DialogClose
-                    aria-label="Close assignment builder"
+                    aria-label={t("Close assignment builder")}
                     className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                 >
                     <X className="h-4 w-4" />
@@ -140,38 +143,36 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                 <div className="flex min-h-0 flex-col p-4 md:p-5">
                     <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-xl font-semibold text-(--theme-text)">
-                            Create assignment
-                        </DialogTitle>
+                             {t("Create assignment")} </DialogTitle>
                         <DialogDescription className="sr-only">
-                            Add assignment details and attach it to the post.
-                        </DialogDescription>
+                             {t("Add assignment details and attach it to the post.")} </DialogDescription>
                     </DialogHeader>
 
                     <ScrollArea className="min-h-0 max-h-[calc(100dvh-11rem)] flex-1">
                         <div className="space-y-4 py-4 pl-1 pr-3">
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Title *</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Title *")}</label>
                                 <Input
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-sm font-normal shadow-none focus-visible:border-[var(--classroom-focus-border)] focus-visible:ring-2 focus-visible:ring-(--theme-card)"
-                                    placeholder="e.g. Chapter 5 homework"
+                                    placeholder={t("e.g. Chapter 5 homework")}
                                 />
                             </div>
 
                             <div>
-                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Description</label>
+                                <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Description")}</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="min-h-24 w-full resize-none rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3 text-sm font-normal text-(--theme-text) outline-none transition-shadow placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-(--theme-card)"
-                                    placeholder="Add instructions..."
+                                    placeholder={t("Add instructions...")}
                                 />
                             </div>
 
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due date *</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Due date *")}</label>
                                     <Input
                                         type="date"
                                         min={localDateInputValue()}
@@ -181,7 +182,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Due time</label>
+                                    <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Due time")}</label>
                                     <Input
                                         type="time"
                                         min={dueDate === localDateInputValue() ? minimumLocalTimeInputValue() : undefined}
@@ -192,14 +193,13 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                 </div>
                             </div>
                             <p className="-mt-2 text-xs text-[var(--classroom-text-faint)]">
-                                Deadline timezone: {timeZone}. A date without a time is due at 23:59.
-                            </p>
+                                 {t("Deadline timezone:")} {timeZone}{t(". A date without a time is due at 23:59.")} </p>
 
                             <div className="grid items-end gap-3 sm:grid-cols-[1fr_9rem]">
                                 <div>
-                                    <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Grading</span>
+                                    <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Grading")}</span>
                                     <div className="flex h-10 items-center justify-between rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3">
-                                        <label htmlFor="assignment-graded" className="text-sm text-(--theme-text)">Graded</label>
+                                        <label htmlFor="assignment-graded" className="text-sm text-(--theme-text)">{t("Graded")}</label>
                                         <Switch
                                             id="assignment-graded"
                                             checked={isGraded}
@@ -211,7 +211,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
                                 {isGraded && (
                                     <div>
-                                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Max points</label>
+                                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Max points")}</label>
                                         <Input
                                             type="number"
                                             value={maxPoints}
@@ -224,7 +224,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                             </div>
 
                             <div>
-                                <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Attachments</span>
+                                <span className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Attachments")}</span>
                                 {files.length > 0 && (
                                     <div className="mb-2 space-y-2">
                                         {files.map((file, index) => (
@@ -237,7 +237,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                                 <button
                                                     type="button"
                                                     onClick={() => removeFile(index)}
-                                                    aria-label={`Remove ${file.fileName}`}
+                                                    aria-label={t("Remove {v0}", { v0: file.fileName })}
                                                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-hover)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                                 >
                                                     <X className="h-3.5 w-3.5" />
@@ -248,7 +248,7 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
                                 )}
                                 <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-border)]">
                                     <Upload className="h-4 w-4" />
-                                    {uploading ? "Uploading..." : "Add files"}
+                                    {uploading ? t("Uploading...") : t("Add files")}
                                     <input
                                         type="file"
                                         multiple
@@ -263,11 +263,9 @@ export function CreateAssignmentModal({ open, onClose, onAdd }: Props) {
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
                         <WorkspaceButton type="button" variant="secondary" onClick={onClose}>
-                            Cancel
-                        </WorkspaceButton>
+                             {t("Cancel")} </WorkspaceButton>
                         <WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={uploading}>
-                            Add assignment
-                        </WorkspaceButton>
+                             {t("Add assignment")} </WorkspaceButton>
                     </div>
                 </div>
             </WorkspaceDialogContent>

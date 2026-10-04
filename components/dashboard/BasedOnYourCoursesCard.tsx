@@ -1,12 +1,16 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import { DailyCourseRecommendationCard } from "./DailyCourseRecommendationCard";
 
 export function BasedOnYourCoursesCard() {
+  const t = useText();
   return (
     <DailyCourseRecommendationCard
       kind="HIVE_PICK"
-      title="Hive picks"
-      description="Courses that match what you're already learning."
-      actionLabel="See today's pick"
+      title={t("Hive picks")}
+      description={t("Courses that match what you're already learning.")}
+      actionLabel={t("See today's pick")}
     />
   );
 }

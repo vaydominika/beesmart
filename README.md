@@ -11,6 +11,7 @@ Built with Next.js, React, Prisma, and MariaDB.
 - Tests with multiple question types, attempts, and AI-assisted grading
 - Personal schedules, reminders, notifications, and focus timers
 - User profiles, course ratings, reports, and admin ticket management
+- English and Hungarian interface with saved language preferences
 
 ## Local setup
 
@@ -40,3 +41,5 @@ npm run build
 ```
 
 See [docs/security-deployment.md](docs/security-deployment.md) for storage, backups, migrations, cleanup jobs, and rollback notes.
+
+See [docs/internationalization.md](docs/internationalization.md) for language preferences, translation maintenance, and the required locale migration.

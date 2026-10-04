@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookPlus, Lightbulb, Plus } from "lucide-react";
@@ -45,6 +47,7 @@ function CourseSkeleton() {
 }
 
 export default function CoursesPage() {
+  const t = useText();
   const router = useRouter();
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [activeTab, setActiveTab] = useState<CourseTab | null>(null);
@@ -64,7 +67,7 @@ export default function CoursesPage() {
     setError(null);
     try {
       const response = await fetch("/api/courses", { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load your courses.");
+      if (!response.ok) throw new Error(t("Could not load your courses."));
       const data = await response.json() as CourseSummary[];
       setCourses(data);
       setActiveTab((current) => current ?? initialCourseTab(window.localStorage.getItem(TAB_KEY), data));
@@ -74,7 +77,7 @@ export default function CoursesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void fetchCourses();
@@ -125,7 +128,7 @@ export default function CoursesPage() {
       setCreateOpen(true);
       return true;
     } catch {
-      toast.error("The tutorial could not be saved.");
+      toast.error(t("The tutorial could not be saved."));
       return false;
     }
   };
@@ -151,48 +154,46 @@ export default function CoursesPage() {
 
   return (
     <WorkspacePageFrame className="course-ui bg-[var(--course-canvas)]">
-        <WorkspacePageHeader title="Courses" titleClassName="text-[var(--course-text)]" actions={<div className="flex items-center gap-2">
-            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label="Review course creation tutorial">
+        <WorkspacePageHeader title={t("Courses")} titleClassName="text-[var(--course-text)]" actions={<div className="flex items-center gap-2">
+            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon" onClick={reviewTutorial} aria-label={t("Review course creation tutorial")}>
               <Lightbulb className="h-4 w-4" />
-            </WorkspaceButton></TooltipTrigger><TooltipContent>Course creation tutorial</TooltipContent></Tooltip>
+            </WorkspaceButton></TooltipTrigger><TooltipContent>{t("Course creation tutorial")}</TooltipContent></Tooltip>
             <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>
-              <Plus className="h-4 w-4" />New course
-            </WorkspaceButton>
+              <Plus className="h-4 w-4" />{t("New course")} </WorkspaceButton>
           </div>} />
 
         <LibraryToolbar className="border-[var(--course-line)]">
           <WorkspaceTabs
-            ariaLabel="Course library"
+            ariaLabel={t("Course library")}
             value={activeTab ?? "created"}
             onValueChange={changeTab}
-            items={[{ value: "learning", label: "Learning" }, { value: "created", label: "Created" }] satisfies Array<{ value: CourseTab; label: string }>}
+            items={[{ value: "learning", label: t("Learning") }, { value: "created", label: t("Created") }] satisfies Array<{ value: CourseTab; label: string }>}
             fill
             className="sm:w-auto"
           />
 
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-            <WorkspaceSearchField type="search" name="course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search courses" aria-label="Search courses" wrapperClassName="flex-1 sm:w-64 sm:flex-none" className="border-[var(--course-line)] bg-[var(--course-surface-muted)] text-[var(--course-text)] placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-[var(--course-focus-ring)]" />
+            <WorkspaceSearchField type="search" name="course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search courses")} aria-label={t("Search courses")} wrapperClassName="flex-1 sm:w-64 sm:flex-none" className="border-[var(--course-line)] bg-[var(--course-surface-muted)] text-[var(--course-text)] placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-[var(--course-focus-ring)]" />
             <CourseStatusFilter activeTab={activeTab ?? "created"} learningFilter={learningFilter} createdFilter={createdFilter} onLearningChange={setLearningFilter} onCreatedChange={setCreatedFilter} />
             {activeTab === "created" && (
               <WorkspaceButton type="button" variant="secondary" onClick={() => setAddToClassroomOpen(true)}>
-                <BookPlus className="h-4 w-4" />Add to classroom
-              </WorkspaceButton>
+                <BookPlus className="h-4 w-4" />{t("Add to classroom")} </WorkspaceButton>
             )}
           </div>
         </LibraryToolbar>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label="Loading courses">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={t("Loading courses")}>
             {Array.from({ length: 4 }, (_, index) => <CourseSkeleton key={index} />)}
           </div>
         ) : error ? (
-          <WorkspaceEmptyState title="Your courses could not be loaded" description={error} className="min-h-72 border-[var(--course-line)]" action={<WorkspaceButton type="button" variant="primary" onClick={() => void fetchCourses()}>Try again</WorkspaceButton>} />
+          <WorkspaceEmptyState title={t("Your courses could not be loaded")} description={t(error)} className="min-h-72 border-[var(--course-line)]" action={<WorkspaceButton type="button" variant="primary" onClick={() => void fetchCourses()}>{t("Try again")}</WorkspaceButton>} />
         ) : visibleCourses.length ? (
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "learning" ? "Courses you are learning" : "Courses you created"}>
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "learning" ? t("Courses you are learning") : t("Courses you created")}>
             {visibleCourses.map((course) => <CourseCard key={course.id} course={course} onClick={() => router.push(course.relationship === "owner" ? `/courses/${course.id}/builder` : `/courses/${course.id}`)} />)}
           </section>
         ) : (
-          <WorkspaceEmptyState title={hasActiveFilters ? "No courses match these filters" : activeTab === "learning" ? "No courses to learn yet" : "Create your first course"} description={hasActiveFilters ? "Try a different search or status." : activeTab === "learning" ? "Courses you join or receive through a Classroom will appear here." : "Build lessons, add materials, and share the course when it is ready."} className="min-h-72 border-[var(--course-line)]" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setLearningFilter("all"); setCreatedFilter("all"); }}>Clear filters</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>New course</WorkspaceButton> : null} />
+          <WorkspaceEmptyState title={hasActiveFilters ? t("No courses match these filters") : activeTab === "learning" ? t("No courses to learn yet") : t("Create your first course")} description={hasActiveFilters ? t("Try a different search or status.") : activeTab === "learning" ? t("Courses you join or receive through a Classroom will appear here.") : t("Build lessons, add materials, and share the course when it is ready.")} className="min-h-72 border-[var(--course-line)]" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setLearningFilter("all"); setCreatedFilter("all"); }}>{t("Clear filters")}</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={openCourseCreation}>{t("New course")}</WorkspaceButton> : null} />
         )}
       <CourseCreationTutorial open={tutorialOpen} intent={tutorialIntent} onClose={() => setTutorialOpen(false)} onFinish={finishTutorial} />
       <CreateCourseModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={(course) => router.push(`/courses/${course.id}/builder`)} />

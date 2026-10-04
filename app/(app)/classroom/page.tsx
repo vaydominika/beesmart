@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClassroomCard } from "@/components/classroom/ClassroomCard";
@@ -39,6 +41,7 @@ interface ClassroomData {
 }
 
 export default function ClassroomPage() {
+  const t = useText();
     const router = useRouter();
     const searchParams = useSearchParams();
     const joinCode = searchParams.get("join")?.trim().toUpperCase() ?? "";
@@ -107,33 +110,32 @@ export default function ClassroomPage() {
 
     return (
         <WorkspacePageFrame className="classroom-ui bg-[var(--classroom-canvas)]">
-                <WorkspacePageHeader className="items-end" title="Classrooms" titleClassName="text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New classroom</WorkspaceButton>} />
+                <WorkspacePageHeader className="items-end" title={t("Classrooms")} titleClassName="text-[var(--classroom-text)]" actions={<WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" />  {t("New classroom")}</WorkspaceButton>} />
 
                 <LibraryToolbar className="border-[var(--classroom-line)]">
                     <WorkspaceTabs
-                        ariaLabel="Classroom library"
+                        ariaLabel={t("Classroom library")}
                         value={activeTab ?? "joined"}
                         onValueChange={changeTab}
-                        items={[{ value: "joined", label: "Joined" }, { value: "created", label: "Created" }] satisfies Array<{ value: ClassroomTab; label: string }>}
+                        items={[{ value: "joined", label: t("Joined") }, { value: "created", label: t("Created") }] satisfies Array<{ value: ClassroomTab; label: string }>}
                         fill
                         className="sm:w-auto"
                     />
 
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                        <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search classrooms" aria-label="Search classrooms" wrapperClassName="flex-1 sm:w-64 sm:flex-none" className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text)] placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-[var(--classroom-focus-ring)]" />
-                        <WorkspaceSelect ariaLabel="Classroom role" value={roleFilter} options={CLASSROOM_ROLE_OPTIONS} onValueChange={setRoleFilter} />
+                        <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search classrooms")} aria-label={t("Search classrooms")} wrapperClassName="flex-1 sm:w-64 sm:flex-none" className="border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] text-[var(--classroom-text)] placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-[var(--classroom-focus-ring)]" />
+                        <WorkspaceSelect ariaLabel={t("Classroom role")} value={roleFilter} options={CLASSROOM_ROLE_OPTIONS} translateLabels onValueChange={setRoleFilter} />
                         <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>
-                            <LogIn className="h-4 w-4" /> Join classroom
-                        </WorkspaceButton>
+                            <LogIn className="h-4 w-4" />  {t("Join classroom")} </WorkspaceButton>
                     </div>
                 </LibraryToolbar>
 
                 {loading ? (
-                    <WorkspaceLoadingState className="py-20" label="Loading classrooms" />
+                    <WorkspaceLoadingState className="py-20" label={t("Loading classrooms")} />
                 ) : visibleClassrooms.length === 0 ? (
-                    <WorkspaceEmptyState title={hasActiveFilters ? "No classrooms match these filters" : activeTab === "created" ? "No classrooms created yet" : "No joined classrooms yet"} description={hasActiveFilters ? "Try a different search or role." : activeTab === "created" ? "Create a classroom to start teaching." : "Join a classroom with a code from your teacher."} className="min-h-64 border-[var(--classroom-line)] py-16" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setRoleFilter("all"); }}>Clear filters</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>Create a classroom</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>Join a classroom</WorkspaceButton>} />
+                    <WorkspaceEmptyState title={hasActiveFilters ? t("No classrooms match these filters") : activeTab === "created" ? t("No classrooms created yet") : t("No joined classrooms yet")} description={hasActiveFilters ? t("Try a different search or role.") : activeTab === "created" ? t("Create a classroom to start teaching.") : t("Join a classroom with a code from your teacher.")} className="min-h-64 border-[var(--classroom-line)] py-16" action={hasActiveFilters ? <WorkspaceButton type="button" variant="secondary" onClick={() => { setSearch(""); setRoleFilter("all"); }}>{t("Clear filters")}</WorkspaceButton> : activeTab === "created" ? <WorkspaceButton type="button" variant="primary" onClick={() => setCreateOpen(true)}>{t("Create a classroom")}</WorkspaceButton> : <WorkspaceButton type="button" variant="secondary" onClick={() => setJoinOpen(true)}>{t("Join a classroom")}</WorkspaceButton>} />
                 ) : (
-                    <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "created" ? "Classrooms you created" : "Classrooms you joined"}>
+                    <section className="grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(280px,350px))]" aria-label={activeTab === "created" ? t("Classrooms you created") : t("Classrooms you joined")}>
                         {visibleClassrooms.map((classroom) => (
                             <ClassroomCard key={classroom.id} {...classroom} onClick={() => router.push(`/classroom/${classroom.id}`)} />
                         ))}

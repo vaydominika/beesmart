@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useRef, useEffect } from "react";
 import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
 import { useFocus } from "./FocusProvider";
@@ -15,6 +17,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function TimerWidget() {
+  const t = useText();
   const {
     isSessionActive,
     currentMode,
@@ -74,7 +77,7 @@ export function TimerWidget() {
           <div className="drag-handle flex min-w-0 flex-1 cursor-grab items-center px-3 py-2.5 active:cursor-grabbing">
             <div className="flex min-w-0 items-baseline gap-2">
               <span className="truncate text-xs font-semibold text-[var(--app-text-muted)]">
-                {currentMode === "active" ? "Focus" : "Break"}
+                {currentMode === "active" ? t("Focus") : t("Break")}
               </span>
               <span className="text-sm font-semibold tabular-nums tracking-tight">
                 {formatTime(timeRemaining)}
@@ -84,7 +87,7 @@ export function TimerWidget() {
           <button
             type="button"
             onClick={toggleMinimize}
-            aria-label="Restore focus timer"
+            aria-label={t("Restore focus timer")}
             className="mr-1.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
           >
             <ChevronUp className="h-4 w-4" />
@@ -110,7 +113,7 @@ export function TimerWidget() {
         <div className="flex min-h-14 items-center border-b border-[var(--app-border)] bg-[var(--app-surface-muted)]/70">
           <div className="drag-handle flex min-w-0 flex-1 cursor-grab items-center px-4 py-3 active:cursor-grabbing">
             <h2 id="focus-timer-title" className="min-w-0 text-sm font-semibold tracking-tight">
-              <span>{currentMode === "active" ? "Focus" : "Break"}</span>
+              <span>{currentMode === "active" ? t("Focus") : t("Break")}</span>
               <span aria-hidden="true" className="px-1.5 text-[var(--app-text-faint)]">·</span>
               <span className="tabular-nums">{formatTime(timeRemaining)}</span>
             </h2>
@@ -119,7 +122,7 @@ export function TimerWidget() {
             <button
               type="button"
               onClick={toggleMinimize}
-              aria-label="Minimize focus timer"
+              aria-label={t("Minimize focus timer")}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
             >
               <Minus className="h-4 w-4" />
@@ -127,7 +130,7 @@ export function TimerWidget() {
             <button
               type="button"
               onClick={stopSession}
-              aria-label="Stop focus session"
+              aria-label={t("Stop focus session")}
               className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-danger-soft)] hover:text-[var(--app-danger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
             >
               <X className="h-4 w-4" />
@@ -138,27 +141,27 @@ export function TimerWidget() {
         <div className="flex items-center justify-between px-4 py-3">
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" onClick={restart} aria-label="Restart focus timer" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+              <button type="button" onClick={restart} aria-label={t("Restart focus timer")} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
                 <RotateCcw className="h-4 w-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>Restart</TooltipContent>
+            <TooltipContent>{t("Restart")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" onClick={isRunning ? pauseTimer : resumeTimer} aria-label={isRunning ? "Pause focus timer" : "Resume focus timer"} className="inline-flex h-10 w-16 items-center justify-center rounded-xl border border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] text-[var(--app-text)] transition-colors hover:bg-[var(--app-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+              <button type="button" onClick={isRunning ? pauseTimer : resumeTimer} aria-label={isRunning ? t("Pause focus timer") : t("Resume focus timer")} className="inline-flex h-10 w-16 items-center justify-center rounded-xl border border-[var(--app-accent-hover)] bg-[var(--app-accent-soft)] text-[var(--app-text)] transition-colors hover:bg-[var(--app-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
                 {isRunning ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent>{isRunning ? "Pause" : "Play"}</TooltipContent>
+            <TooltipContent>{isRunning ? t("Pause") : t("Play")}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" onClick={next} aria-label="Skip to next focus timer interval" className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+              <button type="button" onClick={next} aria-label={t("Skip to next focus timer interval")} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
                 <SkipForward className="h-4 w-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent>Next</TooltipContent>
+            <TooltipContent>{t("Next")}</TooltipContent>
           </Tooltip>
         </div>
       </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import * as React from "react";
 import { X } from "lucide-react";
 import {
@@ -32,6 +34,7 @@ function WorkspaceDialogContent({ className, children, mobileSheet = true, ...pr
 }
 
 function WorkspaceDialogHeader({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const t = useText();
   return (
     <DialogHeader
       className={cn("relative shrink-0 space-y-1 border-b border-[var(--app-border)] px-5 py-4 pr-14 text-left sm:px-6", className)}
@@ -40,7 +43,7 @@ function WorkspaceDialogHeader({ className, children, ...props }: React.HTMLAttr
       {children}
       <DialogClose className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
         <X className="h-4 w-4" aria-hidden="true" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">{t("Close")}</span>
       </DialogClose>
     </DialogHeader>
   );

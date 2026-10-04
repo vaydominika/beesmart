@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen } from "@/test-utils/render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Link from "next/link";
 import { AppLayout } from "./AppLayout";

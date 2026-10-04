@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { ClassroomWorkEditModal } from "@/components/calendar/ClassroomWorkEditModal";
@@ -31,6 +33,7 @@ export function ClassroomWorkEditButton({
     onDeleted,
     className,
 }: ClassroomWorkEditButtonProps) {
+  const t = useText();
     const { triggerUpdate } = useEventSync();
     const [open, setOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
@@ -54,10 +57,10 @@ export function ClassroomWorkEditButton({
             if (!response.ok) throw new Error(data.error || `Could not delete the ${workType}.`);
             setDeleteOpen(false);
             triggerUpdate();
-            toast.success(`${workType === "exam" ? "Exam" : workType === "test" ? "Test" : "Assignment"} deleted.`);
+            toast.success(t("{v0} deleted.", { v0: workType === t("exam") ? t("Exam") : workType === t("test") ? t("Test") : t("Assignment") }));
             await (onDeleted ?? onSaved)?.();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : `Could not delete the ${workType}.`);
+            toast.error(t(error instanceof Error ? error.message : `Could not delete the ${workType}.`));
         } finally {
             setDeleting(false);
         }
@@ -72,8 +75,8 @@ export function ClassroomWorkEditButton({
                             type="button"
                             variant="ghost"
                             size="icon-compact"
-                            aria-label={`Actions for ${workType} ${title}`}
-                            title="More actions"
+                            aria-label={t("Actions for {v0} {v1}", { v0: workType, v1: title })}
+                            title={t("More actions")}
                             onClick={(event) => event.stopPropagation()}
                             className="h-8 w-8 rounded-lg text-[var(--classroom-text-muted)]"
                         >
@@ -93,7 +96,7 @@ export function ClassroomWorkEditButton({
                         <DropdownMenuSeparator className="bg-[var(--classroom-line)]" />
                         <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)} className="rounded-lg px-2.5 py-2 text-sm focus:bg-[var(--app-danger-soft)]">
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            <span>{deleteLabel}</span>
+                            <span>{t(deleteLabel)}</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -111,8 +114,8 @@ export function ClassroomWorkEditButton({
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={remove}
                 isDeleting={deleting}
-                title={`Delete ${workType}?`}
-                description={`Delete “${title}” and all of its submissions and grades? This action cannot be undone.`}
+                title={t("Delete {v0}?", { v0: workType })}
+                description={t("Delete “{v0}” and all of its submissions and grades? This action cannot be undone.", { v0: title })}
             />
         </>
     );

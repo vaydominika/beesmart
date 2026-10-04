@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Compass, Icon, Plus, type IconNode } from "lucide-react";
@@ -18,11 +20,12 @@ const beeIcon: IconNode = [
 ];
 
 export function WelcomeBanner() {
+  const t = useText();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, loading } = useDashboard();
   const user = data?.user;
-  const userName = user?.name?.trim() || "Learner";
+  const userName = user?.name?.trim() || t("Learner");
   const [isFirstLogin] = useState(() => searchParams.get("welcome") === "new");
   const message = user
     ? isFirstLogin
@@ -51,18 +54,16 @@ export function WelcomeBanner() {
       <div className="relative z-10 flex min-h-48 flex-col justify-center gap-5 p-5 md:p-7 lg:pr-52">
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl font-semibold tracking-[-0.035em] text-[var(--dashboard-text)] sm:text-3xl md:text-[38px]">
-            {isFirstLogin ? "Welcome" : "Welcome back"}, {loading && !user ? "…" : userName}
+            {isFirstLogin ? t("Welcome") : t("Welcome back")}, {loading && !user ? "…" : userName}
           </h2>
           <p className="mt-2 max-w-3xl text-base font-medium leading-relaxed text-[var(--dashboard-text-muted)] md:text-xl">
-            {message ?? "The hive is getting things ready…"}
+            {message ? t(message) : t("The hive is getting things ready…")}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <WorkspaceButton type="button" variant="primary" onClick={scrollToDiscover}>
-              <Compass className="h-4 w-4" /> Explore courses
-            </WorkspaceButton>
+              <Compass className="h-4 w-4" />  {t("Explore courses")} </WorkspaceButton>
             <WorkspaceButton type="button" variant="secondary" onClick={() => router.push("/courses")}>
-              <Plus className="h-4 w-4" /> Make your own
-            </WorkspaceButton>
+              <Plus className="h-4 w-4" />  {t("Make your own")} </WorkspaceButton>
           </div>
         </div>
       </div>

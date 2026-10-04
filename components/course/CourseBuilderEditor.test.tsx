@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@/test-utils/render";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CourseBuilderEditor from "./CourseBuilderEditor";

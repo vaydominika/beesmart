@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
@@ -117,11 +121,12 @@ function AuthorAvatar({
     size: number;
     className: string;
 }) {
+  const t = useText();
     return (
         <div className={cn("relative shrink-0 overflow-hidden rounded-full bg-[var(--classroom-surface-muted)]", className)}>
             <Image
                 src={profileImageUrl(author.image)}
-                alt={`${author.name}'s profile picture`}
+                alt={t("{v0}'s profile picture", { v0: author.name })}
                 width={size}
                 height={size}
                 className="h-full w-full object-cover object-center"
@@ -132,6 +137,8 @@ function AuthorAvatar({
 }
 
 export function ClassroomFeed({ classroomId, isTeacher }: Props) {
+  const locale = useLocale();
+  const t = useText();
     const searchParams = useSearchParams();
     const { triggerUpdate } = useEventSync();
     const focusedPostId = searchParams.get("post");
@@ -227,13 +234,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             else {
                 setInitialError(true);
                 setPosts([]);
-                toast.error("Posts could not be loaded.");
+                toast.error(t("Posts could not be loaded."));
             }
         } finally {
             if (append) setLoadingMore(false);
             else setLoading(false);
         }
-    }, [classroomId, debouncedSearch, typeFilter, sort]);
+    }, [classroomId, debouncedSearch, typeFilter, sort, t]);
 
     useEffect(() => {
         void fetchPosts(1, false);
@@ -304,7 +311,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         const editorContent = postEditorRef.current?.getHTML() ?? newPostContent;
         const isContentEmpty = !editorContent.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, " ").trim();
         if (isContentEmpty && postFiles.length === 0 && !postCourse && !postAssignment && !postTest) {
-            toast.error("Write a message or add something to the post.");
+            toast.error(t("Write a message or add something to the post."));
             return;
         }
         setPosting(true);
@@ -335,11 +342,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                toast.error(data.error ?? "Failed to create post.");
+                toast.error(t(data.error ?? "Failed to create post."));
                 return;
             }
             if (updatesCalendar) triggerUpdate();
-            toast.success("Post created!");
+            toast.success(t("Post created!"));
             setNewPostContent("");
             postEditorRef.current?.commands.clearContent();
             setPostFiles([]);
@@ -348,7 +355,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             setPostTest(null);
             fetchPosts();
         } catch {
-            toast.error("Failed to create post.");
+            toast.error(t("Failed to create post."));
         } finally {
             setPosting(false);
         }
@@ -366,14 +373,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     const result = await res.json().catch(() => ({})) as { error?: string };
-                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
+                    toast.error(t(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`));
                     continue;
                 }
                 const uploaded = await res.json();
                 setPostFiles((prev) => [...prev, uploaded]);
             }
         } catch {
-            toast.error("Upload failed.");
+            toast.error(t("Upload failed."));
         } finally {
             setUploadingFiles(false);
             e.target.value = "";
@@ -417,7 +424,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 body: JSON.stringify({ content: commentText.trim(), ...(parentId ? { parentId } : {}) }),
             });
             if (!res.ok) {
-                toast.error(parentId ? "Failed to add reply." : "Failed to add comment.");
+                toast.error(t(parentId ? "Failed to add reply." : "Failed to add comment."));
                 return;
             }
             setCommentText("");
@@ -430,7 +437,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 )
             );
         } catch {
-            toast.error(parentId ? "Failed to add reply." : "Failed to add comment.");
+            toast.error(t(parentId ? "Failed to add reply." : "Failed to add comment."));
         } finally {
             setPostingComment(false);
         }
@@ -457,7 +464,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             editingPost.assignment || editingPost.test || editingPost.course || editingPost.files.length,
         );
         if (!plainText && !hasAttachment && !editingPost.title) {
-            toast.error("A post without attachments needs text.");
+            toast.error(t("A post without attachments needs text."));
             return;
         }
 
@@ -470,16 +477,16 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                toast.error(data.error || "Could not update the post.");
+                toast.error(t(data.error || "Could not update the post."));
                 return;
             }
-            toast.success("Post updated.");
+            toast.success(t("Post updated."));
             editEditorRef.current = null;
             setEditingPost(null);
             setEditContent("");
             fetchPosts();
         } catch {
-            toast.error("Could not update the post.");
+            toast.error(t("Could not update the post."));
         } finally {
             setSavingEdit(false);
         }
@@ -494,16 +501,16 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             const response = await fetch(deletion.endpoint, { method: "DELETE" });
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                toast.error(data.error || `Could not delete the ${deletion.kind}.`);
+                toast.error(t(data.error || `Could not delete the ${deletion.kind}.`));
                 return;
             }
             setPosts((current) => current.filter((post) => post.id !== postToDelete.id));
             setExpandedPost((current) => current === postToDelete.id ? null : current);
             setPostToDelete(null);
             if (deletion.kind !== "post") triggerUpdate();
-            toast.success(`${displayKind} deleted.`);
+            toast.success(t("{v0} deleted.", { v0: displayKind }));
         } catch {
-            toast.error(`Could not delete the ${deletion.kind}.`);
+            toast.error(t("Could not delete the {v0}.", { v0: deletion.kind }));
         } finally {
             setDeletingPost(false);
         }
@@ -528,12 +535,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         const now = new Date();
         const diff = now.getTime() - d.getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 1) return "Just now";
-        if (mins < 60) return `${mins}m ago`;
+        if (mins < 1) return t("Just now");
+        if (mins < 60) return t("{count}m ago", { count: mins });
         const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours}h ago`;
+        if (hours < 24) return t("{count}h ago", { count: hours });
         const days = Math.floor(hours / 24);
-        if (days < 7) return `${days}d ago`;
+        if (days < 7) return t("{count}d ago", { count: days });
         return formatDateYmd(d);
     };
 
@@ -542,26 +549,26 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
         const now = new Date();
         const diff = due.getTime() - now.getTime();
         const hours = Math.floor(diff / 3600000);
-        if (hours < 0) return { text: "Past due", color: "bg-[var(--app-danger-soft)]0/20 text-[var(--app-danger)]" };
-        if (hours < 24) return { text: `${hours}h left`, color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
+        if (hours < 0) return { text: t("Past due"), color: "bg-[var(--app-danger-soft)]0/20 text-[var(--app-danger)]" };
+        if (hours < 24) return { text: t("{count}h left", { count: hours }), color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
         const days = Math.floor(hours / 24);
-        if (days <= 3) return { text: `${days}d left`, color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
-        return { text: `Due ${formatDateYmd(due)}`, color: "bg-[var(--app-info-soft)] text-[var(--app-info)]" };
+        if (days <= 3) return { text: t("{count}d left", { count: days }), color: "bg-[var(--app-warning-soft)] text-[var(--app-warning)]" };
+        return { text: t("Due {date}", { date: formatDateYmd(due) }), color: "bg-[var(--app-info-soft)] text-[var(--app-info)]" };
     };
 
     return (
         <div>
             {/* Post creation */}
-            <section className="mb-5 border-b border-[var(--classroom-line)] pb-5" aria-label="Create a post">
+            <section className="mb-5 border-b border-[var(--classroom-line)] pb-5" aria-label={t("Create a post")}>
                 <div className="mb-2">
-                    <h2 className="text-sm font-semibold text-[var(--classroom-text)]">Share with the class</h2>
+                    <h2 className="text-sm font-semibold text-[var(--classroom-text)]">{t("Share with the class")}</h2>
                 </div>
                 <div className="relative">
                     <Editor
                         initialValue={newPostContent}
                         onChange={setNewPostContent}
                         onReady={(editor) => { postEditorRef.current = editor; }}
-                        placeholder="Write an update..."
+                        placeholder={t("Write an update...")}
                         className="min-h-[72px] rounded-xl border border-[var(--classroom-line)] bg-[color-mix(in_srgb,var(--app-surface)_70%,transparent)] p-3 pr-14 text-sm font-normal text-[var(--classroom-text)] outline-none focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]/15 prose prose-sm max-w-none"
                         id="classroom-post"
                     />
@@ -571,7 +578,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         size="icon"
                         onClick={handleCreatePost}
                         disabled={posting || uploadingFiles}
-                        aria-label="Publish post"
+                        aria-label={t("Publish post")}
                         className="absolute bottom-2 right-2"
                     >
                         <Send className="h-5 w-5" />
@@ -604,14 +611,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postAssignment.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
-                                Assignment · Due {formatDateYmd(postAssignment.dueDate)}
-                                {postAssignment.files.length > 0 && ` · ${postAssignment.files.length} file${postAssignment.files.length === 1 ? "" : "s"}`}
+                                 {t("Assignment · Due")} {formatDateYmd(postAssignment.dueDate)}
+                                {postAssignment.files.length > 0 && ` · ${postAssignment.files.length} file${postAssignment.files.length === 1 ? "" : t("s")}`}
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setPostAssignment(null)}
-                            aria-label={`Remove assignment ${postAssignment.title}`}
+                            aria-label={t("Remove assignment {v0}", { v0: postAssignment.title })}
                             className="p-1.5 opacity-45 transition-opacity hover:opacity-100"
                         >
                             <X className="h-4 w-4" />
@@ -627,13 +634,13 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postTest.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
-                                {postTest.type === "EXAM" ? "Exam" : "Test"} · {postTest.questions.length} question{postTest.questions.length === 1 ? "" : "s"}
+                                {postTest.type === "EXAM" ? t("Exam") : t("Test")} · {postTest.questions.length}  {t("question")}{postTest.questions.length === 1 ? "" : t("s")}
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setPostTest(null)}
-                            aria-label={`Remove ${postTest.type === "EXAM" ? "exam" : "test"} ${postTest.title}`}
+                            aria-label={t("Remove {v0} {v1}", { v0: postTest.type === "EXAM" ? t("exam") : t("test"), v1: postTest.title })}
                             className="p-1.5 opacity-45 transition-opacity hover:opacity-100"
                         >
                             <X className="h-4 w-4" />
@@ -649,13 +656,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{postCourse.title}</p>
                             <p className="truncate text-xs text-[var(--classroom-text-muted)]">
-                                {postCourse.creator.name} · {postCourse._count?.modules ?? 0} modules
-                            </p>
+                                {postCourse.creator.name} · {postCourse._count?.modules ?? 0}  {t("modules")} </p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setPostCourse(null)}
-                            aria-label={`Remove ${postCourse.title}`}
+                            aria-label={t("Remove {v0}", { v0: postCourse.title })}
                             className="p-1.5 opacity-45 hover:opacity-100 transition-opacity"
                         >
                             <X className="h-4 w-4" />
@@ -666,22 +672,19 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 {/* Teacher action toolbar */}
                 {isTeacher && (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="mr-1 text-xs font-medium text-[var(--classroom-text-muted)]">Add to post</span>
+                        <span className="mr-1 text-xs font-medium text-[var(--classroom-text-muted)]">{t("Add to post")}</span>
                         <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setAssignmentModalOpen(true)}>
                             <ClipboardList className="h-3.5 w-3.5" />
-                            Assignment
-                        </WorkspaceButton>
+                             {t("Assignment")} </WorkspaceButton>
                         <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setTestModalOpen(true)}>
                             <GraduationCap className="h-3.5 w-3.5" />
-                            Test / Exam
-                        </WorkspaceButton>
+                             {t("Test / Exam")} </WorkspaceButton>
                         <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setCourseModalOpen(true)}>
                             <BookOpen className="h-3.5 w-3.5" />
-                            Course
-                        </WorkspaceButton>
+                             {t("Course")} </WorkspaceButton>
                         <label className={workspaceButtonVariants({ variant: "primary", size: "compact", className: "cursor-pointer" })}>
                             <Upload className="h-3.5 w-3.5" />
-                            {uploadingFiles ? "Uploading…" : "Files"}
+                            {uploadingFiles ? t("Uploading…") : t("Files")}
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -699,7 +702,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <div className="mt-3 flex items-center gap-2">
                         <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) px-2.5 py-2 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) hover:text-[var(--classroom-text)]">
                             <Upload className="h-3.5 w-3.5" />
-                            {uploadingFiles ? "Uploading…" : "Attach Files"}
+                            {uploadingFiles ? t("Uploading…") : t("Attach Files")}
                             <input
                                 type="file"
                                 multiple
@@ -719,11 +722,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                     <input
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search posts..."
+                        placeholder={t("Search posts...")}
                         className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] pl-10 pr-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
                     />
                 </div>
-                <WorkspaceButton type="button" variant={showFilters ? "primary" : "secondary"} size="icon" onClick={() => setShowFilters(!showFilters)} aria-label="Toggle post filters" aria-pressed={showFilters}>
+                <WorkspaceButton type="button" variant={showFilters ? "primary" : "secondary"} size="icon" onClick={() => setShowFilters(!showFilters)} aria-label={t("Toggle post filters")} aria-pressed={showFilters}>
                     <SlidersHorizontal className="h-4 w-4" />
                 </WorkspaceButton>
             </div>
@@ -737,8 +740,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             !typeFilter ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)]" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]"
                         )}
                     >
-                        All
-                    </button>
+                         {t("All")} </button>
                     {Object.entries(POST_TYPE_LABELS).map(([key, label]) => (
                         <button
                             key={key}
@@ -757,14 +759,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             onClick={() => setSort("newest")}
                             className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "newest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]")}
                         >
-                            Newest
-                        </button>
+                             {t("Newest")} </button>
                         <button
                             onClick={() => setSort("oldest")}
                             className={cn("rounded-lg px-3 py-1.5 text-xs font-medium", sort === "oldest" ? "border border-[var(--classroom-accent-hover)] bg-(--classroom-accent)" : "border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)]")}
                         >
-                            Oldest
-                        </button>
+                             {t("Oldest")} </button>
                     </div>
                 </div>
             )}
@@ -773,10 +773,10 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             {loading ? (
                 <div className="flex justify-center py-10"><Spinner /></div>
             ) : initialError ? (
-                <div className="py-10 text-center"><p className="text-sm text-[var(--classroom-text-muted)]">The classroom feed could not be loaded.</p><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(1, false)} className="mt-3">Retry</WorkspaceButton></div>
+                <div className="py-10 text-center"><p className="text-sm text-[var(--classroom-text-muted)]">{t("The classroom feed could not be loaded.")}</p><WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(1, false)} className="mt-3">{t("Retry")}</WorkspaceButton></div>
             ) : posts.length === 0 ? (
                 <div className="text-center py-10">
-                    <p className="text-sm text-(--theme-text) opacity-50">No posts yet. Be the first to share!</p>
+                    <p className="text-sm text-(--theme-text) opacity-50">{t("No posts yet. Be the first to share!")}</p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -788,11 +788,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     <AuthorAvatar author={post.author} size={32} className="h-8 w-8" />
                                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                         <span className="text-sm font-semibold text-[var(--classroom-text)]">{post.author.name}</span>
-                                        <Tooltip><TooltipTrigger asChild><span className="text-xs text-[var(--classroom-text-muted)]">Posted {formatDate(post.createdAt)}</span></TooltipTrigger><TooltipContent>{new Date(post.createdAt).toLocaleString()}</TooltipContent></Tooltip>
+                                        <Tooltip><TooltipTrigger asChild><span className="text-xs text-[var(--classroom-text-muted)]">{t("Posted")} {formatDate(post.createdAt)}</span></TooltipTrigger><TooltipContent>{new Date(post.createdAt).toLocaleString(locale)}</TooltipContent></Tooltip>
                                         {post.editedAt && (
                                             <Tooltip><TooltipTrigger asChild><span className="text-xs text-[var(--classroom-text-faint)]">
-                                                · Edited {formatDate(post.editedAt)}
-                                            </span></TooltipTrigger><TooltipContent>{new Date(post.editedAt).toLocaleString()}</TooltipContent></Tooltip>
+                                                 {t("· Edited")} {formatDate(post.editedAt)}
+                                            </span></TooltipTrigger><TooltipContent>{new Date(post.editedAt).toLocaleString(locale)}</TooltipContent></Tooltip>
                                         )}
                                     </div>
                                 </div>
@@ -807,7 +807,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         <Tooltip><TooltipTrigger asChild><button
                                             type="button"
                                             onClick={() => handleTogglePin(post.id, post.isPinned)}
-                                            aria-label={post.isPinned ? "Unpin post" : "Pin post"}
+                                            aria-label={post.isPinned ? t("Unpin post") : t("Pin post")}
                                             className={cn(
                                                 "p-1 text-xs text-(--theme-text) transition-all hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-text-important) rounded-md",
                                                 post.isPinned ? "opacity-100" : "opacity-40",
@@ -817,12 +817,12 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                 className={cn("h-3.5 w-3.5", post.isPinned && "rotate-45 text-[var(--classroom-pin)]")}
                                                 style={post.isPinned ? { fill: "var(--classroom-accent)" } : undefined}
                                             />
-                                        </button></TooltipTrigger><TooltipContent>{post.isPinned ? "Unpin" : "Pin"}</TooltipContent></Tooltip>
+                                        </button></TooltipTrigger><TooltipContent>{post.isPinned ? t("Unpin") : t("Pin")}</TooltipContent></Tooltip>
                                     ) : post.isPinned ? (
                                         <Pin
                                             className="h-3.5 w-3.5 rotate-45 text-[var(--classroom-pin)]"
                                             style={{ fill: "var(--classroom-accent)" }}
-                                            aria-label="Pinned post"
+                                            aria-label={t("Pinned post")}
                                         />
                                     ) : null}
                                     {post.isOwnPost && (
@@ -830,7 +830,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             <DropdownMenuTrigger asChild>
                                                 <button
                                                     type="button"
-                                                    aria-label="Post actions"
+                                                    aria-label={t("Post actions")}
                                                     className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                                 >
                                                     <MoreHorizontal className="h-4 w-4" />
@@ -845,16 +845,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                     className="rounded-lg px-2.5 py-2 text-sm text-[var(--classroom-text-muted)] focus:bg-[var(--classroom-surface-muted)]"
                                                 >
                                                     <Pencil className="h-4 w-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
+                                                     {t("Edit")} </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     variant="destructive"
                                                     onSelect={() => setPostToDelete(post)}
                                                     className="rounded-lg px-2.5 py-2 text-sm focus:bg-[var(--app-danger-soft)]"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
+                                                     {t("Delete")} </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     )}
@@ -883,19 +881,19 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             {post.assignment.deadlineAt && (
                                                 <Tooltip><TooltipTrigger asChild><span className={cn("text-xs font-bold ml-2 px-2 py-0.5 rounded-md", getDueDateBadge(post.assignment.deadlineAt).color)}>
                                                     {getDueDateBadge(post.assignment.deadlineAt).text}
-                                                </span></TooltipTrigger><TooltipContent>{`Deadline set in ${post.assignment.deadlineTimeZone}`}</TooltipContent></Tooltip>
+                                                </span></TooltipTrigger><TooltipContent>{t("Deadline set in {v0}", { v0: post.assignment.deadlineTimeZone })}</TooltipContent></Tooltip>
                                             )}
                                         </div>
                                         {post.assignment.maxPoints != null && (
-                                            <span className="mr-1 text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints} pts</span>
+                                            <span className="mr-1 text-xs font-bold text-(--theme-text) opacity-50">{post.assignment.maxPoints}  {t("pts")}</span>
                                         )}
                                         <Tooltip><TooltipTrigger asChild><Link
                                             href={classroomAssignmentHref(classroomId, post.assignment.id)}
-                                            aria-label={`Open assignment ${post.assignment.title}`}
+                                            aria-label={t("Open assignment {v0}", { v0: post.assignment.title })}
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                         >
                                             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                        </Link></TooltipTrigger><TooltipContent>Open assignment</TooltipContent></Tooltip>
+                                        </Link></TooltipTrigger><TooltipContent>{t("Open assignment")}</TooltipContent></Tooltip>
                                 </div>
                             )}
 
@@ -906,7 +904,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         <div className="flex-1">
                                             <span className="text-sm font-bold text-(--theme-text)">{post.test.title}</span>
                                             {post.test.timeLimit && (
-                                                <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit} min</span>
+                                                <span className="text-xs text-(--theme-text) opacity-50 ml-2">{post.test.timeLimit}  {t("min")}</span>
                                             )}
                                         </div>
                                         <span className="mr-1 text-xs font-bold uppercase text-(--theme-text) opacity-50">{post.test.type}</span>
@@ -914,19 +912,19 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                             <Tooltip><TooltipTrigger asChild><button
                                                 type="button"
                                                 onClick={() => setPreviewTestId(post.test!.id)}
-                                                aria-label={`Preview ${post.test.type === "EXAM" ? "exam" : "test"} ${post.test.title}`}
+                                                aria-label={t("Preview {v0} {v1}", { v0: post.test.type === "EXAM" ? t("exam") : t("test"), v1: post.test.title })}
                                                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                             >
                                                 <Eye className="h-4 w-4" aria-hidden="true" />
-                                            </button></TooltipTrigger><TooltipContent>Preview {post.test.type === "EXAM" ? "exam" : "test"}</TooltipContent></Tooltip>
+                                            </button></TooltipTrigger><TooltipContent>{t("Preview")} {post.test.type === "EXAM" ? t("exam") : t("test")}</TooltipContent></Tooltip>
                                         ) : null}
                                         <Tooltip><TooltipTrigger asChild><Link
                                             href={`/classroom/${classroomId}/tests/${post.test.id}`}
-                                            aria-label={`Open ${post.test.type === "EXAM" ? "exam" : "test"} ${post.test.title}`}
+                                            aria-label={t("Open {v0} {v1}", { v0: post.test.type === "EXAM" ? t("exam") : t("test"), v1: post.test.title })}
                                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--classroom-accent) text-(--theme-text) opacity-70 transition-[opacity,transform] hover:translate-x-0.5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                         >
                                             <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                                        </Link></TooltipTrigger><TooltipContent>Open {post.test.type === "EXAM" ? "exam" : "test"}</TooltipContent></Tooltip>
+                                        </Link></TooltipTrigger><TooltipContent>{t("Open")} {post.test.type === "EXAM" ? t("exam") : t("test")}</TooltipContent></Tooltip>
                                 </div>
                             )}
 
@@ -940,8 +938,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         <div className="min-w-0 flex-1">
                                             <p className="text-sm font-bold text-(--theme-text) truncate">{post.course.title}</p>
                                             <p className="text-[10px] text-(--theme-text) opacity-45 uppercase truncate">
-                                                {post.course.creator.name} · {post.course._count?.modules ?? 0} modules
-                                            </p>
+                                                {post.course.creator.name} · {post.course._count?.modules ?? 0}  {t("modules")} </p>
                                         </div>
                                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-(--classroom-accent) opacity-0 transition-opacity group-hover:opacity-100">
                                             <ArrowRight className="h-4 w-4 text-(--theme-text)" />
@@ -975,7 +972,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                     className="flex items-center gap-1.5 text-xs font-medium text-[var(--classroom-text-muted)] transition-colors hover:text-[var(--classroom-text)]"
                                 >
                                     <MessageCircle className="h-3.5 w-3.5" />
-                                    {post._count.comments} {post._count.comments === 1 ? "comment" : "comments"}
+                                    {post._count.comments} {post._count.comments === 1 ? t("comment") : t("comments")}
                                 </button>
                             </div>
 
@@ -993,12 +990,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleStartReply(post.id, comment)}
-                                                        aria-label={`Reply to ${comment.author.name}`}
+                                                        aria-label={t("Reply to {v0}", { v0: comment.author.name })}
                                                         className="mt-1 inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[10px] font-semibold text-[var(--classroom-text-faint)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                                     >
                                                         <Reply className="h-3 w-3" aria-hidden="true" />
-                                                        Reply
-                                                    </button>
+                                                         {t("Reply")} </button>
                                                 </div>
                                             </div>
                                             {/* Replies */}
@@ -1020,11 +1016,11 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                         {replyingTo?.postId === post.id && (
                                             <div className="mb-1.5 flex items-center gap-1.5 text-[10px] text-[var(--classroom-text-muted)]">
                                                 <Reply className="h-3 w-3" aria-hidden="true" />
-                                                <span>Replying to <strong className="font-semibold text-[var(--classroom-text)]">{replyingTo.authorName}</strong></span>
+                                                <span>{t("Replying to")} <strong className="font-semibold text-[var(--classroom-text)]">{replyingTo.authorName}</strong></span>
                                                 <button
                                                     type="button"
                                                     onClick={() => setReplyingTo(null)}
-                                                    aria-label="Cancel reply"
+                                                    aria-label={t("Cancel reply")}
                                                     className="rounded p-0.5 transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                                 >
                                                     <X className="h-3 w-3" aria-hidden="true" />
@@ -1043,15 +1039,15 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                                                         handleAddComment(post.id);
                                                     }
                                                 }}
-                                                aria-label={replyingTo?.postId === post.id ? `Reply to ${replyingTo.authorName}` : "Write a comment"}
-                                                placeholder={replyingTo?.postId === post.id ? `Reply to ${replyingTo.authorName}...` : "Write a comment..."}
+                                                aria-label={replyingTo?.postId === post.id ? t("Reply to {v0}", { v0: replyingTo.authorName }) : t("Write a comment")}
+                                                placeholder={replyingTo?.postId === post.id ? t("Reply to {v0}...", { v0: replyingTo.authorName }) : t("Write a comment...")}
                                                 className="h-9 flex-1 rounded-lg border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 text-xs font-normal text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]/20"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => handleAddComment(post.id)}
                                                 disabled={postingComment || !commentText.trim()}
-                                                aria-label={replyingTo?.postId === post.id ? "Send reply" : "Send comment"}
+                                                aria-label={replyingTo?.postId === post.id ? t("Send reply") : t("Send comment")}
                                                 className="rounded-md p-1 text-(--theme-text) opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)] disabled:cursor-not-allowed disabled:opacity-30"
                                             >
                                                 <Send className="h-4 w-4" aria-hidden="true" />
@@ -1063,7 +1059,7 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                         </article>
                     ))}
                     <div ref={loadMoreRef} className="flex min-h-12 items-center justify-center py-2" aria-live="polite">
-                        {loadingMore ? <><Spinner className="h-5 w-5" /><span className="ml-2 text-xs text-[var(--classroom-text-muted)]">Loading more posts...</span></> : loadMoreError ? <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(page + 1, true)}>Retry loading posts</WorkspaceButton> : !hasMore && posts.length > 0 ? <span className="text-xs text-[var(--classroom-text-faint)]">You have reached the end · {total} posts</span> : null}
+                        {loadingMore ? <><Spinner className="h-5 w-5" /><span className="ml-2 text-xs text-[var(--classroom-text-muted)]">{t("Loading more posts...")}</span></> : loadMoreError ? <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchPosts(page + 1, true)}>{t("Retry loading posts")}</WorkspaceButton> : !hasMore && posts.length > 0 ? <span className="text-xs text-[var(--classroom-text-faint)]">{t("You have reached the end ·")} {total}  {t("posts")}</span> : null}
                     </div>
                 </div>
             )}
@@ -1097,17 +1093,17 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
             <Dialog open={Boolean(editingPost && !editingPost.assignment && !editingPost.test)} onOpenChange={(open) => { if (!open) closePostEditor(); }}>
                 <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-2xl rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                     <DialogHeader className="pr-10">
-                        <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Edit post</DialogTitle>
-                        <DialogDescription className="sr-only">Update the text in your post.</DialogDescription>
+                        <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">{t("Edit post")}</DialogTitle>
+                        <DialogDescription className="sr-only">{t("Update the text in your post.")}</DialogDescription>
                     </DialogHeader>
-                    <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close post editor" className="absolute right-4 top-4"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+                    <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close post editor")} className="absolute right-4 top-4"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                     {editingPost && (
                         <Editor
                             key={editingPost.id}
                             initialValue={editingPost.content || ""}
                             onChange={setEditContent}
                             onReady={(editor) => { editEditorRef.current = editor; }}
-                            placeholder="Write an update..."
+                            placeholder={t("Write an update...")}
                             className="min-h-36 rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3 text-sm font-normal text-[var(--classroom-text)] outline-none focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]/15 prose prose-sm max-w-none"
                             id={`edit-classroom-post-${editingPost.id}`}
                         />
@@ -1119,15 +1115,14 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                             onClick={closePostEditor}
                             disabled={savingEdit}
                         >
-                            Cancel
-                        </WorkspaceButton>
+                             {t("Cancel")} </WorkspaceButton>
                         <WorkspaceButton
                             type="button"
                             variant="primary"
                             onClick={handleEditPost}
                             disabled={savingEdit}
                         >
-                            {savingEdit ? "Saving…" : "Save changes"}
+                            {savingEdit ? t("Saving…") : t("Save changes")}
                         </WorkspaceButton>
                     </div>
                 </WorkspaceDialogContent>
@@ -1138,10 +1133,10 @@ export function ClassroomFeed({ classroomId, isTeacher }: Props) {
                 onClose={() => setPostToDelete(null)}
                 onConfirm={handleDeletePost}
                 isDeleting={deletingPost}
-                title={`Delete ${postToDelete ? classroomPostDeleteDetails(classroomId, postToDelete).kind : "post"}?`}
+                title={t("Delete {v0}?", { v0: postToDelete ? classroomPostDeleteDetails(classroomId, postToDelete).kind : "post" })}
                 description={postToDelete && (postToDelete.assignment || postToDelete.test)
-                    ? `This removes the ${classroomPostDeleteDetails(classroomId, postToDelete).kind}, its classroom post, submissions, grades, and calendar event. This action cannot be undone.`
-                    : "This removes the post and its comments. This action cannot be undone."}
+                    ? t("This removes the {v0}, its classroom post, submissions, grades, and calendar event. This action cannot be undone.", { v0: classroomPostDeleteDetails(classroomId, postToDelete).kind })
+                    : t("This removes the post and its comments. This action cannot be undone.")}
             />
 
             <CreateAssignmentModal

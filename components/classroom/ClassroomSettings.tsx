@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
+  const t = useText();
     const [name, setName] = useState(classroom.name);
     const [description, setDescription] = useState(classroom.description || "");
     const [subject, setSubject] = useState(classroom.subject || "");
@@ -29,7 +32,7 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
 
     const handleSave = async () => {
         if (!name.trim()) {
-            toast.error("Name is required.");
+            toast.error(t("Name is required."));
             return;
         }
         setSaving(true);
@@ -44,13 +47,13 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                 }),
             });
             if (!res.ok) {
-                toast.error("Failed to update.");
+                toast.error(t("Failed to update."));
                 return;
             }
-            toast.success("Classroom updated!");
+            toast.success(t("Classroom updated!"));
             onUpdated();
         } catch {
-            toast.error("Failed to update.");
+            toast.error(t("Failed to update."));
         } finally {
             setSaving(false);
         }
@@ -62,13 +65,13 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
             const res = await fetch(`/api/classrooms/${classroom.id}`, { method: "DELETE" });
             if (!res.ok) {
                 const data = await res.json().catch(() => ({}));
-                toast.error(data.error || "Failed to delete.");
+                toast.error(t(data.error || "Failed to delete."));
                 return;
             }
-            toast.success("Classroom deleted.");
+            toast.success(t("Classroom deleted."));
             onDeleted();
         } catch {
-            toast.error("Failed to delete.");
+            toast.error(t("Failed to delete."));
         } finally {
             setDeleting(false);
         }
@@ -79,11 +82,11 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
             {/* Class Info */}
             <section className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface)] p-4 md:p-5">
                 <div className="mb-4">
-                    <h2 className="text-base font-semibold text-[var(--classroom-text)]">Classroom details</h2>
+                    <h2 className="text-base font-semibold text-[var(--classroom-text)]">{t("Classroom details")}</h2>
                 </div>
                 <div className="space-y-4">
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Name</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Name")}</label>
                         <Input
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -91,7 +94,7 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Subject</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Subject")}</label>
                         <Input
                             value={subject}
                             onChange={(e) => setSubject(e.target.value)}
@@ -99,7 +102,7 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                         />
                     </div>
                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">Description</label>
+                        <label className="mb-1.5 block text-xs font-medium text-[var(--classroom-text-muted)]">{t("Description")}</label>
                         <Input
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -113,25 +116,23 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                         disabled={saving}
                         className="mt-2"
                     >
-                        {saving ? "Saving…" : "Save Changes"}
+                        {saving ? t("Saving…") : t("Save Changes")}
                     </WorkspaceButton>
                 </div>
             </section>
 
             {/* Danger Zone */}
             <section className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-4 md:p-5">
-                <h2 className="text-base font-semibold text-[var(--app-danger)]">Delete classroom</h2>
+                <h2 className="text-base font-semibold text-[var(--app-danger)]">{t("Delete classroom")}</h2>
                 <p className="mb-4 mt-1 text-sm leading-5 text-[var(--classroom-text-muted)]">
-                    Deleting this classroom will permanently remove all posts, assignments, tests, and grades.
-                </p>
+                     {t("Deleting this classroom will permanently remove all posts, assignments, tests, and grades.")} </p>
                 <WorkspaceButton
                     type="button"
                     variant="danger"
                     onClick={() => setDeleteOpen(true)}
                 >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Classroom
-                </WorkspaceButton>
+                     {t("Delete Classroom")} </WorkspaceButton>
             </section>
 
             <DeleteConfirmationModal
@@ -139,8 +140,8 @@ export function ClassroomSettings({ classroom, onUpdated, onDeleted }: Props) {
                 onClose={() => setDeleteOpen(false)}
                 onConfirm={handleDelete}
                 isDeleting={deleting}
-                title="Delete Classroom"
-                description="Are you sure? This will permanently delete all posts, assignments, tests, and grades. This action cannot be undone."
+                title={t("Delete Classroom")}
+                description={t("Are you sure? This will permanently delete all posts, assignments, tests, and grades. This action cannot be undone.")}
             />
         </div>
     );

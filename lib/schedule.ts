@@ -171,22 +171,22 @@ export function eventRecordId(event: Pick<ScheduleEvent, "id" | "seriesId">): st
   return event.seriesId || event.id;
 }
 
-export function eventSourceLabel(event: Pick<ScheduleEvent, "source" | "classroomName">): string {
+export function eventSourceLabel(event: Pick<ScheduleEvent, "source" | "classroomName">, translate: (source: string) => string = (value) => value): string {
   const classroomName = event.classroomName?.trim();
-  if (event.source === "classroom" && classroomName) return `Classroom ${classroomName}`;
-  return sourceLabel(event.source);
+  if (event.source === "classroom" && classroomName) return `${translate("Classroom")} ${classroomName}`;
+  return translate(sourceLabel(event.source));
 }
 
-export function eventTimeLabel(event: Pick<ScheduleEvent, "assignmentId" | "endDate" | "isAllDay" | "startDate" | "startTime" | "testId">): string {
+export function eventTimeLabel(event: Pick<ScheduleEvent, "assignmentId" | "endDate" | "isAllDay" | "startDate" | "startTime" | "testId">, locale = "en-US", translate: (source: string) => string = (value) => value): string {
   if (!event.isAllDay) return event.startTime || "—";
-  if (!event.assignmentId && !event.testId) return "All day";
+  if (!event.assignmentId && !event.testId) return translate("All day");
 
   const dueDate = parseDateKey(dateKey(event.endDate || event.startDate));
-  return `Due ${dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+  return `${translate("Due")} ${dueDate.toLocaleDateString(locale, { month: "short", day: "numeric" })}`;
 }
 
-export function formatLongDate(date: Date, options: { includeYear?: boolean } = {}): string {
-  return date.toLocaleDateString("en-US", {
+export function formatLongDate(date: Date, options: { includeYear?: boolean; locale?: string } = {}): string {
+  return date.toLocaleDateString(options.locale ?? "en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",

@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import { ClipboardList, GraduationCap } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -106,6 +108,7 @@ function assignmentDeadlineInputs(details: AssignmentDetails) {
 }
 
 export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSaved, post }: ClassroomWorkEditModalProps) {
+  const t = useText();
   const assignmentMode = Boolean(event.assignmentId);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -187,30 +190,30 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
   };
 
   const save = async () => {
-    if (!title.trim()) return toast.error("Title is required.");
+    if (!title.trim()) return toast.error(t("Title is required."));
     let endpoint: string;
     let body: Record<string, unknown>;
 
     if (assignmentMode) {
-      if (!dueDate) return toast.error("Due date is required.");
-      if (dueDate !== originalDueDate && dueDate < localDateInputValue()) return toast.error("Due date cannot be in the past.");
+      if (!dueDate) return toast.error(t("Due date is required."));
+      if (dueDate !== originalDueDate && dueDate < localDateInputValue()) return toast.error(t("Due date cannot be in the past."));
       if ((dueDate !== originalDueDate || dueTime !== originalDueTime) && dueDate === localDateInputValue() && dueTime && dueTime < minimumLocalTimeInputValue()) {
-        return toast.error("Due time cannot be in the past.");
+        return toast.error(t("Due time cannot be in the past."));
       }
       const points = Number(maxPoints);
-      if (isGraded && (!Number.isFinite(points) || points < 0)) return toast.error("Maximum points must be zero or greater.");
+      if (isGraded && (!Number.isFinite(points) || points < 0)) return toast.error(t("Maximum points must be zero or greater."));
       endpoint = `/api/classrooms/${event.classroomId}/assignments/${event.assignmentId}`;
       body = { title: title.trim(), description: description.trim() || null, dueDate, dueTime: dueTime || null, timeZone, isGraded, maxPoints: isGraded ? points : null };
     } else {
-      if (opensAt && opensAt !== originalOpensAt && opensAt < minimumLocalDateTimeInputValue()) return toast.error("Opening time cannot be in the past.");
-      if (closesAt !== originalClosesAt && closesAt && closesAt < minimumLocalDateTimeInputValue()) return toast.error("Closing time cannot be in the past.");
-      if (closesAt && closesAt < opensAt) return toast.error("Closing time must be after opening time.");
+      if (opensAt && opensAt !== originalOpensAt && opensAt < minimumLocalDateTimeInputValue()) return toast.error(t("Opening time cannot be in the past."));
+      if (closesAt !== originalClosesAt && closesAt && closesAt < minimumLocalDateTimeInputValue()) return toast.error(t("Closing time cannot be in the past."));
+      if (closesAt && closesAt < opensAt) return toast.error(t("Closing time must be after opening time."));
       const attempts = Number(maxAttempts);
-      if (!Number.isSafeInteger(attempts) || attempts < 1) return toast.error("Attempts allowed must be a positive integer.");
+      if (!Number.isSafeInteger(attempts) || attempts < 1) return toast.error(t("Attempts allowed must be a positive integer."));
       const minutes = timeLimit ? Number(timeLimit) : null;
       const passing = passingScore ? Number(passingScore) : null;
-      if (minutes != null && (!Number.isFinite(minutes) || minutes < 1)) return toast.error("Time limit must be at least one minute.");
-      if (passing != null && (!Number.isFinite(passing) || passing < 0 || passing > 100)) return toast.error("Passing score must be between 0 and 100.");
+      if (minutes != null && (!Number.isFinite(minutes) || minutes < 1)) return toast.error(t("Time limit must be at least one minute."));
+      if (passing != null && (!Number.isFinite(passing) || passing < 0 || passing > 100)) return toast.error(t("Passing score must be between 0 and 100."));
       endpoint = `/api/classrooms/${event.classroomId}/tests/${event.testId}`;
       body = { title: title.trim(), description: description.trim() || null, type: workType, opensAt: opensAt ? new Date(opensAt).toISOString() : null, closesAt: closesAt ? new Date(closesAt).toISOString() : null, timeLimit: minutes, passingScore: passing, maxAttempts: attempts };
     }
@@ -222,10 +225,10 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
       if (!response.ok) throw new Error(data.error || `${workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} could not be updated`);
       await refreshEvent();
       await onSaved?.();
-      toast.success(post ? "Post updated." : `${workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} updated.`);
+      toast.success(t(post ? "Post updated." : `${workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} updated.`));
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Changes could not be saved.");
+      toast.error(t(error instanceof Error ? error.message : "Changes could not be saved."));
     } finally {
       setSaving(false);
     }
@@ -239,7 +242,7 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
         <WorkspaceDialogHeader className="border-b border-[var(--app-border)] px-5 py-4 pr-14">
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <WorkIcon className="h-5 w-5" aria-hidden="true" />
-            {post ? "Edit post" : `Edit ${label}`}
+            {post ? t("Edit post") : t("Edit {v0}", { v0: label })}
           </WorkspaceDialogTitle>
         </WorkspaceDialogHeader>
 
@@ -250,36 +253,36 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
             <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-4 text-sm text-[var(--app-danger)]">{loadError}</div>
           ) : (
             <div className="space-y-4">
-              {post && <p className="text-xs font-semibold text-[var(--app-text-muted)]">{workType === "ASSIGNMENT" ? "Assignment" : workType === "EXAM" ? "Exam" : "Test"} details</p>}
-              <Field label="Title" value={title} onChange={setTitle} autoFocus />
+              {post && <p className="text-xs font-semibold text-[var(--app-text-muted)]">{workType === "ASSIGNMENT" ? t("Assignment") : workType === "EXAM" ? t("Exam") : t("Test")}  {t("details")}</p>}
+              <Field label={t("Title")} value={title} onChange={setTitle} autoFocus />
               <label className="block">
-                <span className={workspaceLabelClass}>Description</span>
-                <textarea value={description} onChange={(changeEvent) => setDescription(changeEvent.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-24 w-full resize-y py-2.5`} placeholder={assignmentMode ? "Instructions for students" : "What this assessment covers"} />
+                <span className={workspaceLabelClass}>{t("Description")}</span>
+                <textarea value={description} onChange={(changeEvent) => setDescription(changeEvent.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-24 w-full resize-y py-2.5`} placeholder={assignmentMode ? t("Instructions for students") : t("What this assessment covers")} />
               </label>
 
               {assignmentMode ? (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Due date" type="date" min={originalDueDate < localDateInputValue() ? originalDueDate : localDateInputValue()} value={dueDate} onChange={setDueDate} />
-                    <Field label="Due time" type="time" min={dueDate === localDateInputValue() && dueDate !== originalDueDate ? minimumLocalTimeInputValue() : undefined} value={dueTime} onChange={setDueTime} />
+                    <Field label={t("Due date")} type="date" min={originalDueDate < localDateInputValue() ? originalDueDate : localDateInputValue()} value={dueDate} onChange={setDueDate} />
+                    <Field label={t("Due time")} type="time" min={dueDate === localDateInputValue() && dueDate !== originalDueDate ? minimumLocalTimeInputValue() : undefined} value={dueTime} onChange={setDueTime} />
                   </div>
-                  <p className="-mt-2 text-xs text-[var(--app-text-faint)]">Timezone: {timeZone}. Without a time, work is due at 23:59.</p>
+                  <p className="-mt-2 text-xs text-[var(--app-text-faint)]">{t("Timezone:")} {timeZone}{t(". Without a time, work is due at 23:59.")}</p>
                   <div className="grid items-end gap-3 sm:grid-cols-[1fr_9rem]">
-                    <WorkspaceSwitchRow id="work-edit-graded" label="Graded assignment" checked={isGraded} onCheckedChange={setIsGraded} className="h-10 rounded-xl px-3 py-0" />
-                    {isGraded ? <Field label="Maximum points" type="number" min="0" value={maxPoints} onChange={setMaxPoints} /> : null}
+                    <WorkspaceSwitchRow id="work-edit-graded" label={t("Graded assignment")} checked={isGraded} onCheckedChange={setIsGraded} className="h-10 rounded-xl px-3 py-0" />
+                    {isGraded ? <Field label={t("Maximum points")} type="number" min="0" value={maxPoints} onChange={setMaxPoints} /> : null}
                   </div>
                 </>
               ) : (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field label="Opens (optional)" type="datetime-local" min={originalOpensAt && originalOpensAt < minimumLocalDateTimeInputValue() ? originalOpensAt : minimumLocalDateTimeInputValue()} value={opensAt} onChange={setOpensAt} />
-                    <Field label="Closes (optional)" type="datetime-local" min={opensAt || minimumLocalDateTimeInputValue()} value={closesAt} onChange={setClosesAt} />
+                    <Field label={t("Opens (optional)")} type="datetime-local" min={originalOpensAt && originalOpensAt < minimumLocalDateTimeInputValue() ? originalOpensAt : minimumLocalDateTimeInputValue()} value={opensAt} onChange={setOpensAt} />
+                    <Field label={t("Closes (optional)")} type="datetime-local" min={opensAt || minimumLocalDateTimeInputValue()} value={closesAt} onChange={setClosesAt} />
                   </div>
-                  <p className="-mt-2 text-xs text-[var(--app-text-faint)]">Leave these blank to make the assessment available immediately with no closing deadline.</p>
+                  <p className="-mt-2 text-xs text-[var(--app-text-faint)]">{t("Leave these blank to make the assessment available immediately with no closing deadline.")}</p>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <Field label="Time limit (min)" type="number" min="1" value={timeLimit} onChange={setTimeLimit} placeholder="None" />
-                    <Field label="Passing score (%)" type="number" min="0" max="100" value={passingScore} onChange={setPassingScore} placeholder="None" />
-                    <Field label="Attempts allowed" type="number" min="1" value={maxAttempts} onChange={setMaxAttempts} />
+                    <Field label={t("Time limit (min)")} type="number" min="1" value={timeLimit} onChange={setTimeLimit} placeholder={t("None")} />
+                    <Field label={t("Passing score (%)")} type="number" min="0" max="100" value={passingScore} onChange={setPassingScore} placeholder={t("None")} />
+                    <Field label={t("Attempts allowed")} type="number" min="1" value={maxAttempts} onChange={setMaxAttempts} />
                   </div>
                 </>
               )}
@@ -288,9 +291,9 @@ export function ClassroomWorkEditModal({ open, event, onClose, onUpdated, onSave
         </WorkspaceDialogBody>
 
         <WorkspaceDialogFooter className="border-t border-[var(--app-border)] px-5 py-3">
-          <WorkspaceButton type="button" variant="secondary" onClick={onClose} disabled={saving}>Cancel</WorkspaceButton>
+          <WorkspaceButton type="button" variant="secondary" onClick={onClose} disabled={saving}>{t("Cancel")}</WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" onClick={() => void save()} disabled={loading || Boolean(loadError) || saving}>
-            {saving ? <><Spinner className="h-4 w-4" />Saving…</> : post ? "Save post" : `Save ${label}`}
+            {saving ? <><Spinner className="h-4 w-4" />{t("Saving…")}</> : post ? t("Save post") : t("Save {v0}", { v0: label })}
           </WorkspaceButton>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>

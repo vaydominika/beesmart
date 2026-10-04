@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@/test-utils/render";
 import { describe, expect, it } from "vitest";
 import { PublicProfileContent, type PublicProfileData } from "./PublicProfileContent";
 

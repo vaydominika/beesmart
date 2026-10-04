@@ -1,3 +1,4 @@
+import { isLocale, resolveLocale } from "@/i18n/config";
 import { NextResponse } from "next/server";
 import { prisma, getCurrentUserId } from "@/lib/db";
 
@@ -10,7 +11,7 @@ export async function GET() {
     const settings = await prisma.user.findUnique({
         where: { id: userId },
         select: {
-            theme: true, courseCreationTutorialCompleted: true,
+            locale: true, theme: true, courseCreationTutorialCompleted: true,
             defaultActiveMinutes: true, defaultBreakMinutes: true, defaultAutoBreak: true,
             reminderNotifications: true, classroomNotifications: true,
             profileVisibility: true, activitySharing: true,
@@ -20,6 +21,7 @@ export async function GET() {
     if (!settings) {
         // Return defaults matching the Prisma schema
         return NextResponse.json({
+            locale: "en",
             theme: "bee",
             courseCreationTutorialCompleted: false,
             defaultActiveMinutes: 45,
@@ -33,6 +35,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
+        locale: resolveLocale(settings.locale),
         theme: settings.theme,
         courseCreationTutorialCompleted: settings.courseCreationTutorialCompleted,
         defaultActiveMinutes: settings.defaultActiveMinutes,
@@ -53,6 +56,10 @@ export async function PATCH(req: Request) {
 
     const body = await req.json();
 
+    if (body.locale !== undefined && !isLocale(body.locale)) {
+        return NextResponse.json({ error: "Unsupported language" }, { status: 400 });
+    }
+
     if (body.reminderNotifications === true) {
         const current = await prisma.user.findUnique({
             where: { id: userId },
@@ -69,6 +76,7 @@ export async function PATCH(req: Request) {
     // Build the data object from allowed fields
     const data: Record<string, unknown> = {};
 
+    if (body.locale !== undefined) data.locale = body.locale;
     if (body.theme !== undefined) data.theme = body.theme;
     // Completion is intentionally one-way: reviewing the tutorial never relocks course creation.
     if (body.courseCreationTutorialCompleted === true)
@@ -95,6 +103,7 @@ export async function PATCH(req: Request) {
     });
 
     return NextResponse.json({
+        locale: resolveLocale(settings.locale),
         theme: settings.theme,
         courseCreationTutorialCompleted: settings.courseCreationTutorialCompleted,
         defaultActiveMinutes: settings.defaultActiveMinutes,

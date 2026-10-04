@@ -1,3 +1,6 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +32,7 @@ function WorkspaceTabs<T extends string>({
   className,
   tabClassName,
 }: WorkspaceTabsProps<T>) {
+  const t = useText();
   const selectedIndex = Math.max(0, items.findIndex((item) => item.value === value));
 
   return (
@@ -70,7 +74,7 @@ function WorkspaceTabs<T extends string>({
               tabClassName,
             )}
           >
-            {item.label}
+            {typeof item.label === "string" ? t(item.label) : item.label}
           </button>
         );
       })}

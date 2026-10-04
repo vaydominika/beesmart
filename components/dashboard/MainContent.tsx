@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { LearningCard } from "./LearningCard";
@@ -22,6 +24,7 @@ interface MainContentProps {
 }
 
 export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
+  const t = useText();
   const router = useRouter();
   const { data, loading, error, refetch } = useDashboard();
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -57,11 +60,10 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
   if (error && !data) {
     return (
       <section className="mt-5 flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
-        <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">Dashboard courses could not be loaded</h2>
-        <p className="mt-2 max-w-md text-sm text-[var(--dashboard-text-muted)]">{error}</p>
+        <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">{t("Dashboard courses could not be loaded")}</h2>
+        <p className="mt-2 max-w-md text-sm text-[var(--dashboard-text-muted)]">{t(error)}</p>
         <WorkspaceButton type="button" variant="primary" onClick={() => void refetch()} className="mt-5">
-          Try again
-        </WorkspaceButton>
+           {t("Try again")} </WorkspaceButton>
       </section>
     );
   }
@@ -70,16 +72,15 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
       <div className="mt-5 space-y-5">
         {queryActive && !loading && !hasSearchResults && (
           <section className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)] px-6 text-center">
-            <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">No courses match “{searchQuery.trim()}”</h2>
-            <p className="mt-2 text-sm text-[var(--dashboard-text-muted)]">Try another title or description.</p>
+            <h2 className="text-lg font-semibold text-[var(--dashboard-text)]">{t("No courses match “")}{searchQuery.trim()}”</h2>
+            <p className="mt-2 text-sm text-[var(--dashboard-text-muted)]">{t("Try another title or description.")}</p>
             <WorkspaceButton type="button" variant="secondary" onClick={onClearSearch} className="mt-5">
-              Clear search
-            </WorkspaceButton>
+               {t("Clear search")} </WorkspaceButton>
           </section>
         )}
 
         {myCourses.length > 0 && (
-          <CourseRail title="Your courses">
+          <CourseRail title={t("Your courses")}>
               {myCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -97,7 +98,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
         )}
 
         {continueLearning.length > 0 && (
-          <CourseRail title="Continue learning">
+          <CourseRail title={t("Continue learning")}>
               {continueLearning.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -117,7 +118,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
         )}
 
         {popularCourses.length > 0 && (
-          <CourseRail title="Popular now">
+          <CourseRail title={t("Popular now")}>
               {popularCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -136,7 +137,7 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
         )}
 
         {finishedCourses.length > 0 && (
-          <CourseRail title="Finished">
+          <CourseRail title={t("Finished")}>
               {finishedCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -157,13 +158,13 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
 
         {loading && !data ? (
           <section id="discover">
-            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">Discover</h2>
+            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">{t("Discover")}</h2>
             <div className="flex min-h-48 items-center justify-center rounded-2xl border border-[var(--dashboard-line)] bg-[var(--dashboard-surface)]">
               <Spinner className="h-7 w-7 text-[var(--dashboard-text-muted)]" />
             </div>
           </section>
         ) : discoverCourses.length > 0 ? (
-            <CourseRail title="Discover" id="discover">
+            <CourseRail title={t("Discover")} id="discover">
               {discoverCourses.map((course) => (
                 <LearningCard
                   key={course.id}
@@ -180,10 +181,9 @@ export function MainContent({ searchQuery, onClearSearch }: MainContentProps) {
             </CourseRail>
         ) : !queryActive ? (
           <section id="discover">
-            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">Discover</h2>
+            <h2 className="mb-4 text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">{t("Discover")}</h2>
             <p className="text-sm text-[var(--dashboard-text-muted)]">
-              There are no courses yet. Create your first course or check back later for new content.
-            </p>
+               {t("There are no courses yet. Create your first course or check back later for new content.")} </p>
           </section>
         ) : null}
 

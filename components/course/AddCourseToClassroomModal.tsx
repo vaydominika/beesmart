@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import { BookOpen, LockKeyhole, Search, X } from "lucide-react";
 import { Dialog, DialogClose, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +24,7 @@ interface AddCourseToClassroomModalProps {
 }
 
 export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseToClassroomModalProps) {
+  const t = useText();
   const [source, setSource] = useState<CourseSource>("my");
   const [search, setSearch] = useState("");
   const [courses, setCourses] = useState<CourseSummary[]>([]);
@@ -50,11 +53,11 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
         if (!cancelled) {
           setClassrooms([]);
           setClassroomId("");
-          toast.error("Classrooms could not be loaded.");
+          toast.error(t("Classrooms could not be loaded."));
         }
       });
     return () => { cancelled = true; };
-  }, [open]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -88,15 +91,15 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        toast.error(data.error ?? "The course could not be added.");
+        toast.error(t(data.error ?? "The course could not be added."));
         return;
       }
-      toast.success("Course added to Classroom.");
+      toast.success(t("Course added to Classroom."));
       setCourseId("");
       onAdded?.();
       onClose();
     } catch {
-      toast.error("The course could not be added.");
+      toast.error(t("The course could not be added."));
     } finally {
       setSaving(false);
     }
@@ -105,57 +108,57 @@ export function AddCourseToClassroomModal({ open, onClose, onAdded }: AddCourseT
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose(); }}>
       <WorkspaceDialogContent mobileSheet={false} className="course-dialog fixed bottom-0 left-0 top-auto flex max-h-[88dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-t-3xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:left-[50%] md:top-[50%] md:max-h-[760px] md:max-w-2xl md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-2xl">
-        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom course picker" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close classroom course picker")} className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
-          <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Add to classroom</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">{t("Add to classroom")}</DialogTitle>
         </div>
 
         <div className="course-scroll min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <div className="space-y-4">
             <div>
-              <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">Destination classroom</span>
+              <span className="mb-1.5 block text-xs font-semibold text-[var(--course-text-muted)]">{t("Destination classroom")}</span>
               <ClassroomDestinationSelect classrooms={classrooms} value={classroomId} onChange={setClassroomId} />
-              {!classrooms.length && <span className="mt-1.5 block text-xs text-[var(--course-text-muted)]">You need a Classroom where you are a teacher or teaching assistant.</span>}
+              {!classrooms.length && <span className="mt-1.5 block text-xs text-[var(--course-text-muted)]">{t("You need a Classroom where you are a teacher or teaching assistant.")}</span>}
             </div>
 
             <WorkspaceTabs
-              ariaLabel="Course source"
+              ariaLabel={t("Course source")}
               value={source}
               onValueChange={(tab) => { setSource(tab); setCourseId(""); }}
-              items={[{ value: "my", label: "My courses" }, { value: "all", label: "Available courses" }] satisfies Array<{ value: CourseSource; label: string }>}
+              items={[{ value: "my", label: t("My courses") }, { value: "all", label: t("Available courses") }] satisfies Array<{ value: CourseSource; label: string }>}
               size="compact"
               fill
             />
 
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--course-text-faint)]" />
-              <input type="search" name="available-course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search title, description, or creator" aria-label="Search available courses" className="h-10 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+              <input type="search" name="available-course-query" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search title, description, or creator")} aria-label={t("Search available courses")} className="h-10 w-full rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] pl-9 pr-3 text-sm text-[var(--course-text)] outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
             </label>
 
             <div className="min-h-56 space-y-2">
               {loading ? (
                 <div className="flex min-h-56 items-center justify-center"><Spinner className="h-5 w-5" /></div>
               ) : loadError ? (
-                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><p className="text-sm font-semibold text-[var(--course-text)]">Courses could not be loaded</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">Change the search to try again.</p></div>
+                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><p className="text-sm font-semibold text-[var(--course-text)]">{t("Courses could not be loaded")}</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">{t("Change the search to try again.")}</p></div>
               ) : courses.length ? courses.map((course) => {
                 const disabled = course.visibility === "PRIVATE";
                 const selected = courseId === course.id;
                 return (
                   <button key={course.id} type="button" onClick={() => setCourseId(course.id)} disabled={disabled} aria-pressed={selected} className={cn("flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)]", selected ? "border-[var(--course-focus-border)] bg-[var(--course-accent)]" : "border-[var(--course-line)] bg-[var(--app-surface)] hover:bg-[var(--course-surface-muted)]", disabled && "cursor-not-allowed opacity-55")}>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--course-surface-muted)]">{disabled ? <LockKeyhole className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}</span>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[var(--course-text)]">{course.title}</span><span className="mt-0.5 block truncate text-[11px] text-[var(--course-text-muted)]">{course.creator.name || "Unknown creator"} · {course._count.modules} modules · {course.visibility === "INVITATION_ONLY" ? "Invitation only" : course.visibility.toLocaleLowerCase()}</span>{disabled && <span className="mt-1 block text-[10px] font-medium text-[var(--course-text-muted)]">Change this course to Public or Invitation only before assigning it.</span>}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-[var(--course-text)]">{course.title}</span><span className="mt-0.5 block truncate text-[11px] text-[var(--course-text-muted)]">{course.creator.name || t("Unknown creator")} · {course._count.modules}  {t("modules ·")} {course.visibility === "INVITATION_ONLY" ? t("Invitation only") : t(course.visibility === "PUBLIC" ? "Public" : "Private")}</span>{disabled && <span className="mt-1 block text-[10px] font-medium text-[var(--course-text-muted)]">{t("Change this course to Public or Invitation only before assigning it.")}</span>}</span>
                   </button>
                 );
               }) : (
-                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><p className="text-sm font-semibold text-[var(--course-text)]">No matching courses</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">Try another search or source.</p></div>
+                <div className="flex min-h-56 flex-col items-center justify-center rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-5 text-center"><p className="text-sm font-semibold text-[var(--course-text)]">{t("No matching courses")}</p><p className="mt-1 text-xs text-[var(--course-text-muted)]">{t("Try another search or source.")}</p></div>
               )}
             </div>
           </div>
         </div>
 
         <div className="flex gap-3 border-t border-[var(--course-line)] bg-[var(--app-surface)] px-5 py-4">
-          <WorkspaceButton type="button" variant="secondary" onClick={onClose} className="flex-1">Cancel</WorkspaceButton>
-          <WorkspaceButton type="button" variant="primary" onClick={() => void addCourse()} disabled={saving || !courseId || !classroomId} className="flex-1">{saving ? "Adding…" : "Add course"}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="secondary" onClick={onClose} className="flex-1">{t("Cancel")}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="primary" onClick={() => void addCourse()} disabled={saving || !courseId || !classroomId} className="flex-1">{saving ? t("Adding…") : t("Add course")}</WorkspaceButton>
         </div>
       </WorkspaceDialogContent>
     </Dialog>

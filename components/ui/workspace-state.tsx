@@ -1,3 +1,6 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import * as React from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -27,8 +30,9 @@ type WorkspaceLoadingStateProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 function WorkspaceLoadingState({ label = "Loading", spinnerClassName, className, ...props }: WorkspaceLoadingStateProps) {
+  const t = useText();
   return (
-    <div className={cn("flex min-h-48 items-center justify-center", className)} aria-label={label} {...props}>
+    <div className={cn("flex min-h-48 items-center justify-center", className)} aria-label={t(label)} {...props}>
       <Spinner className={spinnerClassName} aria-label={label} />
     </div>
   );

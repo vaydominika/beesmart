@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
@@ -32,6 +34,7 @@ interface ClassroomDetail {
 }
 
 export default function ClassroomDetailPage() {
+  const t = useText();
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
@@ -48,18 +51,18 @@ export default function ClassroomDetailPage() {
         try {
             const res = await fetch(`/api/classrooms/${classroomId}`);
             if (!res.ok) {
-                toast.error(res.status === 403 ? "You are not a member of this classroom." : "Classroom not found.");
+                toast.error(t(res.status === 403 ? "You are not a member of this classroom." : "Classroom not found."));
                 router.push("/classroom");
                 return;
             }
             setClassroom(await res.json());
         } catch {
-            toast.error("Failed to load classroom.");
+            toast.error(t("Failed to load classroom."));
             router.push("/classroom");
         } finally {
             setLoading(false);
         }
-    }, [classroomId, router]);
+    }, [classroomId, router, t]);
 
     useEffect(() => {
         fetchClassroom();
@@ -82,7 +85,7 @@ export default function ClassroomDetailPage() {
         if (!classroom) return;
         await navigator.clipboard.writeText(classroom.code);
         setCodeCopied(true);
-        toast.success("Classroom code copied.");
+        toast.success(t("Classroom code copied."));
         window.setTimeout(() => setCodeCopied(false), 2000);
     };
 
@@ -90,7 +93,7 @@ export default function ClassroomDetailPage() {
     if (!classroom) return null;
 
     const isTeacher = isClassroomStaffRole(classroom.role);
-    const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? "Teaching assistant" : classroom.role.toLowerCase();
+    const roleLabel = classroom.role === "TEACHING_ASSISTANT" ? t("Teaching assistant") : classroom.role === "TEACHER" ? t("Teacher") : t("Student");
     const joinUrl = typeof window !== "undefined" ? `${window.location.origin}/classroom?join=${encodeURIComponent(classroom.code)}` : "";
 
     return (
@@ -107,20 +110,20 @@ export default function ClassroomDetailPage() {
                                 <button
                                     type="button"
                                     onClick={() => router.push("/classroom")}
-                                    aria-label="Back to classrooms"
+                                    aria-label={t("Back to classrooms")}
                                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
                                 </button>
                                 <div className="flex min-w-0 flex-wrap items-center gap-3">
                                     <h1 className="truncate text-2xl font-semibold leading-none tracking-[-0.035em] text-[var(--classroom-text)] md:text-[38px]">{classroom.name}</h1>
-                                    <span className="shrink-0 rounded-full bg-[var(--classroom-surface-muted)] px-2.5 py-1 text-[11px] font-medium capitalize text-[var(--classroom-text-muted)]">{roleLabel}</span>
+                                    <span className="shrink-0 rounded-full bg-[var(--classroom-surface-muted)] px-2.5 py-1 text-[11px] font-medium capitalize text-[var(--classroom-text-muted)]">{t(roleLabel)}</span>
                                 </div>
                             </div>
                             {classroom.description && <p className="ml-[52px] mt-2 max-w-2xl text-sm leading-relaxed text-[var(--classroom-text-muted)] md:ml-14">{classroom.description}</p>}
                             <div className="ml-[52px] mt-2 flex items-center gap-4 text-xs text-[var(--classroom-text-muted)] md:ml-14">
-                                <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {classroom._count.members} members</span>
-                                <span className="flex items-center gap-1.5"><FileText className="h-4 w-4" /> {classroom._count.posts} posts</span>
+                                <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> {classroom._count.members}  {t("members")}</span>
+                                <span className="flex items-center gap-1.5"><FileText className="h-4 w-4" /> {classroom._count.posts}  {t("posts")}</span>
                             </div>
                         </div>
 
@@ -129,7 +132,7 @@ export default function ClassroomDetailPage() {
                                 <button
                                     type="button"
                                     onClick={() => setSettingsOpen(true)}
-                                    aria-label="Open classroom settings"
+                                    aria-label={t("Open classroom settings")}
                                     className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                                 >
                                     <Settings className="h-4 w-4" />
@@ -139,16 +142,16 @@ export default function ClassroomDetailPage() {
                                 type="button"
                                 onClick={copyCode}
                                 className="flex items-center gap-2 rounded-xl border border-[var(--classroom-accent-hover)] bg-[var(--app-surface)] px-3.5 py-2.5 text-sm text-[var(--classroom-text)] transition-colors hover:bg-[var(--classroom-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
-                                aria-label={`Copy classroom code ${classroom.code}`}
+                                aria-label={t("Copy classroom code {v0}", { v0: classroom.code })}
                             >
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--classroom-text-muted)]">Code</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--classroom-text-muted)]">{t("Code")}</span>
                                 <span className="font-semibold tracking-[0.12em]">{classroom.code}</span>
                                 {codeCopied ? <Check className="h-4 w-4 text-[var(--app-success)]" /> : <Copy className="h-4 w-4 text-[var(--classroom-text-muted)]" />}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setQrOpen(true)}
-                                aria-label="Show classroom QR code"
+                                aria-label={t("Show classroom QR code")}
                                 className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text-muted)] transition-colors hover:bg-(--classroom-accent-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                             >
                                 <QrCode className="h-4 w-4" />
@@ -157,7 +160,7 @@ export default function ClassroomDetailPage() {
                     </div>
                 </header>
 
-                <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[var(--classroom-line)]" aria-label="Classroom sections">
+                <nav className="mb-5 flex gap-1 overflow-x-auto border-b border-[var(--classroom-line)]" aria-label={t("Classroom sections")}>
                     {TABS.map((tab) => {
                         return (
                             <button
@@ -192,10 +195,10 @@ export default function ClassroomDetailPage() {
                     <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                         <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-h-[88vh] max-w-xl overflow-y-auto rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-2xl md:p-6">
                             <DialogHeader>
-                                <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Classroom settings</DialogTitle>
+                                <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">{t("Classroom settings")}</DialogTitle>
                             </DialogHeader>
                             <DialogClose
-                                aria-label="Close classroom settings"
+                                aria-label={t("Close classroom settings")}
                                 className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                             >
                                 <X className="h-4 w-4" />
@@ -212,10 +215,10 @@ export default function ClassroomDetailPage() {
                 <Dialog open={qrOpen} onOpenChange={setQrOpen}>
                     <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-sm rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-6 shadow-2xl">
                         <DialogHeader className="pr-10">
-                            <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">Join {classroom.name}</DialogTitle>
+                            <DialogTitle className="text-xl font-semibold text-[var(--classroom-text)]">{t("Join")} {classroom.name}</DialogTitle>
                         </DialogHeader>
                         <DialogClose
-                            aria-label="Close classroom join code"
+                            aria-label={t("Close classroom join code")}
                             className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                         >
                             <X className="h-4 w-4" />

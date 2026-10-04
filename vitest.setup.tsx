@@ -3,16 +3,11 @@ import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
-    back: vi.fn(),
-    prefetch: vi.fn(),
-  }),
+vi.mock('next/navigation', () => { const router = { push: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }; return ({
+  useRouter: () => router,
   useSearchParams: () => new URLSearchParams(),
   usePathname: () => '/',
-}));
+}); });
 
 // Mock NextAuth
 vi.mock('next-auth/react', () => ({

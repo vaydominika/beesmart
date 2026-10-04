@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import { CalendarDays, Clock, LockKeyhole, Pencil, Repeat2, Trash2 } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -35,6 +38,8 @@ type EventData = ScheduleEvent;
 interface EventDetailModalProps { open: boolean; onClose: () => void; event: EventData; onEventUpdated: () => void }
 
 export function EventDetailModal({ open, onClose, event, onEventUpdated }: EventDetailModalProps) {
+  const locale = useLocale();
+  const t = useText();
   const { reminderNotifications } = useSettings();
   const [displayEvent, setDisplayEvent] = useState(event);
   const [editing, setEditing] = useState(false);
@@ -67,7 +72,7 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     setReminderTime(reminder ? `${pad(reminder.getHours())}:${pad(reminder.getMinutes())}` : "");
   }, [event, open]);
 
-  const dateStr = formatLongDate(new Date(displayEvent.startDate));
+  const dateStr = formatLongDate(new Date(displayEvent.startDate), { locale });
 
   const beginEdit = () => {
     if (isClassroomWorkEvent(displayEvent)) {
@@ -78,16 +83,16 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
   };
 
   const handleSave = async () => {
-    if (!title.trim()) return toast.error("Title cannot be empty.");
-    if (!isAllDay && startTime && endTime && endTime <= startTime) return toast.error("End time must be later than start time.");
+    if (!title.trim()) return toast.error(t("Title cannot be empty."));
+    if (!isAllDay && startTime && endTime && endTime <= startTime) return toast.error(t("End time must be later than start time."));
     setSaving(true);
     try {
       const response = await fetch("/api/user/events", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: eventRecordId(displayEvent), title: title.trim(), description: description.trim() || null, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color, recurrencePattern: recurrence === "NONE" ? null : recurrence, startDate: `${eventDate}T00:00:00`, endDate: `${eventDate}T00:00:00` }) });
-      if (!response.ok) return toast.error("Failed to update event.");
+      if (!response.ok) return toast.error(t("Failed to update event."));
       const updatedEvent = await response.json();
       setDisplayEvent(updatedEvent);
       setEditing(false);
-      toast.success("Event updated");
+      toast.success(t("Event updated"));
       window.setTimeout(onEventUpdated, 100);
     } finally { setSaving(false); }
   };
@@ -99,8 +104,8 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
       const endpoint = classroomWorkDeleteEndpoint(displayEvent) ?? `/api/user/events?id=${eventRecordId(displayEvent)}`;
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) return toast.error(data.error || `Failed to delete ${linkedWork ? "assessment" : "event"}.`);
-      toast.success(`${linkedWork ? "Assessment" : "Event"} deleted`);
+      if (!response.ok) return toast.error(t(data.error || `Failed to delete ${linkedWork ? "assessment" : "event"}.`));
+      toast.success(t("{v0} deleted", { v0: linkedWork ? t("Assessment") : t("Event") }));
       setShowDeleteModal(false);
       onClose();
       window.setTimeout(onEventUpdated, 100);
@@ -112,26 +117,26 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     try {
       if (!reminderEnabled) {
         const response = await fetch(`/api/user/events/${eventRecordId(displayEvent)}/reminder`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Could not remove event reminder");
+        if (!response.ok) throw new Error(t("Could not remove event reminder"));
         setDisplayEvent((current) => ({ ...current, reminder: null }));
-        toast.success("Event reminder removed");
+        toast.success(t("Event reminder removed"));
         onEventUpdated();
         return;
       }
-      if (!reminderNotifications) throw new Error("Turn on reminder notifications in Settings first");
-      if (!reminderDate || !reminderTime) throw new Error("Choose a reminder date and time");
+      if (!reminderNotifications) throw new Error(t("Turn on reminder notifications in Settings first"));
+      if (!reminderDate || !reminderTime) throw new Error(t("Choose a reminder date and time"));
       const notifyAt = new Date(`${reminderDate}T${reminderTime}:00`);
       const eventDay = displayEvent.startDate.slice(0, 10);
       const eventBoundary = new Date(`${eventDay}T${displayEvent.isAllDay ? "23:59" : displayEvent.startTime || "23:59"}:00`);
-      if (notifyAt.getTime() <= Date.now()) throw new Error("Reminder time must be in the future");
-      if (notifyAt > eventBoundary) throw new Error("Reminder time cannot be after the event starts");
+      if (notifyAt.getTime() <= Date.now()) throw new Error(t("Reminder time must be in the future"));
+      if (notifyAt > eventBoundary) throw new Error(t("Reminder time cannot be after the event starts"));
       const response = await fetch(`/api/user/events/${eventRecordId(displayEvent)}/reminder`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ notifyAt: notifyAt.toISOString(), eventStartsAt: eventBoundary.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC" }) });
       const data = await readJsonSafely<{ error?: string; reminder?: EventData["reminder"] }>(response, {});
       if (!response.ok) throw new Error(data.error || "Could not save event reminder");
       setDisplayEvent((current) => ({ ...current, reminder: data.reminder }));
-      toast.success("Event reminder saved");
+      toast.success(t("Event reminder saved"));
       onEventUpdated();
-    } catch (reminderFailure) { toast.error(reminderFailure instanceof Error ? reminderFailure.message : "Could not save event reminder"); }
+    } catch (reminderFailure) { toast.error(t(reminderFailure instanceof Error ? reminderFailure.message : "Could not save event reminder")); }
     finally { setSavingReminder(false); }
   };
 
@@ -156,37 +161,37 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <WorkspaceDialogContent className="max-w-lg">
         <WorkspaceDialogHeader>
-          <WorkspaceDialogTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" />{editing ? "Edit event" : displayEvent.title}</WorkspaceDialogTitle>
+          <WorkspaceDialogTitle className="flex items-center gap-2"><CalendarDays className="h-5 w-5" />{editing ? t("Edit event") : displayEvent.title}</WorkspaceDialogTitle>
           <WorkspaceDialogDescription>{dateStr}</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-5">
           {editing ? (
             <div className="space-y-4">
-              <Field id="event-edit-date" label="Date" type="date" value={eventDate} onChange={setEventDate} />
-              <div><label className={workspaceLabelClass}>Repeats</label><WorkspaceSelect ariaLabel="Repeats" value={recurrence} options={RECURRENCE_OPTIONS} onValueChange={setRecurrence} triggerIcon={Repeat2} className="w-full" /></div>
-              <Field id="event-edit-title" label="Title" value={title} onChange={setTitle} />
-              <div><label htmlFor="event-edit-description" className={workspaceLabelClass}>Description</label><textarea id="event-edit-description" value={description} onChange={(changeEvent) => setDescription(changeEvent.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} /></div>
-              <WorkspaceSwitchRow id="event-edit-all-day" label="All day" checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
-              {!isAllDay ? <div className="grid grid-cols-2 gap-3"><Field id="event-edit-start" label="Start" type="time" value={startTime} onChange={setStartTime} /><Field id="event-edit-end" label="End" type="time" value={endTime} onChange={setEndTime} /></div> : null}
+              <Field id="event-edit-date" label={t("Date")} type="date" value={eventDate} onChange={setEventDate} />
+              <div><label className={workspaceLabelClass}>{t("Repeats")}</label><WorkspaceSelect ariaLabel={t("Repeats")} value={recurrence} options={RECURRENCE_OPTIONS} translateLabels onValueChange={setRecurrence} triggerIcon={Repeat2} className="w-full" /></div>
+              <Field id="event-edit-title" label={t("Title")} value={title} onChange={setTitle} />
+              <div><label htmlFor="event-edit-description" className={workspaceLabelClass}>{t("Description")}</label><textarea id="event-edit-description" value={description} onChange={(changeEvent) => setDescription(changeEvent.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} /></div>
+              <WorkspaceSwitchRow id="event-edit-all-day" label={t("All day")} checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
+              {!isAllDay ? <div className="grid grid-cols-2 gap-3"><Field id="event-edit-start" label={t("Start")} type="time" value={startTime} onChange={setStartTime} /><Field id="event-edit-end" label={t("End")} type="time" value={endTime} onChange={setEndTime} /></div> : null}
               <EventColorPicker value={color} onValueChange={setColor} />
             </div>
           ) : (
             <>
               <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-text)]"><Clock className="h-4 w-4 text-[var(--app-text-muted)]" />{displayEvent.isAllDay ? "All day" : `${displayEvent.startTime || "No start time"}${displayEvent.endTime ? ` – ${displayEvent.endTime}` : ""}`}</div>
-                {displayEvent.recurrencePattern ? <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--app-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{recurrenceLabel(displayEvent.recurrencePattern)}</p> : null}
+                <div className="flex items-center gap-2 text-sm font-medium text-[var(--app-text)]"><Clock className="h-4 w-4 text-[var(--app-text-muted)]" />{displayEvent.isAllDay ? t("All day") : t("{v0}{v1}", { v0: displayEvent.startTime || "No start time", v1: displayEvent.endTime ? ` – ${displayEvent.endTime}` : "" })}</div>
+                {displayEvent.recurrencePattern ? <p className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--app-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{t(recurrenceLabel(displayEvent.recurrencePattern))}</p> : null}
                 {displayEvent.description ? <p className="mt-3 text-sm leading-6 text-[var(--app-text-muted)]">{displayEvent.description}</p> : null}
-                {displayEvent.isProtected ? <p className="mt-3 flex items-center gap-2 text-xs text-[var(--app-text-faint)]"><LockKeyhole className="h-3.5 w-3.5" />{displayEvent.canEdit === false ? "Managed by your teacher" : "Synchronized with Classroom"}</p> : null}
+                {displayEvent.isProtected ? <p className="mt-3 flex items-center gap-2 text-xs text-[var(--app-text-faint)]"><LockKeyhole className="h-3.5 w-3.5" />{displayEvent.canEdit === false ? t("Managed by your teacher") : t("Synchronized with Classroom")}</p> : null}
               </div>
               {!displayEvent.recurrencePattern ? <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} inputClassName={workspaceFieldClass}>
-                <WorkspaceButton type="button" variant={reminderEnabled ? "primary" : "secondary"} onClick={handleSaveReminder} disabled={savingReminder || (reminderEnabled && !reminderNotifications) || (!reminderEnabled && !displayEvent.reminder)} className="mt-3 w-full">{savingReminder ? "Saving…" : reminderEnabled ? displayEvent.reminder ? "Update reminder" : "Set reminder" : displayEvent.reminder ? "Remove reminder" : "No reminder"}</WorkspaceButton>
-              </EventReminderFields> : <p className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-2.5 text-xs text-[var(--app-text-muted)]">Reminders are available for one-time events.</p>}
+                <WorkspaceButton type="button" variant={reminderEnabled ? "primary" : "secondary"} onClick={handleSaveReminder} disabled={savingReminder || (reminderEnabled && !reminderNotifications) || (!reminderEnabled && !displayEvent.reminder)} className="mt-3 w-full">{savingReminder ? t("Saving…") : reminderEnabled ? displayEvent.reminder ? t("Update reminder") : t("Set reminder") : displayEvent.reminder ? t("Remove reminder") : t("No reminder")}</WorkspaceButton>
+              </EventReminderFields> : <p className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] px-3 py-2.5 text-xs text-[var(--app-text-muted)]">{t("Reminders are available for one-time events.")}</p>}
             </>
           )}
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter className="justify-between sm:justify-between">
-          <div>{displayEvent.canEdit !== false && !editing ? <WorkspaceButton type="button" variant="danger" onClick={() => setShowDeleteModal(true)}><Trash2 className="h-4 w-4" />Delete {classroomWorkLabel ?? "event"}</WorkspaceButton> : null}</div>
-          <div className="flex gap-2">{editing ? <><WorkspaceButton type="button" variant="secondary" onClick={() => setEditing(false)}>Cancel</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={saving}>{saving ? <><Spinner className="h-4 w-4" />Saving…</> : "Save changes"}</WorkspaceButton></> : displayEvent.canEdit !== false ? <WorkspaceButton type="button" variant="secondary" onClick={beginEdit}><Pencil className="h-4 w-4" />Edit {classroomWorkLabel ?? "event"}</WorkspaceButton> : null}</div>
+          <div>{displayEvent.canEdit !== false && !editing ? <WorkspaceButton type="button" variant="danger" onClick={() => setShowDeleteModal(true)}><Trash2 className="h-4 w-4" />{t("Delete")} {classroomWorkLabel ?? t("event")}</WorkspaceButton> : null}</div>
+          <div className="flex gap-2">{editing ? <><WorkspaceButton type="button" variant="secondary" onClick={() => setEditing(false)}>{t("Cancel")}</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={saving}>{saving ? <><Spinner className="h-4 w-4" />{t("Saving…")}</> : t("Save changes")}</WorkspaceButton></> : displayEvent.canEdit !== false ? <WorkspaceButton type="button" variant="secondary" onClick={beginEdit}><Pencil className="h-4 w-4" />{t("Edit")} {classroomWorkLabel ?? t("event")}</WorkspaceButton> : null}</div>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
       <DeleteConfirmationModal
@@ -194,10 +199,10 @@ export function EventDetailModal({ open, onClose, event, onEventUpdated }: Event
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleConfirmDelete}
         isDeleting={deleting}
-        title={`Delete ${classroomWorkLabel ?? "event"}`}
+        title={t("Delete {v0}", { v0: classroomWorkLabel ?? t("event") })}
         description={classroomWork
-          ? `Delete this ${classroomWorkLabel} and all of its submissions and grades? This action cannot be undone.`
-          : displayEvent.recurrencePattern ? "Delete this entire recurring event series? This action cannot be undone." : "Delete this event? This action cannot be undone."}
+          ? t("Delete this {v0} and all of its submissions and grades? This action cannot be undone.", { v0: classroomWorkLabel })
+          : displayEvent.recurrencePattern ? t("Delete this entire recurring event series? This action cannot be undone.") : t("Delete this event? This action cannot be undone.")}
       />
     </Dialog>
   );

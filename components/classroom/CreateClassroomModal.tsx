@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +31,7 @@ interface CreateClassroomModalProps {
 }
 
 export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassroomModalProps) {
+  const t = useText();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [subject, setSubject] = useState("");
@@ -36,7 +39,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
 
     const handleSave = async () => {
         if (!name.trim()) {
-            toast.error("Please enter a classroom name.");
+            toast.error(t("Please enter a classroom name."));
             return;
         }
         setSaving(true);
@@ -52,18 +55,18 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
             });
             if (!res.ok) {
                 const data = await readJsonSafely<{ error?: string }>(res, {});
-                toast.error(data.error ?? "Failed to create classroom.");
+                toast.error(t(data.error ?? "Failed to create classroom."));
                 return;
             }
             const classroom = await res.json();
-            toast.success("Classroom created!");
+            toast.success(t("Classroom created!"));
             onCreated(classroom);
             setName("");
             setDescription("");
             setSubject("");
             onClose();
         } catch {
-            toast.error("Failed to create classroom.");
+            toast.error(t("Failed to create classroom."));
         } finally {
             setSaving(false);
         }
@@ -72,46 +75,42 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog max-w-lg border-[var(--classroom-line-strong)]">
-                <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close classroom creator" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+                <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close classroom creator")} className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
                 <div className="flex flex-col overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-8">
                     <DialogHeader className="shrink-0 pb-2 pr-10">
                         <DialogTitle className="text-lg md:text-[32px] font-bold text-(--theme-text) uppercase">
-                            Create Classroom
-                        </DialogTitle>
+                             {t("Create Classroom")} </DialogTitle>
                     </DialogHeader>
 
                     <div className="space-y-3 flex-1">
                         <div>
                             <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Name *
-                            </label>
+                                 {t("Name *")} </label>
                             <Input
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                placeholder="e.g. Math 101"
+                                placeholder={t("e.g. Math 101")}
                             />
                         </div>
                         <div>
                             <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Subject
-                            </label>
+                                 {t("Subject")} </label>
                             <Input
                                 value={subject}
                                 onChange={(e) => setSubject(e.target.value)}
                                 className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                placeholder="e.g. Mathematics"
+                                placeholder={t("e.g. Mathematics")}
                             />
                         </div>
                         <div>
                             <label className="block text-xs md:text-base font-bold text-(--theme-text) uppercase mb-1">
-                                Description
-                            </label>
+                                 {t("Description")} </label>
                             <Input
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm md:text-lg font-bold border-0 outline-none ring-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 md:h-12 w-full"
-                                placeholder="Optional description"
+                                placeholder={t("Optional description")}
                             />
                         </div>
                     </div>
@@ -123,8 +122,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                             onClick={onClose}
                             className="flex-1"
                         >
-                            Cancel
-                        </WorkspaceButton>
+                             {t("Cancel")} </WorkspaceButton>
                         <WorkspaceButton
                             type="button"
                             variant="primary"
@@ -132,7 +130,7 @@ export function CreateClassroomModal({ open, onClose, onCreated }: CreateClassro
                             disabled={saving}
                             className="flex-1"
                         >
-                            {saving ? "Creating…" : "Create"}
+                            {saving ? t("Creating…") : t("Create")}
                         </WorkspaceButton>
                     </div>
                 </div>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +21,8 @@ export function CalendarWidget({
   highlightedDates = [],
   onMonthChange,
 }: CalendarWidgetProps) {
+  const locale = useLocale();
+  const t = useText();
   const [currentDate, setCurrentDate] = useState(new Date());
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -34,12 +39,9 @@ export function CalendarWidget({
   // If startingDay is 1 (Mon), we want index 0.
   const adjustedStartingDay = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
 
-  const monthNames = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
+  const monthNames = Array.from({ length: 12 }, (_, month) => new Intl.DateTimeFormat(locale, { month: "short" }).format(new Date(2024, month, 1)));
 
-  const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const daysOfWeek = Array.from({ length: 7 }, (_, day) => new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2024, 0, 1 + day)));
 
   const goToToday = () => {
     const newDate = new Date();
@@ -157,7 +159,7 @@ export function CalendarWidget({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl md:text-2xl font-bold text-(--theme-text) uppercase tracking-tight">
-          {monthNames[month]}. {year}.
+          {locale === "hu" ? `${year}. ${monthNames[month]}` : `${monthNames[month]} ${year}`}
         </h3>
         <div className="flex gap-1 items-center">
           <WorkspaceButton
@@ -165,7 +167,7 @@ export function CalendarWidget({
             variant="secondary"
             size="icon-compact"
             onClick={goToPreviousMonth}
-            aria-label="Previous month"
+            aria-label={t("Previous month")}
             className="h-7 w-7"
           >
             <ChevronLeft className="h-4 w-4" strokeWidth={3} />
@@ -177,14 +179,13 @@ export function CalendarWidget({
             onClick={goToToday}
             className="h-7 px-2"
           >
-            Today
-          </WorkspaceButton>
+             {t("Today")} </WorkspaceButton>
           <WorkspaceButton
             type="button"
             variant="secondary"
             size="icon-compact"
             onClick={goToNextMonth}
-            aria-label="Next month"
+            aria-label={t("Next month")}
             className="h-7 w-7"
           >
             <ChevronRight className="h-4 w-4" strokeWidth={3} />

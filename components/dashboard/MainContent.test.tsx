@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@/test-utils/render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardData } from "@/lib/types";
 import { MainContent } from "./MainContent";

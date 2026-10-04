@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import { Star, X } from "lucide-react";
 import { Dialog, DialogClose, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +20,7 @@ interface CourseRatingModalProps {
 }
 
 export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, onSaved }: CourseRatingModalProps) {
+  const t = useText();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,14 +40,14 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
         setComment(data.currentRating?.comment ?? "");
         setExisting(Boolean(data.currentRating));
       })
-      .catch((error) => active && toast.error(error instanceof Error ? error.message : "Rating could not be loaded."))
+      .catch((error) => active && toast.error(t(error instanceof Error ? error.message : "Rating could not be loaded.")))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [courseId, open]);
+  }, [courseId, open, t]);
 
   const save = async () => {
     if (!courseId || rating < 1) {
-      toast.error("Choose a star rating first.");
+      toast.error(t("Choose a star rating first."));
       return;
     }
     setSaving(true);
@@ -56,11 +59,11 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Rating could not be saved");
-      toast.success(existing ? "Rating updated." : "Thanks for rating this course.");
+      toast.success(t(existing ? "Rating updated." : "Thanks for rating this course."));
       onSaved?.({ averageRating: data.averageRating ?? null, ratingCount: data.ratingCount ?? 0 });
       onOpenChange(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Rating could not be saved.");
+      toast.error(t(error instanceof Error ? error.message : "Rating could not be saved."));
     } finally {
       setSaving(false);
     }
@@ -69,22 +72,22 @@ export function CourseRatingModal({ open, onOpenChange, courseId, courseTitle, o
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <WorkspaceDialogContent mobileSheet={false} className="course-ui max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-6 shadow-2xl">
-        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" className="absolute right-4 top-4" aria-label="Close rating"><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" className="absolute right-4 top-4" aria-label={t("Close rating")}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <DialogHeader className="pr-8 text-left">
-          <DialogTitle className="text-xl font-semibold text-[var(--course-text)]">{existing ? "Update your rating" : "How was the course?"}</DialogTitle>
-          <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">Your feedback helps other learners understand {courseTitle || "this course"}.</DialogDescription>
+          <DialogTitle className="text-xl font-semibold text-[var(--course-text)]">{existing ? t("Update your rating") : t("How was the course?")}</DialogTitle>
+          <DialogDescription className="mt-1 text-sm text-[var(--course-text-muted)]">{t("Your feedback helps other learners understand")} {courseTitle || t("this course")}.</DialogDescription>
         </DialogHeader>
         {loading ? <div className="flex min-h-48 items-center justify-center"><Spinner /></div> : (
           <div className="mt-5 space-y-5">
-            <div role="radiogroup" aria-label="Course rating" className="flex justify-center gap-2">
+            <div role="radiogroup" aria-label={t("Course rating")} className="flex justify-center gap-2">
               {[1, 2, 3, 4, 5].map((value) => (
-                <button key={value} type="button" role="radio" aria-checked={rating === value} aria-label={`${value} star${value === 1 ? "" : "s"}`} onClick={() => setRating(value)} className="rounded-lg p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
+                <button key={value} type="button" role="radio" aria-checked={rating === value} aria-label={t("{v0} star{v1}", { v0: value, v1: value === 1 ? "" : t("s") })} onClick={() => setRating(value)} className="rounded-lg p-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
                   <Star className={cn("h-8 w-8 transition-colors", value <= rating ? "fill-[var(--app-warning)] text-[var(--app-warning)]" : "text-[var(--course-line-strong)]")} />
                 </button>
               ))}
             </div>
-            <label className="block text-sm font-medium text-[var(--course-text)]">Optional comment<textarea value={comment} onChange={(event) => setComment(event.target.value.slice(0, 500))} className="mt-2 min-h-28 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 py-2 text-sm leading-6 outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" placeholder="What worked well? What could be clearer?" /><span className="mt-1 block text-right text-[10px] text-[var(--course-text-faint)]">{comment.length}/500</span></label>
-            <div className="flex justify-end gap-2"><WorkspaceButton type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>Maybe later</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={() => void save()} disabled={saving || rating < 1}>{saving ? "Saving..." : "Save rating"}</WorkspaceButton></div>
+            <label className="block text-sm font-medium text-[var(--course-text)]">{t("Optional comment")}<textarea value={comment} onChange={(event) => setComment(event.target.value.slice(0, 500))} className="mt-2 min-h-28 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 py-2 text-sm leading-6 outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" placeholder={t("What worked well? What could be clearer?")} /><span className="mt-1 block text-right text-[10px] text-[var(--course-text-faint)]">{comment.length}/500</span></label>
+            <div className="flex justify-end gap-2"><WorkspaceButton type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>{t("Maybe later")}</WorkspaceButton><WorkspaceButton type="button" variant="primary" onClick={() => void save()} disabled={saving || rating < 1}>{saving ? t("Saving...") : t("Save rating")}</WorkspaceButton></div>
           </div>
         )}
       </WorkspaceDialogContent>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, BookOpen, Sparkles, Star } from "lucide-react";
@@ -36,6 +38,7 @@ export function DailyCourseRecommendationCard({
   description,
   actionLabel,
 }: DailyCourseRecommendationCardProps) {
+  const t = useText();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,7 +71,7 @@ export function DailyCourseRecommendationCard({
             code: "code" in caught && typeof caught.code === "string" ? caught.code : "RECOMMENDATION_UNAVAILABLE",
             message: typeof caught.message === "string" ? caught.message : "Today's course pick could not be prepared.",
           }
-        : { code: "RECOMMENDATION_UNAVAILABLE", message: "Today's course pick could not be prepared." };
+        : { code: "RECOMMENDATION_UNAVAILABLE", message: t("Today's course pick could not be prepared.") };
       setError(nextError);
     } finally {
       setLoading(false);
@@ -96,7 +99,7 @@ export function DailyCourseRecommendationCard({
       <DashboardActionCard
         title={title}
         description={description}
-        actionLabel={actionLabel}
+        actionLabel={t(actionLabel)}
         actionPending={loading}
         onAction={() => void requestRecommendation()}
       />
@@ -120,13 +123,12 @@ export function DailyCourseRecommendationCard({
             {loading ? (
               <div className="relative flex min-h-48 flex-col items-center justify-center gap-3 text-center">
                 <Spinner className="h-7 w-7" />
-                <p className="text-sm font-medium text-(--app-text-muted)">Checking your completed courses…</p>
+                <p className="text-sm font-medium text-(--app-text-muted)">{t("Checking your completed courses…")}</p>
               </div>
             ) : recommendation ? (
               <div className="relative flex min-h-48 flex-col justify-center rounded-2xl border border-(--app-border) bg-[color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-5 sm:p-6">
                 <span className="mb-3 flex items-center gap-2 text-xs font-semibold text-(--app-text-muted)">
-                  <BadgeCheck className="h-4 w-4" aria-hidden="true" /> Daily pick
-                </span>
+                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />  {t("Daily pick")} </span>
                 <h3 className="text-2xl font-semibold tracking-[-0.035em] text-(--app-text) sm:text-3xl">
                   {recommendation.course.title}
                 </h3>
@@ -151,7 +153,7 @@ export function DailyCourseRecommendationCard({
                   <BookOpen className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold text-(--app-text)">
-                  {error.code === "COURSE_COMPLETION_REQUIRED" ? "Complete your first course" : error.code === "NO_ELIGIBLE_COURSES" ? "Nothing new is available" : "Pick unavailable"}
+                  {error.code === "COURSE_COMPLETION_REQUIRED" ? t("Complete your first course") : error.code === "NO_ELIGIBLE_COURSES" ? t("Nothing new is available") : t("Pick unavailable")}
                 </h3>
                 <p className="mt-2 max-w-sm text-sm leading-6 text-(--app-text-muted)">{error.message}</p>
               </div>
@@ -160,20 +162,16 @@ export function DailyCourseRecommendationCard({
 
           <WorkspaceDialogFooter>
             <WorkspaceButton type="button" variant="secondary" onClick={() => setOpen(false)}>
-              Close
-            </WorkspaceButton>
+               {t("Close")} </WorkspaceButton>
             {recommendation ? (
               <WorkspaceButton type="button" variant="primary" onClick={openCourse}>
-                Open course
-              </WorkspaceButton>
+                 {t("Open course")} </WorkspaceButton>
             ) : error && protectedCodes.has(error.code) ? (
               <WorkspaceButton type="button" variant="primary" onClick={browseDashboardCourses}>
-                Browse courses
-              </WorkspaceButton>
+                 {t("Browse courses")} </WorkspaceButton>
             ) : error ? (
               <WorkspaceButton type="button" variant="primary" onClick={retry}>
-                Try again
-              </WorkspaceButton>
+                 {t("Try again")} </WorkspaceButton>
             ) : null}
           </WorkspaceDialogFooter>
         </WorkspaceDialogContent>

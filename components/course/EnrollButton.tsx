@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -11,6 +13,7 @@ interface EnrollButtonProps {
 }
 
 export function EnrollButton({ courseId }: EnrollButtonProps) {
+  const t = useText();
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
@@ -26,13 +29,13 @@ export function EnrollButton({ courseId }: EnrollButtonProps) {
                 throw new Error(data.error || "Failed to enroll");
             }
 
-            toast.success("You’re enrolled. Your course is ready.");
+            toast.success(t("You’re enrolled. Your course is ready."));
 
             // Redirect to viewer
             router.push(`/courses/${courseId}/viewer`);
             router.refresh();
         } catch (error: unknown) {
-            toast.error(error instanceof Error ? error.message : "The course could not be opened.");
+            toast.error(t(error instanceof Error ? error.message : "The course could not be opened."));
         } finally {
             setIsLoading(false);
         }
@@ -47,7 +50,7 @@ export function EnrollButton({ courseId }: EnrollButtonProps) {
             className="w-full"
         >
             {isLoading ? <LoaderCircle className="animate-spin" /> : <Play />}
-            {isLoading ? "Enrolling..." : "Enroll and start"}
+            {isLoading ? t("Enrolling...") : t("Enroll and start")}
         </WorkspaceButton>
     );
 }

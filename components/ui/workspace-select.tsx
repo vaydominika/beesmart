@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { Check, ChevronDown, type LucideIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +31,7 @@ interface WorkspaceSelectOption<T extends string> {
 interface WorkspaceSelectProps<T extends string> {
   value: T;
   options: readonly WorkspaceSelectOption<T>[];
+  translateLabels?: boolean;
   onValueChange: (value: T) => void;
   ariaLabel: string;
   id?: string;
@@ -44,6 +47,7 @@ interface WorkspaceSelectProps<T extends string> {
 interface WorkspaceMultiSelectProps<T extends string> {
   values: ReadonlySet<T>;
   options: readonly WorkspaceSelectOption<T>[];
+  translateLabels?: boolean;
   onValueChange: (value: T, checked: boolean) => void;
   ariaLabel: string;
   label: string;
@@ -59,6 +63,7 @@ interface WorkspaceMultiSelectProps<T extends string> {
 function WorkspaceSelect<T extends string>({
   value,
   options,
+  translateLabels = false,
   onValueChange,
   ariaLabel,
   id,
@@ -70,6 +75,7 @@ function WorkspaceSelect<T extends string>({
   className,
   contentClassName,
 }: WorkspaceSelectProps<T>) {
+  const t = useText();
   const selected = options.find((option) => option.value === value);
   const LeadingIcon = triggerIcon ?? selected?.icon;
 
@@ -80,7 +86,7 @@ function WorkspaceSelect<T extends string>({
           id={id}
           type="button"
           data-slot="workspace-select-trigger"
-          aria-label={`${ariaLabel}: ${selected?.label ?? placeholder}`}
+          aria-label={t("{v0}: {v1}", { v0: ariaLabel, v1: translateLabels ? t(selected?.label ?? placeholder) : selected?.label ?? placeholder })}
           className={cn(
             workspaceSelectTriggerClassName,
             size === "compact" ? "h-8 px-2.5 text-xs" : "h-9 px-3 text-sm",
@@ -88,14 +94,14 @@ function WorkspaceSelect<T extends string>({
           )}
         >
           {LeadingIcon ? <LeadingIcon className="h-4 w-4 shrink-0 text-[var(--app-text-muted)]" aria-hidden="true" /> : null}
-          <span className="min-w-0 flex-1 truncate text-left">{selected?.label ?? placeholder}</span>
+          <span className="min-w-0 flex-1 truncate text-left">{translateLabels ? t(selected?.label ?? placeholder) : selected?.label ?? placeholder}</span>
           <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--app-text-muted)]" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align={align}
         sideOffset={6}
-        aria-label={`${ariaLabel} options`}
+        aria-label={t("{v0} options", { v0: ariaLabel })}
         className={cn(
           workspaceSelectContentClassName,
           contentClassName,
@@ -115,7 +121,7 @@ function WorkspaceSelect<T extends string>({
               )}
             >
               {OptionIcon ? <OptionIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
-              <span className="min-w-0 flex-1 truncate">{option.label}</span>
+              <span className="min-w-0 flex-1 truncate">{translateLabels ? t(option.label) : option.label}</span>
               {selectedOption ? <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
             </DropdownMenuItem>
           );
@@ -128,6 +134,7 @@ function WorkspaceSelect<T extends string>({
 function WorkspaceMultiSelect<T extends string>({
   values,
   options,
+  translateLabels = false,
   onValueChange,
   ariaLabel,
   label,
@@ -139,7 +146,8 @@ function WorkspaceMultiSelect<T extends string>({
   className,
   contentClassName,
 }: WorkspaceMultiSelectProps<T>) {
-  const selectedLabels = options.filter((option) => values.has(option.value)).map((option) => option.label);
+  const t = useText();
+  const selectedLabels = options.filter((option) => values.has(option.value)).map((option) => translateLabels ? t(option.label) : option.label);
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
@@ -147,7 +155,7 @@ function WorkspaceMultiSelect<T extends string>({
         <button
           type="button"
           data-slot="workspace-multi-select-trigger"
-          aria-label={`${ariaLabel}: ${selectedLabels.length > 0 ? selectedLabels.join(", ") : "None"}`}
+          aria-label={t("{v0}: {v1}", { v0: ariaLabel, v1: selectedLabels.length > 0 ? selectedLabels.join(", ") : t("None") })}
           className={cn(workspaceSelectTriggerClassName, "h-9 px-3 text-sm", className)}
         >
           {TriggerIcon ? <TriggerIcon className="h-4 w-4 shrink-0 text-[var(--app-text-muted)]" aria-hidden="true" /> : null}
@@ -158,7 +166,7 @@ function WorkspaceMultiSelect<T extends string>({
       <DropdownMenuContent
         align={align}
         sideOffset={6}
-        aria-label={`${ariaLabel} options`}
+        aria-label={t("{v0} options", { v0: ariaLabel })}
         className={cn(workspaceSelectContentClassName, contentClassName)}
       >
         {options.map((option) => {
@@ -178,7 +186,7 @@ function WorkspaceMultiSelect<T extends string>({
               )}
             >
               {OptionIcon ? <OptionIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
-              <span className="min-w-0 flex-1 truncate">{option.label}</span>
+              <span className="min-w-0 flex-1 truncate">{translateLabels ? t(option.label) : option.label}</span>
               {checked ? <Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : null}
             </DropdownMenuCheckboxItem>
           );

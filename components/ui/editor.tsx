@@ -1,6 +1,8 @@
 "use client";
 
 import { EditorContent, EditorRoot, EditorInstance, EditorBubble } from "novel";
+import { useText } from "@/i18n/use-text";
+import { suggestionItems } from "./slash-command";
 import { defaultExtensions } from "./extensions";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { NodeSelector } from "./selectors/node-selector";
@@ -19,6 +21,7 @@ interface EditorProps {
 }
 
 export function Editor({ initialValue, onChange, onReady, className, placeholder, editable = true, id }: EditorProps) {
+  const t = useText();
   const [editor, setEditor] = useState<EditorInstance | null>(null);
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
@@ -29,11 +32,14 @@ export function Editor({ initialValue, onChange, onReady, className, placeholder
   const prevId = useRef<string>(id);
   const editorExtensions = useMemo(
     () => defaultExtensions.map((extension) => (
-      extension.name === "placeholder" && placeholder
-        ? extension.configure({ placeholder })
+      extension.name === "slash-command"
+        ? extension.configure({ suggestion: { items: () => suggestionItems.map(item => ({ ...item, title: t(item.title), description: t(item.description) })) } })
+        :
+      extension.name === "placeholder"
+        ? extension.configure({ placeholder: placeholder || t("Write something…") })
         : extension
     )),
-    [placeholder],
+    [placeholder, t],
   );
 
   // Synchronize internal state with initialValue prop changes (e.g. lesson switch or AI generation)

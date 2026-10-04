@@ -1,3 +1,5 @@
+"use client";
+import { useText } from "@/i18n/use-text";
 import type { ReportStatus } from "@/lib/generated/prisma";
 import { reportStatusLabel } from "@/lib/ticket-types";
 import { cn } from "@/lib/utils";
@@ -10,9 +12,10 @@ const statusClasses: Record<ReportStatus, string> = {
 };
 
 export function TicketStatusBadge({ status }: { status: ReportStatus }) {
+  const t = useText();
   return (
     <span className={cn("inline-flex h-7 items-center rounded-full border px-2.5 font-[var(--font-geist-sans)] text-[11px] font-semibold", statusClasses[status])}>
-      {reportStatusLabel(status)}
+      {t(reportStatusLabel(status))}
     </span>
   );
 }

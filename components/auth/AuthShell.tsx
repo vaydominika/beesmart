@@ -1,5 +1,8 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
+import { LanguageSelect } from "@/components/i18n/LanguageSelect";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -36,6 +39,7 @@ export function AuthShell({ title, footer, children }: AuthShellProps) {
         </Link>
 
         <div className="w-full max-w-[430px] self-center">
+          <div className="mb-5 flex justify-end"><LanguageSelect /></div>
           <header>
             <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.04em] text-[var(--app-text)] sm:text-[38px]">{title}</h1>
           </header>
@@ -49,19 +53,20 @@ export function AuthShell({ title, footer, children }: AuthShellProps) {
 }
 
 export function GoogleAuthButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  const t = useText();
   return (
     <WorkspaceButton type="button" variant="secondary" onClick={onClick} disabled={disabled} className="h-11 w-full">
       <Image src="/svg/google-icon-logo-svgrepo-com.svg" alt="" width={18} height={18} className="h-[18px] w-[18px]" />
-      Continue with Google
-    </WorkspaceButton>
+       {t("Continue with Google")} </WorkspaceButton>
   );
 }
 
 export function AuthDivider() {
+  const t = useText();
   return (
     <div className="my-5 flex items-center gap-3" aria-hidden="true">
       <Separator className="flex-1 bg-[var(--app-border)]" />
-      <span className="text-xs font-medium text-[var(--app-text-faint)]">or continue with email</span>
+      <span className="text-xs font-medium text-[var(--app-text-faint)]">{t("or continue with email")}</span>
       <Separator className="flex-1 bg-[var(--app-border)]" />
     </div>
   );

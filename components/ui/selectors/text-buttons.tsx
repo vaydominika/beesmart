@@ -1,3 +1,5 @@
+"use client";
+import { useText } from "@/i18n/use-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BoldIcon, CodeIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from "lucide-react";
@@ -5,6 +7,7 @@ import { EditorBubbleItem, useEditor } from "novel";
 import type { SelectorItem } from "./node-selector";
 
 export const TextButtons = () => {
+  const t = useText();
     const { editor } = useEditor();
 
     if (!editor) return null;
@@ -53,7 +56,7 @@ export const TextButtons = () => {
                         item.command(editor);
                     }}
                 >
-                    <Button size="sm" className="rounded-none" variant="ghost" type="button">
+                    <Button aria-label={t(item.name)} size="sm" className="rounded-none" variant="ghost" type="button">
                         <item.icon
                             className={cn("h-4 w-4", {
                                 "text-[var(--app-info)]": item.isActive(editor),

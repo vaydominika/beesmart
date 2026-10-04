@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { ArrowUpRight, Users } from "lucide-react";
 import { EntityCardButton } from "@/components/ui/entity-card-button";
 
@@ -16,7 +18,8 @@ interface ClassroomCardProps {
 }
 
 export function ClassroomCard({ name, description, subject, role, memberCount, onClick }: ClassroomCardProps) {
-    const roleLabel = role === "TEACHER" ? "Teacher" : role === "TEACHING_ASSISTANT" ? "Teaching assistant" : "Student";
+  const t = useText();
+    const roleLabel = role === "TEACHER" ? t("Teacher") : role === "TEACHING_ASSISTANT" ? t("Teaching assistant") : t("Student");
     const roleStyle = role === "TEACHER"
         ? "bg-[var(--classroom-role-teacher-bg)] text-[var(--classroom-role-teacher-text)]"
         : role === "TEACHING_ASSISTANT"
@@ -35,7 +38,7 @@ export function ClassroomCard({ name, description, subject, role, memberCount, o
             {description ? (
                 <p className="mb-auto line-clamp-2 text-sm leading-relaxed text-[var(--classroom-text-muted)]">{description}</p>
             ) : (
-                <p className="mb-auto text-sm text-[var(--classroom-text-faint)]">No description</p>
+                <p className="mb-auto text-sm text-[var(--classroom-text-faint)]">{t("No description")}</p>
             )}
 
             <div className="mt-5 flex items-center justify-between border-t border-[var(--classroom-line)] pt-4">
@@ -43,7 +46,7 @@ export function ClassroomCard({ name, description, subject, role, memberCount, o
                     <span className="flex items-center gap-1.5 text-sm font-medium text-[var(--classroom-text-muted)]">
                         <Users className="h-4 w-4" /> {memberCount}
                     </span>
-                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleStyle}`}>{roleLabel}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${roleStyle}`}>{t(roleLabel)}</span>
                 </div>
                 <span className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--classroom-accent-hover)] bg-(--classroom-accent) text-[var(--classroom-text)] transition-colors group-hover:bg-(--classroom-accent-hover)">
                     <ArrowUpRight className="h-4 w-4" />

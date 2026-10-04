@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
@@ -42,8 +45,8 @@ type AdminTheme = "light" | "dark";
 
 const ADMIN_THEME_STORAGE_KEY = "beesmart-admin-theme";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -73,6 +76,8 @@ export function AdminTicketsClient({
   initialTickets: AdminTicketItem[];
   currentAdmin: { name: string; email: string };
 }) {
+  const locale = useLocale();
+  const t = useText();
   const [view, setView] = useState<View>("active");
   const [queue, setQueue] = useState<Queue>("reports");
   const [theme, setTheme] = useState<AdminTheme>("light");
@@ -128,9 +133,9 @@ export function AdminTicketsClient({
         reviewedAt: result.reviewedAt,
         reviewer: { id: "current", ...currentAdmin },
       } : ticket));
-      toast.success("Ticket status updated");
+      toast.success(t("Ticket status updated"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Status could not be updated");
+      toast.error(t(error instanceof Error ? error.message : "Status could not be updated"));
     } finally {
       setUpdatingId(null);
     }
@@ -146,22 +151,22 @@ export function AdminTicketsClient({
     >
       <header className="border-b border-[var(--app-border)] bg-[var(--app-canvas)]">
         <div className="flex min-h-16 w-full flex-wrap items-center gap-3 px-4 py-3 md:flex-nowrap md:px-6">
-          <h1 className="mr-2 text-base font-semibold tracking-[-0.02em]">Admin</h1>
+          <h1 className="mr-2 text-base font-semibold tracking-[-0.02em]">{t("Admin")}</h1>
 
           <WorkspaceTabs
-            ariaLabel="Submission queue"
+            ariaLabel={t("Submission queue")}
             value={queue}
             onValueChange={setQueue}
             fill
             items={[
               {
                 value: "reports",
-                label: <span>Course reports <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.reports}</span></span>,
+                label: <span>{t("Course reports")} <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.reports}</span></span>,
                 ariaLabel: `Course reports, ${queueCounts.reports} ${queueCounts.reports === 1 ? "submission" : "submissions"}`,
               },
               {
                 value: "feedback",
-                label: <span>Feedback <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.feedback}</span></span>,
+                label: <span>{t("Feedback")} <span className="ml-1 font-mono text-[10px] text-[var(--app-text-faint)]">{queueCounts.feedback}</span></span>,
                 ariaLabel: `Feedback, ${queueCounts.feedback} ${queueCounts.feedback === 1 ? "submission" : "submissions"}`,
               },
             ]}
@@ -176,12 +181,12 @@ export function AdminTicketsClient({
               size="icon"
               onClick={toggleTheme}
               className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"
-              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+              aria-label={t("Switch to {v0} mode", { v0: theme === "light" ? "dark" : "light" })}
             >
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </WorkspaceButton>
-            <WorkspaceButton asChild variant="ghost" size="icon" className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"><Link href="/dashboard" aria-label="Back to learning app"><ArrowLeft className="h-4 w-4" /></Link></WorkspaceButton>
-            <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100" aria-label="Sign out">
+            <WorkspaceButton asChild variant="ghost" size="icon" className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100"><Link href="/dashboard" aria-label={t("Back to learning app")}><ArrowLeft className="h-4 w-4" /></Link></WorkspaceButton>
+            <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: "/login" })} className="transition-transform duration-200 hover:scale-105 motion-reduce:hover:scale-100" aria-label={t("Sign out")}>
               <LogOut className="h-4 w-4" />
             </WorkspaceButton>
           </div>
@@ -193,13 +198,13 @@ export function AdminTicketsClient({
           <h2 id="admin-queue-heading" className="sr-only">{queueTitle}</h2>
           <div className="flex justify-end">
             <WorkspaceTabs
-              ariaLabel={`${queueTitle} view`}
+              ariaLabel={t("{v0} view", { v0: queueTitle })}
               value={view}
               onValueChange={setView}
               size="compact"
               items={[
-                { value: "active", label: <>Active <span className="ml-1 font-mono text-[10px] opacity-70">{activeCount}</span></> },
-                { value: "all", label: <>All <span className="ml-1 font-mono text-[10px] opacity-70">{queueTickets.length}</span></> },
+                { value: "active", label: <>{t("Active")} <span className="ml-1 font-mono text-[10px] opacity-70">{activeCount}</span></> },
+                { value: "all", label: <>{t("All")} <span className="ml-1 font-mono text-[10px] opacity-70">{queueTickets.length}</span></> },
               ]}
             />
           </div>
@@ -213,8 +218,8 @@ export function AdminTicketsClient({
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--app-text-faint)]">{caseReference(ticket.id)}</span>
-                          <span className="text-xs text-[var(--app-text-muted)]">{reportTypeLabel(ticket.type)}</span>
-                          {ticket.type === "AUTOMATED_COURSE_FLAG" ? <Bot className="h-3.5 w-3.5 text-[var(--app-text-faint)]" aria-label="Automated" /> : null}
+                          <span className="text-xs text-[var(--app-text-muted)]">{t(reportTypeLabel(ticket.type))}</span>
+                          {ticket.type === "AUTOMATED_COURSE_FLAG" ? <Bot className="h-3.5 w-3.5 text-[var(--app-text-faint)]" aria-label={t("Automated")} /> : null}
                         </div>
                         <h3 className="mt-2 text-lg font-semibold tracking-[-0.015em] text-[var(--app-text)]">{ticket.reason}</h3>
                         {ticket.description ? <p className="mt-1.5 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">{ticket.description}</p> : null}
@@ -222,9 +227,9 @@ export function AdminTicketsClient({
                       <div className="w-full shrink-0 lg:w-40">
                         <WorkspaceSelect
                           value={ticket.status}
-                          options={REPORT_STATUS_OPTIONS}
+                          options={REPORT_STATUS_OPTIONS} translateLabels
                           onValueChange={(status) => void updateStatus(ticket.id, status)}
-                          ariaLabel={`Status for ${ticket.reason}`}
+                          ariaLabel={t("Status for {v0}", { v0: ticket.reason })}
                           disabled={updatingId === ticket.id}
                           className="w-full rounded-xl"
                           contentClassName={cn("rounded-xl font-[var(--font-geist-sans)]", `admin-theme-${theme}`)}
@@ -233,10 +238,10 @@ export function AdminTicketsClient({
                     </div>
 
                     <dl className="mt-4 grid gap-x-8 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
-                      <AdminTicketMetaItem label={ticket.type === "AUTOMATED_COURSE_FLAG" ? "User" : "Reporter"} truncate>{ticket.reporter.name} · {ticket.reporter.email}</AdminTicketMetaItem>
-                      <AdminTicketMetaItem label="Course" truncate>{ticket.course ? <Link href={`/courses/${ticket.course.id}`} className="underline decoration-[var(--app-border-strong)] underline-offset-4 hover:decoration-[var(--app-text)]">{ticket.course.title}</Link> : "—"}</AdminTicketMetaItem>
-                      <AdminTicketMetaItem label="Created">{formatDate(ticket.createdAt)}</AdminTicketMetaItem>
-                      <AdminTicketMetaItem label="Reviewed">{ticket.reviewedAt ? formatDate(ticket.reviewedAt) : "—"}{ticket.reviewer ? <span className="ml-1">· {ticket.reviewer.name}</span> : null}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label={ticket.type === "AUTOMATED_COURSE_FLAG" ? t("User") : t("Reporter")} truncate>{ticket.reporter.name} · {ticket.reporter.email}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label={t("Course")} truncate>{ticket.course ? <Link href={`/courses/${ticket.course.id}`} className="underline decoration-[var(--app-border-strong)] underline-offset-4 hover:decoration-[var(--app-text)]">{ticket.course.title}</Link> : "—"}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label={t("Created")}>{formatDate(ticket.createdAt, locale)}</AdminTicketMetaItem>
+                      <AdminTicketMetaItem label={t("Reviewed")}>{ticket.reviewedAt ? formatDate(ticket.reviewedAt, locale) : "—"}{ticket.reviewer ? <span className="ml-1">· {ticket.reviewer.name}</span> : null}</AdminTicketMetaItem>
                     </dl>
 
                     <TicketAttachmentGallery attachments={ticket.attachments} gridClassName="sm:grid-cols-4 lg:grid-cols-6" />
@@ -245,7 +250,7 @@ export function AdminTicketsClient({
               ))}
             </div>
           ) : (
-            <WorkspaceEmptyState key={`${queue}-${view}`} className="mt-5 min-h-56 animate-in fade-in-0 duration-200 motion-reduce:animate-none" dashed title={view === "active" ? `No active ${queue === "reports" ? "reports" : "feedback"}.` : `No ${queue === "reports" ? "reports" : "feedback"}.`} />
+            <WorkspaceEmptyState key={`${queue}-${view}`} className="mt-5 min-h-56 animate-in fade-in-0 duration-200 motion-reduce:animate-none" dashed title={view === "active" ? t("No active {v0}.", { v0: queue === "reports" ? "reports" : "feedback" }) : t("No {v0}.", { v0: queue === "reports" ? "reports" : "feedback" })} />
           )}
         </section>
       </main>

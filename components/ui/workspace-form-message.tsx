@@ -1,3 +1,6 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -5,7 +8,8 @@ type WorkspaceFormMessageProps = React.HTMLAttributes<HTMLParagraphElement> & {
   tone?: "danger" | "status";
 };
 
-function WorkspaceFormMessage({ tone = "danger", role, className, ...props }: WorkspaceFormMessageProps) {
+function WorkspaceFormMessage({ tone = "danger", role, className, children, ...props }: WorkspaceFormMessageProps) {
+  const t = useText();
   return (
     <p
       role={role ?? (tone === "danger" ? "alert" : "status")}
@@ -17,7 +21,7 @@ function WorkspaceFormMessage({ tone = "danger", role, className, ...props }: Wo
         className,
       )}
       {...props}
-    />
+    >{typeof children === "string" ? t(children) : children}</p>
   );
 }
 

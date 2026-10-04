@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { Children, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -11,6 +13,7 @@ interface CourseRailProps {
 }
 
 export function CourseRail({ title, id, children }: CourseRailProps) {
+  const t = useText();
   const railRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -44,9 +47,9 @@ export function CourseRail({ title, id, children }: CourseRailProps) {
       <div className="mb-4 flex items-end justify-between gap-4">
         <h2 className="text-xl font-semibold tracking-[-0.025em] text-[var(--dashboard-text)] md:text-2xl">{title}</h2>
         {(canScrollLeft || canScrollRight) && (
-          <div className="flex shrink-0 gap-2" aria-label={`${title} navigation`}>
-            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => move(-1)} disabled={!canScrollLeft} aria-label={`Previous ${title.toLowerCase()}`}><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
-            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => move(1)} disabled={!canScrollRight} aria-label={`Next ${title.toLowerCase()}`}><ChevronRight className="h-4 w-4" /></WorkspaceButton>
+          <div className="flex shrink-0 gap-2" aria-label={t("{v0} navigation", { v0: title })}>
+            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => move(-1)} disabled={!canScrollLeft} aria-label={t("Previous {v0}", { v0: title.toLowerCase() })}><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
+            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => move(1)} disabled={!canScrollRight} aria-label={t("Next {v0}", { v0: title.toLowerCase() })}><ChevronRight className="h-4 w-4" /></WorkspaceButton>
           </div>
         )}
       </div>

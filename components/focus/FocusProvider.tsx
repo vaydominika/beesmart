@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { useSettings } from "@/components/settings/SettingsProvider";
 
@@ -61,6 +63,7 @@ function completionId() {
 }
 
 export function FocusProvider({ children }: { children: ReactNode }) {
+  const t = useText();
   const { defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak, isHydrated } = useSettings();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeMinutes, setActiveMinutes] = useState(defaultActiveMinutes);
@@ -83,14 +86,14 @@ export function FocusProvider({ children }: { children: ReactNode }) {
     setStatsError(null);
     try {
       const response = await fetch("/api/focus-sessions", { cache: "no-store" });
-      if (!response.ok) throw new Error("Could not load focus statistics");
+      if (!response.ok) throw new Error(t("Could not load focus statistics"));
       setStats(await response.json());
     } catch (error) {
       setStatsError(error instanceof Error ? error.message : "Could not load focus statistics");
     } finally {
       setIsStatsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const persistCompletedPhase = useCallback(async (phase: PhaseRecord, endedAt: string) => {
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -100,16 +103,16 @@ export function FocusProvider({ children }: { children: ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...phase, endedAt }),
         });
-        if (!response.ok) throw new Error("Could not save the completed focus session");
+        if (!response.ok) throw new Error(t("Could not save the completed focus session"));
         const data = await response.json();
         setStats(data.stats);
         setStatsError(null);
         return;
       } catch {
-        if (attempt === 1) setStatsError("A completed session could not be saved. Your timer can continue.");
+        if (attempt === 1) setStatsError(t("A completed session could not be saved. Your timer can continue."));
       }
     }
-  }, []);
+  }, [t]);
 
   const beginPhase = useCallback((type: TimerMode, minutes: number) => {
     phaseRef.current = {

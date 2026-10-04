@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@/test-utils/render";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AiUsageStatus, useAiUsage } from "./ai-usage";
 

@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@/test-utils/render";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FIRST_LOGIN_WELCOME_MESSAGE, selectDailyWelcomeMessage } from "@/lib/dashboard";
+import { LanguageStateProvider } from "@/components/i18n/LanguageProvider";
 import { WelcomeBanner } from "./WelcomeBanner";
 
 const dashboardMock = vi.hoisted(() => ({
@@ -51,5 +52,21 @@ describe("WelcomeBanner", () => {
     expect(screen.getByText(FIRST_LOGIN_WELCOME_MESSAGE)).toBeInTheDocument();
     expect(screen.queryByText(selectDailyWelcomeMessage("user-1"))).not.toBeInTheDocument();
     expect(routerMock.replace).toHaveBeenCalledWith("/dashboard", { scroll: false });
+  });
+
+  it("renders the daily greeting in Hungarian and preserves the user's name", () => {
+    render(<LanguageStateProvider initialLocale="hu"><WelcomeBanner /></LanguageStateProvider>);
+
+    expect(screen.getByRole("heading", { name: "Üdv újra, Dominika" })).toBeInTheDocument();
+    expect(screen.queryByText(selectDailyWelcomeMessage("user-1"))).not.toBeInTheDocument();
+    expect(screen.getByRole("heading").nextElementSibling).toHaveTextContent(/kaptár|sziporkázó|mai napból|felfedeznivalók|fonalat/);
+  });
+
+  it("renders the first-visit greeting in Hungarian", () => {
+    navigationMock.searchParams = new URLSearchParams({ welcome: "new" });
+    render(<LanguageStateProvider initialLocale="hu"><WelcomeBanner /></LanguageStateProvider>);
+
+    expect(screen.getByText("Minden készen áll a kaptárban! Fedezz fel egy kurzust, vagy készíts sajátot!")).toBeInTheDocument();
+    expect(screen.queryByText(FIRST_LOGIN_WELCOME_MESSAGE)).not.toBeInTheDocument();
   });
 });

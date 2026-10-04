@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useRef, useState } from "react";
 import { LockKeyhole } from "lucide-react";
 import {
@@ -59,6 +63,8 @@ export function ScheduleWeekView({
   onMoveEvent,
   onResizeEvent,
 }: ScheduleWeekViewProps) {
+  const locale = useLocale();
+  const t = useText();
   const weekStart = startOfWeek(selectedDate);
   const weekStartKey = dateKey(weekStart);
   const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStart, index));
@@ -163,7 +169,7 @@ export function ScheduleWeekView({
                     )}
                   >
                     <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--schedule-text-muted)]">
-                      {day.toLocaleDateString("en-US", { weekday: "short" })}
+                      {day.toLocaleDateString(locale, { weekday: "short" })}
                     </span>
                     <span className={cn(
                       "mt-1 flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-[var(--schedule-text)]",
@@ -177,8 +183,7 @@ export function ScheduleWeekView({
             </div>
             <div className="grid border-t border-[var(--schedule-line)]" style={{ gridTemplateColumns: "64px repeat(7, minmax(88px, 1fr))" }}>
               <div className="flex min-h-11 items-center justify-end border-r border-[var(--schedule-line)] px-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--schedule-text-faint)]">
-                All day
-              </div>
+                 {t("All day")} </div>
               {weekDays.map((day) => (
                 <div key={dateKey(day)} className="min-h-11 border-r border-[var(--schedule-line)] p-1 last:border-r-0">
                   <div className="space-y-1">
@@ -244,7 +249,7 @@ export function ScheduleWeekView({
 
                   {isToday && (
                     <div className="pointer-events-none absolute left-0 right-0 z-10 border-t border-[var(--app-focus-border)]" style={{ top: (getNowMinutes(now) / 60) * hourHeight }}>
-                      <span className="absolute -left-1 -top-[10px] flex h-5 min-w-[38px] items-center justify-center rounded-md border border-[var(--app-focus-border)] bg-[var(--app-accent-text)] px-2 font-mono text-[10px] font-bold leading-none text-[var(--app-text-inverse)] shadow-[var(--app-shadow-subtle)]">Now</span>
+                      <span className="absolute -left-1 -top-[10px] flex h-5 min-w-[38px] items-center justify-center rounded-md border border-[var(--app-focus-border)] bg-[var(--app-accent-text)] px-2 font-mono text-[10px] font-bold leading-none text-[var(--app-text-inverse)] shadow-[var(--app-shadow-subtle)]">{t("Now")}</span>
                     </div>
                   )}
 
@@ -268,7 +273,7 @@ export function ScheduleWeekView({
                         draggable={event.canEdit !== false && !event.isProtected && !event.recurrencePattern}
                         onDragStart={(dragEvent) => dragEvent.dataTransfer.setData("text/schedule-event", event.id)}
                         onClick={() => onSelectEvent(event)}
-                        aria-label={`${event.title}, ${event.startTime} to ${event.endTime || formatTime(parseTime(event.startTime) + 60)}`}
+                        aria-label={t("{v0}, {v1} to {v2}", { v0: event.title, v1: event.startTime, v2: event.endTime || formatTime(parseTime(event.startTime) + 60) })}
                         className={cn(
                           "schedule-event-card schedule-event-surface group absolute left-1 right-1 z-20 flex flex-col items-stretch justify-start overflow-hidden rounded-[10px] border text-left text-[var(--app-event-text)] shadow-[var(--app-shadow-subtle)] transition-[filter,transform,box-shadow] hover:-translate-y-px hover:brightness-[0.99] hover:shadow-[var(--app-shadow-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]",
                           isRoomy ? "px-2.5 py-2" : "px-2 py-[3px]",

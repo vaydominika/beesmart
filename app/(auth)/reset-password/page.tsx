@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -8,6 +10,7 @@ import { AuthShell, AuthStatusMessage, AuthSubmitButton, authFieldClass, authLab
 import { WorkspaceField } from "@/components/ui/workspace-field";
 
 function ResetPasswordForm() {
+  const t = useText();
   const token = useSearchParams().get("token") || "";
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -17,9 +20,9 @@ function ResetPasswordForm() {
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (password.length < 12) return setError("Password must be at least 12 characters.");
-    if (password !== confirmation) return setError("Passwords do not match.");
-    if (!token) return setError("This reset link is invalid or incomplete.");
+    if (password.length < 12) return setError(t("Password must be at least 12 characters."));
+    if (password !== confirmation) return setError(t("Passwords do not match."));
+    if (!token) return setError(t("This reset link is invalid or incomplete."));
     setLoading(true);
     setError("");
     try {
@@ -35,13 +38,13 @@ function ResetPasswordForm() {
   }
 
   return (
-    <AuthShell title={message ? "Password updated" : "Choose a new password"} footer={<p><Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">Back to sign in</Link></p>}>
+    <AuthShell title={message ? t("Password updated") : t("Choose a new password")} footer={<p><Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">{t("Back to sign in")}</Link></p>}>
       {message ? <AuthStatusMessage><p>{message}</p></AuthStatusMessage> : (
         <form onSubmit={submit} className="space-y-4">
-          <WorkspaceField id="reset-password" label="New password" labelClassName={authLabelClass} hint="Use at least 12 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} /></WorkspaceField>
-          <WorkspaceField id="reset-confirmation" label="Confirm new password" labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authFieldClass} /></WorkspaceField>
-          {error ? <p role="alert" className="text-sm text-[var(--app-danger)]">{error}</p> : null}
-          <AuthSubmitButton loading={loading} idleLabel="Update password" loadingLabel="Updating…" />
+          <WorkspaceField id="reset-password" label={t("New password")} labelClassName={authLabelClass} hint="Use at least 12 characters."><Input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={authFieldClass} /></WorkspaceField>
+          <WorkspaceField id="reset-confirmation" label={t("Confirm new password")} labelClassName={authLabelClass}><Input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authFieldClass} /></WorkspaceField>
+          {error ? <p role="alert" className="text-sm text-[var(--app-danger)]">{t(error)}</p> : null}
+          <AuthSubmitButton loading={loading} idleLabel={t("Update password")} loadingLabel={t("Updating…")} />
         </form>
       )}
     </AuthShell>

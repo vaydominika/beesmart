@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { ArrowRight, LoaderCircle } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
 
@@ -13,6 +15,7 @@ type DashboardActionCardProps = {
 };
 
 export function DashboardActionCard({ title, description, actionLabel, onAction, targetId, actionPending = false }: DashboardActionCardProps) {
+  const t = useText();
   const handleAction = () => {
     if (onAction) return onAction();
     if (targetId) document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
@@ -25,7 +28,7 @@ export function DashboardActionCard({ title, description, actionLabel, onAction,
         <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--dashboard-text)]">{title}</h2>
         <p className="mt-1 text-sm leading-relaxed text-[var(--dashboard-text-muted)]">{description}</p>
         <WorkspaceButton type="button" variant="ghost" size="compact" className="mt-3 -ml-3" onClick={handleAction} disabled={actionPending}>
-          {actionPending ? "Choosing…" : actionLabel}
+          {actionPending ? t("Choosing…") : actionLabel}
           {actionPending ? <LoaderCircle className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowRight aria-hidden="true" />}
         </WorkspaceButton>
       </div>

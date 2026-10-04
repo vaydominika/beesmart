@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useRef, useState, useEffect } from "react";
 import { Header } from "./Header";
 import { LeftSidebar } from "./LeftSidebar";
@@ -19,6 +21,7 @@ const SCROLL_THRESHOLD = 200;
 const LAPTOP_SIDEBAR_WIDTH = 288; // w-72
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const t = useText();
   const isMobile = useIsMobile();
   const hasRoomForRightSidebar = useHasRoomForRightSidebar();
   const pathname = usePathname();
@@ -93,7 +96,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {(isLeftSidebarOpen || isRightSidebarOpen) && (
           <button
             type="button"
-            aria-label="Close overlays"
+            aria-label={t("Close overlays")}
             className="fixed inset-0 bg-[var(--app-scrim-strong)] z-30 md:hidden"
             onClick={() => {
               if (isLeftSidebarOpen) toggleLeftSidebar();
@@ -127,7 +130,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <button
           type="button"
           onClick={scrollToTop}
-          aria-label="Back to top"
+          aria-label={t("Back to top")}
           className={cn(
             "fixed bottom-4 right-4 flex h-14 w-14 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-all duration-300 z-999 shadow-sm hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]",
             showBackToTop
@@ -167,7 +170,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {!hasRoomForRightSidebar && isRightSidebarOpen && (
             <button
               type="button"
-              aria-label="Close right sidebar overlay"
+              aria-label={t("Close right sidebar overlay")}
               className="fixed inset-0 z-30 hidden bg-[var(--app-scrim-strong)] md:block"
               onClick={toggleRightSidebar}
             />
@@ -187,7 +190,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             onClick={toggleRightSidebar}
             className="fixed bottom-36 w-8 h-10 md:w-5 md:h-9 md:bottom-24 bg-(--theme-sidebar) rounded-tl-[15px] rounded-bl-[15px] md:rounded-tl-[10px] md:rounded-bl-[10px] hidden md:flex items-center justify-center hover:bg-(--theme-sidebar)/90 transition-all duration-300 z-20"
             style={{ right: hasRoomForRightSidebar && isRightSidebarOpen ? LAPTOP_SIDEBAR_WIDTH : 0 }}
-            aria-label={isRightSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            aria-label={isRightSidebarOpen ? t("Close sidebar") : t("Open sidebar")}
           >
             {isRightSidebarOpen ? (
               <ChevronRight className="h-6 w-6 text-(--theme-text) md:h-5 md:w-5 md:translate-x-0.5" />
@@ -200,7 +203,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <button
         type="button"
         onClick={scrollToTop}
-        aria-label="Back to top"
+        aria-label={t("Back to top")}
         className={cn(
           "fixed bottom-4 right-4 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-all duration-300 z-999 shadow-sm hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]",
           showBackToTop

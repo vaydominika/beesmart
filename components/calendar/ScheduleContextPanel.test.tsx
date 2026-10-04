@@ -1,4 +1,4 @@
-import { fireEvent, render as testingRender, screen } from "@testing-library/react";
+import { fireEvent, render as testingRender, screen } from "@/test-utils/render";
 import type { ReactElement } from "react";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ScheduleContextPanel } from "./ScheduleContextPanel";

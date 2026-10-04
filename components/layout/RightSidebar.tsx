@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,6 +33,8 @@ const BANNER_HEIGHT = 80;
 const DEFAULT_BANNER_URL = "/images/default_banner.jpg";
 
 export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps) {
+  const locale = useLocale();
+  const t = useText();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<EventData | null>(null);
@@ -150,10 +156,10 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
   const formatEventDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const year = d.getFullYear();
-    const month = d.toLocaleDateString("en-US", { month: "long" });
+    const month = d.toLocaleDateString(locale, { month: "long" });
     const day = d.getDate();
-    const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
-    return `${year}. ${month} ${day}. ${weekday}`;
+    const weekday = d.toLocaleDateString(locale, { weekday: "long" });
+    return locale === "hu" ? `${year}. ${month} ${day}. ${weekday}` : `${weekday}, ${month} ${day}, ${year}`;
   };
 
   return (
@@ -181,7 +187,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close sidebar"
+                aria-label={t("Close sidebar")}
                 className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
               >
                 <X className="h-4 w-4" />
@@ -197,7 +203,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
                 <Image
                   src={profileImageUrl(userAvatar)}
-                  alt={userName || "Profile"}
+                  alt={userName || t("Profile")}
                   width={64}
                   height={64}
                   className="h-full w-full object-cover object-center"
@@ -207,7 +213,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
               <button
                 type="button"
                 onClick={openProfileModal}
-                aria-label="Profile settings"
+                aria-label={t("Profile settings")}
                 className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border border-(--theme-sidebar) bg-[var(--app-surface)] text-[var(--app-text)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
               >
                 <Settings className="h-3 w-3" />
@@ -223,10 +229,10 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           {activeTicketCount > 0 ? (
             <Link
               href="/tickets"
-              aria-label={`Active tickets: ${activeTicketCount}`}
+              aria-label={t("Active tickets: {v0}", { v0: activeTicketCount })}
               className="mb-3 flex items-center justify-between rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 font-[var(--font-geist-sans)] text-xs font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
             >
-              <span>Active tickets</span>
+              <span>{t("Active tickets")}</span>
               <span className="rounded-full bg-[var(--app-accent-soft)] px-2 py-0.5 text-[var(--app-text)]">{activeTicketCount}</span>
             </Link>
           ) : null}
@@ -240,7 +246,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
           </div>
 
           <div>
-            <h3 className="mb-2 text-[32px] font-semibold uppercase tracking-wide text-(--theme-text) md:mb-0 md:text-xl">REMINDERS</h3>
+            <h3 className="mb-2 text-[32px] font-semibold uppercase tracking-wide text-(--theme-text) md:mb-0 md:text-xl">{t("REMINDERS")}</h3>
             <div>
               {upcomingEvents.length > 0 ? (
                 upcomingEvents.map((event) => {
@@ -266,7 +272,7 @@ export function RightSidebar({ variant = "inline", onClose }: RightSidebarProps)
                   );
                 })
               ) : (
-                <p className="py-2 text-sm text-(--theme-text)/65">No upcoming events</p>
+                <p className="py-2 text-sm text-(--theme-text)/65">{t("No upcoming events")}</p>
               )}
             </div>
           </div>

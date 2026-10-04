@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarPlus, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { ScheduleContextPanel, ScheduleEditorState } from "@/components/calendar/ScheduleContextPanel";
@@ -71,17 +75,20 @@ async function syncEventReminder(event: ScheduleEvent, reminder: ScheduleEventIn
   return { ...event, reminder: data.reminder };
 }
 
-function viewTitle(view: ScheduleView, date: Date) {
-  if (view === "month") return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+function viewTitle(view: ScheduleView, date: Date, locale: string) {
+  if (view === "month") return date.toLocaleDateString(locale, { month: "long", year: "numeric" });
+  if (locale === "hu") { const start = addDays(date, -(date.getDay() === 0 ? 6 : date.getDay() - 1)); return new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric" }).formatRange(start, addDays(start, 6)); }
   const end = addDays(date, 6 - (date.getDay() === 0 ? 6 : date.getDay() - 1));
   const start = addDays(end, -6);
   if (start.getMonth() === end.getMonth()) {
-    return `${start.toLocaleDateString("en-US", { month: "long" })} ${start.getDate()}–${end.getDate()}, ${end.getFullYear()}`;
+    return `${start.toLocaleDateString(locale, { month: "long" })} ${start.getDate()}–${end.getDate()}, ${end.getFullYear()}`;
   }
-  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })}–${end.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${end.getFullYear()}`;
+  return `${start.toLocaleDateString(locale, { month: "short", day: "numeric" })}–${end.toLocaleDateString(locale, { month: "short", day: "numeric" })}, ${end.getFullYear()}`;
 }
 
 export default function SchedulePage() {
+  const locale = useLocale();
+  const t = useText();
   const isMobile = useIsMobile();
   const [view, setView] = useState<ScheduleView>("week");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
@@ -121,7 +128,7 @@ export default function SchedulePage() {
         cache: "no-store",
         headers: { Pragma: "no-cache" },
       });
-      if (!response.ok) throw new Error("Could not load this date range.");
+      if (!response.ok) throw new Error(t("Could not load this date range."));
       const data = await response.json();
       if (requestId !== fetchRequestRef.current) return;
       const nextEvents = data.map(normalizeEvent) as ScheduleEvent[];
@@ -137,7 +144,7 @@ export default function SchedulePage() {
     } finally {
       if (requestId === fetchRequestRef.current) setLoading(false);
     }
-  }, [rangeStart, rangeEnd, rangeKey]);
+  }, [rangeStart, rangeEnd, rangeKey, t]);
 
   useEffect(() => {
     void fetchEvents();
@@ -235,16 +242,16 @@ export default function SchedulePage() {
       const updated = normalizeEvent(await response.json());
       setEvents((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (selectedEvent?.id === updated.id) setSelectedEvent(updated);
-      if (successMessage) toast.success(successMessage);
+      if (successMessage) toast.success(t(successMessage));
       triggerUpdate();
       return updated;
     } catch {
       setEvents(previous);
       if (selectedEvent?.id === event.id) setSelectedEvent(event);
-      toast.error("The event could not be updated. Your previous schedule was restored.");
+      toast.error(t("The event could not be updated. Your previous schedule was restored."));
       return null;
     }
-  }, [events, selectedEvent, triggerUpdate]);
+  }, [events, selectedEvent, triggerUpdate, t]);
 
   const saveEvent = async (input: ScheduleEventInput) => {
     setSaving(true);
@@ -269,10 +276,10 @@ export default function SchedulePage() {
             setSelectedEvent(eventWithReminder);
             setSelectedDate(parseDateKey(input.date));
             setEditor(null);
-            toast.success(input.reminder ? `Event updated. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString()}.` : selectedEvent.reminder ? "Event updated. Reminder removed." : "Event updated.");
+            toast.success(t(input.reminder ? `Event updated. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString(locale)}.` : selectedEvent.reminder ? "Event updated. Reminder removed." : "Event updated."));
             triggerUpdate();
           } catch (reminderError) {
-            toast.error(`Event updated, but ${reminderError instanceof Error ? reminderError.message : "the reminder could not be saved"}.`);
+            toast.error(t("Event updated, but {v0}.", { v0: reminderError instanceof Error ? reminderError.message : t("the reminder could not be saved") }));
           }
         }
       } else {
@@ -306,13 +313,13 @@ export default function SchedulePage() {
         setSelectedEvent(created);
         setSelectedDate(parseDateKey(input.date));
         setEditor(null);
-        if (reminderError) toast.error(`Event added, but ${reminderError}.`);
-        else if (input.reminder) toast.success(`Event added. Reminder set for ${new Date(input.reminder.notifyAt).toLocaleString()}.`);
-        else toast.success("Event added.");
+        if (reminderError) toast.error(t("Event added, but {v0}.", { v0: reminderError }));
+        else if (input.reminder) toast.success(t("Event added. Reminder set for {v0}.", { v0: new Date(input.reminder.notifyAt).toLocaleString(locale) }));
+        else toast.success(t("Event added."));
         triggerUpdate();
       }
     } catch {
-      toast.error("The event could not be saved.");
+      toast.error(t("The event could not be saved."));
     } finally {
       setSaving(false);
     }
@@ -330,7 +337,7 @@ export default function SchedulePage() {
       const response = await fetch(endpoint, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `The ${workKind ?? "event"} could not be deleted.`);
-      toast.success(`${workKind ? workKind[0].toUpperCase() + workKind.slice(1) : "Event"} deleted.`);
+      toast.success(t("{v0} deleted.", { v0: workKind ? workKind[0].toUpperCase() + workKind.slice(1) : t("Event") }));
       setDeleteTarget(null);
       setSelectedEvent(null);
       setEditor(null);
@@ -338,7 +345,7 @@ export default function SchedulePage() {
       triggerUpdate();
     } catch (deleteError) {
       setEvents(previous);
-      toast.error(deleteError instanceof Error ? deleteError.message : "The item could not be deleted. Your schedule was restored.");
+      toast.error(t(deleteError instanceof Error ? deleteError.message : "The item could not be deleted. Your schedule was restored."));
     } finally {
       setDeleting(false);
     }
@@ -383,27 +390,26 @@ export default function SchedulePage() {
   return (
     <WorkspacePageFrame className="schedule-ui bg-[var(--schedule-canvas)]">
         <header className="schedule-page-header mb-5">
-          <WorkspacePageHeader className="mb-0 sm:flex-col sm:items-stretch xl:flex-row xl:items-end" title="Schedule" titleClassName="text-[var(--schedule-text)]" actions={<div className="flex flex-wrap items-center gap-2">
-              <WorkspaceTabs ariaLabel="Schedule view" items={VIEWS} value={view} onValueChange={changeView} />
+          <WorkspacePageHeader className="mb-0 sm:flex-col sm:items-stretch xl:flex-row xl:items-end" title={t("Schedule")} titleClassName="text-[var(--schedule-text)]" actions={<div className="flex flex-wrap items-center gap-2">
+              <WorkspaceTabs ariaLabel={t("Schedule view")} items={VIEWS} value={view} onValueChange={changeView} />
               <WorkspaceButton type="button" variant="primary" onClick={() => startCreate(selectedDate)}>
-                <CalendarPlus className="h-4 w-4" />New event
-              </WorkspaceButton>
+                <CalendarPlus className="h-4 w-4" />{t("New event")} </WorkspaceButton>
             </div>} />
 
           <LibraryToolbar className="schedule-toolbar mt-5 border-[var(--schedule-line)]">
             <div className="flex items-center gap-2">
-              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label="Previous date range"><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
-              <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>Today</WorkspaceButton>
-              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(1)} aria-label="Next date range"><ChevronRight className="h-4 w-4" /></WorkspaceButton>
-              <h2 className="ml-1 text-sm font-semibold text-[var(--schedule-text)] md:text-base">{viewTitle(view, selectedDate)}</h2>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(-1)} aria-label={t("Previous date range")}><ChevronLeft className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" onClick={goToToday}>{t("Today")}</WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => navigate(1)} aria-label={t("Next date range")}><ChevronRight className="h-4 w-4" /></WorkspaceButton>
+              <h2 className="ml-1 text-sm font-semibold text-[var(--schedule-text)] md:text-base">{viewTitle(view, selectedDate, locale)}</h2>
             </div>
             <div className="flex min-w-0 items-center gap-2">
-              <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search events" aria-label="Search events" wrapperClassName="min-w-0 flex-1 lg:w-64 lg:flex-none" className="border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-[var(--schedule-text)] placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-[var(--schedule-focus-ring)]" />
+              <WorkspaceSearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t("Search events")} aria-label={t("Search events")} wrapperClassName="min-w-0 flex-1 lg:w-64 lg:flex-none" className="border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-[var(--schedule-text)] placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-[var(--schedule-focus-ring)]" />
               <WorkspaceMultiSelect
-                ariaLabel="Event sources"
-                label="Sources"
+                ariaLabel={t("Event sources")}
+                label={t("Sources")}
                 values={sources}
-                options={SOURCE_OPTIONS}
+                options={SOURCE_OPTIONS} translateLabels
                 triggerIcon={SlidersHorizontal}
                 align="end"
                 open={filtersOpen}
@@ -422,9 +428,9 @@ export default function SchedulePage() {
 
         {error ? (
           <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] px-6 text-center">
-            <p className="font-semibold text-[var(--schedule-text)]">Your schedule could not be loaded</p>
-            <p className="mt-2 text-sm text-[var(--schedule-text-muted)]">{error}</p>
-            <WorkspaceButton type="button" variant="primary" onClick={() => void fetchEvents()} className="mt-5">Try again</WorkspaceButton>
+            <p className="font-semibold text-[var(--schedule-text)]">{t("Your schedule could not be loaded")}</p>
+            <p className="mt-2 text-sm text-[var(--schedule-text-muted)]">{t(error)}</p>
+            <WorkspaceButton type="button" variant="primary" onClick={() => void fetchEvents()} className="mt-5">{t("Try again")}</WorkspaceButton>
           </div>
         ) : (
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -444,21 +450,21 @@ export default function SchedulePage() {
         )}
       <Dialog open={mobilePanelOpen} onOpenChange={(open) => { setMobilePanelOpen(open); if (!open) closePanelState(); }}>
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog fixed bottom-0 left-0 top-auto block max-h-[88vh] min-h-[44vh] w-full max-w-none translate-x-0 translate-y-0 overflow-hidden rounded-t-3xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-0 shadow-2xl md:hidden">
-          <DialogTitle className="sr-only">Schedule details</DialogTitle>
-          <DialogDescription className="sr-only">View or edit events for the selected date.</DialogDescription>
-          <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobilePanelOpen(false)} aria-label="Close schedule details" className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton>
+          <DialogTitle className="sr-only">{t("Schedule details")}</DialogTitle>
+          <DialogDescription className="sr-only">{t("View or edit events for the selected date.")}</DialogDescription>
+          <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setMobilePanelOpen(false)} aria-label={t("Close schedule details")} className="absolute right-4 top-4 z-20"><X className="h-4 w-4" /></WorkspaceButton>
           <div className="h-[min(78vh,720px)]">{panel}</div>
         </WorkspaceDialogContent>
       </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open && !deleting) setDeleteTarget(null); }}>
         <WorkspaceDialogContent mobileSheet={false} className="schedule-dialog rounded-2xl border border-[var(--schedule-line)] bg-[var(--app-surface)] p-6 pr-14 shadow-xl">
-          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
-          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">Delete {deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}?</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? `“${deleteTarget.title}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.` : deleteTarget?.recurrencePattern ? `The entire “${deleteTarget.title}” series will be removed from your schedule. This action cannot be undone.` : `“${deleteTarget?.title}” will be removed from your schedule. This action cannot be undone.`}</DialogDescription>
+          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close delete confirmation")} className="absolute right-4 top-4 z-20" disabled={deleting}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+          <DialogTitle className="text-lg font-semibold text-[var(--schedule-text)]">{t("Delete")} {deleteTarget ? classroomWorkKind(deleteTarget) ?? t("event") : t("event")}?</DialogTitle>
+          <DialogDescription className="text-sm leading-relaxed text-[var(--schedule-text-muted)]">{deleteTarget && classroomWorkKind(deleteTarget) ? t("“{v0}” and all of its submissions and grades will be removed from the Classroom. This action cannot be undone.", { v0: deleteTarget.title }) : deleteTarget?.recurrencePattern ? t("The entire “{v0}” series will be removed from your schedule. This action cannot be undone.", { v0: deleteTarget.title }) : t("“{v0}” will be removed from your schedule. This action cannot be undone.", { v0: deleteTarget?.title })}</DialogDescription>
           <div className="mt-2 flex justify-end gap-3">
-            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</WorkspaceButton>
-            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? "Deleting…" : `Delete ${deleteTarget ? classroomWorkKind(deleteTarget) ?? "event" : "event"}`}</WorkspaceButton>
+            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={deleting}>{t("Cancel")}</WorkspaceButton>
+            <WorkspaceButton type="button" variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>{deleting ? t("Deleting…") : t("Delete {v0}", { v0: deleteTarget ? classroomWorkKind(deleteTarget) ?? t("event") : t("event") })}</WorkspaceButton>
           </div>
         </WorkspaceDialogContent>
       </Dialog>

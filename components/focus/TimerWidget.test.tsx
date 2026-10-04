@@ -1,4 +1,4 @@
-import { fireEvent, render as testingRender, screen } from "@testing-library/react";
+import { fireEvent, render as testingRender, screen } from "@/test-utils/render";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

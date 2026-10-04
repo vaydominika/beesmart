@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, GraduationCap, Info, Loader2 } from "lucide-react";
@@ -21,6 +25,8 @@ type NotificationItem = {
 };
 
 export function NotificationCenter() {
+  const locale = useLocale();
+  const t = useText();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Category>("GENERAL");
@@ -36,9 +42,9 @@ export function NotificationCenter() {
       const data = await response.json();
       setItems(data.notifications);
       setUnreadCount(data.unreadCount);
-      for (const reminder of data.triggeredReminders ?? []) toast.info(`Reminder: ${reminder.task}`);
+      for (const reminder of data.triggeredReminders ?? []) toast.info(t("Reminder: {v0}", { v0: reminder.task }));
     } finally { setLoading(false); }
-  }, [activeTab]);
+  }, [activeTab, t]);
 
   useEffect(() => { void loadNotifications(); }, [loadNotifications]);
   useEffect(() => {
@@ -75,25 +81,25 @@ export function NotificationCenter() {
 
   const formatTime = (value: string) => {
     const seconds = Math.floor((Date.now() - new Date(value).getTime()) / 1000);
-    if (seconds < 60) return "Just now";
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return new Date(value).toLocaleDateString();
+    if (seconds < 60) return t("Just now");
+    if (seconds < 3600) return t("{count}m ago", { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t("{count}h ago", { count: Math.floor(seconds / 3600) });
+    return new Date(value).toLocaleDateString(locale);
   };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`} className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
+        <button type="button" aria-label={t("Notifications{v0}", { v0: unreadCount ? `, ${t("{v0} unread", { v0: unreadCount })}` : "" })} className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] shadow-[var(--app-shadow-subtle)] transition-colors hover:bg-[var(--app-surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 ? <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--app-danger)] px-1 text-[9px] font-semibold text-[var(--app-text-inverse)]">{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={8} className="notification-center w-[min(400px,calc(100vw-16px))] overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-0 text-[var(--app-text)] shadow-[var(--app-shadow-elevated)]">
         <div className="border-b border-[var(--app-border)] p-4">
-          <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[var(--app-text)]">Notifications</h3><p className="mt-0.5 text-xs text-[var(--app-text-muted)]">{unreadCount ? `${unreadCount} unread` : "You're all caught up"}</p></div><WorkspaceButton type="button" variant="ghost" size="compact" className="disabled:border-transparent disabled:bg-transparent disabled:text-[var(--app-text-faint)]" onClick={markAllRead} disabled={!unreadCount}><CheckCheck className="h-3.5 w-3.5" />Mark all read</WorkspaceButton></div>
+          <div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-[var(--app-text)]">{t("Notifications")}</h3><p className="mt-0.5 text-xs text-[var(--app-text-muted)]">{unreadCount ? t("{v0} unread", { v0: unreadCount }) : t("You're all caught up")}</p></div><WorkspaceButton type="button" variant="ghost" size="compact" className="disabled:border-transparent disabled:bg-transparent disabled:text-[var(--app-text-faint)]" onClick={markAllRead} disabled={!unreadCount}><CheckCheck className="h-3.5 w-3.5" />{t("Mark all read")}</WorkspaceButton></div>
           <WorkspaceTabs
-            ariaLabel="Notification category"
+            ariaLabel={t("Notification category")}
             value={activeTab}
             onValueChange={setActiveTab}
             items={NOTIFICATION_TABS}
@@ -102,13 +108,13 @@ export function NotificationCenter() {
           />
         </div>
         <ScrollArea className="h-[min(440px,65vh)]">
-          {loading && items.length === 0 ? <div className="flex h-44 items-center justify-center text-[var(--app-text-muted)]"><Loader2 className="h-5 w-5 animate-spin" /><span className="sr-only">Loading notifications</span></div> : items.length === 0 ? <div className="flex h-44 flex-col items-center justify-center px-8 text-center"><p className="text-sm font-semibold text-[var(--app-text)]">Nothing new here</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">New updates will appear in this panel.</p></div> : <div className="p-2">{items.map((notification) => (
+          {loading && items.length === 0 ? <div className="flex h-44 items-center justify-center text-[var(--app-text-muted)]"><Loader2 className="h-5 w-5 animate-spin" /><span className="sr-only">{t("Loading notifications")}</span></div> : items.length === 0 ? <div className="flex h-44 flex-col items-center justify-center px-8 text-center"><p className="text-sm font-semibold text-[var(--app-text)]">{t("Nothing new here")}</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">{t("New updates will appear in this panel.")}</p></div> : <div className="p-2">{items.map((notification) => (
             <div key={notification.id} data-unread={!notification.readAt ? "true" : undefined} className={cn("rounded-xl border border-transparent transition-colors hover:bg-[var(--app-surface-hover)]", !notification.readAt && "bg-[var(--app-surface)]")}>
               <button type="button" onClick={() => void openNotification(notification)} className="flex w-full gap-3 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--app-focus-ring)]">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--app-surface-muted)] text-[var(--app-text-muted)]">{activeTab === "CLASSROOM" ? <GraduationCap className="h-4 w-4" /> : <Info className="h-4 w-4" />}</span>
-                <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><span className="line-clamp-1 text-xs font-semibold text-[var(--app-text)]">{notification.title}</span><span className="shrink-0 text-[10px] text-[var(--app-text-faint)]">{formatTime(notification.createdAt)}</span></span>{notification.category === "CLASSROOM" ? <span className="mt-0.5 block text-[10px] font-medium text-[var(--app-text-faint)]">{notification.classroomName ?? "Classroom"} · {notification.actorName ?? "BeeSmart"}</span> : null}<span className="mt-1 block line-clamp-2 text-xs leading-4 text-[var(--app-text-muted)]">{notification.body}</span></span>
+                <span className="min-w-0 flex-1"><span className="flex justify-between gap-2"><span className="line-clamp-1 text-xs font-semibold text-[var(--app-text)]">{notification.title}</span><span className="shrink-0 text-[10px] text-[var(--app-text-faint)]">{formatTime(notification.createdAt)}</span></span>{notification.category === "CLASSROOM" ? <span className="mt-0.5 block text-[10px] font-medium text-[var(--app-text-faint)]">{notification.classroomName ?? t("Classroom")} · {notification.actorName ?? t("BeeSmart")}</span> : null}<span className="mt-1 block line-clamp-2 text-xs leading-4 text-[var(--app-text-muted)]">{notification.body}</span></span>
               </button>
-              <button type="button" onClick={() => void setRead(notification, !Boolean(notification.readAt))} className="mb-2 ml-[60px] text-[10px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)]">{notification.readAt ? "Mark unread" : "Mark read"}</button>
+              <button type="button" onClick={() => void setRead(notification, !Boolean(notification.readAt))} className="mb-2 ml-[60px] text-[10px] font-medium text-[var(--app-text-muted)] hover:text-[var(--app-text)]">{notification.readAt ? t("Mark unread") : t("Mark read")}</button>
             </div>
           ))}</div>}
         </ScrollArea>

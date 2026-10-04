@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CloudOff, CloudUpload, Eye, EyeOff, Globe2, Lightbulb, Loader2, Lock, Mail, Menu, Pencil, Save, ShieldCheck, X } from "lucide-react";
@@ -62,11 +64,12 @@ const VISIBILITY_OPTIONS: { value: CourseVisibility; label: string; icon: typeof
 ];
 
 function CourseVisibilityMenu({ value, onChange }: { value: CourseVisibility; onChange: (value: CourseVisibility) => void }) {
+  const t = useText();
   return (
     <WorkspaceSelect
-      ariaLabel="Course visibility"
+      ariaLabel={t("Course visibility")}
       value={value}
-      options={VISIBILITY_OPTIONS}
+      options={VISIBILITY_OPTIONS} translateLabels
       onValueChange={onChange}
       size="compact"
       className="shrink-0 border-transparent bg-transparent font-semibold"
@@ -76,6 +79,7 @@ function CourseVisibilityMenu({ value, onChange }: { value: CourseVisibility; on
 }
 
 export default function CourseBuilderClient({ initialCourse }: CourseBuilderClientProps) {
+  const t = useText();
   const [course, setCourse] = useState(initialCourse);
   const [savedCourse, setSavedCourse] = useState(initialCourse);
   const editorRef = useRef<CourseBuilderEditorHandle>(null);
@@ -123,7 +127,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
       setCourse((current) => ({ ...current, ...updated }));
       return updated;
     } catch {
-      toast.error("Course changes could not be saved.");
+      toast.error(t("Course changes could not be saved."));
       return null;
     }
   };
@@ -173,7 +177,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
       setCourseTitle(nextTitle);
       setHasUnsavedLessonChanges(false);
-      toast.success("Course saved.");
+      toast.success(t("Course saved."));
       return true;
     } finally {
       saveInProgressRef.current = false;
@@ -212,9 +216,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
         })),
       }));
       setPublishCheckOpen(false);
-      toast.success(wasPublished ? "Course changes published." : "Course published.");
+      toast.success(t(wasPublished ? "Course changes published." : "Course published."));
     } catch {
-      setPublishError("The publishing safety check could not be completed.");
+      setPublishError(t("The publishing safety check could not be completed."));
     } finally {
       setIsPublishing(false);
     }
@@ -231,9 +235,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
       if (!response.ok) throw new Error();
       const updated = await response.json() as Partial<CourseBuilderCourse>;
       setCourse((current) => ({ ...current, ...updated }));
-      toast.success("Course moved to drafts.");
+      toast.success(t("Course moved to drafts."));
     } catch {
-      toast.error("Course status could not be updated.");
+      toast.error(t("Course status could not be updated."));
     } finally {
       setIsPublishing(false);
     }
@@ -252,7 +256,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
           <input
             autoFocus
             value={courseTitle}
-            aria-label="Course title"
+            aria-label={t("Course title")}
             maxLength={COURSE_TITLE_MAX_LENGTH}
             onChange={(event) => setCourseTitle(event.target.value)}
             onBlur={commitCourseTitle}
@@ -265,7 +269,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
         ) : (
           <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => !previewMode && setIsEditingTitle(true)} aria-label={course.title} className="flex h-8 min-w-0 max-w-[min(45ch,40vw)] items-center rounded-lg px-2 text-left text-base font-semibold tracking-[-0.02em] outline-none transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--course-focus-ring)]">
             <span className="truncate" aria-hidden="true">{displayCourseTitle(course.title)}</span>
-          </button></TooltipTrigger><TooltipContent>{previewMode ? course.title : `Rename course: ${course.title}`}</TooltipContent></Tooltip>
+          </button></TooltipTrigger><TooltipContent>{previewMode ? course.title : t("Rename course: {v0}", { v0: course.title })}</TooltipContent></Tooltip>
         )}
         {!previewMode && <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--course-text-muted)]" aria-hidden="true" />}
       </div>
@@ -276,9 +280,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
         )}
         {showMetadata && (
           <div className="hidden min-w-0 items-center gap-2 whitespace-nowrap text-[10px] text-[var(--course-text-muted)] sm:flex">
-            <span>{course.published ? hasUnpublishedChanges ? "Published · Unpublished changes" : "Published" : "Draft"}</span>
+            <span>{course.published ? hasUnpublishedChanges ? t("Published · Unpublished changes") : t("Published") : t("Draft")}</span>
             <span aria-hidden="true">/</span>
-            <span>{course.modules.length} modules / {totalLessons} lessons</span>
+            <span>{course.modules.length}  {t("modules /")} {totalLessons}  {t("lessons")}</span>
           </div>
         )}
         {!previewMode && course.visibility === "INVITATION_ONLY" && <CourseInviteButton courseId={course.id} />}
@@ -288,7 +292,7 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
   const syllabusBackControl = (
     <WorkspaceButton asChild variant="secondary" size="icon-compact">
-      <Link href="/courses" aria-label="Back to courses"><ArrowLeft className="h-4 w-4" /></Link>
+      <Link href="/courses" aria-label={t("Back to courses")}><ArrowLeft className="h-4 w-4" /></Link>
     </WorkspaceButton>
   );
 
@@ -305,13 +309,13 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
   const publishButton = (!course.published || hasUnpublishedChanges) ? (
     <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => void handlePublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges}>
-      <CloudUpload className="h-3.5 w-3.5" /><span>{isPublishing ? "Checking..." : course.published ? "Publish changes" : "Publish"}</span>
+      <CloudUpload className="h-3.5 w-3.5" /><span>{isPublishing ? t("Checking...") : course.published ? t("Publish changes") : t("Publish")}</span>
     </WorkspaceButton>
   ) : null;
   const publishControl = publishButton && hasUnsavedChanges ? (
     <Tooltip>
       <TooltipTrigger asChild><span className="inline-flex">{publishButton}</span></TooltipTrigger>
-      <TooltipContent>Save changes before publishing</TooltipContent>
+      <TooltipContent>{t("Save changes before publishing")}</TooltipContent>
     </Tooltip>
   ) : publishButton;
 
@@ -321,9 +325,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 
       {!previewMode && mobileSyllabusOpen && (
         <>
-          <button type="button" aria-label="Close syllabus" onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
+          <button type="button" aria-label={t("Close syllabus")} onClick={() => setMobileSyllabusOpen(false)} className="fixed inset-0 z-40 bg-[var(--app-scrim-soft)] lg:hidden" />
           <aside className="fixed inset-y-0 left-0 z-50 w-[min(88vw,330px)] border-r border-[var(--course-line)] bg-[var(--course-surface)] shadow-2xl lg:hidden">
-            <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => setMobileSyllabusOpen(false)} aria-label="Close syllabus" className="absolute right-3 top-3 z-10"><X className="h-4 w-4" /></WorkspaceButton>
+            <WorkspaceButton type="button" variant="ghost" size="icon" onClick={() => setMobileSyllabusOpen(false)} aria-label={t("Close syllabus")} className="absolute right-3 top-3 z-10"><X className="h-4 w-4" /></WorkspaceButton>
             {syllabus}
           </aside>
         </>
@@ -333,22 +337,22 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
         <header className="h-[76px] shrink-0 border-b border-[var(--course-line)] bg-[var(--app-surface)]">
           <div className="flex h-full items-center gap-2 px-3 md:px-5">
             {!previewMode && (
-              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label="Open syllabus" className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setMobileSyllabusOpen(true)} aria-label={t("Open syllabus")} className="lg:hidden"><Menu className="h-4 w-4" /></WorkspaceButton>
             )}
             <div className="flex min-w-0 flex-1">{renderCourseIdentity(true)}</div>
 
-            {!previewMode && !isSaving && !isSavingCourse && hasUnsavedChanges && <span role="status" className="hidden shrink-0 text-[10px] font-medium text-[var(--course-text-muted)] sm:inline">Unsaved changes</span>}
+            {!previewMode && !isSaving && !isSavingCourse && hasUnsavedChanges && <span role="status" className="hidden shrink-0 text-[10px] font-medium text-[var(--course-text-muted)] sm:inline">{t("Unsaved changes")}</span>}
 
-            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setTutorialOpen(true)} aria-label="Review course creation tutorial">
+            <Tooltip><TooltipTrigger asChild><WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={() => setTutorialOpen(true)} aria-label={t("Review course creation tutorial")}>
               <Lightbulb className="h-3.5 w-3.5" />
-            </WorkspaceButton></TooltipTrigger><TooltipContent>Course creation tutorial</TooltipContent></Tooltip>
+            </WorkspaceButton></TooltipTrigger><TooltipContent>{t("Course creation tutorial")}</TooltipContent></Tooltip>
             <WorkspaceButton type="button" variant={previewMode ? "primary" : "secondary"} size="compact" onClick={() => setPreviewMode((current) => !current)}>
-              {previewMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}<span className="hidden sm:inline">{previewMode ? "Exit preview" : "Preview"}</span>
+              {previewMode ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}<span className="hidden sm:inline">{previewMode ? t("Exit preview") : t("Preview")}</span>
             </WorkspaceButton>
             {!previewMode && <WorkspaceButton type="button" variant={hasUnsavedChanges ? "primary" : "secondary"} size="compact" onClick={() => void handleSave()} disabled={isPublishing || isSaving || isSavingCourse || !hasUnsavedChanges}>
-              {isSaving || isSavingCourse ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}<span>{isSaving || isSavingCourse ? "Saving..." : "Save"}</span>
+              {isSaving || isSavingCourse ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}<span>{isSaving || isSavingCourse ? t("Saving...") : t("Save")}</span>
             </WorkspaceButton>}
-            {course.published && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleUnpublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges}><CloudOff className="h-3.5 w-3.5" /><span>Unpublish</span></WorkspaceButton>}
+            {course.published && <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleUnpublish()} disabled={isPublishing || isSaving || isSavingCourse || hasUnsavedChanges}><CloudOff className="h-3.5 w-3.5" /><span>{t("Unpublish")}</span></WorkspaceButton>}
             {publishControl}
           </div>
         </header>
@@ -360,9 +364,9 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
             </div>
           ) : (
             <div className="flex h-full min-h-96 flex-col items-center justify-center px-6 text-center">
-              <h2 className="text-lg font-semibold">Your first lesson starts in the syllabus</h2>
-              <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--course-text-muted)]">Add a module, then create a lesson to begin writing course material.</p>
-              <WorkspaceButton type="button" variant="secondary" onClick={() => setMobileSyllabusOpen(true)} className="mt-5 lg:hidden">Open syllabus</WorkspaceButton>
+              <h2 className="text-lg font-semibold">{t("Your first lesson starts in the syllabus")}</h2>
+              <p className="mt-2 max-w-sm text-sm leading-relaxed text-[var(--course-text-muted)]">{t("Add a module, then create a lesson to begin writing course material.")}</p>
+              <WorkspaceButton type="button" variant="secondary" onClick={() => setMobileSyllabusOpen(true)} className="mt-5 lg:hidden">{t("Open syllabus")}</WorkspaceButton>
             </div>
           )}
         </main>
@@ -382,27 +386,28 @@ export default function CourseBuilderClient({ initialCourse }: CourseBuilderClie
 }
 
 function PublishCheckDialog({ open, checking, issues, error, onClose }: { open: boolean; checking: boolean; issues: CoursePublishIssue[]; error: string | null; onClose: () => void }) {
+  const t = useText();
   const blocked = issues.length > 0;
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !checking) onClose(); }}>
       <WorkspaceDialogContent mobileSheet={false} className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
-        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close publication safety check" className="absolute right-4 top-4 z-20" disabled={checking}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+        <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close publication safety check")} className="absolute right-4 top-4 z-20" disabled={checking}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
         <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--course-text)]"><ShieldCheck className="h-5 w-5" />Publication safety check</DialogTitle>
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-[var(--course-text)]"><ShieldCheck className="h-5 w-5" />{t("Publication safety check")}</DialogTitle>
         </div>
         <div className="px-5 py-5">
           {checking ? (
-            <div role="status" className="flex min-h-32 flex-col items-center justify-center text-center text-sm text-[var(--course-text-muted)]"><Loader2 className="mb-3 h-6 w-6 animate-spin" />Checking whether this course can be published…</div>
+            <div role="status" className="flex min-h-32 flex-col items-center justify-center text-center text-sm text-[var(--course-text-muted)]"><Loader2 className="mb-3 h-6 w-6 animate-spin" />{t("Checking whether this course can be published…")}</div>
           ) : blocked ? (
             <div>
-              <div className="flex gap-3 rounded-xl border border-[var(--app-warning-border)] bg-[var(--app-warning-soft)] p-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><div><p className="text-sm font-semibold">Course not published</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">The safety check found {issues.length} publication {issues.length === 1 ? "blocker" : "blockers"}.</p></div></div>
+              <div className="flex gap-3 rounded-xl border border-[var(--app-warning-border)] bg-[var(--app-warning-soft)] p-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><div><p className="text-sm font-semibold">{t("Course not published")}</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{t("The safety check found")} {issues.length}  {t("publication")} {issues.length === 1 ? t("blocker") : t("blockers")}.</p></div></div>
               <ul className="mt-4 space-y-2">{issues.map((issue, index) => <li key={`${issue.category}-${index}`} className="rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] p-3"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--course-text-faint)]">{issue.category.replaceAll("_", " ")}</span><p className="mt-1 text-sm leading-5 text-[var(--course-text)]">{issue.reason}</p></li>)}</ul>
             </div>
           ) : (
-            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-3"><p className="text-sm font-semibold text-[var(--course-danger)]">Course not published</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{error ?? "The publishing safety check could not be completed."}</p></div>
+            <div className="rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] p-3"><p className="text-sm font-semibold text-[var(--course-danger)]">{t("Course not published")}</p><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{error ?? t("The publishing safety check could not be completed.")}</p></div>
           )}
         </div>
-        {!checking && <div className="flex justify-end border-t border-[var(--course-line)] px-5 py-4"><WorkspaceButton type="button" variant="secondary" onClick={onClose}>Close</WorkspaceButton></div>}
+        {!checking && <div className="flex justify-end border-t border-[var(--course-line)] px-5 py-4"><WorkspaceButton type="button" variant="secondary" onClick={onClose}>{t("Close")}</WorkspaceButton></div>}
       </WorkspaceDialogContent>
     </Dialog>
   );

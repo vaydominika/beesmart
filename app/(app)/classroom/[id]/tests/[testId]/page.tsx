@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useRouter, useParams } from "next/navigation";
 import { TestView } from "@/components/classroom/TestView";
 import { TestScheduleControls } from "@/components/classroom/TestScheduleControls";
@@ -8,6 +10,7 @@ import { useClassroomDetail } from "@/hooks/use-classroom-detail";
 import { ClassroomDetailPageShell } from "@/components/classroom/ClassroomDetailPageShell";
 
 export default function TestPage() {
+  const t = useText();
     const router = useRouter();
     const params = useParams();
     const classroomId = params.id as string;
@@ -15,12 +18,12 @@ export default function TestPage() {
 
     const { classroom, loading, isStaff } = useClassroomDetail(classroomId);
 
-    if (loading) return <WorkspaceLoadingState className="h-full py-20" label="Loading classroom" />;
+    if (loading) return <WorkspaceLoadingState className="h-full py-20" label={t("Loading classroom")} />;
 
     if (!classroom) return null;
 
     return (
-        <ClassroomDetailPageShell classroomId={classroomId} classroomName={classroom.name} detailTitle="Test details">
+        <ClassroomDetailPageShell classroomId={classroomId} classroomName={classroom.name} detailTitle={t("Test details")}>
             <TestView classroomId={classroomId} testId={testId} isTeacher={isStaff} />
             {isStaff && (
                 <TestScheduleControls

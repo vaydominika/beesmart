@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
@@ -30,6 +32,7 @@ const feedbackEnabled = ["1", "true", "yes", "on"].includes(
 );
 
 export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
+  const t = useText();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const pathname = usePathname();
   const { openModal } = useFocus();
@@ -54,7 +57,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close menu"
+            aria-label={t("Close menu")}
             className="absolute top-4 right-4 p-2 rounded-md hover:bg-(--theme-sidebar)/80 text-(--theme-text)"
           >
             <X className="h-6 w-6" />
@@ -65,7 +68,7 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             href="/dashboard"
             prefetch={true}
             onClick={isOverlay ? onClose : undefined}
-            aria-label="Go to dashboard"
+            aria-label={t("Go to dashboard")}
             className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
           >
             <BeeSmartLogo className="h-auto w-60 md:w-[176px]" />
@@ -73,12 +76,12 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
         </div>
 
         <div className="mx-auto mb-4 w-full rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3 md:w-[168px] md:p-2">
-          <p className="text-center text-[32px] font-semibold uppercase leading-none text-[var(--app-text)] md:text-[26px]">Bee consistent</p>
+          <p className="text-center text-[32px] font-semibold uppercase leading-none text-[var(--app-text)] md:text-[26px]">{t("Bee consistent")}</p>
           <div className="mt-2 flex items-center justify-center gap-2 text-[var(--app-text)]">
             <span className="flex min-h-14 min-w-14 items-center justify-center rounded-xl bg-[var(--app-accent-soft)] px-3 text-[64px] font-bold leading-none md:text-[48px]">
               {loading && !data ? "—" : streak}
             </span>
-            <span className="text-[56px] font-bold uppercase leading-none text-[var(--app-text)] md:text-[45px]">{streak === 1 ? "day" : "days"}</span>
+            <span className="text-[56px] font-bold uppercase leading-none text-[var(--app-text)] md:text-[45px]">{streak === 1 ? t("day") : t("days")}</span>
           </div>
         </div>
       </div>
@@ -114,14 +117,14 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
                     aria-current={isActive ? "page" : undefined}
                     onClick={isOverlay ? onClose : undefined}
                     className={cn(
-                      "relative z-10 mx-6 flex h-full w-[calc(100%-3rem)] items-center justify-center px-0 text-center text-[40px] font-bold uppercase leading-none transition-colors md:mx-0 md:w-full md:justify-start md:px-4 md:text-left md:text-[36px]",
+                      "relative z-10 mx-6 flex h-full w-[calc(100%-3rem)] items-center justify-center px-0 text-center text-[40px] font-bold uppercase leading-none transition-colors md:mx-0 md:w-full md:justify-start md:px-4 md:text-left md:text-[30px]",
                       isActive && isOverlay && "rounded-xl bg-[var(--app-canvas)]",
                       isActive
                         ? "text-(--theme-text-important)"
                         : "text-(--theme-text) hover:text-(--theme-text-important)"
                     )}
                   >
-                    {item.name}
+                    {t(item.name)}
                   </Link>
                 </div>
               </li>
@@ -138,31 +141,27 @@ export function LeftSidebar({ variant = "inline", onClose }: LeftSidebarProps) {
             className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
           >
             <MessageSquareText className="h-6 w-6 md:h-5 md:w-5" />
-            FEEDBACK
-          </button>
+             {t("FEEDBACK")} </button>
         ) : null}
         <button
           onClick={openModal}
           className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
           <Lightbulb className="h-6 w-6 md:h-5 md:w-5" />
-          FOCUS
-        </button>
+           {t("FOCUS")} </button>
         <button
           onClick={openSettingsModal}
           className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
           <Settings className="h-6 w-6 md:h-5 md:w-5" />
-          SETTINGS
-        </button>
+           {t("SETTINGS")} </button>
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex min-h-8 w-full cursor-pointer items-center gap-2 uppercase text-(--theme-text) transition-colors hover:text-(--theme-text-important)"
         >
           <LogOut className="h-6 w-6 md:h-5 md:w-5" />
-          LOG OUT
-        </button>
+           {t("LOG OUT")} </button>
       </div>
 
       <FocusModal />

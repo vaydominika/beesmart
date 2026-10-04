@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { ImagePlus, MessageSquareText, Trash2 } from "lucide-react";
@@ -34,6 +36,7 @@ export function FeedbackModal({
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }) {
+  const t = useText();
   const inputRef = useRef<HTMLInputElement>(null);
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<UploadedImage[]>([]);
@@ -59,14 +62,14 @@ export function FeedbackModal({
     if (!selected.length) return;
     const remaining = MAX_IMAGES - images.length;
     if (remaining <= 0) return;
-    if (selected.length > remaining) toast.info(`You can attach up to ${MAX_IMAGES} images.`);
+    if (selected.length > remaining) toast.info(t("You can attach up to {v0} images.", { v0: MAX_IMAGES }));
 
     setUploading(true);
     setError(null);
     try {
       for (const file of selected.slice(0, remaining)) {
         if (!file.type.startsWith("image/")) {
-          toast.error(`${file.name} is not an image.`);
+          toast.error(t("{v0} is not an image.", { v0: file.name }));
           continue;
         }
         const formData = new FormData();
@@ -75,13 +78,13 @@ export function FeedbackModal({
         const response = await fetch("/api/uploads", { method: "POST", body: formData });
         const result = await response.json();
         if (!response.ok) {
-          toast.error(result.error ?? `${file.name} could not be uploaded.`);
+          toast.error(t(result.error ?? `${file.name} could not be uploaded.`));
           continue;
         }
         setImages((current) => [...current, result]);
       }
     } catch {
-      toast.error("The images could not be uploaded.");
+      toast.error(t("The images could not be uploaded."));
     } finally {
       setUploading(false);
     }
@@ -103,11 +106,11 @@ export function FeedbackModal({
       reset();
       onOpenChange(false);
       onSuccess?.();
-      toast.success("Feedback sent");
+      toast.success(t("Feedback sent"));
     } catch (submissionError) {
       const message = submissionError instanceof Error ? submissionError.message : "Feedback could not be sent";
       setError(message);
-      toast.error(message);
+      toast.error(t(message));
     } finally {
       setSubmitting(false);
     }
@@ -119,19 +122,18 @@ export function FeedbackModal({
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <MessageSquareText className="h-5 w-5" />
-            Early Access feedback
-          </WorkspaceDialogTitle>
+             {t("Early Access feedback")} </WorkspaceDialogTitle>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-5">
           <div>
-            <label htmlFor="feedback-description" className={workspaceLabelClass}>What happened?</label>
+            <label htmlFor="feedback-description" className={workspaceLabelClass}>{t("What happened?")}</label>
             <textarea
               id="feedback-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={7}
               maxLength={10_000}
-              placeholder="Describe what you noticed and what you expected to happen…"
+              placeholder={t("Describe what you noticed and what you expected to happen…")}
               className={`${workspaceFieldClass} h-auto min-h-36 w-full resize-y py-3`}
             />
           </div>
@@ -139,12 +141,12 @@ export function FeedbackModal({
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
               <div>
-                <p className={workspaceLabelClass}>Screenshots <span className="font-normal text-[var(--app-text-faint)]">Optional</span></p>
-                <p className="text-xs text-[var(--app-text-faint)]">Up to {MAX_IMAGES} images</p>
+                <p className={workspaceLabelClass}>{t("Screenshots")} <span className="font-normal text-[var(--app-text-faint)]">{t("Optional")}</span></p>
+                <p className="text-xs text-[var(--app-text-faint)]">{t("Up to")} {MAX_IMAGES}  {t("images")}</p>
               </div>
               <label className={workspaceButtonVariants({ variant: "secondary", size: "compact", className: images.length >= MAX_IMAGES ? "pointer-events-none opacity-60" : "cursor-pointer" })}>
                 <ImagePlus className="h-4 w-4" />
-                {uploading ? "Uploading…" : "Add images"}
+                {uploading ? t("Uploading…") : t("Add images")}
                 <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple onChange={uploadImages} disabled={uploading || images.length >= MAX_IMAGES} className="sr-only" />
               </label>
             </div>
@@ -156,7 +158,7 @@ export function FeedbackModal({
                     <button
                       type="button"
                       onClick={() => setImages((current) => current.filter((item) => item.uploadId !== image.uploadId))}
-                      aria-label={`Remove ${image.fileName}`}
+                      aria-label={t("Remove {v0}", { v0: image.fileName })}
                     className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-overlay)] text-[var(--app-overlay-text)] opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -167,12 +169,12 @@ export function FeedbackModal({
             ) : null}
           </div>
 
-          {error ? <WorkspaceFormMessage>{error}</WorkspaceFormMessage> : null}
+          {error ? <WorkspaceFormMessage>{t(error)}</WorkspaceFormMessage> : null}
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter>
-          <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={submitting}>Cancel</WorkspaceButton>
+          <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={submitting}>{t("Cancel")}</WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" onClick={submit} disabled={!description.trim() || uploading || submitting}>
-            {submitting ? "Sending…" : "Send feedback"}
+            {submitting ? t("Sending…") : t("Send feedback")}
           </WorkspaceButton>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>

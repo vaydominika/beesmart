@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -35,6 +37,7 @@ const sections: Array<SettingsSectionItem<ProfileSection>> = [
 ];
 
 export function ProfileSettingsModal() {
+  const t = useText();
   const router = useRouter();
   const {
     isProfileModalOpen,
@@ -95,7 +98,7 @@ export function ProfileSettingsModal() {
     } catch (uploadFailure) {
       const message = uploadFailure instanceof Error ? uploadFailure.message : "Avatar upload failed";
       setUploadError(message);
-      toast.error(message);
+      toast.error(t(message));
     } finally {
       setUploadingAvatar(false);
       event.target.value = "";
@@ -112,7 +115,7 @@ export function ProfileSettingsModal() {
     } catch (uploadFailure) {
       const message = uploadFailure instanceof Error ? uploadFailure.message : "Banner upload failed";
       setUploadError(message);
-      toast.error(message);
+      toast.error(t(message));
     } finally {
       setUploadingBanner(false);
       event.target.value = "";
@@ -124,12 +127,12 @@ export function ProfileSettingsModal() {
     setUploadError(null);
     if (newPassword && newPassword !== confirmPassword) {
       setActiveSection("password");
-      setError("New passwords don't match.");
+      setError(t("New passwords don't match."));
       return;
     }
     if (newPassword && newPassword.length < 12) {
       setActiveSection("password");
-      setError("New password must be at least 12 characters.");
+      setError(t("New password must be at least 12 characters."));
       return;
     }
     setSaving(true);
@@ -149,15 +152,15 @@ export function ProfileSettingsModal() {
         throw new Error(result.error ?? "Failed to update profile");
       }
       if (!(await saveSettingsToServer({ profileVisibility, activitySharing }))) {
-        throw new Error("Profile updated, but privacy settings could not be saved.");
+        throw new Error(t("Profile updated, but privacy settings could not be saved."));
       }
       await refetch();
-      toast.success("Profile updated");
+      toast.success(t("Profile updated"));
       closeProfileModal();
     } catch (saveFailure) {
       const message = saveFailure instanceof Error ? saveFailure.message : "Something went wrong";
       setError(message);
-      toast.error(message);
+      toast.error(t(message));
     } finally {
       setSaving(false);
     }
@@ -171,32 +174,31 @@ export function ProfileSettingsModal() {
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <UserRound className="h-5 w-5" />
-            Profile settings
-          </WorkspaceDialogTitle>
+             {t("Profile settings")} </WorkspaceDialogTitle>
         </WorkspaceDialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
-          <SettingsSectionNav ariaLabel="Profile settings sections" items={sections} value={activeSection} onValueChange={setActiveSection} footer={user?.id ? <button type="button" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="mt-auto hidden items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] sm:flex"><ExternalLink className="h-3.5 w-3.5" />View profile</button> : null} />
+          <SettingsSectionNav ariaLabel={t("Profile settings sections")} items={sections} value={activeSection} onValueChange={setActiveSection} footer={user?.id ? <button type="button" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="mt-auto hidden items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--app-text-muted)] hover:bg-[var(--app-surface)] hover:text-[var(--app-text)] sm:flex"><ExternalLink className="h-3.5 w-3.5" />{t("View profile")}</button> : null} />
 
           <WorkspaceDialogBody className="w-full">
             {activeSection === "profile" ? (
               <section aria-labelledby="profile-heading" className="space-y-5">
-                <h3 id="profile-heading" className="text-base font-semibold text-[var(--app-text)]">Profile</h3>
-                <div><label htmlFor="profile-name" className={workspaceLabelClass}>Name</label><Input id="profile-name" type="text" value={name} onChange={(event) => setName(event.target.value)} className={cn(workspaceFieldClass, "w-full")} placeholder="Your name" /></div>
-                {user?.id ? <WorkspaceButton type="button" variant="ghost" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="sm:hidden"><ExternalLink className="h-4 w-4" />View profile</WorkspaceButton> : null}
+                <h3 id="profile-heading" className="text-base font-semibold text-[var(--app-text)]">{t("Profile")}</h3>
+                <div><label htmlFor="profile-name" className={workspaceLabelClass}>{t("Name")}</label><Input id="profile-name" type="text" value={name} onChange={(event) => setName(event.target.value)} className={cn(workspaceFieldClass, "w-full")} placeholder={t("Your name")} /></div>
+                {user?.id ? <WorkspaceButton type="button" variant="ghost" onClick={() => { closeProfileModal(); router.push(`/profile/${user.id}`); }} className="sm:hidden"><ExternalLink className="h-4 w-4" />{t("View profile")}</WorkspaceButton> : null}
               </section>
             ) : null}
 
             {activeSection === "images" ? (
               <section aria-labelledby="images-heading" className="space-y-6">
-                <h3 id="images-heading" className="text-base font-semibold text-[var(--app-text)]">Images</h3>
+                <h3 id="images-heading" className="text-base font-semibold text-[var(--app-text)]">{t("Images")}</h3>
                 <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-muted)] p-4">
-                  <p className={workspaceLabelClass}>Profile picture</p>
+                  <p className={workspaceLabelClass}>{t("Profile picture")}</p>
                   <div className="flex items-center gap-4">
                     <div className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-(--theme-sidebar) bg-[var(--app-surface)]">
                       <Image
                         src={profileImageUrl(avatarUrl)}
-                        alt="Profile avatar"
+                        alt={t("Profile avatar")}
                         width={64}
                         height={64}
                         className="h-full w-full object-cover object-center"
@@ -206,36 +208,36 @@ export function ProfileSettingsModal() {
                     <div>
                       <Input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-describedby="avatar-upload-help" onChange={handleAvatarFileChange} />
                       <WorkspaceButton type="button" variant="secondary" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar} aria-describedby="avatar-upload-help">
-                        <Upload className="h-4 w-4" />{uploadingAvatar ? "Uploading…" : "Upload avatar"}
+                        <Upload className="h-4 w-4" />{uploadingAvatar ? t("Uploading…") : t("Upload avatar")}
                       </WorkspaceButton>
-                      <p id="avatar-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">JPG, PNG, WebP or GIF · Max 2 MB</p>
+                      <p id="avatar-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">{t("JPG, PNG, WebP or GIF · Max 2 MB")}</p>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <p className={workspaceLabelClass}>Banner</p>
-                  <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)]"><Image src={bannerImageUrl || "/images/default_banner.jpg"} alt="Banner preview" fill sizes="(max-width: 768px) 100vw, 512px" className={bannerImageUrl ? "object-cover object-center" : "object-cover object-top"} unoptimized /></div>
+                  <p className={workspaceLabelClass}>{t("Banner")}</p>
+                  <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-[var(--app-border)] bg-[var(--app-accent-soft)]"><Image src={bannerImageUrl || "/images/default_banner.jpg"} alt={t("Banner preview")} fill sizes="(max-width: 768px) 100vw, 512px" className={bannerImageUrl ? "object-cover object-center" : "object-cover object-top"} unoptimized /></div>
                   <Input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" aria-describedby="banner-upload-help" onChange={handleBannerFileChange} />
-                  <WorkspaceButton type="button" variant="secondary" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner} aria-describedby="banner-upload-help" className="mt-3"><Upload className="h-4 w-4" />{uploadingBanner ? "Uploading…" : "Upload banner"}</WorkspaceButton>
-                  <p id="banner-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">JPG, PNG, WebP or GIF · Max 4 MB</p>
+                  <WorkspaceButton type="button" variant="secondary" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner} aria-describedby="banner-upload-help" className="mt-3"><Upload className="h-4 w-4" />{uploadingBanner ? t("Uploading…") : t("Upload banner")}</WorkspaceButton>
+                  <p id="banner-upload-help" className="mt-2 text-xs text-[var(--app-text-muted)]">{t("JPG, PNG, WebP or GIF · Max 4 MB")}</p>
                 </div>
               </section>
             ) : null}
 
             {activeSection === "privacy" ? (
               <section aria-labelledby="privacy-heading" className="space-y-5">
-                <h3 id="privacy-heading" className="text-base font-semibold text-[var(--app-text)]">Privacy</h3>
-                <div><p className={workspaceLabelClass}>Profile visibility</p><WorkspaceTabs ariaLabel="Profile visibility" items={[{ value: "public", label: "Public" }, { value: "private", label: "Private" }]} value={profileVisibility} onValueChange={setProfileVisibility} fill /></div>
-                <WorkspaceSwitchRow id="activity-sharing" label="Share learning activity" checked={activitySharing} onCheckedChange={setActivitySharing} />
+                <h3 id="privacy-heading" className="text-base font-semibold text-[var(--app-text)]">{t("Privacy")}</h3>
+                <div><p className={workspaceLabelClass}>{t("Profile visibility")}</p><WorkspaceTabs ariaLabel={t("Profile visibility")} items={[{ value: "public", label: t("Public") }, { value: "private", label: t("Private") }]} value={profileVisibility} onValueChange={setProfileVisibility} fill /></div>
+                <WorkspaceSwitchRow id="activity-sharing" label={t("Share learning activity")} checked={activitySharing} onCheckedChange={setActivitySharing} />
               </section>
             ) : null}
 
             {activeSection === "password" ? (
               <section aria-labelledby="password-heading" className="space-y-4">
-                <div><h3 id="password-heading" className="text-base font-semibold text-[var(--app-text)]">Password</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">Leave these fields blank to keep your current password.</p></div>
-                <PasswordField id="current-password" label="Current password" value={currentPassword} onChange={setCurrentPassword} />
-                <PasswordField id="new-password" label="New password" value={newPassword} onChange={setNewPassword} />
-                <PasswordField id="confirm-password" label="Confirm new password" value={confirmPassword} onChange={setConfirmPassword} />
+                <div><h3 id="password-heading" className="text-base font-semibold text-[var(--app-text)]">{t("Password")}</h3><p className="mt-1 text-sm text-[var(--app-text-muted)]">{t("Leave these fields blank to keep your current password.")}</p></div>
+                <PasswordField id="current-password" label={t("Current password")} value={currentPassword} onChange={setCurrentPassword} />
+                <PasswordField id="new-password" label={t("New password")} value={newPassword} onChange={setNewPassword} />
+                <PasswordField id="confirm-password" label={t("Confirm new password")} value={confirmPassword} onChange={setConfirmPassword} />
               </section>
             ) : null}
 
@@ -244,8 +246,8 @@ export function ProfileSettingsModal() {
         </div>
 
         <WorkspaceDialogFooter>
-          <WorkspaceButton type="button" variant="secondary" onClick={closeProfileModal} disabled={busy}>Cancel</WorkspaceButton>
-          <WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={busy}>{saving ? "Saving…" : "Save changes"}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="secondary" onClick={closeProfileModal} disabled={busy}>{t("Cancel")}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="primary" onClick={handleSave} disabled={busy}>{saving ? t("Saving…") : t("Save changes")}</WorkspaceButton>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
     </Dialog>

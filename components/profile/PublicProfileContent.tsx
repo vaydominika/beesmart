@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -47,8 +50,8 @@ export type PublicProfileData = {
   activity: ProfileActivity[];
 };
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
+function formatDate(value: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -66,6 +69,8 @@ function MoreToggle({
   label: string;
   onClick: () => void;
 }) {
+  const locale = useLocale();
+  const t = useText();
   if (!expanded && hiddenCount <= 0) return null;
 
   return (
@@ -76,7 +81,7 @@ function MoreToggle({
       className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-xs font-semibold text-[var(--app-text-muted)] transition-colors hover:border-[var(--app-border-strong)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
     >
       {expanded ? <X className="h-3.5 w-3.5" /> : <Ellipsis className="h-4 w-4" />}
-      {expanded ? `Close ${label}` : `${hiddenCount} more`}
+      {expanded ? t("Close {v0}", { v0: label }) : t("{v0} more", { v0: hiddenCount })}
     </button>
   );
 }
@@ -108,6 +113,8 @@ function SectionHeading({
 }
 
 export function PublicProfileContent({ profile }: { profile: PublicProfileData }) {
+  const locale = useLocale();
+  const t = useText();
   const [showAllCourses, setShowAllCourses] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
   const visibleCourses = showAllCourses ? profile.courses : profile.courses.slice(0, COURSE_PREVIEW_LIMIT);
@@ -138,7 +145,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                 <div className="relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-[var(--app-surface)] bg-[var(--app-surface)]">
                   <Image
                     src={profileImageUrl(profile.image)}
-                    alt={profile.name || "Profile"}
+                    alt={profile.name || t("Profile")}
                     width={64}
                     height={64}
                     className="h-full w-full object-cover object-center"
@@ -148,10 +155,10 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
               </div>
               <div className="min-w-0 pb-0.5">
                 <h1 className="truncate font-[var(--font-barlow-condensed)] text-2xl leading-none tracking-[0.01em] text-[var(--app-text)] md:text-[32px]">
-                  {profile.name || "BeeSmart learner"}
+                  {profile.name || t("BeeSmart learner")}
                 </h1>
                 <p className="mt-1 text-xs font-medium text-[var(--app-text-muted)]">
-                  Learning with BeeSmart since {formatDate(profile.joinedAt)}
+                   {t("Learning with BeeSmart since")} {formatDate(profile.joinedAt, locale)}
                 </p>
               </div>
             </div>
@@ -159,8 +166,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
             {profile.isOwner && profile.isPrivate && (
               <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--app-border)] bg-[var(--app-accent-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--app-accent-text)]">
                 <LockKeyhole className="h-3.5 w-3.5" />
-                Your profile is private
-              </div>
+                 {t("Your profile is private")} </div>
             )}
           </div>
         </section>
@@ -169,7 +175,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
           <section className="flex min-h-0 flex-col rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 md:p-5">
             <SectionHeading
               icon={<BookOpen className="h-6 w-6" />}
-              title="Published courses"
+              title={t("Published courses")}
               count={profile.courses.length}
             />
 
@@ -193,9 +199,9 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                         <div className="min-w-0 flex-1">
                           <p className="line-clamp-1 text-sm font-semibold text-[var(--app-text)]">{course.title}</p>
                           <p className="mt-1 line-clamp-1 text-[11px] leading-4 text-[var(--app-text-muted)]">
-                            {course.description || "Ready to explore"}
+                            {course.description || t("Ready to explore")}
                           </p>
-                          <p className="mt-1 text-[10px] font-medium text-[var(--app-text-faint)]">Updated {formatDate(course.updatedAt)}</p>
+                          <p className="mt-1 text-[10px] font-medium text-[var(--app-text-faint)]">{t("Updated")} {formatDate(course.updatedAt, locale)}</p>
                         </div>
                         <ExternalLink className="h-3.5 w-3.5 shrink-0 text-[var(--app-text-faint)] transition-colors group-hover:text-[var(--app-text)]" />
                       </Link>
@@ -205,14 +211,13 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                 <MoreToggle
                   expanded={showAllCourses}
                   hiddenCount={profile.courses.length - COURSE_PREVIEW_LIMIT}
-                  label="courses"
+                  label={t("courses")}
                   onClick={() => setShowAllCourses((current) => !current)}
                 />
               </>
             ) : (
               <div className="flex min-h-52 flex-1 items-center justify-center px-6 text-center text-sm text-[var(--app-text-muted)]">
-                No public courses yet.
-              </div>
+                 {t("No public courses yet.")} </div>
             )}
           </section>
 
@@ -220,7 +225,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
             <section className="flex min-h-0 flex-col rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 md:p-5">
               <SectionHeading
                 icon={<Sparkles className="h-6 w-6" />}
-                title="Recent learning"
+                title={t("Recent learning")}
                 count={profile.activity.length}
               />
 
@@ -237,7 +242,7 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                                 {item.text}
                               </p>
                               <p className="mt-1 text-[10px] font-medium text-[var(--app-text-faint)]">
-                                {formatDate(item.createdAt)}
+                                {formatDate(item.createdAt, locale)}
                               </p>
                             </div>
                           </>
@@ -266,14 +271,13 @@ export function PublicProfileContent({ profile }: { profile: PublicProfileData }
                   <MoreToggle
                     expanded={showAllActivity}
                     hiddenCount={profile.activity.length - ACTIVITY_PREVIEW_LIMIT}
-                    label="activity"
+                    label={t("activity")}
                     onClick={() => setShowAllActivity((current) => !current)}
                   />
                 </>
               ) : (
                 <div className="flex min-h-52 flex-1 items-center justify-center px-6 text-center text-sm text-[var(--app-text-muted)]">
-                  No shared activity yet.
-                </div>
+                   {t("No shared activity yet.")} </div>
               )}
             </section>
           )}

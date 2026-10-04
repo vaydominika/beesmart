@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useRef } from "react";
 import { FileText, Upload } from "lucide-react";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -13,13 +15,14 @@ type CourseSourceFilePickerProps = {
 };
 
 export function CourseSourceFilePicker({ file, onFileChange, accept = ".pdf,.doc,.docx,image/*", className }: CourseSourceFilePickerProps) {
+  const t = useText();
   const inputRef = useRef<HTMLInputElement>(null);
   return (
     <>
       <input ref={inputRef} type="file" accept={accept} onChange={(event) => onFileChange(event.target.files?.[0] ?? null)} className="sr-only" />
       <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => inputRef.current?.click()} className={cn("max-w-full justify-start border-dashed", className)}>
         {file ? <FileText className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
-        <span className="min-w-0 flex-1 truncate">{file?.name ?? "Choose a source file"}</span>
+        <span className="min-w-0 flex-1 truncate">{file?.name ?? t("Choose a source file")}</span>
       </WorkspaceButton>
     </>
   );

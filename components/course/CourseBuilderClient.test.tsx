@@ -1,4 +1,4 @@
-import { fireEvent, render as testingRender, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render as testingRender, screen, waitFor } from "@/test-utils/render";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import CourseBuilderClient from "./CourseBuilderClient";

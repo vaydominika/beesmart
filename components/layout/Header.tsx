@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { PanelLeft, PanelRight } from "lucide-react";
 import Link from "next/link";
 import { useFocus } from "@/components/focus/FocusProvider";
@@ -10,6 +12,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 export function Header() {
+  const t = useText();
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const isClassroom = pathname.startsWith("/classroom");
@@ -33,11 +36,11 @@ export function Header() {
       <header className={cn(
         "h-16 shrink-0 border-b border-[var(--app-border)] bg-(--theme-sidebar) px-3",
       )}>
-        <nav aria-label="Mobile application navigation" className="grid h-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3">
+        <nav aria-label={t("Mobile application navigation")} className="grid h-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3">
           <button
             type="button"
             onClick={toggleLeftSidebar}
-            aria-label="Open menu"
+            aria-label={t("Open menu")}
             aria-expanded={isLeftSidebarOpen}
             className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", quietHoverClass)}
           >
@@ -46,7 +49,7 @@ export function Header() {
           {isSessionActive ? (
             <div className="flex min-w-0 items-center justify-center gap-2">
               <span className="text-sm font-bold uppercase text-[var(--app-text)]">
-                {currentMode === "active" ? "FOCUS" : "BREAK"}
+                {currentMode === "active" ? t("FOCUS") : t("BREAK")}
               </span>
               <span className="text-lg font-bold tabular-nums text-[var(--app-text)]">
                 {formatTime(timeRemaining)}
@@ -55,7 +58,7 @@ export function Header() {
           ) : (
             <Link
               href="/dashboard"
-              aria-label="Go to dashboard"
+              aria-label={t("Go to dashboard")}
               className="w-24 justify-self-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]"
             >
               <BeeSmartLogo className="block h-auto w-full" />
@@ -64,7 +67,7 @@ export function Header() {
           <button
             type="button"
             onClick={toggleRightSidebar}
-            aria-label="Open calendar and profile"
+            aria-label={t("Open calendar and profile")}
             aria-expanded={isRightSidebarOpen}
             className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-focus-ring)]", quietHoverClass)}
           >

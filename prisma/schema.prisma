@@ -153,6 +153,7 @@ model User {
   updatedAt      DateTime  @updatedAt
 
   // Preferences (formerly UserSettings)
+  locale                          String            @default("en")
   theme                           String            @default("bee")
   courseCreationTutorialCompleted Boolean           @default(false)
   defaultActiveMinutes            Int               @default(45)

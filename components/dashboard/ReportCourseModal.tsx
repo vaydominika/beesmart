@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { Flag } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
@@ -37,6 +39,7 @@ const REPORT_REASONS: readonly WorkspaceSelectOption<ReportReason>[] = [
 ];
 
 export function ReportCourseModal({ open, onOpenChange, courseId, courseTitle, onSuccess }: ReportCourseModalProps) {
+  const t = useText();
   const [reason, setReason] = useState<ReportReason>("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,13 +64,13 @@ export function ReportCourseModal({ open, onOpenChange, courseId, courseTitle, o
       const result = await response.json();
       if (!result.ok) throw new Error(result.error ?? "Failed to submit report");
       reset();
-      toast.success("Report submitted");
+      toast.success(t("Report submitted"));
       onOpenChange(false);
       onSuccess?.();
     } catch (submitFailure) {
       const message = submitFailure instanceof Error ? submitFailure.message : "Failed to submit report";
       setError(message);
-      toast.error(message);
+      toast.error(t(message));
     } finally {
       setLoading(false);
     }
@@ -84,24 +87,23 @@ export function ReportCourseModal({ open, onOpenChange, courseId, courseTitle, o
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <Flag className="h-5 w-5" />
-            Report course
-          </WorkspaceDialogTitle>
-          <WorkspaceDialogDescription>Tell us what needs review in “{courseTitle || "this course"}”.</WorkspaceDialogDescription>
+             {t("Report course")} </WorkspaceDialogTitle>
+          <WorkspaceDialogDescription>{t("Tell us what needs review in “")}{courseTitle || t("this course")}”.</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-5">
           <div>
-            <label id="report-reason-label" className={workspaceLabelClass}>Reason</label>
-            <WorkspaceSelect value={reason} options={REPORT_REASONS} onValueChange={setReason} ariaLabel="Report reason" className="w-full" />
+            <label id="report-reason-label" className={workspaceLabelClass}>{t("Reason")}</label>
+            <WorkspaceSelect value={reason} options={REPORT_REASONS} translateLabels onValueChange={setReason} ariaLabel={t("Report reason")} className="w-full" />
           </div>
           <div>
-            <label htmlFor="report-details" className={workspaceLabelClass}>Additional details <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label>
-            <textarea id="report-details" value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Describe the issue and where it appears…" className={`${workspaceFieldClass} h-auto min-h-28 w-full resize-y py-3`} />
+            <label htmlFor="report-details" className={workspaceLabelClass}>{t("Additional details")} <span className="font-normal text-[var(--app-text-faint)]">{t("Optional")}</span></label>
+            <textarea id="report-details" value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder={t("Describe the issue and where it appears…")} className={`${workspaceFieldClass} h-auto min-h-28 w-full resize-y py-3`} />
           </div>
-          {error ? <WorkspaceFormMessage>{error}</WorkspaceFormMessage> : null}
+          {error ? <WorkspaceFormMessage>{t(error)}</WorkspaceFormMessage> : null}
         </WorkspaceDialogBody>
         <WorkspaceDialogFooter>
-          <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={loading}>Cancel</WorkspaceButton>
-          <WorkspaceButton type="button" variant="danger" onClick={handleSubmit} disabled={!reason || loading}>{loading ? "Submitting…" : "Submit report"}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={loading}>{t("Cancel")}</WorkspaceButton>
+          <WorkspaceButton type="button" variant="danger" onClick={handleSubmit} disabled={!reason || loading}>{loading ? t("Submitting…") : t("Submit report")}</WorkspaceButton>
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
     </Dialog>

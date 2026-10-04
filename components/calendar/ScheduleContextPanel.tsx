@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import { ArrowLeft, CalendarPlus, Clock3, LockKeyhole, Pencil, Repeat2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -69,6 +73,8 @@ function ScheduleContextPanelContent({
   onSave,
   onDelete,
 }: ScheduleContextPanelProps) {
+  const locale = useLocale();
+  const t = useText();
   const { reminderNotifications } = useSettings();
   const dayEvents = eventsForDate(events, selectedDate);
   const editingEvent = editor?.mode === "edit" ? selectedEvent : null;
@@ -91,10 +97,10 @@ function ScheduleContextPanelContent({
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex items-center gap-3 border-b border-[var(--schedule-line)] px-4 py-2.5">
-          <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={onBack} aria-label="Back to schedule">
+          <WorkspaceButton type="button" variant="secondary" size="icon-compact" onClick={onBack} aria-label={t("Back to schedule")}>
             <ArrowLeft className="h-4 w-4" />
           </WorkspaceButton>
-          <h2 className="text-sm font-semibold text-[var(--schedule-text)]">{editor.mode === "edit" ? "Edit event" : "New event"}</h2>
+          <h2 className="text-sm font-semibold text-[var(--schedule-text)]">{editor.mode === "edit" ? t("Edit event") : t("New event")}</h2>
         </div>
         <div className="schedule-scroll flex-1 overflow-y-auto px-4 py-2.5">
           <form
@@ -150,33 +156,33 @@ function ScheduleContextPanelContent({
             }}
           >
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Title</span>
-              <Input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Event title" className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
+              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("Title")}</span>
+              <Input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} placeholder={t("Event title")} className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Date</span>
+              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("Date")}</span>
               <Input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Repeats</span>
-              <WorkspaceSelect ariaLabel="Repeats" value={recurrence} options={RECURRENCE_OPTIONS} onValueChange={setRecurrence} triggerIcon={Repeat2} className="h-10 w-full rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)]" />
+              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("Repeats")}</span>
+              <WorkspaceSelect ariaLabel={t("Repeats")} value={recurrence} options={RECURRENCE_OPTIONS} translateLabels onValueChange={setRecurrence} triggerIcon={Repeat2} className="h-10 w-full rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)]" />
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Description</span>
-              <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional notes" rows={2} className="w-full resize-none rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-sm text-[var(--schedule-text)] outline-none placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-2 focus:ring-[var(--schedule-focus-ring)]" />
+              <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("Description")}</span>
+              <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder={t("Optional notes")} rows={2} className="w-full resize-none rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-sm text-[var(--schedule-text)] outline-none placeholder:text-[var(--schedule-text-faint)] focus:border-[var(--schedule-focus-border)] focus:ring-2 focus:ring-[var(--schedule-focus-ring)]" />
             </label>
             <div className="flex items-center justify-between rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2">
-              <span className="text-sm font-medium text-[var(--schedule-text)]">All day</span>
-              <Switch checked={isAllDay} onCheckedChange={setIsAllDay} aria-label="All day" className="data-[state=checked]:bg-[var(--schedule-focus-border)] data-[state=unchecked]:bg-[var(--schedule-line-strong)]" />
+              <span className="text-sm font-medium text-[var(--schedule-text)]">{t("All day")}</span>
+              <Switch checked={isAllDay} onCheckedChange={setIsAllDay} aria-label={t("All day")} className="data-[state=checked]:bg-[var(--schedule-focus-border)] data-[state=unchecked]:bg-[var(--schedule-line-strong)]" />
             </div>
             {!isAllDay && (
               <div className="grid grid-cols-2 gap-3">
                 <label>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">Start</span>
+                  <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("Start")}</span>
                   <Input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">End</span>
+                  <span className="mb-1 block text-xs font-semibold text-[var(--schedule-text-muted)]">{t("End")}</span>
                   <Input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="h-10 rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] text-sm font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
                 </label>
               </div>
@@ -184,13 +190,13 @@ function ScheduleContextPanelContent({
             {recurrence === "NONE" ? (
               <EventReminderFields enabled={reminderEnabled} onEnabledChange={setReminderEnabled} date={reminderDate} onDateChange={setReminderDate} time={reminderTime} onTimeChange={setReminderTime} notificationsEnabled={reminderNotifications} maxDate={eventDate} className="rounded-lg border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2.5" inputClassName="h-9 rounded-lg border-[var(--schedule-line)] bg-[var(--app-surface)] text-xs font-medium focus-visible:border-[var(--schedule-focus-border)] focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-ring)]" />
             ) : (
-              <p className="rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-xs text-[var(--schedule-text-muted)]">Reminders are available for one-time events.</p>
+              <p className="rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-3 py-2 text-xs text-[var(--schedule-text-muted)]">{t("Reminders are available for one-time events.")}</p>
             )}
             <EventColorPicker value={color} onValueChange={setColor} compact />
-            {validation && <p role="alert" className="rounded-xl bg-[var(--schedule-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--schedule-danger)]">{validation}</p>}
+            {validation && <p role="alert" className="rounded-xl bg-[var(--schedule-danger-soft)] px-3 py-2 text-sm font-medium text-[var(--schedule-danger)]">{t(validation)}</p>}
             <div className="flex gap-2">
-              <WorkspaceButton type="button" variant="secondary" onClick={onBack} className="flex-1">Cancel</WorkspaceButton>
-              <WorkspaceButton type="submit" variant="primary" disabled={saving} className="flex-1">{saving ? "Saving…" : editor.mode === "edit" ? "Save changes" : "Add event"}</WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" onClick={onBack} className="flex-1">{t("Cancel")}</WorkspaceButton>
+              <WorkspaceButton type="submit" variant="primary" disabled={saving} className="flex-1">{saving ? t("Saving…") : editor.mode === "edit" ? t("Save changes") : t("Add event")}</WorkspaceButton>
             </div>
           </form>
         </div>
@@ -204,27 +210,27 @@ function ScheduleContextPanelContent({
     return (
       <div className="flex h-full min-h-0 flex-col">
         <div className="flex items-center justify-between border-b border-[var(--schedule-line)] px-5 py-4">
-          <WorkspaceButton type="button" variant="ghost" size="compact" onClick={onBack}><ArrowLeft className="h-4 w-4" />Schedule</WorkspaceButton>
+          <WorkspaceButton type="button" variant="ghost" size="compact" onClick={onBack}><ArrowLeft className="h-4 w-4" />{t("Schedule")}</WorkspaceButton>
           {selectedEvent.canEdit !== false && (
             <div className="flex gap-2">
-              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onStartEdit(selectedEvent)} aria-label={`Edit ${itemLabel}`}><Pencil className="h-4 w-4" /></WorkspaceButton>
-              <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label={`Delete ${itemLabel}`}><Trash2 className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => onStartEdit(selectedEvent)} aria-label={t("Edit {v0}", { v0: itemLabel })}><Pencil className="h-4 w-4" /></WorkspaceButton>
+              <WorkspaceButton type="button" variant="danger" size="icon" onClick={() => onDelete(selectedEvent)} disabled={deleting} aria-label={t("Delete {v0}", { v0: itemLabel })}><Trash2 className="h-4 w-4" /></WorkspaceButton>
             </div>
           )}
         </div>
         <div className="schedule-scroll flex-1 overflow-y-auto px-5 py-5">
           <h2 className="text-xl font-semibold leading-tight text-[var(--schedule-text)]">{selectedEvent.title}</h2>
-          <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate))}</p>
+          <p className="mt-1.5 text-[13px] leading-5 text-[var(--schedule-text-muted)]">{formatLongDate(new Date(selectedEvent.startDate), { locale })}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-          <Tooltip><TooltipTrigger asChild><span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(selectedEvent)}</TooltipContent></Tooltip>
-          <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? eventTimeLabel(selectedEvent) : `${selectedEvent.startTime || "No start"}${selectedEvent.endTime ? `–${selectedEvent.endTime}` : ""}`}</span>
-          {selectedEvent.recurrencePattern && <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-2.5 text-[11px] font-semibold leading-none text-[var(--schedule-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{recurrenceLabel(selectedEvent.recurrencePattern)}</span>}
+          <Tooltip><TooltipTrigger asChild><span className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><EventSourceIcon source={selectedEvent.source} /><span className="truncate">{eventSourceLabel(selectedEvent, t)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(selectedEvent, t)}</TooltipContent></Tooltip>
+          <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--app-event-6)_65%,var(--schedule-line))] bg-[var(--app-event-6)] px-2.5 text-[11px] font-semibold leading-none text-[var(--app-event-text)]"><Clock3 className="h-3.5 w-3.5" />{selectedEvent.isAllDay ? eventTimeLabel(selectedEvent, locale, t) : t("{v0}{v1}", { v0: selectedEvent.startTime || t("No start"), v1: selectedEvent.endTime ? `–${selectedEvent.endTime}` : "" })}</span>
+          {selectedEvent.recurrencePattern && <span className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] px-2.5 text-[11px] font-semibold leading-none text-[var(--schedule-text-muted)]"><Repeat2 className="h-3.5 w-3.5" />{t(recurrenceLabel(selectedEvent.recurrencePattern))}</span>}
           </div>
           {selectedEvent.description && <p className="mt-5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--schedule-text-muted)]">{selectedEvent.description}</p>}
           {selectedEvent.canEdit === false && (
             <div className="mt-6 flex gap-3 rounded-xl border border-[var(--schedule-line)] bg-[var(--schedule-surface-muted)] p-3 text-sm text-[var(--schedule-text-muted)]">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>This event is managed by your teacher. You can view it here, but you cannot change it.</p>
+              <p>{t("This event is managed by your teacher. You can view it here, but you cannot change it.")}</p>
             </div>
           )}
         </div>
@@ -236,10 +242,10 @@ function ScheduleContextPanelContent({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-start justify-between border-b border-[var(--schedule-line)] px-5 py-4">
         <div>
-          <h2 className="text-base font-semibold text-[var(--schedule-text)]">{selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h2>
-          <p className="mt-0.5 text-xs text-[var(--schedule-text-muted)]">{dayEvents.length ? `${dayEvents.length} ${dayEvents.length === 1 ? "event" : "events"}` : "No events yet"}</p>
+          <h2 className="text-base font-semibold text-[var(--schedule-text)]">{selectedDate.toLocaleDateString(locale, { weekday: "long", month: "long", day: "numeric" })}</h2>
+          <p className="mt-0.5 text-xs text-[var(--schedule-text-muted)]">{dayEvents.length ? t("{v0} {v1}", { v0: dayEvents.length, v1: dayEvents.length === 1 ? t("event") : "events" }) : t("No events yet")}</p>
         </div>
-        <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => onStartCreate(selectedDate)} aria-label="New event"><CalendarPlus className="h-4 w-4" /></WorkspaceButton>
+        <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => onStartCreate(selectedDate)} aria-label={t("New event")}><CalendarPlus className="h-4 w-4" /></WorkspaceButton>
       </div>
       <div className="schedule-scroll flex-1 overflow-y-auto p-3">
         {dayEvents.length ? (
@@ -257,15 +263,15 @@ function ScheduleContextPanelContent({
                     <span className="truncate text-sm font-semibold text-[var(--schedule-text)]">{event.title}</span>
                     {event.canEdit === false && <LockKeyhole className="h-3.5 w-3.5 shrink-0 text-[var(--schedule-text-faint)]" />}
                   </div>
-                  <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? eventTimeLabel(event) : `${event.startTime || "—"}${event.endTime ? `–${event.endTime}` : ""}`}</p>
-                  <Tooltip><TooltipTrigger asChild><span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]"><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(event)}</TooltipContent></Tooltip>
+                  <p className="mt-1 font-mono text-[11px] text-[var(--schedule-text-muted)]">{event.isAllDay ? eventTimeLabel(event, locale, t) : t("{v0}{v1}", { v0: event.startTime || "—", v1: event.endTime ? `–${event.endTime}` : "" })}</p>
+                  <Tooltip><TooltipTrigger asChild><span className="mt-2 inline-flex max-w-full items-center gap-1 text-[11px] font-medium text-[var(--schedule-text-faint)]"><EventSourceIcon source={event.source} /><span className="truncate">{eventSourceLabel(event, t)}</span></span></TooltipTrigger><TooltipContent>{eventSourceLabel(event, t)}</TooltipContent></Tooltip>
                 </div>
               </button>
             ))}
           </div>
         ) : (
           <div className="flex h-full min-h-52 flex-col items-center justify-center px-3 text-center">
-            <p className="text-sm font-medium text-[var(--schedule-text)]">Nothing planned for this day</p>
+            <p className="text-sm font-medium text-[var(--schedule-text)]">{t("Nothing planned for this day")}</p>
           </div>
         )}
       </div>

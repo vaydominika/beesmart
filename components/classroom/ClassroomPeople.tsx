@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -46,6 +48,7 @@ const ROLE_OPTIONS: Array<{ value: ClassroomRole; label: string }> = [
 const roleLabel = (role: ClassroomRole) => ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role;
 
 export function ClassroomPeople({ classroomId, isTeacher }: Props) {
+  const t = useText();
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState(true);
     const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -77,13 +80,13 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                 body: JSON.stringify({ memberId, role }),
             });
             if (!response.ok) {
-                toast.error((await response.json().catch(() => ({}))).error || "Failed to change role.");
+                toast.error(t((await response.json().catch(() => ({}))).error || "Failed to change role."));
                 return;
             }
-            toast.success("Role updated.");
+            toast.success(t("Role updated."));
             await fetchPeople();
         } catch {
-            toast.error("Failed to change role.");
+            toast.error(t("Failed to change role."));
         } finally {
             setMenuOpen(null);
         }
@@ -97,13 +100,13 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                 body: JSON.stringify({ memberId }),
             });
             if (!response.ok) {
-                toast.error((await response.json().catch(() => ({}))).error || "Failed to remove member.");
+                toast.error(t((await response.json().catch(() => ({}))).error || "Failed to remove member."));
                 return;
             }
-            toast.success("Member removed.");
+            toast.success(t("Member removed."));
             await fetchPeople();
         } catch {
-            toast.error("Failed to remove member.");
+            toast.error(t("Failed to remove member."));
         } finally {
             setMenuOpen(null);
         }
@@ -120,17 +123,17 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok) {
-                toast.error(result.error || "Could not add this teacher.");
+                toast.error(t(result.error || "Could not add this teacher."));
                 return;
             }
 
-            toast.success(`${roleLabel(memberRole)} added.`);
+            toast.success(t("{v0} added.", { v0: roleLabel(memberRole) }));
             setMemberEmail("");
             setMemberRole("TEACHER");
             setAddMemberOpen(false);
             await fetchPeople();
         } catch {
-            toast.error("Could not add this teacher.");
+            toast.error(t("Could not add this teacher."));
         } finally {
             setAddingMember(false);
         }
@@ -150,7 +153,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                     <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-(--classroom-surface-muted)">
                         <Image
                             src={profileImageUrl(member.user.image)}
-                            alt={`${member.user.name}'s profile picture`}
+                            alt={t("{v0}'s profile picture", { v0: member.user.name })}
                             width={40}
                             height={40}
                             className="h-full w-full object-cover object-center"
@@ -168,7 +171,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                         ? "bg-(--classroom-surface-muted) text-(--classroom-text-muted)"
                                         : "border border-(--classroom-line) bg-(--classroom-surface) text-(--classroom-text-muted)",
                             )}>
-                                {member.isOwner ? "Owner" : roleLabel(member.role)}
+                                {member.isOwner ? t("Owner") : roleLabel(member.role)}
                             </span>
                         </div>
                         <p className="truncate text-xs text-(--classroom-text-muted)">{member.user.email}</p>
@@ -182,7 +185,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                 type="button"
                                 variant="ghost"
                                 size="icon-compact"
-                                aria-label={`Manage ${member.user.name}`}
+                                aria-label={t("Manage {v0}", { v0: member.user.name })}
                             >
                                 <MoreVertical className="h-4 w-4" />
                             </WorkspaceButton>
@@ -194,7 +197,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                         onSelect={() => void handleChangeRole(member.id, option.value)}
                                         className="rounded-lg px-3 py-2 text-xs font-medium text-(--classroom-text-muted) focus:bg-(--classroom-surface-muted) focus:text-(--classroom-text)"
                                     >
-                                        Make {option.label.toLowerCase()}
+                                         {t("Make")} {option.label.toLowerCase()}
                                     </DropdownMenuItem>
                                 ))}
                                 <DropdownMenuSeparator className="bg-(--classroom-line)" />
@@ -203,8 +206,7 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                                     onSelect={() => void handleRemove(member.id)}
                                     className="rounded-lg px-3 py-2 text-xs font-medium text-(--classroom-danger) focus:bg-(--classroom-danger-soft)"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" /> Remove
-                                </DropdownMenuItem>
+                                    <Trash2 className="h-3.5 w-3.5" />  {t("Remove")} </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )}
@@ -218,12 +220,11 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
                 <div className="mb-3 flex items-center justify-between gap-3">
                     <h2 className="flex items-center gap-2 text-sm font-semibold text-(--classroom-text)">
                         <Crown className="h-4 w-4 text-(--classroom-focus-border)" />
-                        Teachers <span className="font-normal text-(--classroom-text-muted)">{teachers.length}</span>
+                         {t("Teachers")} <span className="font-normal text-(--classroom-text-muted)">{teachers.length}</span>
                     </h2>
                     {isTeacher && (
                         <WorkspaceButton type="button" variant="secondary" onClick={() => setAddMemberOpen(true)}>
-                            <UserPlus className="h-4 w-4" /> Add teacher
-                        </WorkspaceButton>
+                            <UserPlus className="h-4 w-4" />  {t("Add teacher")} </WorkspaceButton>
                     )}
                 </div>
                 <div className="space-y-2">{teachers.map(memberRow)}</div>
@@ -232,48 +233,48 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
             <section>
                 <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-(--classroom-text)">
                     <UserCircle className="h-4 w-4 text-(--classroom-text-muted)" />
-                    Students <span className="font-normal text-(--classroom-text-muted)">{students.length}</span>
+                     {t("Students")} <span className="font-normal text-(--classroom-text-muted)">{students.length}</span>
                 </h2>
                 {students.length === 0
-                    ? <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) py-10 text-center text-sm text-(--classroom-text-muted)">No students have joined yet.</div>
+                    ? <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) py-10 text-center text-sm text-(--classroom-text-muted)">{t("No students have joined yet.")}</div>
                     : <div className="space-y-2">{students.map(memberRow)}</div>}
             </section>
 
             <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
                 <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog w-[calc(100%-1.5rem)] max-w-md gap-0 rounded-2xl border border-(--classroom-line-strong) bg-(--classroom-surface) p-5 shadow-2xl">
                     <DialogClose asChild>
-                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close add teacher dialog" className="absolute right-4 top-4">
+                        <WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close add teacher dialog")} className="absolute right-4 top-4">
                             <X className="h-4 w-4" />
                         </WorkspaceButton>
                     </DialogClose>
                     <DialogHeader className="border-b border-(--classroom-line) pb-4 pr-10 text-left">
-                        <DialogTitle className="text-xl font-semibold text-(--classroom-text)">Add a teacher</DialogTitle>
-                        <DialogDescription className="sr-only">Add an existing registered user to this classroom.</DialogDescription>
+                        <DialogTitle className="text-xl font-semibold text-(--classroom-text)">{t("Add a teacher")}</DialogTitle>
+                        <DialogDescription className="sr-only">{t("Add an existing registered user to this classroom.")}</DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <div>
-                            <label htmlFor="teacher-email" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">Email</label>
+                            <label htmlFor="teacher-email" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">{t("Email")}</label>
                             <Input
                                 id="teacher-email"
                                 type="email"
                                 value={memberEmail}
                                 onChange={(event) => setMemberEmail(event.target.value)}
                                 onKeyDown={(event) => { if (event.key === "Enter") handleAddMember(); }}
-                                placeholder="teacher@example.com"
+                                placeholder={t("teacher@example.com")}
                                 className="h-10 rounded-xl px-3 text-sm font-normal shadow-none"
                             />
                         </div>
                         <div>
-                            <label htmlFor="teacher-role" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">Role</label>
+                            <label htmlFor="teacher-role" className="mb-1.5 block text-xs font-medium text-(--classroom-text-muted)">{t("Role")}</label>
                             <WorkspaceSelect
                                 id="teacher-role"
                                 value={memberRole}
                                 onValueChange={setMemberRole}
-                                ariaLabel="Teacher role"
+                                ariaLabel={t("Teacher role")}
                                 options={[
-                                    { value: "TEACHER", label: "Teacher" },
-                                    { value: "TEACHING_ASSISTANT", label: "Teaching assistant" },
+                                    { value: "TEACHER", label: t("Teacher") },
+                                    { value: "TEACHING_ASSISTANT", label: t("Teaching assistant") },
                                 ] satisfies Array<{ value: ClassroomRole; label: string }>}
                                 className="h-10 w-full"
                             />
@@ -282,10 +283,9 @@ export function ClassroomPeople({ classroomId, isTeacher }: Props) {
 
                     <div className="flex justify-end gap-2 border-t border-(--classroom-line) pt-3">
                         <WorkspaceButton type="button" variant="secondary" onClick={() => setAddMemberOpen(false)}>
-                            Cancel
-                        </WorkspaceButton>
+                             {t("Cancel")} </WorkspaceButton>
                         <WorkspaceButton type="button" variant="primary" onClick={handleAddMember} disabled={addingMember || !memberEmail.trim()}>
-                            {addingMember ? "Adding..." : "Add teacher"}
+                            {addingMember ? t("Adding...") : t("Add teacher")}
                         </WorkspaceButton>
                     </div>
                 </WorkspaceDialogContent>

@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState, type ReactNode } from "react";
 import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import {
@@ -55,6 +59,8 @@ type DeleteTarget =
   | { type: "lesson"; id: string; moduleId: string; title: string };
 
 export default function CourseBuilderSidebar({ course, onCourseChange, activeLessonId, onSelectLesson, isSaving = false, leadingControl }: CourseBuilderSidebarProps) {
+  const locale = useLocale();
+  const t = useText();
   const [isAIExpanded, setIsAIExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -90,7 +96,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         if (!response.ok) throw new Error();
       } catch {
         onCourseChange({ modules: previousModules });
-        toast.error("Module order could not be saved.");
+        toast.error(t("Module order could not be saved."));
       }
       return;
     }
@@ -127,7 +133,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       if (!response.ok) throw new Error();
     } catch {
       onCourseChange({ modules: previousModules });
-      toast.error("Lesson order could not be saved.");
+      toast.error(t("Lesson order could not be saved."));
     }
   };
 
@@ -146,7 +152,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       setNewModuleTitle("");
       setNewModuleOpen(false);
     } catch {
-      toast.error("The module could not be created.");
+      toast.error(t("The module could not be created."));
     }
   };
 
@@ -168,7 +174,7 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       setNewLessonTitle("");
       onSelectLesson(newLesson.id);
     } catch {
-      toast.error("The lesson could not be created.");
+      toast.error(t("The lesson could not be created."));
     }
   };
 
@@ -190,9 +196,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       if (!response.ok) throw new Error();
       onCourseChange({ modules: course.modules.map((item) => item.id === module.id ? { ...item, title } : item) });
       setEditingModuleId(null);
-      toast.success("Module renamed.");
+      toast.success(t("Module renamed."));
     } catch {
-      toast.error("The module name could not be saved.");
+      toast.error(t("The module name could not be saved."));
     } finally {
       setIsMutating(false);
     }
@@ -220,9 +226,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           : module),
       });
       setEditingLessonId(null);
-      toast.success("Lesson renamed.");
+      toast.success(t("Lesson renamed."));
     } catch {
-      toast.error("The lesson name could not be saved.");
+      toast.error(t("The lesson name could not be saved."));
     } finally {
       setIsMutating(false);
     }
@@ -249,10 +255,10 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
       onCourseChange({ modules: nextModules });
       if (removedActiveLesson) onSelectLesson(nextModules.flatMap((module) => module.lessons)[0]?.id ?? null);
-      toast.success(deleteTarget.type === "module" ? "Module deleted." : "Lesson deleted.");
+      toast.success(t(deleteTarget.type === "module" ? "Module deleted." : "Lesson deleted."));
       setDeleteTarget(null);
     } catch {
-      toast.error(deleteTarget.type === "module" ? "The module could not be deleted." : "The lesson could not be deleted.");
+      toast.error(t(deleteTarget.type === "module" ? "The module could not be deleted." : "The lesson could not be deleted."));
     } finally {
       setIsMutating(false);
     }
@@ -301,10 +307,10 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
       setIsAIExpanded(false);
       setSelectedFile(null);
       setSourceText("");
-      toast.success("Syllabus created from your source.", { id: toastId });
+      toast.success(t("Syllabus created from your source."), { id: toastId });
     } catch (error) {
       void refreshAiUsage();
-      toast.error(error instanceof Error ? error.message : "The syllabus could not be generated.", { id: toastId });
+      toast.error(t(error instanceof Error ? error.message : "The syllabus could not be generated."), { id: toastId });
     } finally {
       setIsGenerating(false);
     }
@@ -325,9 +331,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           ? { ...module, lessons: module.lessons.map((item) => item.id === lesson.id ? { ...item, isLocked } : item) }
           : module),
       });
-      toast.success(isLocked ? "Lesson set as a prerequisite." : "Lesson prerequisite removed.");
+      toast.success(t(isLocked ? "Lesson set as a prerequisite." : "Lesson prerequisite removed."));
     } catch {
-      toast.error("The lesson prerequisite could not be updated.");
+      toast.error(t("The lesson prerequisite could not be updated."));
     } finally {
       setIsMutating(false);
     }
@@ -349,9 +355,9 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
           ? { ...module, lessons: module.lessons.map((lesson) => ({ ...lesson, isLocked: isPrerequisite })) }
           : module),
       });
-      toast.success(isPrerequisite ? "Module set as a prerequisite." : "Module prerequisite removed.");
+      toast.success(t(isPrerequisite ? "Module set as a prerequisite." : "Module prerequisite removed."));
     } catch {
-      toast.error("The module prerequisite could not be updated.");
+      toast.error(t("The module prerequisite could not be updated."));
     } finally {
       setIsMutating(false);
     }
@@ -372,8 +378,8 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         <div className="flex min-w-0 items-center gap-2.5">
           {leadingControl}
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-[var(--course-text)]">Syllabus</h2>
-            <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length} modules / {lessonCount(course)} lessons</p>
+            <h2 className="text-sm font-semibold text-[var(--course-text)]">{t("Syllabus")}</h2>
+            <p className="mt-1 text-[10px] text-[var(--course-text-muted)]">{course.modules.length}  {t("modules /")} {lessonCount(course)}  {t("lessons")}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -383,14 +389,13 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
             size="icon-compact"
             onClick={() => setIsAIExpanded((current) => !current)}
             disabled={isSaving}
-            aria-label="Generate syllabus with AI"
+            aria-label={t("Generate syllabus with AI")}
             aria-expanded={isAIExpanded}
           >
             <Sparkles className="h-4 w-4" />
           </WorkspaceButton>
           <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} disabled={isSaving}>
-            <Plus className="h-3.5 w-3.5" />Module
-          </WorkspaceButton>
+            <Plus className="h-3.5 w-3.5" />{t("Module")} </WorkspaceButton>
         </div>
       </div>
 
@@ -398,42 +403,42 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
         {isAIExpanded && (
           <div className="mb-2.5 rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-3">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="text-xs font-semibold">Create an outline</p><p className="mt-1 text-[11px] leading-4 text-[var(--course-text-muted)]">Paste notes or add a file to build a syllabus.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
-              <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => { setIsAIExpanded(false); setSelectedFile(null); setSourceText(""); }} aria-label="Close outline generator"><X className="h-3.5 w-3.5" /></WorkspaceButton>
+              <div><p className="text-xs font-semibold">{t("Create an outline")}</p><p className="mt-1 text-[11px] leading-4 text-[var(--course-text-muted)]">{t("Paste notes or add a file to build a syllabus.")}</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
+              <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => { setIsAIExpanded(false); setSelectedFile(null); setSourceText(""); }} aria-label={t("Close outline generator")}><X className="h-3.5 w-3.5" /></WorkspaceButton>
             </div>
-            <label htmlFor="outline-source-text" className="mt-3 block text-[10px] font-semibold text-[var(--course-text-muted)]">Source text</label>
+            <label htmlFor="outline-source-text" className="mt-3 block text-[10px] font-semibold text-[var(--course-text-muted)]">{t("Source text")}</label>
             <textarea
               id="outline-source-text"
-              aria-label="Outline source text"
+              aria-label={t("Outline source text")}
               value={sourceText}
               maxLength={AI_SOURCE_CHARACTER_LIMIT}
               onChange={(event) => setSourceText(event.target.value)}
-              placeholder="Paste notes, lesson ideas, or source material..."
+              placeholder={t("Paste notes, lesson ideas, or source material...")}
               rows={4}
               className="mt-1.5 min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[color-mix(in_srgb,var(--app-surface)_80%,transparent)] px-3 py-2.5 text-xs leading-5 outline-none placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]"
             />
-            <span className="mt-1 block text-right text-[9px] text-[var(--course-text-faint)]">{sourceText.length.toLocaleString()}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString()}</span>
+            <span className="mt-1 block text-right text-[9px] text-[var(--course-text-faint)]">{sourceText.length.toLocaleString(locale)}/{AI_SOURCE_CHARACTER_LIMIT.toLocaleString(locale)}</span>
             <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleBulkGenerate()} disabled={(!selectedFile && !sourceText.trim()) || isGenerating || aiExhausted} className="mt-2 w-full">
-              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create syllabus"}
+              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? t("Creating...") : t("Create syllabus")}
             </WorkspaceButton>
-            <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>or add a file</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
+            <div className="my-2.5 flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.08em] text-[var(--course-text-faint)]" aria-hidden="true"><span className="h-px flex-1 bg-[var(--course-line)]" /><span>{t("or add a file")}</span><span className="h-px flex-1 bg-[var(--course-line)]" /></div>
             <CourseSourceFilePicker file={selectedFile} onFileChange={setSelectedFile} className="w-full" />
-            <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[9px] leading-4 text-[var(--app-text-muted)]">Text and extracted file content share the 12,000-character source limit.</p>
+            <p className="mt-1.5 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[9px] leading-4 text-[var(--app-text-muted)]">{t("Text and extracted file content share the 12,000-character source limit.")}</p>
           </div>
         )}
 
         {newModuleOpen && (
           <div className="mb-2.5 flex gap-1.5">
-            <input autoFocus value={newModuleTitle} onChange={(event) => setNewModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void addModule(); if (event.key === "Escape") setNewModuleOpen(false); }} placeholder="Module title" aria-label="New module title" className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
-            <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => void addModule()} disabled={!newModuleTitle.trim()} aria-label="Add module"><Check className="h-4 w-4" /></WorkspaceButton>
-            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => { setNewModuleOpen(false); setNewModuleTitle(""); }} aria-label="Cancel new module"><X className="h-4 w-4" /></WorkspaceButton>
+            <input autoFocus value={newModuleTitle} onChange={(event) => setNewModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void addModule(); if (event.key === "Escape") setNewModuleOpen(false); }} placeholder={t("Module title")} aria-label={t("New module title")} className="h-9 min-w-0 flex-1 rounded-lg border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-3 text-sm outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+            <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => void addModule()} disabled={!newModuleTitle.trim()} aria-label={t("Add module")}><Check className="h-4 w-4" /></WorkspaceButton>
+            <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => { setNewModuleOpen(false); setNewModuleTitle(""); }} aria-label={t("Cancel new module")}><X className="h-4 w-4" /></WorkspaceButton>
           </div>
         )}
         {course.modules.length === 0 ? (
           <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--course-line-strong)] px-5 text-center">
-            <p className="text-sm font-semibold">No modules yet</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Add one yourself or generate a syllabus from a file.</p>
-            <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} className="mt-4">Add module</WorkspaceButton>
+            <p className="text-sm font-semibold">{t("No modules yet")}</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{t("Add one yourself or generate a syllabus from a file.")}</p>
+            <WorkspaceButton type="button" variant="primary" size="compact" onClick={() => setNewModuleOpen(true)} className="mt-4">{t("Add module")}</WorkspaceButton>
           </div>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -457,43 +462,41 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                             <div className={cn("flex items-center gap-1 px-1.5 py-1.5", !collapsed && "border-b border-[var(--course-line)]")}>
                               <span
                                 {...moduleDragProvided.dragHandleProps}
-                                aria-label={`Reorder module ${module.title}`}
+                                aria-label={t("Reorder module {v0}", { v0: module.title })}
                                 className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center rounded-md text-[var(--course-text-faint)] hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:cursor-not-allowed"
                               >
                                 <GripVertical className="h-3.5 w-3.5" />
                               </span>
-                              <button type="button" onClick={() => toggleModule(module.id)} aria-label={`${collapsed ? "Expand" : "Collapse"} ${module.title}`} className="flex h-8 w-7 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)]">
+                              <button type="button" onClick={() => toggleModule(module.id)} aria-label={t("{v0} {v1}", { v0: collapsed ? "Expand" : "Collapse", v1: module.title })} className="flex h-8 w-7 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)]">
                                 {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </button>
                               <span className="flex h-6 min-w-6 items-center justify-center rounded-lg bg-[var(--course-surface-muted)] px-1.5 font-mono text-[10px] font-semibold text-[var(--course-text-muted)]">{String(moduleIndex + 1).padStart(2, "0")}</span>
                               {editingModuleId === module.id ? (
                                 <>
-                                  <input autoFocus value={editingModuleTitle} onChange={(event) => setEditingModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameModule(module); if (event.key === "Escape") setEditingModuleId(null); }} aria-label={`Module name for ${module.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--course-surface-muted)] px-2 text-xs font-semibold outline-none ring-2 ring-[var(--course-focus-ring)]" />
-                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameModule(module)} disabled={!editingModuleTitle.trim() || isMutating} aria-label="Save module name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Save changes</TooltipContent></Tooltip>
-                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingModuleId(null)} disabled={isMutating} aria-label="Cancel module rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Cancel editing. Changes won&apos;t be saved.</TooltipContent></Tooltip>
+                                  <input autoFocus value={editingModuleTitle} onChange={(event) => setEditingModuleTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameModule(module); if (event.key === "Escape") setEditingModuleId(null); }} aria-label={t("Module name for {v0}", { v0: module.title })} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--course-surface-muted)] px-2 text-xs font-semibold outline-none ring-2 ring-[var(--course-focus-ring)]" />
+                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameModule(module)} disabled={!editingModuleTitle.trim() || isMutating} aria-label={t("Save module name")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">{t("Save changes")}</TooltipContent></Tooltip>
+                                  <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingModuleId(null)} disabled={isMutating} aria-label={t("Cancel module rename")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">{t("Cancel editing. Changes won't be saved.")}</TooltipContent></Tooltip>
                                 </>
                               ) : (
                                 <>
                                   <Tooltip><TooltipTrigger asChild><h3 className="min-w-0 flex-1 truncate text-xs font-semibold">{module.title}</h3></TooltipTrigger><TooltipContent>{module.title}</TooltipContent></Tooltip>
-                                  {moduleIsPrerequisite && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={`${module.title} is a prerequisite`} />}
-                                  <button type="button" onClick={() => { setLessonModuleId(module.id); setNewLessonTitle(""); setCollapsedModules((current) => { const next = new Set(current); next.delete(module.id); return next; }); }} disabled={isSaving || isMutating} aria-label={`Add lesson to ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
+                                  {moduleIsPrerequisite && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={t("{v0} is a prerequisite", { v0: module.title })} />}
+                                  <button type="button" onClick={() => { setLessonModuleId(module.id); setNewLessonTitle(""); setCollapsedModules((current) => { const next = new Set(current); next.delete(module.id); return next; }); }} disabled={isSaving || isMutating} aria-label={t("Add lesson to {v0}", { v0: module.title })} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--course-surface-muted)] disabled:opacity-40"><Plus className="h-3.5 w-3.5" /></button>
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <button type="button" disabled={isSaving || isMutating} aria-label={`Module actions for ${module.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
+                                      <button type="button" disabled={isSaving || isMutating} aria-label={t("Module actions for {v0}", { v0: module.title })} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] transition-colors hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
                                         <MoreHorizontal className="h-4 w-4" />
                                       </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
-                                      <DropdownMenuItem aria-label={`Edit module ${module.title}`} onSelect={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
-                                        <Pencil />Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem aria-label={`${moduleIsPrerequisite ? "Remove" : "Set"} ${module.title} ${moduleIsPrerequisite ? "prerequisite" : "as prerequisite"}`} disabled={module.lessons.length === 0} onSelect={() => void toggleModulePrerequisite(module)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
-                                        {moduleIsPrerequisite ? <LockOpen /> : <Lock />}{moduleIsPrerequisite ? "Remove prerequisite" : "Set as prerequisite"}
+                                      <DropdownMenuItem aria-label={t("Edit module {v0}", { v0: module.title })} onSelect={() => { setEditingModuleId(module.id); setEditingModuleTitle(module.title); setEditingLessonId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                        <Pencil />{t("Edit")} </DropdownMenuItem>
+                                      <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: moduleIsPrerequisite ? t("Remove") : "Set", v1: module.title, v2: moduleIsPrerequisite ? "prerequisite" : "as prerequisite" })} disabled={module.lessons.length === 0} onSelect={() => void toggleModulePrerequisite(module)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                        {moduleIsPrerequisite ? <LockOpen /> : <Lock />}{moduleIsPrerequisite ? t("Remove prerequisite") : t("Set as prerequisite")}
                                       </DropdownMenuItem>
                                       <DropdownMenuSeparator className="bg-[var(--course-line)]" />
-                                      <DropdownMenuItem aria-label={`Delete module ${module.title}`} variant="destructive" onSelect={() => setDeleteTarget({ type: "module", id: module.id, title: module.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
-                                        <Trash2 />Delete
-                                      </DropdownMenuItem>
+                                      <DropdownMenuItem aria-label={t("Delete module {v0}", { v0: module.title })} variant="destructive" onSelect={() => setDeleteTarget({ type: "module", id: module.id, title: module.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
+                                        <Trash2 />{t("Delete")} </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </>
@@ -511,35 +514,33 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
                                     <span {...dragProvided.dragHandleProps} className="flex h-9 w-7 shrink-0 cursor-grab items-center justify-center text-[var(--course-text-faint)] opacity-50 group-hover:opacity-100"><GripVertical className="h-3.5 w-3.5" /></span>
                                     {editingLessonId === lesson.id ? (
                                       <>
-                                        <input autoFocus value={editingLessonTitle} onChange={(event) => setEditingLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameLesson(lesson, module.id); if (event.key === "Escape") setEditingLessonId(null); }} aria-label={`Lesson name for ${lesson.title}`} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--app-surface)] px-2 text-xs font-medium outline-none ring-2 ring-[var(--course-focus-ring)]" />
-                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameLesson(lesson, module.id)} disabled={!editingLessonTitle.trim() || isMutating} aria-label="Save lesson name" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Save changes</TooltipContent></Tooltip>
-                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingLessonId(null)} disabled={isMutating} aria-label="Cancel lesson rename" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">Cancel editing. Changes won&apos;t be saved.</TooltipContent></Tooltip>
+                                        <input autoFocus value={editingLessonTitle} onChange={(event) => setEditingLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void renameLesson(lesson, module.id); if (event.key === "Escape") setEditingLessonId(null); }} aria-label={t("Lesson name for {v0}", { v0: lesson.title })} className="h-8 min-w-0 flex-1 rounded-lg border border-[var(--course-focus-border)] bg-[var(--app-surface)] px-2 text-xs font-medium outline-none ring-2 ring-[var(--course-focus-ring)]" />
+                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => void renameLesson(lesson, module.id)} disabled={!editingLessonTitle.trim() || isMutating} aria-label={t("Save lesson name")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Check className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">{t("Save changes")}</TooltipContent></Tooltip>
+                                        <Tooltip><TooltipTrigger asChild><button type="button" onClick={() => setEditingLessonId(null)} disabled={isMutating} aria-label={t("Cancel lesson rename")} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] hover:bg-[var(--app-surface)] disabled:opacity-40"><Undo2 className="h-3.5 w-3.5" /></button></TooltipTrigger><TooltipContent side="top">{t("Cancel editing. Changes won't be saved.")}</TooltipContent></Tooltip>
                                       </>
                                     ) : (
                                       <>
                                         <button type="button" onClick={() => onSelectLesson(lesson.id)} disabled={isSaving || isMutating} className="min-w-0 flex-1 py-2.5 text-left disabled:cursor-not-allowed">
                                           <span className="flex min-w-0 items-center gap-1.5">
                                             <span className="block min-w-0 flex-1 truncate text-xs font-medium">{lesson.title}</span>
-                                            {lesson.isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={`${lesson.title} is a prerequisite`} />}
+                                            {lesson.isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-[var(--course-focus-border)]" aria-label={t("{v0} is a prerequisite", { v0: lesson.title })} />}
                                           </span>
                                         </button>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <button type="button" disabled={isSaving || isMutating} aria-label={`Lesson actions for ${lesson.title}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] opacity-70 transition-[background-color,color,opacity] hover:bg-[var(--app-surface)] hover:text-[var(--course-text)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
+                                            <button type="button" disabled={isSaving || isMutating} aria-label={t("Lesson actions for {v0}", { v0: lesson.title })} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--course-text-muted)] opacity-70 transition-[background-color,color,opacity] hover:bg-[var(--app-surface)] hover:text-[var(--course-text)] group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--course-focus-border)] disabled:opacity-40">
                                               <MoreHorizontal className="h-4 w-4" />
                                             </button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end" className="course-dialog min-w-48 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-1.5 shadow-[var(--app-shadow-soft)]">
-                                            <DropdownMenuItem aria-label={`Edit lesson ${lesson.title}`} onSelect={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
-                                              <Pencil />Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem aria-label={`${lesson.isLocked ? "Remove" : "Set"} ${lesson.title} ${lesson.isLocked ? "prerequisite" : "as prerequisite"}`} onSelect={() => void toggleLessonPrerequisite(lesson, module.id)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
-                                              {lesson.isLocked ? <LockOpen /> : <Lock />}{lesson.isLocked ? "Remove prerequisite" : "Set as prerequisite"}
+                                            <DropdownMenuItem aria-label={t("Edit lesson {v0}", { v0: lesson.title })} onSelect={() => { setEditingLessonId(lesson.id); setEditingLessonTitle(lesson.title); setEditingModuleId(null); }} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                              <Pencil />{t("Edit")} </DropdownMenuItem>
+                                            <DropdownMenuItem aria-label={t("{v0} {v1} {v2}", { v0: lesson.isLocked ? t("Remove") : "Set", v1: lesson.title, v2: lesson.isLocked ? "prerequisite" : "as prerequisite" })} onSelect={() => void toggleLessonPrerequisite(lesson, module.id)} className="rounded-lg px-2.5 py-2 text-xs text-[var(--course-text-muted)] focus:bg-[var(--course-surface-muted)] focus:text-[var(--course-text)]">
+                                              {lesson.isLocked ? <LockOpen /> : <Lock />}{lesson.isLocked ? t("Remove prerequisite") : t("Set as prerequisite")}
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator className="bg-[var(--course-line)]" />
-                                            <DropdownMenuItem aria-label={`Delete lesson ${lesson.title}`} variant="destructive" onSelect={() => setDeleteTarget({ type: "lesson", id: lesson.id, moduleId: module.id, title: lesson.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
-                                              <Trash2 />Delete
-                                            </DropdownMenuItem>
+                                            <DropdownMenuItem aria-label={t("Delete lesson {v0}", { v0: lesson.title })} variant="destructive" onSelect={() => setDeleteTarget({ type: "lesson", id: lesson.id, moduleId: module.id, title: lesson.title })} className="rounded-lg px-2.5 py-2 text-xs focus:bg-[var(--app-danger-soft)]">
+                                              <Trash2 />{t("Delete")} </DropdownMenuItem>
                                           </DropdownMenuContent>
                                         </DropdownMenu>
                                       </>
@@ -552,14 +553,14 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
                             {lessonModuleId === module.id && (
                               <div className="flex gap-1.5 pt-1">
-                                <input autoFocus value={newLessonTitle} onChange={(event) => setNewLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void addLesson(module.id); if (event.key === "Escape") setLessonModuleId(null); }} placeholder="Lesson title" aria-label={`New lesson title for ${module.title}`} className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2.5 text-xs outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
-                                <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => void addLesson(module.id)} disabled={!newLessonTitle.trim()} aria-label="Add lesson"><Check className="h-3.5 w-3.5" /></WorkspaceButton>
-                                <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setLessonModuleId(null)} aria-label="Cancel new lesson"><X className="h-3.5 w-3.5" /></WorkspaceButton>
+                                <input autoFocus value={newLessonTitle} onChange={(event) => setNewLessonTitle(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void addLesson(module.id); if (event.key === "Escape") setLessonModuleId(null); }} placeholder={t("Lesson title")} aria-label={t("New lesson title for {v0}", { v0: module.title })} className="h-9 min-w-0 flex-1 rounded-xl border border-[var(--course-line)] bg-[var(--course-surface-muted)] px-2.5 text-xs outline-none focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+                                <WorkspaceButton type="button" variant="primary" size="icon" onClick={() => void addLesson(module.id)} disabled={!newLessonTitle.trim()} aria-label={t("Add lesson")}><Check className="h-3.5 w-3.5" /></WorkspaceButton>
+                                <WorkspaceButton type="button" variant="secondary" size="icon" onClick={() => setLessonModuleId(null)} aria-label={t("Cancel new lesson")}><X className="h-3.5 w-3.5" /></WorkspaceButton>
                               </div>
                             )}
 
                             {module.lessons.length === 0 && lessonModuleId !== module.id && (
-                              <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => setLessonModuleId(module.id)} className="w-full"><Plus className="h-3.5 w-3.5" />Add the first lesson</WorkspaceButton>
+                              <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => setLessonModuleId(module.id)} className="w-full"><Plus className="h-3.5 w-3.5" />{t("Add the first lesson")}</WorkspaceButton>
                             )}
                           </div>
                         )}
@@ -580,19 +581,18 @@ export default function CourseBuilderSidebar({ course, onCourseChange, activeLes
 
       <Dialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open && !isMutating) setDeleteTarget(null); }}>
         <WorkspaceDialogContent mobileSheet={false} className="course-dialog w-[calc(100%-2rem)] max-w-md rounded-2xl border border-[var(--course-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl">
-          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label="Close delete confirmation" className="absolute right-4 top-4 z-20" disabled={isMutating}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
+          <DialogClose asChild><WorkspaceButton type="button" variant="ghost" size="icon-compact" aria-label={t("Close delete confirmation")} className="absolute right-4 top-4 z-20" disabled={isMutating}><X className="h-4 w-4" /></WorkspaceButton></DialogClose>
           <div className="border-b border-[var(--course-line)] px-5 py-4 pr-12">
-            <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">Delete {deleteTarget?.type}?</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[var(--course-text)]">{t("Delete")} {deleteTarget?.type}?</DialogTitle>
             <DialogDescription className="mt-1 text-sm leading-6 text-[var(--course-text-muted)]">
               {deleteTarget?.type === "module"
-                ? `This will permanently delete “${deleteTarget.title}” and every lesson inside it.`
-                : `This will permanently delete “${deleteTarget?.title}”.`} This cannot be undone.
-            </DialogDescription>
+                ? t("This will permanently delete “{v0}” and every lesson inside it.", { v0: deleteTarget.title })
+                : t("This will permanently delete “{v0}”.", { v0: deleteTarget?.title })}  {t("This cannot be undone.")} </DialogDescription>
           </div>
           <div className="flex justify-end gap-2 px-5 py-4">
-            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isMutating}>Cancel</WorkspaceButton>
+            <WorkspaceButton type="button" variant="secondary" onClick={() => setDeleteTarget(null)} disabled={isMutating}>{t("Cancel")}</WorkspaceButton>
             <WorkspaceButton type="button" variant="danger" onClick={() => void deleteSyllabusItem()} disabled={isMutating}>
-              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? "Deleting..." : `Delete ${deleteTarget?.type ?? "item"}`}
+              {isMutating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}{isMutating ? t("Deleting...") : t("Delete {v0}", { v0: deleteTarget?.type ?? "item" })}
             </WorkspaceButton>
           </div>
         </WorkspaceDialogContent>

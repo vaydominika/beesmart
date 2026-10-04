@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { EditorInstance } from "novel";
 import {
@@ -35,6 +39,8 @@ export interface CourseBuilderEditorHandle {
 }
 
 const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderEditorProps>(function CourseBuilderEditor({ lesson, courseId, previewMode = false, onLessonUpdate, onDirtyChange, onSavingChange }, ref) {
+  const locale = useLocale();
+  const t = useText();
   const savedContent = lesson.contentDraft ?? lesson.content ?? "";
   const [title, setTitle] = useState(lesson.title);
   const [content, setContent] = useState(savedContent);
@@ -71,13 +77,13 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
     } catch {
       pendingChanges.current = { ...changesToSave, ...pendingChanges.current };
       onDirtyChange?.(true);
-      toast.error("Lesson changes could not be saved.");
+      toast.error(t("Lesson changes could not be saved."));
       return false;
     } finally {
       saveInFlightRef.current = false;
       setIsSaving(false);
     }
-  }, [courseId, onDirtyChange, onLessonUpdate]);
+  }, [courseId, onDirtyChange, onLessonUpdate, t]);
 
   useImperativeHandle(ref, () => ({
     save: () => saveChanges(lesson.id, lesson.moduleId),
@@ -152,7 +158,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       }
 
       const reader = response.body?.getReader();
-      if (!reader) throw new Error("No generated content was returned");
+      if (!reader) throw new Error(t("No generated content was returned"));
       const decoder = new TextDecoder();
       let accumulated = "";
       while (true) {
@@ -167,10 +173,10 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       setIsAIExpanded(false);
       setGenerationPrompt("");
       setSelectedFile(null);
-      toast.success("Lesson content created.", { id: toastId });
+      toast.success(t("Lesson content created."), { id: toastId });
     } catch (error) {
       void refreshAiUsage();
-      toast.error(error instanceof Error ? error.message : "Lesson content could not be generated.", { id: toastId });
+      toast.error(t(error instanceof Error ? error.message : "Lesson content could not be generated."), { id: toastId });
     } finally {
       setIsGenerating(false);
     }
@@ -203,10 +209,10 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       if (!response.ok) throw new Error();
       const updatedFile = await response.json() as CourseBuilderFile;
       applyFileVisibility(file.id, updatedFile.isVisible, updatedFile);
-      toast.success(nextVisibility ? `${file.fileName} is visible to learners.` : `${file.fileName} is hidden from learners.`);
+      toast.success(t(nextVisibility ? `${file.fileName} is visible to learners.` : `${file.fileName} is hidden from learners.`));
     } catch {
       applyFileVisibility(file.id, file.isVisible);
-      toast.error(`${file.fileName} visibility could not be updated.`);
+      toast.error(t("{v0} visibility could not be updated.", { v0: file.fileName }));
     } finally {
       setSavingFileIds((current) => {
         const next = new Set(current);
@@ -220,7 +226,7 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
     return (
       <article className="overflow-hidden rounded-3xl border border-[var(--course-line)] bg-[var(--app-surface)] shadow-[var(--app-shadow-soft)]">
         <header className="border-b border-[var(--course-line)] bg-[var(--app-surface)] px-6 py-8 text-center md:px-10">
-          <p className="mb-2 text-[11px] font-semibold text-[var(--course-text-muted)]">Learner preview</p>
+          <p className="mb-2 text-[11px] font-semibold text-[var(--course-text-muted)]">{t("Learner preview")}</p>
           <h1 className="text-2xl font-semibold tracking-[-0.035em] md:text-3xl">{lesson.title}</h1>
         </header>
         <div className="min-h-[55vh] px-6 py-8 md:px-10">
@@ -235,67 +241,66 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 flex-1">
           <label htmlFor={`lesson-title-${lesson.id}`} className="mb-1 flex items-center gap-1.5 text-xs font-medium text-[var(--course-text-muted)]">
-            <Pencil className="h-3.5 w-3.5" />Lesson title<span className="rounded-md bg-[var(--course-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--course-text-faint)]">Editable</span>
+            <Pencil className="h-3.5 w-3.5" />{t("Lesson title")}<span className="rounded-md bg-[var(--course-surface-muted)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--course-text-faint)]">{t("Editable")}</span>
           </label>
           <input
             id={`lesson-title-${lesson.id}`}
             type="text"
             value={title}
             onChange={handleTitleChange}
-            aria-label="Lesson title"
-            placeholder="Untitled lesson"
+            aria-label={t("Lesson title")}
+            placeholder={t("Untitled lesson")}
             className="-mx-2 h-11 w-[calc(100%+1rem)] rounded-lg border-0 bg-transparent px-2 text-2xl font-semibold tracking-[-0.035em] text-[var(--course-text)] outline-none transition-colors placeholder:text-[var(--course-text-faint)] hover:bg-[var(--course-surface-muted)] hover:text-[var(--course-text-muted)] motion-reduce:transition-none md:text-[28px]"
           />
         </div>
         <div className="flex justify-end sm:pb-1.5">
-          <WorkspaceButton type="button" variant={isAIExpanded ? "primary" : "secondary"} size="compact" onClick={() => setIsAIExpanded((current) => !current)} aria-expanded={isAIExpanded} aria-label="Create lesson">
-            <Sparkles className="h-4 w-4" />Create lesson
-          </WorkspaceButton>
+          <WorkspaceButton type="button" variant={isAIExpanded ? "primary" : "secondary"} size="compact" onClick={() => setIsAIExpanded((current) => !current)} aria-expanded={isAIExpanded} aria-label={t("Create lesson")}>
+            <Sparkles className="h-4 w-4" />{t("Create lesson")} </WorkspaceButton>
         </div>
       </div>
 
       {isAIExpanded && (
-        <section className="rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-4" aria-label="AI lesson assistant">
+        <section className="rounded-xl border border-[var(--course-line)] bg-[var(--course-accent)] p-4" aria-label={t("AI lesson assistant")}>
           <div className="flex items-start justify-between gap-4">
-            <div><h2 className="text-sm font-semibold">Build from a prompt or source</h2><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">Describe the lesson you need, optionally attach a source, then review the result before learners see it.</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
-            <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setIsAIExpanded(false)} aria-label="Close AI assistant"><X className="h-4 w-4" /></WorkspaceButton>
+            <div><h2 className="text-sm font-semibold">{t("Build from a prompt or source")}</h2><p className="mt-1 text-xs leading-5 text-[var(--course-text-muted)]">{t("Describe the lesson you need, optionally attach a source, then review the result before learners see it.")}</p><AiUsageStatus usage={aiUsage} className="mt-1.5" /></div>
+            <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => setIsAIExpanded(false)} aria-label={t("Close AI assistant")}><X className="h-4 w-4" /></WorkspaceButton>
           </div>
 
           <label className="mt-4 block">
-            <span className="sr-only">Lesson generation prompt</span>
-            <textarea aria-label="Lesson generation prompt" value={generationPrompt} maxLength={AI_LESSON_PROMPT_CHARACTER_LIMIT} onChange={(event) => setGenerationPrompt(event.target.value)} placeholder="For example: Explain photosynthesis with a simple classroom experiment..." className="min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-6 outline-none transition-colors placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
-            <span className="mt-1 block text-right text-[10px] text-[var(--course-text-faint)]">{generationPrompt.length.toLocaleString()}/{AI_LESSON_PROMPT_CHARACTER_LIMIT.toLocaleString()}</span>
+            <span className="sr-only">{t("Lesson generation prompt")}</span>
+            <textarea aria-label={t("Lesson generation prompt")} value={generationPrompt} maxLength={AI_LESSON_PROMPT_CHARACTER_LIMIT} onChange={(event) => setGenerationPrompt(event.target.value)} placeholder={t("For example: Explain photosynthesis with a simple classroom experiment...")} className="min-h-24 w-full resize-y rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] px-3 py-2.5 text-sm leading-6 outline-none transition-colors placeholder:text-[var(--course-text-faint)] focus:border-[var(--course-focus-border)] focus:ring-2 focus:ring-[var(--course-focus-ring)]" />
+            <span className="mt-1 block text-right text-[10px] text-[var(--course-text-faint)]">{generationPrompt.length.toLocaleString(locale)}/{AI_LESSON_PROMPT_CHARACTER_LIMIT.toLocaleString(locale)}</span>
           </label>
 
           <div className="mt-3 grid gap-2.5 sm:grid-cols-[auto_auto_1fr] sm:items-center">
             <CourseSourceFilePicker file={selectedFile} onFileChange={setSelectedFile} className="w-fit" />
             <WorkspaceCheckbox
-              label="Show source to learners"
+              label={t("Show source to learners")}
               checked={showFileInLesson}
               onCheckedChange={setShowFileInLesson}
               containerClassName="shrink-0 px-1 text-xs"
               indicatorClassName="peer-checked:border-[var(--app-border-strong)] peer-checked:bg-[var(--app-surface)]"
             />
             <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleGenerate()} disabled={isGenerating || aiExhausted || (!generationPrompt.trim() && !selectedFile)} className="enabled:text-[var(--course-text)] sm:justify-self-end">
-              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? "Creating..." : "Create content"}
+              {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{isGenerating ? t("Creating...") : t("Create content")}
             </WorkspaceButton>
           </div>
-          <p className="mt-2 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] leading-4 text-[var(--app-text-muted)]">Source files can contain up to 12,000 extracted characters.</p>
+          <p className="mt-2 w-fit max-w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] leading-4 text-[var(--app-text-muted)]">{t("Source files can contain up to 12,000 extracted characters.")}</p>
         </section>
       )}
 
       {lesson.files && lesson.files.length > 0 && (
-        <section aria-label="Lesson attachments" className="flex flex-wrap gap-2">
+        <section aria-label={t("Lesson attachments")} className="flex flex-wrap gap-2">
           {lesson.files.map((file) => (
             <div key={file.id} className="flex min-w-0 items-center gap-2 rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] p-2 pl-3">
               <Paperclip className="h-3.5 w-3.5 shrink-0 text-[var(--course-text-muted)]" />
               <span className="max-w-52 truncate text-xs font-medium">{file.fileName}</span>
-              <span className="font-mono text-[9px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)} KB</span>
+              <span className="font-mono text-[9px] text-[var(--course-text-faint)]">{Math.max(0.1, file.fileSize / 1024).toFixed(1)}  {t("KB")}</span>
               <button
                 type="button"
                 role="switch"
                 aria-checked={file.isVisible}
-                aria-label={file.isVisible ? `Hide ${file.fileName} from learners` : `Show ${file.fileName} to learners`}
+                aria-label={file.isVisible ? t("Hide {v0} from learners", { v0: file.fileName }) : t("Show {v0} to learners", { v0: file.fileName })}
                 disabled={savingFileIds.has(file.id)}
                 onClick={() => void handleFileVisibilityChange(file)}
                 className={cn(
@@ -306,16 +311,16 @@ const CourseBuilderEditor = forwardRef<CourseBuilderEditorHandle, CourseBuilderE
                 )}
               >
                 {file.isVisible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-                {file.isVisible ? "Visible" : "Hidden"}
+                {file.isVisible ? t("Visible") : t("Hidden")}
               </button>
             </div>
           ))}
         </section>
       )}
 
-      <section className="overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] transition-[border-color,box-shadow] focus-within:border-[var(--course-focus-border)] focus-within:ring-2 focus-within:ring-[var(--course-focus-ring)]" aria-label="Lesson content editor">
+      <section className="overflow-hidden rounded-xl border border-[var(--course-line)] bg-[var(--app-surface)] transition-[border-color,box-shadow] focus-within:border-[var(--course-focus-border)] focus-within:ring-2 focus-within:ring-[var(--course-focus-ring)]" aria-label={t("Lesson content editor")}>
         <div className="min-h-[560px] px-5 py-6 md:px-7">
-          <Editor initialValue={content} onChange={handleContentChange} onReady={(instance) => { editorRef.current = instance; }} placeholder="Start writing your lesson..." className="min-h-[470px]" id={lesson.id} />
+          <Editor initialValue={content} onChange={handleContentChange} onReady={(instance) => { editorRef.current = instance; }} placeholder={t("Start writing your lesson...")} className="min-h-[470px]" id={lesson.id} />
         </div>
       </section>
 

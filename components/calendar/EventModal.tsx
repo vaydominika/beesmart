@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useState } from "react";
 import { Reorder, useDragControls } from "framer-motion";
 import { CalendarPlus, Clock, GripVertical, LockKeyhole, Repeat2, Trash2 } from "lucide-react";
@@ -50,24 +53,28 @@ interface EventModalProps {
 }
 
 function SortableEventItem({ event, onDelete, onDragEnd }: { event: EventData; onDelete: (id: string) => void; onDragEnd: () => void }) {
+  const locale = useLocale();
+  const t = useText();
   const controls = useDragControls();
   return (
     <Reorder.Item value={event} dragListener={false} dragControls={controls} onDragEnd={onDragEnd} className="mb-2 flex items-center rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-2.5">
       {event.isProtected || event.recurrencePattern ? (
         <span className="flex h-8 w-8 items-center justify-center text-[var(--app-text-faint)]">{event.recurrencePattern ? <Repeat2 className="h-4 w-4" /> : <LockKeyhole className="h-4 w-4" />}</span>
       ) : (
-        <button type="button" aria-label={`Reorder ${event.title}`} className="flex h-8 w-8 cursor-grab touch-none items-center justify-center rounded-lg text-[var(--app-text-faint)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] active:cursor-grabbing" onPointerDown={(pointerEvent) => controls.start(pointerEvent)}><GripVertical className="h-4 w-4" /></button>
+        <button type="button" aria-label={t("Reorder {v0}", { v0: event.title })} className="flex h-8 w-8 cursor-grab touch-none items-center justify-center rounded-lg text-[var(--app-text-faint)] hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] active:cursor-grabbing" onPointerDown={(pointerEvent) => controls.start(pointerEvent)}><GripVertical className="h-4 w-4" /></button>
       )}
       <div className="min-w-0 flex-1 px-2">
         <p className="truncate text-sm font-semibold text-[var(--app-text)]">{event.title}</p>
-        <p className="text-xs text-[var(--app-text-muted)]">{event.isAllDay ? "All day" : event.startTime ? `${event.startTime}${event.endTime ? ` – ${event.endTime}` : ""}` : "No time set"}</p>
+        <p className="text-xs text-[var(--app-text-muted)]">{event.isAllDay ? t("All day") : event.startTime ? t("{v0}{v1}", { v0: event.startTime, v1: event.endTime ? ` – ${event.endTime}` : "" }) : t("No time set")}</p>
       </div>
-      {event.canEdit !== false ? <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => onDelete(event.id)} aria-label={`Delete ${event.title}`}><Trash2 className="h-4 w-4" /></WorkspaceButton> : null}
+      {event.canEdit !== false ? <WorkspaceButton type="button" variant="ghost" size="icon-compact" onClick={() => onDelete(event.id)} aria-label={t("Delete {v0}", { v0: event.title })}><Trash2 className="h-4 w-4" /></WorkspaceButton> : null}
     </Reorder.Item>
   );
 }
 
 export function EventModal({ open, onClose, selectedDate, onEventsChanged, initialStartTime, initialEndTime }: EventModalProps) {
+  const locale = useLocale();
+  const t = useText();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -82,7 +89,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
   const [eventToDeleteId, setEventToDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const dateStr = formatLongDate(selectedDate);
+  const dateStr = formatLongDate(selectedDate, { locale });
 
   const fetchEventsForDate = useCallback(async () => {
     setLoadingEvents(true);
@@ -112,8 +119,8 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
   }, [fetchEventsForDate, initialEndTime, initialStartTime, open]);
 
   const handleSave = async () => {
-    if (!title.trim()) return toast.error("Please enter a title.");
-    if (!isAllDay && startTime && endTime && endTime <= startTime) return toast.error("End time must be later than start time.");
+    if (!title.trim()) return toast.error(t("Please enter a title."));
+    if (!isAllDay && startTime && endTime && endTime <= startTime) return toast.error(t("End time must be later than start time."));
     setSaving(true);
     try {
       const year = selectedDate.getFullYear();
@@ -122,14 +129,14 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
       const response = await fetch("/api/user/events", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: title.trim(), description: description.trim() || null, startDate: `${year}-${month}-${day}T00:00:00.000Z`, startTime: isAllDay ? null : startTime || null, endTime: isAllDay ? null : endTime || null, isAllDay, color, recurrencePattern: recurrence === "NONE" ? null : recurrence }) });
       if (!response.ok) {
         const result = await readJsonSafely<{ error?: string }>(response, {});
-        return toast.error(result.error ?? "Failed to create event.");
+        return toast.error(t(result.error ?? "Failed to create event."));
       }
-      toast.success("Event created");
+      toast.success(t("Event created"));
       setTitle(""); setDescription(""); setStartTime(""); setEndTime(""); setIsAllDay(false); setColor(DEFAULT_EVENT_COLOR); setRecurrence("NONE");
       await fetchEventsForDate();
       window.setTimeout(onEventsChanged, 100);
     } catch {
-      toast.error("Failed to create event.");
+      toast.error(t("Failed to create event."));
     } finally {
       setSaving(false);
     }
@@ -141,8 +148,8 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     try {
       const selected = events.find((event) => event.id === eventToDeleteId);
       const response = await fetch(`/api/user/events?id=${selected ? eventRecordId(selected) : eventToDeleteId}`, { method: "DELETE" });
-      if (!response.ok) return toast.error("Failed to delete event.");
-      toast.success("Event deleted");
+      if (!response.ok) return toast.error(t("Failed to delete event."));
+      toast.success(t("Event deleted"));
       await fetchEventsForDate();
       window.setTimeout(onEventsChanged, 50);
       setShowDeleteModal(false);
@@ -157,7 +164,7 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
       await fetch("/api/user/events", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(events.filter((event) => !event.isProtected && !event.recurrencePattern).map((event, index) => ({ id: event.id, order: index }))) });
       window.setTimeout(onEventsChanged, 50);
     } catch {
-      toast.error("Failed to save order.");
+      toast.error(t("Failed to save order."));
     }
   };
 
@@ -165,28 +172,28 @@ export function EventModal({ open, onClose, selectedDate, onEventsChanged, initi
     <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
       <WorkspaceDialogContent className="h-[min(820px,92vh)] max-w-xl">
         <WorkspaceDialogHeader>
-          <WorkspaceDialogTitle className="flex items-center gap-2"><CalendarPlus className="h-5 w-5" />Add event</WorkspaceDialogTitle>
+          <WorkspaceDialogTitle className="flex items-center gap-2"><CalendarPlus className="h-5 w-5" />{t("Add event")}</WorkspaceDialogTitle>
           <WorkspaceDialogDescription>{dateStr}</WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
         <WorkspaceDialogBody className="space-y-6">
           <section aria-labelledby="day-events-heading">
-            <div className="mb-2 flex items-center justify-between"><h3 id="day-events-heading" className="text-sm font-semibold text-[var(--app-text)]">Events on this day</h3><span className="text-xs text-[var(--app-text-faint)]">Drag to reorder</span></div>
-            {loadingEvents ? <p className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-4 text-sm text-[var(--app-text-muted)]">Loading events…</p> : events.length ? <Reorder.Group axis="y" layoutScroll values={events} onReorder={setEvents} className="max-h-44 overflow-y-auto pr-1">{events.map((event) => <SortableEventItem key={event.id} event={event} onDelete={(id) => { setEventToDeleteId(id); setShowDeleteModal(true); }} onDragEnd={handleDragEnd} />)}</Reorder.Group> : <p className="rounded-xl border border-dashed border-[var(--app-border-strong)] px-3 py-4 text-sm text-[var(--app-text-muted)]">No events yet. Add the first one below.</p>}
+            <div className="mb-2 flex items-center justify-between"><h3 id="day-events-heading" className="text-sm font-semibold text-[var(--app-text)]">{t("Events on this day")}</h3><span className="text-xs text-[var(--app-text-faint)]">{t("Drag to reorder")}</span></div>
+            {loadingEvents ? <p className="rounded-xl bg-[var(--app-surface-muted)] px-3 py-4 text-sm text-[var(--app-text-muted)]">{t("Loading events…")}</p> : events.length ? <Reorder.Group axis="y" layoutScroll values={events} onReorder={setEvents} className="max-h-44 overflow-y-auto pr-1">{events.map((event) => <SortableEventItem key={event.id} event={event} onDelete={(id) => { setEventToDeleteId(id); setShowDeleteModal(true); }} onDragEnd={handleDragEnd} />)}</Reorder.Group> : <p className="rounded-xl border border-dashed border-[var(--app-border-strong)] px-3 py-4 text-sm text-[var(--app-text-muted)]">{t("No events yet. Add the first one below.")}</p>}
           </section>
 
           <section aria-labelledby="new-event-heading" className="space-y-4 border-t border-[var(--app-border)] pt-5">
-            <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">New event details</h3>
-            <div><label htmlFor="event-title" className={workspaceLabelClass}>Title</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder="Event title" /></div>
-            <div><label htmlFor="event-description" className={workspaceLabelClass}>Description <span className="font-normal text-[var(--app-text-faint)]">Optional</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder="Add a note" /></div>
-            <div><label className={workspaceLabelClass}>Repeats</label><WorkspaceSelect ariaLabel="Repeats" value={recurrence} options={RECURRENCE_OPTIONS} onValueChange={setRecurrence} triggerIcon={Repeat2} className="w-full" /></div>
-            <WorkspaceSwitchRow id="event-all-day" label="All day" checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
-            {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label="Start" value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label="End" value={endTime} onChange={setEndTime} /></div> : null}
+            <h3 id="new-event-heading" className="text-sm font-semibold text-[var(--app-text)]">{t("New event details")}</h3>
+            <div><label htmlFor="event-title" className={workspaceLabelClass}>{t("Title")}</label><Input id="event-title" value={title} onChange={(event) => setTitle(event.target.value)} className={workspaceFieldClass} placeholder={t("Event title")} /></div>
+            <div><label htmlFor="event-description" className={workspaceLabelClass}>{t("Description")} <span className="font-normal text-[var(--app-text-faint)]">{t("Optional")}</span></label><textarea id="event-description" value={description} onChange={(event) => setDescription(event.target.value)} rows={3} className={`${workspaceFieldClass} h-auto min-h-20 w-full resize-y py-2.5`} placeholder={t("Add a note")} /></div>
+            <div><label className={workspaceLabelClass}>{t("Repeats")}</label><WorkspaceSelect ariaLabel={t("Repeats")} value={recurrence} options={RECURRENCE_OPTIONS} translateLabels onValueChange={setRecurrence} triggerIcon={Repeat2} className="w-full" /></div>
+            <WorkspaceSwitchRow id="event-all-day" label={t("All day")} checked={isAllDay} onCheckedChange={setIsAllDay} className="rounded-xl p-3" />
+            {!isAllDay ? <div className="grid grid-cols-2 gap-3"><TimeField id="event-start-time" label={t("Start")} value={startTime} onChange={setStartTime} /><TimeField id="event-end-time" label={t("End")} value={endTime} onChange={setEndTime} /></div> : null}
             <EventColorPicker value={color} onValueChange={setColor} />
           </section>
         </WorkspaceDialogBody>
-        <WorkspaceDialogFooter><WorkspaceButton variant="secondary" onClick={onClose}>Cancel</WorkspaceButton><WorkspaceButton variant="primary" onClick={handleSave} disabled={saving}>{saving ? "Saving…" : "Add event"}</WorkspaceButton></WorkspaceDialogFooter>
+        <WorkspaceDialogFooter><WorkspaceButton variant="secondary" onClick={onClose}>{t("Cancel")}</WorkspaceButton><WorkspaceButton variant="primary" onClick={handleSave} disabled={saving}>{saving ? t("Saving…") : t("Add event")}</WorkspaceButton></WorkspaceDialogFooter>
       </WorkspaceDialogContent>
-      <DeleteConfirmationModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} isDeleting={deleting} title="Delete event" description="Delete this event? This action cannot be undone." />
+      <DeleteConfirmationModal open={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleConfirmDelete} isDeleting={deleting} title={t("Delete event")} description={t("Delete this event? This action cannot be undone.")} />
     </Dialog>
   );
 }

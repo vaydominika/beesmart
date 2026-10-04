@@ -1,3 +1,6 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import { Check, ChevronDown } from "lucide-react";
 import { EditorBubbleItem, useEditor } from "novel";
 
@@ -92,6 +95,7 @@ interface ColorSelectorProps {
 }
 
 export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
+  const t = useText();
     const { editor } = useEditor();
 
     if (!editor) return null;
@@ -110,8 +114,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                             backgroundColor: activeHighlightItem?.color,
                         }}
                     >
-                        A
-                    </span>
+                         {t("A")} </span>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
@@ -122,7 +125,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 align="start"
             >
                 <div className="flex flex-col">
-                    <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">Color</div>
+                    <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">{t("Color")}</div>
                     {TEXT_COLORS.map(({ name, color }) => (
                         <EditorBubbleItem
                             key={name}
@@ -137,18 +140,17 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                         >
                             <div className="flex items-center gap-2">
                                 <div className="rounded-sm border px-2 py-px font-medium" style={{ color }}>
-                                    A
-                                </div>
-                                <span>{name}</span>
+                                     {t("A")} </div>
+                                <span>{t(name)}</span>
                             </div>
                         </EditorBubbleItem>
                     ))}
                 </div>
                 <div>
-                    <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">Background</div>
+                    <div className="my-1 px-2 text-sm font-semibold text-muted-foreground">{t("Background")}</div>
                     {HIGHLIGHT_COLORS.map(({ name, color }) => (
                         <EditorBubbleItem
-                            key={name}
+                            key={t(name)}
                             onSelect={() => {
                                 editor.chain().focus().unsetHighlight().run();
                                 if (name !== "Default") {
@@ -160,9 +162,8 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                         >
                             <div className="flex items-center gap-2">
                                 <div className="rounded-sm border px-2 py-px font-medium" style={{ backgroundColor: color }}>
-                                    A
-                                </div>
-                                <span>{name}</span>
+                                     {t("A")} </div>
+                                <span>{t(name)}</span>
                             </div>
                             {editor.isActive("highlight", { color }) && <Check className="h-4 w-4" />}
                         </EditorBubbleItem>

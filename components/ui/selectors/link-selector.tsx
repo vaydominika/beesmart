@@ -1,3 +1,6 @@
+"use client";
+
+import { useText } from "@/i18n/use-text";
 import { Button } from "@/components/ui/button";
 import { PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -30,6 +33,7 @@ interface LinkSelectorProps {
 }
 
 export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
+  const t = useText();
     const inputRef = useRef<HTMLInputElement>(null);
     const { editor } = useEditor();
 
@@ -49,8 +53,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
                             "text-[var(--app-info)]": editor.isActive("link"),
                         })}
                     >
-                        Link
-                    </p>
+                         {t("Link")} </p>
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-60 p-0" sideOffset={10}>
@@ -70,7 +73,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
                     <input
                         ref={inputRef}
                         type="text"
-                        placeholder="Paste a link"
+                        placeholder={t("Paste a link")}
                         className="flex-1 bg-background p-1 text-sm outline-none"
                         defaultValue={editor.getAttributes("link").href || ""}
                     />

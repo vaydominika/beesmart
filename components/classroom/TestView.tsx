@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -101,6 +105,8 @@ interface TeacherDashboardView {
 type NotStartedLearner = { user: { id: string; name: string } };
 
 export function TestView({ classroomId, testId, isTeacher }: Props) {
+  const locale = useLocale();
+  const t = useText();
     const searchParams = useSearchParams();
     const requestedAttemptId = searchParams.get("attempt");
     const [loading, setLoading] = useState(true);
@@ -167,11 +173,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         } catch (cause) {
             const message = cause instanceof Error ? cause.message : "Error loading test details.";
             setLoadError(message);
-            toast.error(message);
+            toast.error(t(message));
         } finally {
             setLoading(false);
         }
-    }, [classroomId, testId, isTeacher, requestedAttemptId]);
+    }, [classroomId, testId, isTeacher, requestedAttemptId, t]);
 
     useEffect(() => {
         fetchInitialData();
@@ -188,7 +194,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 setTimeLeft(prev => {
                     if (prev === null || prev <= 1) {
                         clearInterval(timerId);
-                        toast.warning("Time is up! Submitting answers...");
+                        toast.warning(t("Time is up! Submitting answers..."));
                         submitTestRef.current();
                         return 0;
                     }
@@ -197,7 +203,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             }, 1000);
             return () => clearInterval(timerId);
         }
-    }, [testState, timeLeft]);
+    }, [testState, timeLeft, t]);
 
     // --- STUDENT ACTIONS ---
     const handleStartTest = async () => {
@@ -219,7 +225,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 setTimeLeft(null);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "The attempt could not be started.");
+            toast.error(t(error instanceof Error ? error.message : "The attempt could not be started."));
         }
     };
 
@@ -233,10 +239,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         });
         if (!response.ok) {
             setSaveState("ERROR");
-            throw new Error("Draft response could not be saved");
+            throw new Error(t("Draft response could not be saved"));
         }
         setSaveState("SAVED");
-    }, [attempt, classroomId, testId]);
+    }, [attempt, classroomId, testId, t]);
 
     const handleAnswerChange = (questionId: string, value: string, type: string) => {
         const nextValue = type === "MULTIPLE_CHOICE" || type === "TRUE_FALSE"
@@ -244,7 +250,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             : { responseText: value };
         const nextResponses = { ...responses, [questionId]: nextValue };
         if (totalWrittenCharacters(Object.values(nextResponses)) > TEST_TOTAL_WRITTEN_CHARACTER_LIMIT) {
-            toast.error(`Written answers can total up to ${TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} characters per attempt.`);
+            toast.error(t("Written answers can total up to {v0} characters per attempt.", { v0: TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString(locale) }));
             return;
         }
         setResponses(nextResponses);
@@ -290,11 +296,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 nextAttemptNumber: current.remainingAttempts > 1 ? data.attempt.attemptNumber + 1 : null,
                 canStart: current.remainingAttempts > 1,
             } : current);
-            toast.success("Test submitted successfully!");
+            toast.success(t("Test submitted successfully!"));
             await fetchInitialData();
 
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to submit test.");
+            toast.error(t(error instanceof Error ? error.message : "Failed to submit test."));
         } finally {
             setSubmitting(false);
         }
@@ -352,10 +358,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         setAiGrading(true);
         try {
             const gradedCount = await requestAiGrade(selectedAttempt.id);
-            toast.success(gradedCount ? `${gradedCount} ${gradedCount === 1 ? "essay" : "essays"} graded.` : "No ungraded essays found.");
+            toast.success(t(gradedCount ? `${gradedCount} ${gradedCount === 1 ? "essay" : "essays"} graded.` : "No ungraded essays found."));
             await fetchInitialData();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "AI grading could not be completed.");
+            toast.error(t(error instanceof Error ? error.message : "AI grading could not be completed."));
         } finally {
             setAiGrading(false);
         }
@@ -386,9 +392,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
         setAiGrading(false);
         await fetchInitialData();
         if (failed) {
-            toast.warning(`${queue.length - failed} attempts graded; ${failed} need another try.`);
+            toast.warning(t("{v0} attempts graded; {v1} need another try.", { v0: queue.length - failed, v1: failed }));
         } else {
-            toast.success(`${queue.length} ${queue.length === 1 ? "attempt" : "attempts"} graded.`);
+            toast.success(t("{v0} {v1} graded.", { v0: queue.length, v1: queue.length === 1 ? t("attempt") : t("attempts") }));
         }
     };
 
@@ -403,7 +409,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             teacherComment: draftGrades[response.id]?.teacherComment ?? "",
         }));
         if (grades.some((grade) => grade.pointsAwarded === "")) {
-            toast.error("Grade every written response before saving.");
+            toast.error(t("Grade every written response before saving."));
             return;
         }
         setGrading(true);
@@ -415,10 +421,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             });
             const data = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(data.error || "Grades could not be saved");
-            toast.success("Grades saved.");
+            toast.success(t("Grades saved."));
             await fetchInitialData();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Grades could not be saved.");
+            toast.error(t(error instanceof Error ? error.message : "Grades could not be saved."));
         } finally {
             setGrading(false);
         }
@@ -432,10 +438,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     };
 
     if (loading) {
-        return <WorkspaceLoadingState className="py-20" label="Loading assessment" />;
+        return <WorkspaceLoadingState className="py-20" label={t("Loading assessment")} />;
     }
 
-    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">Assessment unavailable</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || "Assessment details could not be loaded."}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">Try again</WorkspaceButton></div>;
+    if (!test || loadError) return <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><AlertCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" /><h1 className="mt-3 text-lg font-semibold">{t("Assessment unavailable")}</h1><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{loadError || t("Assessment details could not be loaded.")}</p><WorkspaceButton type="button" variant="secondary" onClick={() => void fetchInitialData()} className="mt-5">{t("Try again")}</WorkspaceButton></div>;
 
     // =========================================================================
     // STUDENT VIEW
@@ -453,7 +459,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 {test.timeLimit && (
                                     <>
                                         <span>•</span>
-                                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {test.timeLimit} mins</span>
+                                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {test.timeLimit}  {t("mins")}</span>
                                     </>
                                 )}
                             </div>
@@ -470,7 +476,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                         {testState === "COMPLETED" && bestAttempt && bestAttempt.score !== null && (
                             <div className="text-right">
-                                <span className="text-xs uppercase font-bold opacity-50 block mb-1">Final Score</span>
+                                <span className="text-xs uppercase font-bold opacity-50 block mb-1">{t("Final Score")}</span>
                                 <div className={cn(
                                     "text-3xl font-black",
                                     (bestAttempt.score ?? 0) >= (test.passingScore ?? 50) ? "text-[var(--app-success)]" : "text-[var(--app-warning)]"
@@ -486,25 +492,25 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 {testState === "PRE_TEST" && (
                     <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
                         <FileText className="h-16 w-16 mx-auto mb-6 text-(--theme-text) opacity-20" />
-                        <h2 className="text-2xl font-bold text-(--theme-text) mb-4">Ready to begin?</h2>
+                        <h2 className="text-2xl font-bold text-(--theme-text) mb-4">{t("Ready to begin?")}</h2>
                         {test.description && (
                             <p className="text-sm text-(--theme-text) opacity-80 mb-6">{test.description}</p>
                         )}
                         <div className="bg-(--theme-sidebar) p-4 rounded-xl corner-squircle text-left mb-8 space-y-3">
                             <div className="flex items-center gap-3">
                                 <AlertCircle className="h-5 w-5 text-[var(--app-warning)]" />
-                                <span className="text-sm font-bold text-(--theme-text)">Once you start, the timer cannot be paused.</span>
+                                <span className="text-sm font-bold text-(--theme-text)">{t("Once you start, the timer cannot be paused.")}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-[var(--app-info)]" />
-                                <span className="text-sm font-bold text-(--theme-text)">Make sure you have a stable connection.</span>
+                                <span className="text-sm font-bold text-(--theme-text)">{t("Make sure you have a stable connection.")}</span>
                             </div>
                         </div>
                         <WorkspaceButton type="button" variant="primary" onClick={handleStartTest} disabled={!attemptPolicy?.canStart}>
                             <Play className="h-5 w-5 mr-2" />
-                            {attemptPolicy?.activeAttemptId ? `Resume attempt ${attemptPolicy.nextAttemptNumber} of ${attemptPolicy.maxAttempts}` : `Start attempt ${attemptPolicy?.nextAttemptNumber ?? 1} of ${attemptPolicy?.maxAttempts ?? test.maxAttempts}`}
+                            {attemptPolicy?.activeAttemptId ? t("Resume attempt {v0} of {v1}", { v0: attemptPolicy.nextAttemptNumber, v1: attemptPolicy.maxAttempts }) : t("Start attempt {v0} of {v1}", { v0: attemptPolicy?.nextAttemptNumber ?? 1, v1: attemptPolicy?.maxAttempts ?? test.maxAttempts })}
                         </WorkspaceButton>
-                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts !== 0 && <p className="mt-3 text-xs font-medium text-[var(--classroom-text-muted)]">This assessment is not currently open.</p>}
+                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts !== 0 && <p className="mt-3 text-xs font-medium text-[var(--classroom-text-muted)]">{t("This assessment is not currently open.")}</p>}
                     </div>
                 )}
 
@@ -519,7 +525,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                     </div>
                                     <div className="flex-1">
                                         <h3 className="text-lg font-bold text-(--theme-text) leading-tight mb-2">{q.questionText}</h3>
-                                        <span className="text-xs font-bold uppercase text-(--theme-text) opacity-40">{q.points} {q.points === 1 ? 'Point' : 'Points'}</span>
+                                        <span className="text-xs font-bold uppercase text-(--theme-text) opacity-40">{q.points} {q.points === 1 ? t("Point") : t("Points")}</span>
                                     </div>
                                 </div>
 
@@ -559,12 +565,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                                 onChange={(e) => handleAnswerChange(q.id, e.target.value, q.questionType)}
                                                 maxLength={writtenResponseLimit(q.questionType) ?? undefined}
                                                 aria-describedby={`response-limit-${q.id}`}
-                                                placeholder="Write your answer here..."
+                                                placeholder={t("Write your answer here...")}
                                                 className="w-full bg-(--theme-sidebar) rounded-xl corner-squircle text-sm p-4 min-h-[150px] outline-none border-2 border-transparent focus:border-(--theme-text)/20 resize-y font-bold text-(--theme-text)"
                                             />
                                             <p id={`response-limit-${q.id}`} className="mt-1.5 text-right text-[11px] font-medium text-[var(--classroom-text-muted)]">
-                                                {(responses[q.id]?.responseText?.length ?? 0).toLocaleString()} / {(writtenResponseLimit(q.questionType) ?? 0).toLocaleString()} characters
-                                            </p>
+                                                {(responses[q.id]?.responseText?.length ?? 0).toLocaleString(locale)} / {(writtenResponseLimit(q.questionType) ?? 0).toLocaleString(locale)}  {t("characters")} </p>
                                         </div>
                                     )}
                                 </div>
@@ -574,14 +579,14 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         {/* Sticky Submit Bar */}
                         <div className="fixed bottom-0 left-0 w-full bg-(--theme-card) border-t border-(--theme-text)/10 p-4 shadow-2xl z-20">
                             <div className="max-w-3xl mx-auto flex items-center justify-between">
-                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length} of {test.questions.length} answered</span><span className="text-xs font-medium text-[var(--classroom-text-muted)]">{totalWrittenCharacters(Object.values(responses)).toLocaleString()} / {TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString()} written characters</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-[var(--app-danger)]" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? "Saving..." : saveState === "SAVED" ? "Saved" : saveState === "ERROR" ? "Draft save failed" : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-[var(--app-danger-border)] px-2 py-1 text-xs font-semibold text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)]">Retry save</button>}</div>
+                                <div className="flex flex-wrap items-center gap-3"><span className="text-sm font-bold text-(--theme-text) opacity-60">{Object.keys(responses).length}  {t("of")} {test.questions.length}  {t("answered")}</span><span className="text-xs font-medium text-[var(--classroom-text-muted)]">{totalWrittenCharacters(Object.values(responses)).toLocaleString(locale)} / {TEST_TOTAL_WRITTEN_CHARACTER_LIMIT.toLocaleString(locale)}  {t("written characters")}</span><span className={cn("text-xs font-medium", saveState === "ERROR" ? "text-[var(--app-danger)]" : "text-[var(--classroom-text-muted)]")}>{saveState === "SAVING" ? t("Saving...") : saveState === "SAVED" ? t("Saved") : saveState === "ERROR" ? t("Draft save failed") : ""}</span>{saveState === "ERROR" && <button type="button" onClick={() => void Promise.all(Object.entries(responses).map(([questionId, response]) => saveDraftResponse(questionId, response))).catch(() => undefined)} className="rounded-lg border border-[var(--app-danger-border)] px-2 py-1 text-xs font-semibold text-[var(--app-danger)] hover:bg-[var(--app-danger-soft)]">{t("Retry save")}</button>}</div>
                                 <WorkspaceButton
                                     type="button"
                                     variant="primary"
                                     onClick={handleSubmitTest}
                                     disabled={submitting}
                                 >
-                                    {submitting ? "Submitting..." : "Submit Exam"}
+                                    {submitting ? t("Submitting...") : t("Submit Exam")}
                                     {!submitting && <ArrowRight className="h-4 w-4 ml-2" />}
                                 </WorkspaceButton>
                             </div>
@@ -593,12 +598,12 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 {testState === "COMPLETED" && (
                     <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
                         <CheckCircle2 className="h-16 w-16 mx-auto mb-6 text-[var(--app-success)]" />
-                        <h2 className="text-2xl font-bold text-(--theme-text) mb-2">Test Submitted</h2>
+                        <h2 className="text-2xl font-bold text-(--theme-text) mb-2">{t("Test Submitted")}</h2>
 
                         {(attempt?.score ?? bestAttempt?.score) != null ? (
-                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">Your test was auto-graded. Check the header for your final score.</p>
+                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">{t("Your test was auto-graded. Check the header for your final score.")}</p>
                         ) : (
-                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">Your test has been submitted and is pending review for essay responses.</p>
+                            <p className="text-sm text-(--theme-text) opacity-80 mb-6">{t("Your test has been submitted and is pending review for essay responses.")}</p>
                         )}
                         {resultReview.length > 0 && (
                             <div className="mb-6 space-y-3 text-left">
@@ -608,9 +613,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                             <p className="text-sm font-semibold text-[var(--classroom-text)]">{index + 1}. {item.questionText}</p>
                                             <span className="shrink-0 text-sm font-semibold text-[var(--classroom-text)]">{item.pointsAwarded}/{item.maxPoints}</span>
                                         </div>
-                                        <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Your answer: {item.learnerAnswer}</p>
+                                        <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">{t("Your answer:")} {item.learnerAnswer}</p>
                                         {item.expectedAnswer && (
-                                            <p className="mt-1 text-xs font-medium text-[var(--app-warning)]">Expected answer: {item.expectedAnswer}</p>
+                                            <p className="mt-1 text-xs font-medium text-[var(--app-warning)]">{t("Expected answer:")} {item.expectedAnswer}</p>
                                         )}
                                     </div>
                                 ))}
@@ -618,10 +623,10 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                         )}
                         {attemptPolicy?.canStart && attemptPolicy.remainingAttempts > 0 && (
                             <WorkspaceButton type="button" variant="primary" onClick={() => void handleStartTest()}>
-                                <Play className="h-4 w-4" />Start attempt {(attempt?.attemptNumber ?? attemptHistory.length) + 1} of {attemptPolicy.maxAttempts}
+                                <Play className="h-4 w-4" />{t("Start attempt")} {(attempt?.attemptNumber ?? attemptHistory.length) + 1}  {t("of")} {attemptPolicy.maxAttempts}
                             </WorkspaceButton>
                         )}
-                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts === 0 && <p className="text-xs font-semibold text-[var(--classroom-text-muted)]">No attempts remaining.</p>}
+                        {!attemptPolicy?.canStart && attemptPolicy?.remainingAttempts === 0 && <p className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("No attempts remaining.")}</p>}
                     </div>
                 )}
             </div>
@@ -633,9 +638,9 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
     // =========================================================================
 
     const tabItems = [
-        { key: "completed" as const, label: "Completed", count: dashboardData?.completed.length ?? 0 },
-        { key: "inProgress" as const, label: "In progress", count: dashboardData?.inProgress.length ?? 0 },
-        { key: "notStarted" as const, label: "Not started", count: dashboardData?.notStarted.length ?? 0 },
+        { key: "completed" as const, label: t("Completed"), count: dashboardData?.completed.length ?? 0 },
+        { key: "inProgress" as const, label: t("In progress"), count: dashboardData?.inProgress.length ?? 0 },
+        { key: "notStarted" as const, label: t("Not started"), count: dashboardData?.notStarted.length ?? 0 },
     ];
     const activeItems = teacherTab === "notStarted"
         ? dashboardData?.notStarted ?? []
@@ -653,39 +658,38 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none md:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--classroom-text-faint)]">Assessment review</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--classroom-text-faint)]">{t("Assessment review")}</p>
                         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[var(--classroom-text)]">{test.title}</h1>
                     </div>
                     <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchInitialData()}>
-                        <RefreshCw className="h-3.5 w-3.5" />Refresh
-                    </WorkspaceButton>
+                        <RefreshCw className="h-3.5 w-3.5" />{t("Refresh")} </WorkspaceButton>
                 </div>
-                <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Attempt status">
+                <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label={t("Attempt status")}>
                     {tabItems.map((item) => (
                         <button key={item.key} type="button" role="tab" aria-selected={teacherTab === item.key} onClick={() => setTeacherTab(item.key)} className={cn("rounded-lg border px-3 py-2 text-sm font-medium transition-colors", teacherTab === item.key ? "border-[var(--classroom-accent-hover)] bg-[var(--classroom-accent)] text-[var(--classroom-text)]" : "border-[var(--classroom-line)] bg-[var(--app-surface)] text-[var(--classroom-text-muted)] hover:bg-[var(--classroom-surface-muted)]")}>
-                            {item.label}<span className="ml-2 rounded-md bg-[color-mix(in_srgb,var(--app-surface)_70%,transparent)] px-1.5 py-0.5 text-xs">{item.count}</span>
+                            {t(item.label)}<span className="ml-2 rounded-md bg-[color-mix(in_srgb,var(--app-surface)_70%,transparent)] px-1.5 py-0.5 text-xs">{item.count}</span>
                         </button>
                     ))}
                 </div>
                 <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-[var(--classroom-text)]">AI essay grading</p>
-                            <AiUsageStatus usage={gradingUsage} category="GRADING" unit="student" className="bg-[var(--app-surface)]" />
+                            <p className="text-sm font-semibold text-[var(--classroom-text)]">{t("AI essay grading")}</p>
+                            <AiUsageStatus usage={gradingUsage} category="GRADING" unit={t("student")} className="bg-[var(--app-surface)]" />
                         </div>
                         {batchProgress ? (
                             <WorkspaceProgress
                                 value={batchProgress.total ? Math.round((batchProgress.completed / batchProgress.total) * 100) : 0}
-                                label={`${batchProgress.completed} of ${batchProgress.total}${batchProgress.failed ? ` · ${batchProgress.failed} failed` : ""}`}
+                                label={t("{v0} of {v1}{v2}", { v0: batchProgress.completed, v1: batchProgress.total, v2: batchProgress.failed ? ` · ${batchProgress.failed} failed` : "" })}
                                 className="mt-2 w-full max-w-sm"
                             />
                         ) : (
-                            <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Awards essay points directly. Expected answers come only from the answer key.</p>
+                            <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">{t("Awards essay points directly. Expected answers come only from the answer key.")}</p>
                         )}
                     </div>
                     <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleAiGradeAll()} disabled={aiGrading || gradingExhausted || attemptsNeedingAiGrading.length === 0}>
                         {aiGrading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                        {aiGrading ? "Grading..." : `Grade pending (${Math.min(attemptsNeedingAiGrading.length, AI_GRADING_BATCH_SIZE)})`}
+                        {aiGrading ? t("Grading...") : t("Grade pending ({v0})", { v0: Math.min(attemptsNeedingAiGrading.length, AI_GRADING_BATCH_SIZE) })}
                     </WorkspaceButton>
                 </div>
             </div>
@@ -694,7 +698,7 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                 <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-3 shadow-none">
                     <div className="max-h-[680px] space-y-1 overflow-y-auto">
                         {activeItems.length === 0 ? (
-                            <div className="px-4 py-12 text-center text-sm text-[var(--classroom-text-muted)]">No learners in this state.</div>
+                            <div className="px-4 py-12 text-center text-sm text-[var(--classroom-text-muted)]">{t("No learners in this state.")}</div>
                         ) : activeItems.map((item: TeacherTestAttempt | NotStartedLearner) => {
                             const attemptItem = "responses" in item;
                             const selected = attemptItem && item.id === selectedAttemptId;
@@ -703,11 +707,11 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                     <div className="flex items-center gap-3">
                                         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--app-surface)] text-sm font-semibold text-[var(--classroom-text-muted)]"><UserRound className="h-4 w-4" /></span>
                                         <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{item.user.name}{attemptItem ? ` · Attempt ${item.attemptNumber}` : ""}</p>
-                                            {attemptItem ? <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{item.isCompleted ? new Date(item.submittedAt ?? item.startedAt).toLocaleString() : `Started ${new Date(item.startedAt).toLocaleString()}`}</p> : <p className="text-xs text-[var(--classroom-text-muted)]">No attempt</p>}
+                                            <p className="truncate text-sm font-semibold text-[var(--classroom-text)]">{item.user.name}{attemptItem ? t(" · Attempt {v0}", { v0: item.attemptNumber }) : ""}</p>
+                                            {attemptItem ? <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{item.isCompleted ? new Date(item.submittedAt ?? item.startedAt).toLocaleString(locale) : t("Started {v0}", { v0: new Date(item.startedAt).toLocaleString(locale) })}</p> : <p className="text-xs text-[var(--classroom-text-muted)]">{t("No attempt")}</p>}
                                         </div>
                                     </div>
-                                    {attemptItem && item.isCompleted && <div className="mt-2 flex items-center justify-between text-xs"><span className={item.gradingStatus === "NEEDS_REVIEW" ? "text-[var(--app-warning)]" : "text-[var(--app-success)]"}>{item.gradingStatus === "NEEDS_REVIEW" ? `${item.manualResponsesRemaining} to review` : "Graded"}</span><span className="font-semibold text-[var(--classroom-text)]">{item.score == null ? "--" : `${Math.round(item.score)}%`}</span></div>}
+                                    {attemptItem && item.isCompleted && <div className="mt-2 flex items-center justify-between text-xs"><span className={item.gradingStatus === "NEEDS_REVIEW" ? "text-[var(--app-warning)]" : "text-[var(--app-success)]"}>{item.gradingStatus === "NEEDS_REVIEW" ? t("{v0} to review", { v0: item.manualResponsesRemaining }) : t("Graded")}</span><span className="font-semibold text-[var(--classroom-text)]">{item.score == null ? "--" : t("{v0}%", { v0: Math.round(item.score) })}</span></div>}
                                 </button>
                             );
                         })}
@@ -716,21 +720,21 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
 
                 <div className="min-w-0 space-y-4">
                     {teacherTab !== "completed" ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? "Attempts still in progress" : "Learners who have not started"}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">Select Completed to inspect and grade submitted work.</p></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold text-[var(--classroom-text)]">{teacherTab === "inProgress" ? t("Attempts still in progress") : t("Learners who have not started")}</h2><p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{t("Select Completed to inspect and grade submitted work.")}</p></div></div>
                     ) : !selectedAttempt ? (
-                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold">Select a completed attempt</h2></div></div>
+                        <div className="flex min-h-[360px] items-center justify-center overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none"><div><h2 className="font-semibold">{t("Select a completed attempt")}</h2></div></div>
                     ) : (
                         <>
                             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <h2 className="text-lg font-semibold text-[var(--classroom-text)]">{selectedAttempt.user.name}</h2>
-                                        <p className="text-xs text-[var(--classroom-text-muted)]">Attempt {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? "Written answers need review" : "Grading complete"}</p>
+                                        <p className="text-xs text-[var(--classroom-text-muted)]">{t("Attempt")} {selectedAttempt.attemptNumber} · {selectedAttempt.gradingStatus === "NEEDS_REVIEW" ? t("Written answers need review") : t("Grading complete")}</p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void handleAiGradeAttempt()} disabled={aiGrading || gradingExhausted || !selectedAttemptNeedsAiGrading}>
                                             {aiGrading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                                            {selectedAttemptNeedsAiGrading ? "AI grade essays" : "Essays graded"}
+                                            {selectedAttemptNeedsAiGrading ? t("AI grade essays") : t("Essays graded")}
                                         </WorkspaceButton>
                                     </div>
                                 </div>
@@ -742,21 +746,21 @@ export function TestView({ classroomId, testId, isTeacher }: Props) {
                                 const correctOption = response.question.options.find((option) => option.isCorrect);
                                 return (
                                     <div key={response.id} className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-5 shadow-none">
-                                        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">Question {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points} pts</span></div>
-                                        <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">Learner answer</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || "No answer"}</p></div>
-                                        {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">Expected: {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
+                                        <div className="flex items-start justify-between gap-4"><div><p className="text-xs font-semibold text-[var(--classroom-text-faint)]">{t("Question")} {index + 1} · {response.question.questionType.replaceAll("_", " ")}</p><h3 className="mt-1 font-semibold leading-6 text-[var(--classroom-text)]">{response.question.questionText}</h3></div><span className="shrink-0 text-xs font-semibold text-[var(--classroom-text-muted)]">{response.question.points}  {t("pts")}</span></div>
+                                        <div className="mt-4 rounded-xl bg-[var(--classroom-surface-muted)] p-4"><p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--classroom-text-faint)]">{t("Learner answer")}</p><p className="mt-1 whitespace-pre-wrap text-sm text-[var(--classroom-text)]">{response.responseText || selectedOption?.optionText || t("No answer")}</p></div>
+                                        {(correctOption || response.question.answers?.some((answer) => answer.answerText)) && <p className="mt-2 text-xs text-[var(--classroom-text-muted)]">{t("Expected:")} {correctOption?.optionText || response.question.answers?.map((answer) => answer.answerText).filter(Boolean).join(" / ")}</p>}
                                         {manual ? (
                                             <div className="mt-4 grid gap-3 sm:grid-cols-[140px_minmax(0,1fr)]">
-                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Points<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
-                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback<textarea maxLength={1000} value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder="Explain what was done well and what to improve." /></label>
+                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Points")}<input type="number" min={0} max={response.question.points} step="0.5" value={draftGrades[response.id]?.pointsAwarded ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], pointsAwarded: event.target.value } }))} className="mt-1 h-10 w-full rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 text-sm outline-none focus:border-[var(--classroom-focus-border)]" /></label>
+                                                <label className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Feedback")}<textarea maxLength={1000} value={draftGrades[response.id]?.teacherComment ?? ""} onChange={(event) => setDraftGrades((current) => ({ ...current, [response.id]: { ...current[response.id], teacherComment: event.target.value } }))} className="mt-1 min-h-20 w-full resize-y rounded-lg border border-[var(--classroom-line)] bg-[var(--app-surface)] px-3 py-2 text-sm outline-none focus:border-[var(--classroom-focus-border)]" placeholder={t("Explain what was done well and what to improve.")} /></label>
                                             </div>
-                                        ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-[var(--app-success)]" : "text-[var(--app-danger)]"}>{response.isCorrect ? "Correct" : "Incorrect"}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points} points</span></div>}
+                                        ) : <div className="mt-3 text-sm font-medium"><span className={response.isCorrect ? "text-[var(--app-success)]" : "text-[var(--app-danger)]"}>{response.isCorrect ? t("Correct") : t("Incorrect")}</span><span className="ml-2 text-[var(--classroom-text-muted)]">{response.pointsAwarded ?? 0}/{response.question.points}  {t("points")}</span></div>}
                                     </div>
                                 );
                             })}
 
                             <div className="sticky bottom-4 overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-4 shadow-lg">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">Draft total: {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">Review every written answer before saving.</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? "Saving..." : "Save grades"}</WorkspaceButton></div>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-[var(--classroom-text)]">{t("Draft total:")} {Number.isFinite(draftAwarded) ? draftAwarded : 0} / {totalPoints}</p><p className="text-xs text-[var(--classroom-text-muted)]">{t("Review every written answer before saving.")}</p></div><WorkspaceButton type="button" variant="primary" onClick={() => void handleSaveGrades()} disabled={grading}><Save className="h-4 w-4" />{grading ? t("Saving...") : t("Save grades")}</WorkspaceButton></div>
                             </div>
                         </>
                     )}

@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { CalendarPlus, LockKeyhole } from "lucide-react";
 import { ScheduleEvent, type ScheduleSelectionProps, addDays, dateKey, eventsForDate, isSameDay, monthGridRange } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
@@ -12,9 +16,12 @@ interface ScheduleMonthViewProps extends ScheduleSelectionProps {
   onCreateDate: (date: Date) => void;
 }
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
 
 export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelectEvent, onCreateDate }: ScheduleMonthViewProps) {
+  const locale = useLocale();
+  const t = useText();
+  const WEEKDAYS = Array.from({ length: 7 }, (_, day) => new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(2024, 0, 1 + day)));
   const range = monthGridRange(selectedDate);
   const days = Array.from({ length: 42 }, (_, index) => addDays(range.start, index));
   const today = new Date();
@@ -47,7 +54,7 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                 <button
                   type="button"
                   onClick={() => onSelectDate(day)}
-                  aria-label={`Select ${day.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`}
+                  aria-label={t("Select {v0}", { v0: day.toLocaleDateString(locale, { month: "long", day: "numeric" }) })}
                   className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)]",
                     outside && "text-[var(--schedule-text-faint)]",
@@ -60,7 +67,7 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                 <button
                   type="button"
                   onClick={() => onCreateDate(day)}
-                  aria-label={`New event on ${day.toLocaleDateString("en-US", { month: "long", day: "numeric" })}`}
+                  aria-label={t("New event on {v0}", { v0: day.toLocaleDateString(locale, { month: "long", day: "numeric" }) })}
                   className="flex h-6 w-6 items-center justify-center rounded-lg text-[var(--schedule-text-muted)] opacity-100 transition-colors hover:bg-[var(--schedule-accent)] hover:text-[var(--schedule-text)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--schedule-focus-border)] md:opacity-0 md:group-hover:opacity-100"
                 >
                   <CalendarPlus className="h-3.5 w-3.5" />
@@ -76,13 +83,12 @@ export function ScheduleMonthView({ selectedDate, events, onSelectDate, onSelect
                     style={eventSurfaceStyle(event.color)}
                   >
                     {event.canEdit === false && <LockKeyhole className="h-2.5 w-2.5 shrink-0" />}
-                    <span className="truncate">{event.isAllDay ? event.title : `${event.startTime || ""} ${event.title}`}</span>
+                    <span className="truncate">{event.isAllDay ? event.title : t("{v0} {v1}", { v0: event.startTime || "", v1: event.title })}</span>
                   </button>
                 ))}
                 {dayEvents.length > 3 && (
                   <button type="button" onClick={() => onSelectDate(day)} className="px-1 text-[10px] font-semibold text-[var(--schedule-text-muted)] hover:text-[var(--schedule-text)]">
-                    +{dayEvents.length - 3} more
-                  </button>
+                    +{dayEvents.length - 3}  {t("more")} </button>
                 )}
               </div>
             </div>

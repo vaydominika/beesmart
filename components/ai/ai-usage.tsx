@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useState } from "react";
 import {
   aiDailyLimitFor,
@@ -65,16 +68,18 @@ export function useAiUsage(category: AiUsageCategory, enabled = true) {
   };
 }
 
-function localResetTime(resetsAt: string) {
-  return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(resetsAt));
+function localResetTime(resetsAt: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(new Date(resetsAt));
 }
 
 export function AiUsageStatus({ usage, category = "LESSON_CONTENT", unit = "AI attempt", className }: { usage: AiUsageState | null; category?: AiUsageCategory; unit?: string; className?: string }) {
+  const locale = useLocale();
+  const t = useText();
   const remaining = usage?.remaining ?? aiDailyLimitFor(category);
   return (
     <p role="status" className={cn("flex w-fit max-w-full flex-wrap items-center gap-x-1 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-2 py-1 text-[10px] font-medium text-[var(--app-text-muted)]", className)}>
-      <span>{remaining} {unit}{remaining === 1 ? "" : "s"} left today</span>
-      {usage?.resetsAt && <span aria-label={`Resets at ${localResetTime(usage.resetsAt)}`}>· Resets {localResetTime(usage.resetsAt)}</span>}
+      <span>{remaining} {t(unit)}{remaining === 1 ? "" : t("s")}  {t("left today")}</span>
+      {usage?.resetsAt && <span aria-label={t("Resets at {v0}", { v0: localResetTime(usage.resetsAt, locale) })}>{t("· Resets")} {localResetTime(usage.resetsAt, locale)}</span>}
     </p>
   );
 }

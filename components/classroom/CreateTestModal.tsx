@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WorkspaceDialogContent } from "@/components/ui/workspace-dialog";
@@ -59,6 +61,7 @@ type Difficulty = (typeof DIFFICULTY_OPTIONS)[number]["value"];
 type SourceCourse = { id: string; title: string; relationship?: string; classrooms?: Array<{ id: string }> };
 
 export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
+  const t = useText();
     const nextQuestionId = useRef(2);
     const sourceFilesInputRef = useRef<HTMLInputElement>(null);
     const [title, setTitle] = useState("");
@@ -98,24 +101,24 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         let active = true;
         fetch("/api/courses?source=all")
             .then(async (response) => {
-                if (!response.ok) throw new Error("Could not load courses");
+                if (!response.ok) throw new Error(t("Could not load courses"));
                 return response.json() as Promise<SourceCourse[]>;
             })
             .then((items) => {
                 if (!active) return;
                 setSourceCourses(items.filter((course) => course.relationship === "owner" || course.classrooms?.some((classroom) => classroom.id === classroomId)));
             })
-            .catch(() => active && toast.error("Course sources could not be loaded."));
+            .catch(() => active && toast.error(t("Course sources could not be loaded.")));
         return () => { active = false; };
-    }, [classroomId, open]);
+    }, [classroomId, open, t]);
 
     const generateTest = async () => {
         if (sourceMode === "course" && !courseId) {
-            toast.error("Choose a source course first.");
+            toast.error(t("Choose a source course first."));
             return;
         }
         if (sourceMode === "text" && sourceFiles.length === 0 && sourceText.trim().length < AI_SOURCE_MIN_CHARACTER_LIMIT) {
-            toast.error(`Paste at least ${AI_SOURCE_MIN_CHARACTER_LIMIT} characters of source text.`);
+            toast.error(t("Paste at least {v0} characters of source text.", { v0: AI_SOURCE_MIN_CHARACTER_LIMIT }));
             return;
         }
         setGenerating(true);
@@ -161,10 +164,10 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                     : (question.options ?? []).map((option) => ({ optionText: option.text, isCorrect: option.isCorrect })),
                 correctAnswer: question.correctAnswer,
             })));
-            toast.success("Questions created. Review and edit them below.");
+            toast.success(t("Questions created. Review and edit them below."));
         } catch (error) {
             void refreshAiUsage();
-            toast.error(error instanceof Error ? error.message : "Test generation failed");
+            toast.error(t(error instanceof Error ? error.message : "Test generation failed"));
         } finally {
             setGenerating(false);
         }
@@ -270,23 +273,23 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
 
     const handleSave = () => {
         if (!title.trim()) {
-            toast.error("Please enter a title.");
+            toast.error(t("Please enter a title."));
             return;
         }
         if (opensAt && isLocalDateTimePast(opensAt)) {
-            toast.error("Opening time cannot be in the past.");
+            toast.error(t("Opening time cannot be in the past."));
             return;
         }
         if (closesAt && isLocalDateTimePast(closesAt)) {
-            toast.error("Closing time cannot be in the past.");
+            toast.error(t("Closing time cannot be in the past."));
             return;
         }
         if (opensAt && closesAt && new Date(closesAt) < new Date(opensAt)) {
-            toast.error("Closing time must be after opening time.");
+            toast.error(t("Closing time must be after opening time."));
             return;
         }
         if (!Number.isSafeInteger(Number(maxAttempts)) || Number(maxAttempts) < 1) {
-            toast.error("Attempts allowed must be a positive integer.");
+            toast.error(t("Attempts allowed must be a positive integer."));
             return;
         }
 
@@ -294,21 +297,21 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
             if (!q.questionText.trim()) {
-                toast.error(`Question ${i + 1} needs text.`);
+                toast.error(t("Question {v0} needs text.", { v0: i + 1 }));
                 return;
             }
             if (q.questionType === "MULTIPLE_CHOICE" || q.questionType === "TRUE_FALSE") {
                 if (!q.options.some((o) => o.isCorrect && o.optionText.trim())) {
-                    toast.error(`Question ${i + 1} needs a correct answer.`);
+                    toast.error(t("Question {v0} needs a correct answer.", { v0: i + 1 }));
                     return;
                 }
                 if (q.options.filter((o) => o.optionText.trim()).length < 2) {
-                    toast.error(`Question ${i + 1} needs at least 2 options.`);
+                    toast.error(t("Question {v0} needs at least 2 options.", { v0: i + 1 }));
                     return;
                 }
             }
             if (q.questionType === "SHORT_ANSWER" && !(q.correctAnswer ?? "").split("\n").some((answer) => answer.trim())) {
-                toast.error(`Question ${i + 1} needs at least one accepted answer.`);
+                toast.error(t("Question {v0} needs at least one accepted answer.", { v0: i + 1 }));
                 return;
             }
         }
@@ -345,7 +348,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
             };
 
         onAdd(payload);
-        toast.success(`${testType === "EXAM" ? "Exam" : "Test"} attached. Publish the post to create it.`);
+        toast.success(t("{v0} attached. Publish the post to create it.", { v0: testType === "EXAM" ? t("Exam") : t("Test") }));
         setTitle("");
         setDescription("");
         setTestType("TEST");
@@ -391,7 +394,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
         <Dialog open={open} onOpenChange={onClose}>
             <WorkspaceDialogContent mobileSheet={false} className="classroom-dialog h-[calc(100dvh-1rem)] max-w-4xl overflow-hidden rounded-2xl border border-[var(--classroom-line-strong)] bg-[var(--app-surface)] p-0 shadow-2xl md:h-[94vh] md:max-h-[880px]">
                 <DialogClose
-                    aria-label="Close test builder"
+                    aria-label={t("Close test builder")}
                     className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--app-surface)] text-[var(--classroom-text-muted)] transition-colors hover:bg-[var(--classroom-surface-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]"
                 >
                     <X className="h-4 w-4" />
@@ -400,7 +403,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                   <div className="h-full min-h-0 flex flex-col">
                     <DialogHeader className="shrink-0 border-b border-[var(--classroom-line)] pb-4 pr-10 text-left">
                         <DialogTitle className="text-lg font-semibold text-(--theme-text) md:text-xl">
-                            Create {testType === "EXAM" ? "Exam" : "Test"}
+                             {t("Create")} {testType === "EXAM" ? t("Exam") : t("Test")}
                         </DialogTitle>
                     </DialogHeader>
 
@@ -410,36 +413,36 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                 <div className="flex items-start gap-3">
                                     <Sparkles className="mt-0.5 h-5 w-5 text-[var(--classroom-text-muted)]" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="font-semibold text-[var(--classroom-text)]">Create questions with AI</p>
-                                        <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">Choose what the questions should be based on.</p>
+                                        <p className="font-semibold text-[var(--classroom-text)]">{t("Create questions with AI")}</p>
+                                        <p className="mt-1 text-xs text-[var(--classroom-text-muted)]">{t("Choose what the questions should be based on.")}</p>
                                         <AiUsageStatus usage={aiUsage} className="mt-1.5 text-[var(--classroom-text-muted)]" />
                                     </div>
                                 </div>
-                                <p className="mb-1.5 mt-3 text-xs font-semibold text-[var(--classroom-text)]">Use content from</p>
-                                <WorkspaceTabs ariaLabel="Question source" value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: "Course" }, { value: "text", label: "Text" }]} size="compact" fill className="bg-[var(--app-surface)]!" />
+                                <p className="mb-1.5 mt-3 text-xs font-semibold text-[var(--classroom-text)]">{t("Use content from")}</p>
+                                <WorkspaceTabs ariaLabel={t("Question source")} value={sourceMode} onValueChange={setSourceMode} items={[{ value: "course", label: t("Course") }, { value: "text", label: t("Text") }]} size="compact" fill className="bg-[var(--app-surface)]!" />
                                 {sourceMode === "course" ? (
                                     <WorkspaceSelect
-                                        ariaLabel="Source course"
+                                        ariaLabel={t("Source course")}
                                         value={courseId}
                                         options={sourceCourses.map((course) => ({ value: course.id, label: course.title }))}
                                         onValueChange={setCourseId}
-                                        placeholder="Choose source course"
+                                        placeholder={t("Choose source course")}
                                         className="mt-3 h-10 w-full rounded-xl border-0 bg-[var(--app-surface)]!"
                                     />
                                 ) : (
                                     <div className="mt-3">
                                         <label className="block">
-                                            <span className="sr-only">Source text</span>
-                                            <textarea aria-label="Source text" value={sourceText} maxLength={AI_SOURCE_CHARACTER_LIMIT} onChange={(event) => setSourceText(event.target.value)} placeholder="Paste the material here..." className="min-h-28 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
+                                            <span className="sr-only">{t("Source text")}</span>
+                                            <textarea aria-label={t("Source text")} value={sourceText} maxLength={AI_SOURCE_CHARACTER_LIMIT} onChange={(event) => setSourceText(event.target.value)} placeholder={t("Paste the material here...")} className="min-h-28 w-full resize-y rounded-xl border-0 bg-[var(--app-surface)]! px-3 py-2.5 text-sm leading-6 text-[var(--classroom-text)] outline-none focus:ring-2 focus:ring-[var(--classroom-focus-border)]" />
                                         </label>
                                         <p className="mt-1 text-[10px] text-[var(--classroom-text-muted)]">
                                             {sourceText.trim().length >= AI_SOURCE_MIN_CHARACTER_LIMIT || sourceFiles.length > 0
-                                                ? "Ready"
-                                                : `Paste at least ${AI_SOURCE_MIN_CHARACTER_LIMIT} characters.`}
+                                                ? t("Ready")
+                                                : t("Paste at least {v0} characters.", { v0: AI_SOURCE_MIN_CHARACTER_LIMIT })}
                                         </p>
                                         <input
                                             ref={sourceFilesInputRef}
-                                            aria-label="Choose source files"
+                                            aria-label={t("Choose source files")}
                                             type="file"
                                             accept=".pdf,.docx,.txt,.csv"
                                             multiple
@@ -447,7 +450,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                             onChange={(event) => {
                                                 const selected = Array.from(event.target.files ?? []);
                                                 if (selected.length > 5) {
-                                                    toast.error("Choose up to 5 source files.");
+                                                    toast.error(t("Choose up to 5 source files."));
                                                     event.target.value = "";
                                                     return;
                                                 }
@@ -456,9 +459,8 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                         />
                                         <div className="mt-2 flex flex-wrap items-center gap-2">
                                             <WorkspaceButton type="button" variant="secondary" size="compact" className="border-dashed" onClick={() => sourceFilesInputRef.current?.click()}>
-                                                <Upload className="h-4 w-4" /> Attach files
-                                            </WorkspaceButton>
-                                            <span className="text-[10px] text-[var(--classroom-text-muted)]">Optional · up to 5 PDF, DOCX, TXT, or CSV files</span>
+                                                <Upload className="h-4 w-4" />  {t("Attach files")} </WorkspaceButton>
+                                            <span className="text-[10px] text-[var(--classroom-text-muted)]">{t("Optional · up to 5 PDF, DOCX, TXT, or CSV files")}</span>
                                         </div>
                                         {sourceFiles.length > 0 && (
                                             <div className="mt-2 space-y-1.5">
@@ -466,48 +468,48 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                     <div key={`${file.name}-${file.size}-${file.lastModified}`} className="flex items-center gap-2 rounded-lg bg-[var(--app-surface)] px-2.5 py-2 text-xs text-[var(--classroom-text)]">
                                                         <FileText className="h-4 w-4 shrink-0 text-[var(--classroom-text-muted)]" />
                                                         <span className="min-w-0 flex-1 truncate">{file.name}</span>
-                                                        <button type="button" aria-label={`Remove ${file.name}`} onClick={() => setSourceFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} className="rounded-md p-1 text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]">
+                                                        <button type="button" aria-label={t("Remove {v0}", { v0: file.name })} onClick={() => setSourceFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} className="rounded-md p-1 text-[var(--classroom-text-muted)] hover:text-[var(--classroom-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--classroom-focus-border)]">
                                                             <X className="h-3.5 w-3.5" />
                                                         </button>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
-                                        {sourceFiles.length > 0 && <p className="mt-1.5 text-[10px] text-[var(--classroom-text-muted)]">These files are used only to create questions.</p>}
+                                        {sourceFiles.length > 0 && <p className="mt-1.5 text-[10px] text-[var(--classroom-text-muted)]">{t("These files are used only to create questions.")}</p>}
                                     </div>
                                 )}
                                 <details className="mt-3 rounded-xl bg-[var(--app-surface)] px-3 py-2">
                                     <summary className="cursor-pointer text-xs font-semibold text-[var(--classroom-text-muted)]">
-                                        Optional settings · {questionCount} questions · {difficulty.toLowerCase()}
+                                         {t("Optional settings ·")} {questionCount}  {t("questions ·")} {difficulty.toLowerCase()}
                                     </summary>
                                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
                                         <label>
-                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">Difficulty</span>
-                                            <WorkspaceSelect ariaLabel="Difficulty" value={difficulty} options={DIFFICULTY_OPTIONS} onValueChange={setDifficulty} className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]" />
+                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Difficulty")}</span>
+                                            <WorkspaceSelect ariaLabel={t("Difficulty")} value={difficulty} options={DIFFICULTY_OPTIONS} translateLabels onValueChange={setDifficulty} className="h-10 w-full rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]" />
                                         </label>
                                         <label>
-                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">Number of questions</span>
-                                            <Input aria-label="Question count" type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]! shadow-none" />
+                                            <span className="mb-1 block text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Number of questions")}</span>
+                                            <Input aria-label={t("Question count")} type="number" min={1} max={20} value={questionCount} onChange={(event) => setQuestionCount(Math.min(20, Math.max(1, Number(event.target.value) || 1)))} className="h-10 rounded-xl border border-[var(--classroom-line)] bg-[var(--app-surface)]! shadow-none" />
                                         </label>
                                     </div>
                                 </details>
                                 <WorkspaceButton type="button" variant="primary" className="mt-3 h-10 w-full rounded-xl" onClick={generateTest} disabled={generating || aiExhausted || (sourceMode === "course" ? !courseId : !sourceText.trim() && sourceFiles.length === 0)}>
-                                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {generating ? "Creating..." : "Create questions"}
+                                    {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {generating ? t("Creating...") : t("Create questions")}
                                 </WorkspaceButton>
                             </div>
                             {/* Basic Info */}
                             <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Title *</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Title *")}</label>
                                     <Input
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
-                                        placeholder="e.g. Midterm Exam"
+                                        placeholder={t("e.g. Midterm Exam")}
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Attempts allowed</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Attempts allowed")}</label>
                                     <Input
                                         type="number"
                                         value={maxAttempts}
@@ -518,12 +520,12 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Type</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Type")}</label>
                                     <WorkspaceTabs
-                                        ariaLabel="Assessment type"
+                                        ariaLabel={t("Assessment type")}
                                         value={testType}
                                         onValueChange={setTestType}
-                                        items={[{ value: "TEST", label: "Test" }, { value: "EXAM", label: "Exam" }]}
+                                        items={[{ value: "TEST", label: t("Test") }, { value: "EXAM", label: t("Exam") }]}
                                         fill
                                         className="h-10"
                                         tabClassName="h-8"
@@ -532,35 +534,35 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Description</label>
+                                <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Description")}</label>
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[50px] w-full p-3 resize-none"
-                                    placeholder="Instructions..."
+                                    placeholder={t("Instructions...")}
                                 />
                             </div>
 
                             <div className="flex gap-3">
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Time Limit (min)</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Time Limit (min)")}</label>
                                     <Input
                                         type="number"
                                         value={timeLimit}
                                         onChange={(e) => setTimeLimit(e.target.value)}
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
-                                        placeholder="No limit"
+                                        placeholder={t("No limit")}
                                         min="1"
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Passing Score (%)</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Passing Score (%)")}</label>
                                     <Input
                                         type="number"
                                         value={passingScore}
                                         onChange={(e) => setPassingScore(e.target.value)}
                                         className="bg-(--theme-sidebar) rounded-xl corner-squircle text-sm font-bold border-0 focus-visible:ring-2 focus-visible:ring-(--theme-card) h-10 w-full"
-                                        placeholder="Optional"
+                                        placeholder={t("Optional")}
                                         min="0"
                                         max="100"
                                     />
@@ -569,7 +571,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
 
                             <div className="flex gap-3">
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Opens At (optional)</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Opens At (optional)")}</label>
                                     <Input
                                         type="datetime-local"
                                         min={minimumLocalDateTimeInputValue()}
@@ -579,7 +581,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">Closes At (optional)</label>
+                                    <label className="block text-xs font-bold text-(--theme-text) uppercase mb-1">{t("Closes At (optional)")}</label>
                                     <Input
                                         type="datetime-local"
                                         min={opensAt && opensAt > minimumLocalDateTimeInputValue() ? opensAt : minimumLocalDateTimeInputValue()}
@@ -593,8 +595,8 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                             {/* Questions */}
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <label className="text-xs font-bold text-(--theme-text) uppercase">Questions</label>
-                                    <span className="text-xs text-(--theme-text) opacity-40">{questions.length} question{questions.length !== 1 ? "s" : ""}</span>
+                                    <label className="text-xs font-bold text-(--theme-text) uppercase">{t("Questions")}</label>
+                                    <span className="text-xs text-(--theme-text) opacity-40">{questions.length}  {t("question")}{questions.length !== 1 ? t("s") : ""}</span>
                                 </div>
 
                                 <DragDropContext onDragEnd={handleQuestionDragEnd}>
@@ -622,13 +624,13 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                     <button
                                                         type="button"
                                                         {...draggableProvided.dragHandleProps}
-                                                        aria-label={`Move question ${qIndex + 1}`}
+                                                        aria-label={t("Move question {v0}", { v0: qIndex + 1 })}
                                                         className="-ml-1 flex h-7 w-7 touch-none cursor-grab items-center justify-center rounded-md text-(--theme-text) opacity-40 transition-opacity hover:opacity-80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--theme-card) active:cursor-grabbing"
                                                     >
                                                         <GripVertical className="h-4 w-4" />
                                                     </button>
                                                     <span className="text-xs font-bold text-(--theme-text) opacity-60">
-                                                        Q{qIndex + 1}
+                                                         {t("Q")}{qIndex + 1}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -639,7 +641,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                         className="bg-(--theme-bg) rounded-lg text-xs font-bold border-0 h-7 w-16 text-center"
                                                         min="1"
                                                     />
-                                                    <span className="text-[10px] text-(--theme-text) opacity-40">pts</span>
+                                                    <span className="text-[10px] text-(--theme-text) opacity-40">{t("pts")}</span>
                                                     {questions.length > 1 && (
                                                         <button
                                                             onClick={() => removeQuestion(qIndex)}
@@ -653,7 +655,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
 
                                             {/* Question Type Selector */}
                                             <WorkspaceTabs
-                                                ariaLabel={`Question ${qIndex + 1} type`}
+                                                ariaLabel={t("Question {v0} type", { v0: qIndex + 1 })}
                                                 value={q.questionType}
                                                 onValueChange={(value) => updateQuestion(qIndex, "questionType", value)}
                                                 items={(Object.entries(QUESTION_TYPE_LABELS) as [QuestionType, string][]).map(([value, label]) => ({ value, label }))}
@@ -667,7 +669,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                 value={q.questionText}
                                                 onChange={(e) => updateQuestion(qIndex, "questionText", e.target.value)}
                                                 className="bg-(--theme-bg) rounded-lg text-sm font-bold border-0 outline-none ring-0 focus:ring-2 focus:ring-(--theme-card) min-h-[40px] w-full p-2.5 resize-none"
-                                                placeholder="Enter your question..."
+                                                placeholder={t("Enter your question...")}
                                             />
 
                                             {/* Options for MC / TF */}
@@ -686,14 +688,14 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                                 )}
                                                             >
                                                                 <CheckCircle2 className="h-5 w-5" />
-                                                            </button></TooltipTrigger><TooltipContent>{opt.isCorrect ? "Correct answer" : "Mark as correct"}</TooltipContent></Tooltip>
+                                                            </button></TooltipTrigger><TooltipContent>{opt.isCorrect ? t("Correct answer") : t("Mark as correct")}</TooltipContent></Tooltip>
                                                             <Input
                                                                 value={opt.optionText}
                                                                 onChange={(e) =>
                                                                     updateOption(qIndex, oIndex, "optionText", e.target.value)
                                                                 }
                                                                 className="h-10 flex-1 rounded-xl border-0 bg-(--theme-bg) text-sm font-bold focus-visible:ring-1 focus-visible:ring-(--theme-card)"
-                                                                placeholder={`Option ${oIndex + 1}`}
+                                                                placeholder={t("Option {v0}", { v0: oIndex + 1 })}
                                                                 disabled={q.questionType === "TRUE_FALSE"}
                                                             />
                                                             {q.questionType === "MULTIPLE_CHOICE" && q.options.length > 2 && (
@@ -712,8 +714,7 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                                             className="text-xs font-bold text-(--theme-text) opacity-40 hover:opacity-80 flex items-center gap-1 ml-7"
                                                         >
                                                             <Plus className="h-3 w-3" />
-                                                            Add option
-                                                        </button>
+                                                             {t("Add option")} </button>
                                                     )}
                                                 </div>
                                             )}
@@ -722,23 +723,21 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                             {q.questionType === "SHORT_ANSWER" && (
                                                 <div>
                                                     <label className="block text-[10px] font-bold text-(--theme-text) opacity-50 mb-1">
-                                                        Correct Answer (for auto-grading)
-                                                    </label>
+                                                         {t("Correct Answer (for auto-grading)")} </label>
                                                     <textarea
                                                         value={q.correctAnswer || ""}
                                                         onChange={(e) => updateQuestion(qIndex, "correctAnswer", e.target.value)}
                                                         className="min-h-20 w-full resize-y rounded-lg border-0 bg-(--theme-bg) p-3 text-sm font-bold outline-none focus:ring-1 focus:ring-(--theme-card)"
-                                                        placeholder="One accepted answer per line"
+                                                        placeholder={t("One accepted answer per line")}
                                                     />
-                                                    <p className="mt-1 text-[10px] text-(--theme-text) opacity-50">Automatically graded after case, whitespace, and Unicode normalization.</p>
+                                                    <p className="mt-1 text-[10px] text-(--theme-text) opacity-50">{t("Automatically graded after case, whitespace, and Unicode normalization.")}</p>
                                                 </div>
                                             )}
 
                                             {/* Essay note */}
                                             {q.questionType === "ESSAY" && (
                                                 <p className="text-[10px] text-(--theme-text) opacity-40 italic">
-                                                    Essay questions require manual grading.
-                                                </p>
+                                                     {t("Essay questions require manual grading.")} </p>
                                             )}
                                         </div>
                                             )}
@@ -755,19 +754,16 @@ export function CreateTestModal({ open, onClose, onAdd, classroomId }: Props) {
                                     className="mt-3 flex items-center gap-1.5 text-xs font-bold text-(--theme-text) opacity-50 hover:opacity-100 transition-opacity"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Add Question
-                                </button>
+                                     {t("Add Question")} </button>
                             </div>
                         </div>
                     </ScrollArea>
 
                     <div className="mt-3 flex shrink-0 justify-end gap-2 border-t border-[var(--classroom-line)] pt-3">
                         <WorkspaceButton type="button" variant="secondary" className="h-10 rounded-xl" onClick={onClose}>
-                            Cancel
-                        </WorkspaceButton>
+                             {t("Cancel")} </WorkspaceButton>
                         <WorkspaceButton type="button" variant="primary" className="h-10 rounded-xl" onClick={handleSave}>
-                            Attach {testType === "EXAM" ? "exam" : "test"} to post
-                        </WorkspaceButton>
+                             {t("Attach")} {testType === "EXAM" ? t("exam") : t("test")}  {t("to post")} </WorkspaceButton>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -100,6 +102,7 @@ function WorkLink({ href, label }: { href: string; label: string }) {
 }
 
 export function ClassroomGradebook({ classroomId }: Props) {
+  const t = useText();
     const [data, setData] = useState<GradebookData | null>(null);
     const [loading, setLoading] = useState(true);
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
@@ -143,15 +146,15 @@ export function ClassroomGradebook({ classroomId }: Props) {
     if (loading) return <div className="flex justify-center py-10"><Spinner /></div>;
 
     if (!data) {
-        return <p className="py-10 text-center text-sm text-(--classroom-text-muted)">No gradebook data available.</p>;
+        return <p className="py-10 text-center text-sm text-(--classroom-text-muted)">{t("No gradebook data available.")}</p>;
     }
 
     if (data.assignments.length === 0 && data.tests.length === 0) {
         return (
             <div className="rounded-xl border border-(--classroom-line) bg-(--classroom-surface) px-5 py-12 text-center">
-                <p className="text-sm font-semibold text-(--classroom-text)">No work yet</p>
+                <p className="text-sm font-semibold text-(--classroom-text)">{t("No work yet")}</p>
                 <p className="mt-1 text-xs text-(--classroom-text-muted)">
-                    {data.role === "STUDENT" ? "Your assignments, tests, and exams will appear here." : "Assignments, tests, and exams will appear here after you create them."}
+                    {data.role === "STUDENT" ? t("Your assignments, tests, and exams will appear here.") : t("Assignments, tests, and exams will appear here after you create them.")}
                 </p>
             </div>
         );
@@ -175,24 +178,24 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                 <table className="w-full min-w-[420px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
-                                            <th className="px-4 py-2.5 text-left">Status</th>
-                                            <th className="px-4 py-2.5 text-left">Submitted</th>
-                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Status")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Submitted")}</th>
+                                            <th className="px-4 py-2.5 text-right">{t("Score")}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td className="px-4 py-3 text-(--classroom-text)">{assignment.grade ? "Graded" : statusLabel(assignment.submission?.status)}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{assignment.grade ? t("Graded") : statusLabel(assignment.submission?.status)}</td>
                                             <td className="px-4 py-3 text-(--classroom-text-muted)">{assignment.submission?.submittedAt ? formatDateYmd(assignment.submission.submittedAt) : "—"}</td>
                                             <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">
-                                                {assignment.grade ? `${assignment.grade.score}${assignment.grade.maxScore ? `/${assignment.grade.maxScore}` : ""}` : "—"}
+                                                {assignment.grade ? t("{v0}{v1}", { v0: assignment.grade.score, v1: assignment.grade.maxScore ? `/${assignment.grade.maxScore}` : "" }) : "—"}
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                                 {assignment.grade?.feedback && <p className="border-t border-(--classroom-line) px-4 py-3 text-xs text-(--classroom-text-muted)">{assignment.grade.feedback}</p>}
                                 <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
-                                    <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label="Open assignment" />
+                                    <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label={t("Open assignment")} />
                                 </div>
                             </div>
                         </GradeSection>
@@ -214,21 +217,21 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                 <table className="w-full min-w-[360px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
-                                            <th className="px-4 py-2.5 text-left">Status</th>
-                                            <th className="px-4 py-2.5 text-left">Completed</th>
-                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Status")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Completed")}</th>
+                                            <th className="px-4 py-2.5 text-right">{t("Score")}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td className="px-4 py-3 text-(--classroom-text)">{test.attempt ? (test.attempt.score != null ? "Graded" : "Awaiting review") : "Not completed"}</td>
+                                            <td className="px-4 py-3 text-(--classroom-text)">{test.attempt ? (test.attempt.score != null ? t("Graded") : t("Awaiting review")) : t("Not completed")}</td>
                                             <td className="px-4 py-3 text-(--classroom-text-muted)">{test.attempt?.submittedAt ? formatDateYmd(test.attempt.submittedAt) : "—"}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{test.attempt?.score != null ? `${Math.round(test.attempt.score)}%` : "—"}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{test.attempt?.score != null ? t("{v0}%", { v0: Math.round(test.attempt.score) }) : "—"}</td>
                                         </tr>
                                     </tbody>
                                 </table>
                                 <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
-                                    <WorkLink href={`/classroom/${classroomId}/tests/${test.id}${test.attempt ? `?attempt=${test.attempt.id}` : ""}`} label={`Open ${test.type === "EXAM" ? "exam" : "test"}`} />
+                                    <WorkLink href={`/classroom/${classroomId}/tests/${test.id}${test.attempt ? `?attempt=${test.attempt.id}` : ""}`} label={t("Open {v0}", { v0: test.type === "EXAM" ? t("exam") : t("test") })} />
                                 </div>
                             </div>
                         </GradeSection>
@@ -268,17 +271,17 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         <div>
                             {rows.length === 0 ? (
                                 <div className="px-5 py-9 text-center">
-                                    <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
+                                    <p className="text-sm font-medium text-(--classroom-text)">{t("No students are enrolled yet")}</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[520px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
-                                            <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
-                                            <th className="px-4 py-2.5 text-left">Submitted</th>
-                                            <th className="px-4 py-2.5 text-left">Status</th>
-                                            <th className="px-4 py-2.5 text-right">Score</th>
+                                            <th className="w-[38%] px-4 py-2.5 text-left">{t("Student")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Submitted")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Status")}</th>
+                                            <th className="px-4 py-2.5 text-right">{t("Score")}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-(--classroom-line)">
@@ -291,8 +294,8 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
-                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.score !== null ? "Graded" : statusLabel(result.submissionStatus)}</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? `${result.score}${result.maxScore ? `/${result.maxScore}` : ""}` : "—"}</td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.score !== null ? t("Graded") : statusLabel(result.submissionStatus)}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? t("{v0}{v1}", { v0: result.score, v1: result.maxScore ? `/${result.maxScore}` : "" }) : "—"}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -300,7 +303,7 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                 </div>
                             )}
                             <div className="flex justify-end border-t border-(--classroom-line) px-3 py-2">
-                                <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label="Open assignment" />
+                                <WorkLink href={`/classroom/${classroomId}/assignments/${assignment.id}`} label={t("Open assignment")} />
                             </div>
                         </div>
                     </GradeSection>
@@ -336,18 +339,18 @@ export function ClassroomGradebook({ classroomId }: Props) {
                         <div>
                             {rows.length === 0 ? (
                                 <div className="px-5 py-9 text-center">
-                                    <p className="text-sm font-medium text-(--classroom-text)">No students are enrolled yet</p>
+                                    <p className="text-sm font-medium text-(--classroom-text)">{t("No students are enrolled yet")}</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full min-w-[620px] text-sm">
                                     <thead className="bg-(--classroom-surface-muted) text-xs font-medium text-(--classroom-text-muted)">
                                         <tr>
-                                            <th className="w-[38%] px-4 py-2.5 text-left">Student</th>
-                                            <th className="px-4 py-2.5 text-left">Completed</th>
-                                            <th className="px-4 py-2.5 text-left">Status</th>
-                                            <th className="px-4 py-2.5 text-right">Score</th>
-                                            <th className="w-24 px-4 py-2.5"><span className="sr-only">Open</span></th>
+                                            <th className="w-[38%] px-4 py-2.5 text-left">{t("Student")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Completed")}</th>
+                                            <th className="px-4 py-2.5 text-left">{t("Status")}</th>
+                                            <th className="px-4 py-2.5 text-right">{t("Score")}</th>
+                                            <th className="w-24 px-4 py-2.5"><span className="sr-only">{t("Open")}</span></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-(--classroom-line)">
@@ -360,9 +363,9 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-(--classroom-text-muted)">{result.submittedAt ? formatDateYmd(result.submittedAt) : "—"}</td>
-                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.attemptId ? (result.score !== null ? "Graded" : "Awaiting review") : "Not completed"}</td>
-                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? `${Math.round(result.score)}%` : "—"}</td>
-                                                <td className="px-2 py-2 text-right">{result.attemptId && <WorkLink href={`/classroom/${classroomId}/tests/${test.id}?attempt=${result.attemptId}`} label="Open" />}</td>
+                                                <td className="px-4 py-3 text-(--classroom-text-muted)">{result.attemptId ? (result.score !== null ? t("Graded") : t("Awaiting review")) : t("Not completed")}</td>
+                                                <td className="px-4 py-3 text-right font-semibold text-(--classroom-text)">{result.score !== null ? t("{v0}%", { v0: Math.round(result.score) }) : "—"}</td>
+                                                <td className="px-2 py-2 text-right">{result.attemptId && <WorkLink href={`/classroom/${classroomId}/tests/${test.id}?attempt=${result.attemptId}`} label={t("Open")} />}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -375,12 +378,12 @@ export function ClassroomGradebook({ classroomId }: Props) {
                                     variant="ghost"
                                     size="icon-compact"
                                     onClick={() => setPreviewTestId(test.id)}
-                                    aria-label={`Preview ${test.type === "EXAM" ? "exam" : "test"} ${test.title}`}
-                                    title={`Preview ${test.type === "EXAM" ? "exam" : "test"}`}
+                                    aria-label={t("Preview {v0} {v1}", { v0: test.type === "EXAM" ? t("exam") : t("test"), v1: test.title })}
+                                    title={t("Preview {v0}", { v0: test.type === "EXAM" ? t("exam") : t("test") })}
                                 >
                                     <Eye aria-hidden="true" />
                                 </WorkspaceButton>
-                                <WorkLink href={`/classroom/${classroomId}/tests/${test.id}`} label={`Open ${test.type === "EXAM" ? "exam" : "test"}`} />
+                                <WorkLink href={`/classroom/${classroomId}/tests/${test.id}`} label={t("Open {v0}", { v0: test.type === "EXAM" ? t("exam") : t("test") })} />
                             </div>
                         </div>
                     </GradeSection>

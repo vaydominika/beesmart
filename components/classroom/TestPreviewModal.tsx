@@ -1,5 +1,8 @@
 "use client";
 
+import { useLocale } from "next-intl";
+import { useText } from "@/i18n/use-text";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Check, Clock, GraduationCap, RotateCcw, Target } from "lucide-react";
@@ -48,9 +51,12 @@ type Props = {
 };
 
 const questionTypeLabel = (value: string) => value.replaceAll("_", " ").toLowerCase().replace(/^./, (letter) => letter.toUpperCase());
-const formatSchedule = (value?: string | null) => value ? new Date(value).toLocaleString() : "Not set";
+
 
 export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) {
+  const locale = useLocale();
+  const t = useText();
+  const formatSchedule = (value?: string | null) => value ? new Date(value).toLocaleString(locale) : t("Not set");
   const [result, setResult] = useState<{ testId: string | null; test: PreviewTest | null; error: string | null }>({
     testId: null,
     test: null,
@@ -89,36 +95,35 @@ export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) 
         <WorkspaceDialogHeader>
           <WorkspaceDialogTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            {test?.title || "Assessment preview"}
+            {test?.title || t("Assessment preview")}
           </WorkspaceDialogTitle>
           <WorkspaceDialogDescription>
-            Review the assessment exactly as configured before opening its grading dashboard.
-          </WorkspaceDialogDescription>
+             {t("Review the assessment exactly as configured before opening its grading dashboard.")} </WorkspaceDialogDescription>
         </WorkspaceDialogHeader>
 
         <WorkspaceDialogBody>
-          {loading ? <WorkspaceLoadingState className="py-16" label="Loading assessment" /> : null}
-          {error ? <WorkspaceFormMessage>{error}</WorkspaceFormMessage> : null}
+          {loading ? <WorkspaceLoadingState className="py-16" label={t("Loading assessment")} /> : null}
+          {error ? <WorkspaceFormMessage>{t(error)}</WorkspaceFormMessage> : null}
           {test ? (
             <div className="space-y-5">
               <div className="flex flex-wrap gap-2 text-xs font-semibold text-[var(--classroom-text-muted)]">
-                <span className="rounded-full bg-[var(--classroom-accent)] px-3 py-1 uppercase text-[var(--classroom-text)]">{test.type}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><Clock className="h-3.5 w-3.5" />{test.timeLimit ? `${test.timeLimit} minutes` : "No time limit"}</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><Target className="h-3.5 w-3.5" />{test.passingScore ?? 50}% to pass</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><RotateCcw className="h-3.5 w-3.5" />{test.maxAttempts} {test.maxAttempts === 1 ? "attempt" : "attempts"}</span>
+                <span className="rounded-full bg-[var(--classroom-accent)] px-3 py-1 uppercase text-[var(--classroom-text)]">{t(test.type === "EXAM" ? "Exam" : "Test")}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><Clock className="h-3.5 w-3.5" />{test.timeLimit ? t("{v0} minutes", { v0: test.timeLimit }) : t("No time limit")}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><Target className="h-3.5 w-3.5" />{test.passingScore ?? 50}{t("% to pass")}</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--classroom-surface-muted)] px-3 py-1"><RotateCcw className="h-3.5 w-3.5" />{test.maxAttempts} {test.maxAttempts === 1 ? t("attempt") : t("attempts")}</span>
               </div>
 
               {test.description ? <div className="prose prose-sm max-w-none text-[var(--classroom-text-muted)]" dangerouslySetInnerHTML={{ __html: test.description }} /> : null}
 
               <div className="grid gap-2 text-xs text-[var(--classroom-text-muted)] sm:grid-cols-2">
-                <div className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3"><span className="mb-1 flex items-center gap-1 font-semibold text-[var(--classroom-text)]"><CalendarDays className="h-3.5 w-3.5" />Opens</span>{formatSchedule(test.opensAt)}</div>
-                <div className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3"><span className="mb-1 flex items-center gap-1 font-semibold text-[var(--classroom-text)]"><CalendarDays className="h-3.5 w-3.5" />Closes</span>{formatSchedule(test.closesAt)}</div>
+                <div className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3"><span className="mb-1 flex items-center gap-1 font-semibold text-[var(--classroom-text)]"><CalendarDays className="h-3.5 w-3.5" />{t("Opens")}</span>{formatSchedule(test.opensAt)}</div>
+                <div className="rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] p-3"><span className="mb-1 flex items-center gap-1 font-semibold text-[var(--classroom-text)]"><CalendarDays className="h-3.5 w-3.5" />{t("Closes")}</span>{formatSchedule(test.closesAt)}</div>
               </div>
 
               <section aria-labelledby="preview-questions-heading">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <h3 id="preview-questions-heading" className="text-sm font-semibold text-[var(--classroom-text)]">Questions</h3>
-                  <span className="text-xs font-medium text-[var(--classroom-text-muted)]">{test.questions.length} total</span>
+                  <h3 id="preview-questions-heading" className="text-sm font-semibold text-[var(--classroom-text)]">{t("Questions")}</h3>
+                  <span className="text-xs font-medium text-[var(--classroom-text-muted)]">{test.questions.length}  {t("total")}</span>
                 </div>
                 <ol className="space-y-3">
                   {test.questions.map((question, index) => {
@@ -130,7 +135,7 @@ export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) 
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-start justify-between gap-2">
                               <p className="text-sm font-semibold leading-5 text-[var(--classroom-text)]">{question.questionText}</p>
-                              <span className="shrink-0 text-[10px] font-semibold uppercase text-[var(--classroom-text-muted)]">{questionTypeLabel(question.questionType)} · {question.points} {question.points === 1 ? "pt" : "pts"}</span>
+                              <span className="shrink-0 text-[10px] font-semibold uppercase text-[var(--classroom-text-muted)]">{t(questionTypeLabel(question.questionType))} · {question.points} {question.points === 1 ? t("pt") : t("pts")}</span>
                             </div>
                             {question.options.length ? (
                               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -142,9 +147,9 @@ export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) 
                                 ))}
                               </ul>
                             ) : acceptedAnswers.length ? (
-                              <p className="mt-3 text-xs text-[var(--classroom-text-muted)]"><span className="font-semibold text-[var(--classroom-text)]">Accepted answer:</span> {acceptedAnswers.join(" / ")}</p>
+                              <p className="mt-3 text-xs text-[var(--classroom-text-muted)]"><span className="font-semibold text-[var(--classroom-text)]">{t("Accepted answer:")}</span> {acceptedAnswers.join(" / ")}</p>
                             ) : (
-                              <p className="mt-3 text-xs italic text-[var(--classroom-text-muted)]">Manually graded response</p>
+                              <p className="mt-3 text-xs italic text-[var(--classroom-text-muted)]">{t("Manually graded response")}</p>
                             )}
                           </div>
                         </div>
@@ -158,8 +163,8 @@ export function TestPreviewModal({ open, onClose, classroomId, testId }: Props) 
         </WorkspaceDialogBody>
 
         <WorkspaceDialogFooter>
-          <WorkspaceButton type="button" variant="secondary" onClick={onClose}>Close</WorkspaceButton>
-          {testId ? <Link href={`/classroom/${classroomId}/tests/${testId}`} className={workspaceButtonVariants({ variant: "primary" })}>Open grading dashboard</Link> : null}
+          <WorkspaceButton type="button" variant="secondary" onClick={onClose}>{t("Close")}</WorkspaceButton>
+          {testId ? <Link href={`/classroom/${classroomId}/tests/${testId}`} className={workspaceButtonVariants({ variant: "primary" })}>{t("Open grading dashboard")}</Link> : null}
         </WorkspaceDialogFooter>
       </WorkspaceDialogContent>
     </Dialog>

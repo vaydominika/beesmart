@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocale } from "next-intl";
+
+import { useText } from "@/i18n/use-text";
+
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { WorkspaceButton } from "@/components/ui/workspace-button";
@@ -72,11 +76,12 @@ const statusTone = (status?: string | null) => {
 };
 
 function ProfileAvatar({ user, className }: { user: { name: string; image?: string | null }; className?: string }) {
+  const t = useText();
     return (
         <Avatar className={cn("h-9 w-9 border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]", className)}>
             <AvatarImage
                 src={profileImageUrl(user.image)}
-                alt={`${user.name}'s profile picture`}
+                alt={t("{v0}'s profile picture", { v0: user.name })}
                 className="object-cover object-center"
             />
             <AvatarFallback className="bg-[var(--classroom-surface-muted)] text-xs font-semibold text-[var(--classroom-text-muted)]">
@@ -87,6 +92,8 @@ function ProfileAvatar({ user, className }: { user: { name: string; image?: stri
 }
 
 export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) {
+  const locale = useLocale();
+  const t = useText();
     const router = useRouter();
     const searchParams = useSearchParams();
     const requestedStudentId = searchParams.get("student");
@@ -138,15 +145,15 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 if (isTeacher) setAllSubmissions(data as TeacherSubmissionsView);
                 else setMySubmission(data[0] || null);
             } else {
-                setSubmissionsError("Submissions could not be loaded.");
+                setSubmissionsError(t("Submissions could not be loaded."));
             }
         } catch {
-            setAssignmentError("Assignment details could not be loaded.");
-            setSubmissionsError("Submissions could not be loaded.");
+            setAssignmentError(t("Assignment details could not be loaded."));
+            setSubmissionsError(t("Submissions could not be loaded."));
         } finally {
             setLoading(false);
         }
-    }, [classroomId, assignmentId, isTeacher]);
+    }, [classroomId, assignmentId, isTeacher, t]);
 
     useEffect(() => {
         fetchAssignmentAndSubmissions();
@@ -183,14 +190,14 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                 const res = await fetch("/api/uploads", { method: "POST", body: formData });
                 if (!res.ok) {
                     const result = await res.json().catch(() => ({})) as { error?: string };
-                    toast.error(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`);
+                    toast.error(t(result.error ? `${file.name}: ${result.error}` : `Failed to upload ${file.name}`));
                     continue;
                 }
                 const uploaded = await res.json();
                 setSubmissionFiles((prev) => [...prev, uploaded]);
             }
         } catch {
-            toast.error("Upload failed.");
+            toast.error(t("Upload failed."));
         } finally {
             setUploadingFiles(false);
             e.target.value = "";
@@ -199,7 +206,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
     const handleSubmitWork = async () => {
         if (!submissionContent.trim() && submissionFiles.length === 0) {
-            toast.error("Please add content or attach files to submit.");
+            toast.error(t("Please add content or attach files to submit."));
             return;
         }
 
@@ -216,13 +223,13 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
             if (!res.ok) throw new Error();
 
-            toast.success("Work submitted successfully.");
+            toast.success(t("Work submitted successfully."));
             setSubmissionContent("");
             setSubmissionFiles([]);
             fetchAssignmentAndSubmissions();
 
         } catch {
-            toast.error("Failed to submit work.");
+            toast.error(t("Failed to submit work."));
         } finally {
             setSubmitting(false);
         }
@@ -230,7 +237,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
     const handleGradeSubmission = async (studentId: string) => {
         if (!gradeScore) {
-            toast.error("Score is required.");
+            toast.error(t("Score is required."));
             return;
         }
 
@@ -249,29 +256,29 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
             if (!res.ok) throw new Error();
 
-            toast.success("Grade saved!");
+            toast.success(t("Grade saved!"));
             setGradeScore("");
             setGradeFeedback("");
             fetchAssignmentAndSubmissions();
 
         } catch {
-            toast.error("Failed to save grade.");
+            toast.error(t("Failed to save grade."));
         } finally {
             setGrading(false);
         }
     };
 
     if (loading) {
-        return <WorkspaceLoadingState className="py-20" label="Loading assignment" />;
+        return <WorkspaceLoadingState className="py-20" label={t("Loading assignment")} />;
     }
 
     if (!assignment) {
         return (
             <div className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] p-8 text-center shadow-none">
                 <XCircle className="mx-auto h-8 w-8 text-[var(--app-danger)]" />
-                <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">Assignment unavailable</h1>
-                <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? "Assignment details could not be loaded."}</p>
-                <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">Try again</WorkspaceButton>
+                <h1 className="mt-3 text-lg font-semibold text-[var(--classroom-text)]">{t("Assignment unavailable")}</h1>
+                <p className="mt-1 text-sm text-[var(--classroom-text-muted)]">{assignmentError ?? t("Assignment details could not be loaded.")}</p>
+                <WorkspaceButton type="button" variant="secondary" onClick={() => void fetchAssignmentAndSubmissions()} className="mt-5">{t("Try again")}</WorkspaceButton>
             </div>
         );
     }
@@ -300,13 +307,13 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                     <div className="flex min-w-0 items-center gap-2">
                         <ProfileAvatar user={displayAssignment.assigner} className="h-7 w-7" />
                         <span className="truncate">
-                            Assigned by <strong className="font-semibold text-[var(--classroom-text)]">{displayAssignment.assigner.name}</strong>
+                             {t("Assigned by")} <strong className="font-semibold text-[var(--classroom-text)]">{displayAssignment.assigner.name}</strong>
                         </span>
                     </div>
                     <span className="hidden h-4 w-px bg-[var(--classroom-line)] sm:block" aria-hidden="true" />
                     <span className="inline-flex items-center gap-1.5 font-medium">
                         <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-                        Due {dueDate}
+                         {t("Due")} {dueDate}
                         <span className="hidden opacity-70 sm:inline">· {displayAssignment.deadlineTimeZone}</span>
                     </span>
                     {displayAssignment.isGraded && displayAssignment.maxPoints != null && (
@@ -314,8 +321,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                             <span className="hidden h-4 w-px bg-[var(--classroom-line)] sm:block" aria-hidden="true" />
                             <span className="inline-flex items-center gap-1.5 font-medium">
                                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                                {displayAssignment.maxPoints} points
-                                {isTeacher && (
+                                {displayAssignment.maxPoints}  {t("points")} {isTeacher && (
                                     <ClassroomWorkEditButton
                                         classroomId={classroomId}
                                         assignmentId={assignmentId}
@@ -343,7 +349,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                     )}
                 </div>
                 {displayAssignment.files.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--classroom-line)] pt-3" aria-label="Assignment attachments">
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--classroom-line)] pt-3" aria-label={t("Assignment attachments")}>
                         {displayAssignment.files.map((file) => (
                             <FileAttachmentChip
                                 key={file.id}
@@ -360,7 +366,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
             {submissionsError && (
                 <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--app-danger-border)] bg-[var(--app-danger-soft)] px-4 py-3 text-sm text-[var(--app-danger)]">
                     <span>{submissionsError}</span>
-                    <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchAssignmentAndSubmissions()}>Retry</WorkspaceButton>
+                    <WorkspaceButton type="button" variant="secondary" size="compact" onClick={() => void fetchAssignmentAndSubmissions()}>{t("Retry")}</WorkspaceButton>
                 </div>
             )}
 
@@ -369,14 +375,14 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                     <section className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)]">
                         <div className="flex flex-col gap-2 border-b border-[var(--classroom-line)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <h2 className="text-lg font-semibold text-[var(--classroom-text)]">Your submission</h2>
+                                <h2 className="text-lg font-semibold text-[var(--classroom-text)]">{t("Your submission")}</h2>
                                 <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">
-                                    {mySubmission ? `Submitted ${formatDateYmd(mySubmission.submittedAt)}` : "Add your work when it is ready."}
+                                    {mySubmission ? t("Submitted {v0}", { v0: formatDateYmd(mySubmission.submittedAt) }) : t("Add your work when it is ready.")}
                                 </p>
                             </div>
                             <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", statusTone(myGrade ? "GRADED" : mySubmission?.status))}>
                                 {myGrade ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : <Clock className="h-3.5 w-3.5" aria-hidden="true" />}
-                                {myStatus}
+                                {t(myStatus)}
                             </span>
                         </div>
 
@@ -384,13 +390,13 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                             <div className="space-y-5 p-5">
                                 {mySubmission.content && (
                                     <div>
-                                        <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</h3>
+                                        <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Submission note")}</h3>
                                         <p className="mt-2 whitespace-pre-wrap rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm leading-6 text-[var(--classroom-text)]">{mySubmission.content}</p>
                                     </div>
                                 )}
                                 {mySubmission.files.length > 0 && (
                                     <div>
-                                        <h3 className="mb-2 text-xs font-semibold text-[var(--classroom-text-muted)]">Attached files</h3>
+                                        <h3 className="mb-2 text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Attached files")}</h3>
                                         <div className="grid gap-2 sm:grid-cols-2">
                                             {mySubmission.files.map((file) => (
                                                 <FileAttachmentChip key={file.id} name={file.fileName} href={file.fileUrl} size={file.fileSize} className="w-full border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)]" />
@@ -399,17 +405,17 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                     </div>
                                 )}
                                 {!mySubmission.content && mySubmission.files.length === 0 && (
-                                    <p className="rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm text-[var(--classroom-text-muted)]">This submission has no note or files.</p>
+                                    <p className="rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm text-[var(--classroom-text-muted)]">{t("This submission has no note or files.")}</p>
                                 )}
                             </div>
                         ) : (
                             <div className="space-y-4 p-5">
                                 <label className="block">
-                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</span>
+                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Submission note")}</span>
                                     <textarea
                                         value={submissionContent}
                                         onChange={(event) => setSubmissionContent(event.target.value)}
-                                        placeholder="Add a note for your teacher..."
+                                        placeholder={t("Add a note for your teacher...")}
                                         className="min-h-32 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
                                     />
                                 </label>
@@ -429,7 +435,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <label className="workspace-button inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 text-sm font-semibold text-[var(--app-text-muted)] transition-colors hover:bg-[var(--app-surface-muted)] hover:text-[var(--app-text)] focus-within:ring-2 focus-within:ring-[var(--app-focus-ring)]">
                                         <Upload className="h-4 w-4" aria-hidden="true" />
-                                        {uploadingFiles ? "Uploading…" : "Attach files"}
+                                        {uploadingFiles ? t("Uploading…") : t("Attach files")}
                                         <input type="file" multiple onChange={handleFileUpload} className="sr-only" disabled={uploadingFiles} />
                                     </label>
                                     <WorkspaceButton
@@ -439,7 +445,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         disabled={submitting || (submissionFiles.length === 0 && !submissionContent.trim())}
                                     >
                                         <Send aria-hidden="true" />
-                                        {submitting ? "Submitting…" : "Submit work"}
+                                        {submitting ? t("Submitting…") : t("Submit work")}
                                     </WorkspaceButton>
                                 </div>
                             </div>
@@ -448,23 +454,22 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
 
                     <aside className="self-start overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)] lg:sticky lg:top-4">
                         <div className="p-5">
-                            <span className="text-xs font-semibold text-[var(--classroom-text-muted)]">Result</span>
+                            <span className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Result")}</span>
                             <div className="mt-2 flex items-baseline gap-2">
                                 <span className="text-4xl font-bold tracking-tight text-[var(--classroom-text)]">{myGrade ? myGrade.score : "—"}</span>
                                 <span className="text-sm font-semibold text-[var(--classroom-text-muted)]">
-                                    {myGrade?.maxScore != null ? `/ ${myGrade.maxScore}` : displayAssignment.maxPoints != null ? `/ ${displayAssignment.maxPoints}` : "points"}
+                                    {myGrade?.maxScore != null ? `/ ${myGrade.maxScore}` : displayAssignment.maxPoints != null ? `/ ${displayAssignment.maxPoints}` : t("points")}
                                 </span>
                             </div>
                             <div className="mt-4 border-t border-[var(--classroom-line)] pt-4">
-                                <span className="text-xs text-[var(--classroom-text-muted)]">Status</span>
-                                <p className="mt-1 text-sm font-semibold text-[var(--classroom-text)]">{myStatus}</p>
+                                <span className="text-xs text-[var(--classroom-text-muted)]">{t("Status")}</span>
+                                <p className="mt-1 text-sm font-semibold text-[var(--classroom-text)]">{t(myStatus)}</p>
                             </div>
                             {myGrade?.feedback && (
                                 <div className="mt-4 border-t border-[var(--classroom-line)] pt-4">
                                     <div className="flex items-center gap-2 text-xs font-semibold text-[var(--classroom-text-muted)]">
                                         <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
-                                        Teacher feedback
-                                    </div>
+                                         {t("Teacher feedback")} </div>
                                     <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[var(--classroom-text)]">{myGrade.feedback}</p>
                                 </div>
                             )}
@@ -476,8 +481,8 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                     <aside className="overflow-hidden rounded-2xl border border-[var(--classroom-line)] bg-[var(--app-surface)]">
                         <div className="flex min-h-20 items-center justify-between border-b border-[var(--classroom-line)] px-4 py-4">
                             <div>
-                                <h2 className="text-sm font-semibold text-[var(--classroom-text)]">Students</h2>
-                                <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{submittedCount} of {studentCount} submitted</p>
+                                <h2 className="text-sm font-semibold text-[var(--classroom-text)]">{t("Students")}</h2>
+                                <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{submittedCount}  {t("of")} {studentCount}  {t("submitted")}</p>
                             </div>
                             <Users className="h-4 w-4 text-[var(--classroom-text-muted)]" aria-hidden="true" />
                         </div>
@@ -501,7 +506,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         <span className="min-w-0 flex-1">
                                             <span className="block truncate text-sm font-semibold text-[var(--classroom-text)]">{submission.user.name}</span>
                                             <span className={cn("mt-0.5 block text-[11px] font-medium", submission.grade ? "text-[var(--app-success)]" : submission.status === "LATE" ? "text-[var(--app-warning)]" : "text-[var(--classroom-text-muted)]")}>
-                                                {submission.grade ? `Graded · ${submission.grade.score}${submission.grade.maxScore != null ? ` / ${submission.grade.maxScore}` : ""}` : statusLabel(submission.status)}
+                                                {submission.grade ? t("Graded · {v0}{v1}", { v0: submission.grade.score, v1: submission.grade.maxScore != null ? ` / ${submission.grade.maxScore}` : "" }) : statusLabel(submission.status)}
                                             </span>
                                         </span>
                                     </WorkspaceButton>
@@ -511,12 +516,12 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         <ProfileAvatar user={user} className="h-9 w-9 grayscale" />
                                         <div className="min-w-0">
                                             <span className="block truncate text-sm font-medium text-[var(--classroom-text)]">{user.name}</span>
-                                            <span className="mt-0.5 block text-[11px] text-[var(--classroom-text-muted)]">Not submitted</span>
+                                            <span className="mt-0.5 block text-[11px] text-[var(--classroom-text-muted)]">{t("Not submitted")}</span>
                                         </div>
                                     </div>
                                 ))}
                                 {studentCount === 0 && (
-                                    <p className="px-3 py-10 text-center text-sm text-[var(--classroom-text-muted)]">No students are enrolled yet.</p>
+                                    <p className="px-3 py-10 text-center text-sm text-[var(--classroom-text-muted)]">{t("No students are enrolled yet.")}</p>
                                 )}
                             </div>
                         </ScrollArea>
@@ -530,12 +535,12 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                         <ProfileAvatar user={selectedSubmission.user} className="h-11 w-11" />
                                         <div className="min-w-0">
                                             <h2 className="truncate text-lg font-semibold text-[var(--classroom-text)]">{selectedSubmission.user.name}</h2>
-                                            <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">Submitted {new Date(selectedSubmission.submittedAt).toLocaleString()}</p>
+                                            <p className="mt-0.5 text-xs text-[var(--classroom-text-muted)]">{t("Submitted")} {new Date(selectedSubmission.submittedAt).toLocaleString(locale)}</p>
                                         </div>
                                     </div>
                                     <span className={cn("inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold", statusTone(selectedSubmission.grade ? "GRADED" : selectedSubmission.status))}>
                                         {selectedSubmission.grade
-                                            ? `Graded · ${selectedSubmission.grade.score}${selectedSubmission.grade.maxScore != null ? ` / ${selectedSubmission.grade.maxScore}` : ""}`
+                                            ? t("Graded · {v0}{v1}", { v0: selectedSubmission.grade.score, v1: selectedSubmission.grade.maxScore != null ? ` / ${selectedSubmission.grade.maxScore}` : "" })
                                             : statusLabel(selectedSubmission.status)}
                                     </span>
                                 </div>
@@ -543,15 +548,15 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                 <div className="space-y-6 p-5">
                                     <div className="grid gap-5 md:grid-cols-2">
                                         <div>
-                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Submission note</h3>
+                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Submission note")}</h3>
                                             {selectedSubmission.content ? (
                                                 <p className="mt-2 whitespace-pre-wrap rounded-xl bg-[var(--classroom-surface-muted)] p-4 text-sm leading-6 text-[var(--classroom-text)]">{selectedSubmission.content}</p>
                                             ) : (
-                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">No note was added.</p>
+                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">{t("No note was added.")}</p>
                                             )}
                                         </div>
                                         <div>
-                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">Attached files</h3>
+                                            <h3 className="text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Attached files")}</h3>
                                             {selectedSubmission.files.length > 0 ? (
                                                 <div className="mt-2 space-y-2">
                                                     {selectedSubmission.files.map((file) => (
@@ -559,26 +564,26 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">No files were attached.</p>
+                                                <p className="mt-2 text-sm text-[var(--classroom-text-muted)]">{t("No files were attached.")}</p>
                                             )}
                                         </div>
                                     </div>
 
                                     {displayAssignment.isGraded && displayAssignment.maxPoints != null ? (
                                         <div className="border-t border-[var(--classroom-line)] pt-5">
-                                            <h3 className="mb-4 text-base font-semibold text-[var(--classroom-text)]">Review and grade</h3>
+                                            <h3 className="mb-4 text-base font-semibold text-[var(--classroom-text)]">{t("Review and grade")}</h3>
                                             <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_180px]">
                                                 <label className="block">
-                                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Feedback</span>
+                                                    <span className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Feedback")}</span>
                                                     <textarea
                                                         value={gradeFeedback}
                                                         onChange={(event) => setGradeFeedback(event.target.value)}
-                                                        placeholder="Add feedback for the student..."
+                                                        placeholder={t("Add feedback for the student...")}
                                                         className="h-20 min-h-20 w-full resize-y rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-4 py-3 text-sm text-[var(--classroom-text)] outline-none placeholder:text-[var(--classroom-text-faint)] focus:border-[var(--classroom-focus-border)] focus:ring-2 focus:ring-[var(--classroom-focus-ring)]"
                                                     />
                                                 </label>
                                                 <div>
-                                                    <label htmlFor="assignment-score" className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">Score</label>
+                                                    <label htmlFor="assignment-score" className="mb-2 block text-xs font-semibold text-[var(--classroom-text-muted)]">{t("Score")}</label>
                                                     <div className="flex h-9 items-center rounded-xl border border-[var(--classroom-line)] bg-[var(--classroom-surface-muted)] px-3 focus-within:border-[var(--classroom-focus-border)] focus-within:ring-2 focus-within:ring-[var(--classroom-focus-ring)]">
                                                         <input
                                                             id="assignment-score"
@@ -599,7 +604,7 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                                                         disabled={grading || !gradeScore}
                                                         className="mt-2 w-full"
                                                     >
-                                                        {grading ? "Saving…" : selectedSubmission.grade ? "Update grade" : "Save grade"}
+                                                        {grading ? t("Saving…") : selectedSubmission.grade ? t("Update grade") : t("Save grade")}
                                                     </WorkspaceButton>
                                                 </div>
                                             </div>
@@ -610,9 +615,9 @@ export function AssignmentView({ classroomId, assignmentId, isTeacher }: Props) 
                         ) : (
                             <div className="flex min-h-72 flex-col items-center justify-center px-6 py-12 text-center">
                                 <Users className="h-6 w-6 text-[var(--classroom-text-faint)]" aria-hidden="true" />
-                                <h2 className="mt-3 text-sm font-semibold text-[var(--classroom-text)]">No submission selected</h2>
+                                <h2 className="mt-3 text-sm font-semibold text-[var(--classroom-text)]">{t("No submission selected")}</h2>
                                 <p className="mt-1 max-w-xs text-xs leading-5 text-[var(--classroom-text-muted)]">
-                                    {submittedCount > 0 ? "Choose a student to review their work." : "Submitted work will appear here."}
+                                    {submittedCount > 0 ? t("Choose a student to review their work.") : t("Submitted work will appear here.")}
                                 </p>
                             </div>
                         )}

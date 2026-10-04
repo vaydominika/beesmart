@@ -1,3 +1,6 @@
+import { getLocale } from "next-intl/server";
+import { resolveLocale } from "@/i18n/config";
+import { LanguageProvider } from "@/components/i18n/LanguageProvider";
 import type { Metadata } from "next";
 import { Barlow_Condensed, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -7,17 +10,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const barlowCondensed = Barlow_Condensed({
   variable: "--font-barlow-condensed",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
@@ -26,13 +29,14 @@ export const metadata: Metadata = {
   description: "BeeSmart Learning Platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = resolveLocale(await getLocale());
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -43,12 +47,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${barlowCondensed.variable} antialiased`}
       >
-        <TooltipProvider>
-          <SessionProvider>
-            <Toaster />
-            {children}
-          </SessionProvider>
-        </TooltipProvider>
+        <LanguageProvider initialLocale={locale}>
+          <TooltipProvider>
+            <SessionProvider>
+              <Toaster />
+              {children}
+            </SessionProvider>
+          </TooltipProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

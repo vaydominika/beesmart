@@ -1,3 +1,6 @@
+
+import { getLocale } from "next-intl/server";
+import { getText } from "@/i18n/server";
 import Link from "next/link";
 import { MessageSquareText } from "lucide-react";
 import { TicketStatusBadge } from "@/components/tickets/TicketStatusBadge";
@@ -7,11 +10,13 @@ import { WorkspaceEmptyState } from "@/components/ui/workspace-state";
 import { getCurrentUserId } from "@/lib/db";
 import { getUserTickets, reportTypeLabel } from "@/lib/tickets";
 
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(value);
+function formatDate(value: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, { month: "short", day: "numeric", year: "numeric" }).format(value);
 }
 
 export default async function TicketsPage() {
+  const locale = await getLocale();
+  const t = await getText();
   const userId = await getCurrentUserId();
   if (!userId) return null;
   const tickets = await getUserTickets(userId);
@@ -20,10 +25,10 @@ export default async function TicketsPage() {
   return (
     <WorkspacePageFrame className="font-[var(--font-geist-sans)]">
         <WorkspacePageHeader
-          title="My reports"
+          title={t("My reports")}
           actions={<div className="flex gap-2 text-xs font-semibold text-[var(--app-text-muted)]">
-            <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1.5">{tickets.length} total</span>
-            <span className="rounded-full bg-[var(--app-accent-soft)] px-3 py-1.5 text-[var(--app-text)]">{activeCount} active</span>
+            <span className="rounded-full bg-[var(--app-surface-muted)] px-3 py-1.5">{tickets.length}  {t("total")}</span>
+            <span className="rounded-full bg-[var(--app-accent-soft)] px-3 py-1.5 text-[var(--app-text)]">{activeCount}  {t("active")}</span>
           </div>}
         />
 
@@ -33,16 +38,16 @@ export default async function TicketsPage() {
               <article key={ticket.id} id={ticket.id} className="scroll-mt-20 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 target:border-[var(--app-focus-border)] target:ring-2 target:ring-[var(--app-focus-ring)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-[var(--app-text-muted)]">{reportTypeLabel(ticket.type)}</p>
+                    <p className="text-xs font-semibold text-[var(--app-text-muted)]">{t(reportTypeLabel(ticket.type))}</p>
                     <h2 className="mt-1 text-lg font-semibold text-[var(--app-text)]">
-                      {ticket.type === "EARLY_ACCESS_FEEDBACK" ? "Early Access feedback" : ticket.reason}
+                      {ticket.type === "EARLY_ACCESS_FEEDBACK" ? t("Early Access feedback") : ticket.reason}
                     </h2>
                     {ticket.course ? (
                       <Link href={`/courses/${ticket.course.id}`} className="mt-1 inline-flex text-xs font-medium text-[var(--app-info)] hover:underline">
                         {ticket.course.title}
                       </Link>
                     ) : ticket.type === "COURSE_REPORT" ? (
-                      <p className="mt-1 text-xs text-[var(--app-text-faint)]">The reported course is no longer available.</p>
+                      <p className="mt-1 text-xs text-[var(--app-text-faint)]">{t("The reported course is no longer available.")}</p>
                     ) : null}
                   </div>
                   <TicketStatusBadge status={ticket.status} />
@@ -50,17 +55,17 @@ export default async function TicketsPage() {
 
                 {ticket.description ? <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[var(--app-text-muted)]">{ticket.description}</p> : null}
 
-                <TicketAttachmentGallery attachments={ticket.attachments} label="Screenshots" />
+                <TicketAttachmentGallery attachments={ticket.attachments} label={t("Screenshots")} />
 
                 <footer className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--app-border)] pt-3 text-xs text-[var(--app-text-faint)]">
-                  <span>Created {formatDate(ticket.createdAt)}</span>
-                  <span>Updated {formatDate(ticket.updatedAt)}</span>
+                  <span>{t("Created")} {formatDate(ticket.createdAt, locale)}</span>
+                  <span>{t("Updated")} {formatDate(ticket.updatedAt, locale)}</span>
                 </footer>
               </article>
             ))}
           </div>
         ) : (
-          <WorkspaceEmptyState dashed className="min-h-72 p-8" icon={<MessageSquareText className="mb-3 h-8 w-8 text-[var(--app-text-faint)]" aria-hidden="true" />} title="No reports yet" description="Course reports and feedback you send will appear here with their latest status." />
+          <WorkspaceEmptyState dashed className="min-h-72 p-8" icon={<MessageSquareText className="mb-3 h-8 w-8 text-[var(--app-text-faint)]" aria-hidden="true" />} title={t("No reports yet")} description={t("Course reports and feedback you send will appear here with their latest status.")} />
         )}
     </WorkspacePageFrame>
   );

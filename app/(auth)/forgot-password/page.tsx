@@ -1,5 +1,7 @@
 "use client";
 
+import { useText } from "@/i18n/use-text";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -7,6 +9,7 @@ import { AuthShell, AuthStatusMessage, AuthSubmitButton, authFieldClass, authLab
 import { WorkspaceField } from "@/components/ui/workspace-field";
 
 export default function ForgotPasswordPage() {
+  const t = useText();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -29,19 +32,19 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title={message ? "Check your email" : "Reset your password"} footer={<p>Remembered it? <Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">Back to sign in</Link></p>}>
+    <AuthShell title={message ? t("Check your email") : t("Reset your password")} footer={<p>{t("Remembered it?")} <Link href="/login" className="font-semibold text-[var(--app-accent-text)] underline underline-offset-4">{t("Back to sign in")}</Link></p>}>
       {message ? (
         <AuthStatusMessage>
           <p>{message}</p>
-          <p>The reset link expires in one hour.</p>
+          <p>{t("The reset link expires in one hour.")}</p>
         </AuthStatusMessage>
       ) : (
         <>
-          <p className="mb-5 text-sm leading-6 text-[var(--app-text-muted)]">Enter your account email and we will send you a reset link.</p>
+          <p className="mb-5 text-sm leading-6 text-[var(--app-text-muted)]">{t("Enter your account email and we will send you a reset link.")}</p>
           <form onSubmit={submit} className="space-y-4">
-            <WorkspaceField id="forgot-email" label="Email address" labelClassName={authLabelClass}><Input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder="you@example.com" /></WorkspaceField>
-            {error ? <p role="alert" className="text-sm text-[var(--app-danger)]">{error}</p> : null}
-            <AuthSubmitButton loading={loading} idleLabel="Send reset link" loadingLabel="Sending…" />
+            <WorkspaceField id="forgot-email" label={t("Email address")} labelClassName={authLabelClass}><Input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className={authFieldClass} placeholder={t("you@example.com")} /></WorkspaceField>
+            {error ? <p role="alert" className="text-sm text-[var(--app-danger)]">{t(error)}</p> : null}
+            <AuthSubmitButton loading={loading} idleLabel={t("Send reset link")} loadingLabel={t("Sending…")} />
           </form>
         </>
       )}

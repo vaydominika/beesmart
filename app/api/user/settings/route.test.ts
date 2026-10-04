@@ -18,6 +18,7 @@ vi.mock("@/lib/db", () => ({
 import { GET, PATCH } from "./route";
 
 const savedSettings = {
+  locale: "en",
   theme: "dark",
   courseCreationTutorialCompleted: true,
   defaultActiveMinutes: 30,
@@ -70,5 +71,21 @@ describe("user settings route", () => {
     });
     expect(mocks.settingsUpdate.mock.calls[0][0].data).not.toHaveProperty("courseCreationTutorialCompleted");
     expect(mocks.settingsUpdate.mock.calls[0][0].data).not.toHaveProperty("ignored");
+  });
+});
+
+ describe("language preference", () => {
+  it("rejects unsupported locales before writing settings", async () => {
+    mocks.getCurrentUserId.mockResolvedValue("user-1");
+    const response = await PATCH(new Request("http://localhost/api/user/settings", { method: "PATCH", body: JSON.stringify({locale: "de"}) }));
+    expect(response.status).toBe(400);
+    expect(mocks.settingsUpdate).not.toHaveBeenCalled();
+  });
+  it("persists Hungarian as the account language", async () => {
+    mocks.getCurrentUserId.mockResolvedValue("user-1");
+    mocks.settingsUpdate.mockResolvedValue({...savedSettings, locale: "hu"});
+    const response = await PATCH(new Request("http://localhost/api/user/settings", { method: "PATCH", body: JSON.stringify({locale: "hu"}) }));
+    expect(mocks.settingsUpdate).toHaveBeenCalledWith({where: {id: "user-1"}, data: {locale: "hu"}});
+    expect(await response.json()).toMatchObject({locale: "hu"});
   });
 });

@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
+
+import { useLanguage } from "@/components/i18n/LanguageProvider";
+import { resolveLocale, type Locale } from "@/i18n/config";
 
 export type Theme = "bee" | "dark" | "pink" | "blue";
 
@@ -11,6 +14,9 @@ interface SettingsContextType {
   isProfileModalOpen: boolean;
   openProfileModal: () => void;
   closeProfileModal: () => void;
+
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
 
   // Theme
   theme: Theme;
@@ -80,6 +86,13 @@ function normalizeTheme(theme: unknown): Theme {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { locale, setLocale: applyLocale } = useLanguage();
+  const languageChanged = useRef(false);
+  const setLocale = useCallback((next: Locale) => {
+    languageChanged.current = true;
+    applyLocale(next);
+    fetch("/api/user/settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ locale: next }) }).catch(() => {});
+  }, [applyLocale]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -123,6 +136,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/user/settings");
         if (!res.ok) return; // Not logged in or server error — keep localStorage values
         const data = await res.json();
+        if (data.locale && !languageChanged.current) applyLocale(resolveLocale(data.locale));
         if (data.theme) {
           const serverTheme = normalizeTheme(data.theme);
           setThemeState(serverTheme);
@@ -146,7 +160,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       }
     }
     fetchSettings();
-  }, []);
+  }, [applyLocale]);
 
   // Apply theme to document
   useEffect(() => {
@@ -177,6 +191,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setIsSaving(true);
     try {
       const payload = {
+        locale,
         theme,
         defaultActiveMinutes,
         defaultBreakMinutes,
@@ -198,7 +213,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsSaving(false);
     }
-  }, [theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak,
+  }, [locale, theme, defaultActiveMinutes, defaultBreakMinutes, defaultAutoBreak,
     reminderNotifications, classroomNotifications, profileVisibility, activitySharing]);
 
   const openModal = () => setIsModalOpen(true);
@@ -215,6 +230,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         isProfileModalOpen,
         openProfileModal,
         closeProfileModal,
+        locale,
+        setLocale,
         theme,
         setTheme,
         defaultActiveMinutes,
