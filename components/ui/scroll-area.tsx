@@ -16,9 +16,10 @@ function ScrollArea({
       className={cn("relative", className)}
       {...props}
     >
+      {/* Constrain Radix's table wrapper so content wraps to the viewport width. */}
       <ScrollAreaPrimitive.Viewport
         data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
+        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1 [&>div]:w-full [&>div]:table-fixed"
       >
         {children}
       </ScrollAreaPrimitive.Viewport>
